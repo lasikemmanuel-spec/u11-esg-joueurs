@@ -3,45 +3,30 @@ import { isDateSuspicious, type Player } from '@/lib/players'
 export function DataQualityPanel({ players }: { players: Player[] }) {
   const issues = players.flatMap((p) => {
     const name = `${p.firstName} ${p.lastName}`
-    if (!p.birthDate) return [{ key: p.number, name, label: 'Date de naissance manquante' }]
-    if (isDateSuspicious(p)) return [{ key: p.number, name, label: `Date improbable (${p.birthDate})` }]
+    if (!p.birthDate) return [{ key: p.number, name, label: 'date manquante' }]
+    if (isDateSuspicious(p)) return [{ key: p.number, name, label: `date improbable (${p.birthDate})` }]
     return []
   })
   const noPosition = players.filter((p) => !p.position).length
   const noTransfer = players.filter((p) => !p.transferStatus).length
 
   return (
-    <section className="flex flex-col gap-4 rounded-xl border bg-card p-5">
-      <div>
-        <h2 className="font-semibold">Données à compléter</h2>
-        <p className="text-sm text-muted-foreground">À corriger directement dans le Google Sheet</p>
-      </div>
-
+    <section
+      aria-label="Données à compléter"
+      className="flex flex-wrap items-center gap-x-4 gap-y-1.5 rounded-lg border bg-card px-3 py-2 text-xs text-muted-foreground"
+    >
+      <span className="font-medium text-foreground">Données à compléter</span>
       {issues.length > 0 ? (
-        <ul className="flex flex-col divide-y">
-          {issues.map((issue) => (
-            <li key={issue.key} className="flex items-center justify-between gap-3 py-2.5 text-sm">
-              <span className="font-medium">{issue.name}</span>
-              <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-medium text-accent-foreground">
-                {issue.label}
-              </span>
-            </li>
-          ))}
-        </ul>
+        issues.map((issue) => (
+          <span key={issue.key}>
+            <span className="font-medium text-foreground">{issue.name}</span> : {issue.label}
+          </span>
+        ))
       ) : (
-        <p className="text-sm text-muted-foreground">Toutes les dates de naissance sont valides.</p>
+        <span>Dates de naissance OK</span>
       )}
-
-      <dl className="mt-auto grid grid-cols-2 gap-3 border-t pt-4 text-sm">
-        <div>
-          <dt className="text-muted-foreground">Sans poste</dt>
-          <dd className="font-mono text-lg font-semibold">{noPosition}</dd>
-        </div>
-        <div>
-          <dt className="text-muted-foreground">Statut muté vide</dt>
-          <dd className="font-mono text-lg font-semibold">{noTransfer}</dd>
-        </div>
-      </dl>
+      <span>Sans poste : <span className="font-mono text-foreground">{noPosition}</span></span>
+      <span>Statut muté vide : <span className="font-mono text-foreground">{noTransfer}</span></span>
     </section>
   )
 }

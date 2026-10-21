@@ -41,8 +41,8 @@ export default async function Page() {
       <main className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 md:gap-6 md:px-6 md:py-8">
         <TeamStatsSummary stats={stats} />
         <PlayerStats players={stats.players} convocations={convocations.players} />
-        <DataQualityPanel players={roster.players} />
-        <RosterTable players={roster.players} />
+<RosterTable players={roster.players} />
+  <DataQualityPanel players={roster.players} />
       </main>
     </div>
   )

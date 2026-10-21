@@ -3,10 +3,13 @@ import { BirthYearChart } from '@/components/birth-year-chart'
 import { DataQualityPanel } from '@/components/data-quality-panel'
 import { RosterTable } from '@/components/roster-table'
 import { StatCards } from '@/components/stat-cards'
+import { PlayerStats } from '@/components/player-stats'
+import { TeamStatsSummary } from '@/components/team-stats-summary'
 import { getRoster, SHEET_URL } from '@/lib/players'
+import { getStats } from '@/lib/stats'
 
 export default async function Page() {
-  const roster = await getRoster()
+  const [roster, stats] = await Promise.all([getRoster(), getStats()])
   const updatedAt = new Intl.DateTimeFormat('fr-FR', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -16,7 +19,7 @@ export default async function Page() {
   return (
     <div className="min-h-dvh bg-muted/40">
       <header className="bg-primary text-primary-foreground">
-        <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-8 md:flex-row md:items-end md:justify-between md:px-6 md:py-10">
+        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-8 md:flex-row md:items-end md:justify-between md:px-6 md:py-10">
           <div className="flex flex-col gap-2">
             <p className="text-sm font-medium tracking-wide text-primary-foreground/70 uppercase">{roster.club}</p>
             <h1 className="text-balance text-3xl font-semibold tracking-tight md:text-4xl">{roster.title}</h1>
@@ -36,8 +39,10 @@ export default async function Page() {
         </div>
       </header>
 
-      <main className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-6 md:gap-6 md:px-6 md:py-8">
+      <main className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 md:gap-6 md:px-6 md:py-8">
         <StatCards players={roster.players} />
+        <TeamStatsSummary stats={stats} />
+        <PlayerStats players={stats.players} />
         <div className="grid gap-4 md:gap-6 lg:grid-cols-2">
           <BirthYearChart players={roster.players} />
           <DataQualityPanel players={roster.players} />

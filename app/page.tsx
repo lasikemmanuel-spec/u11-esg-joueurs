@@ -1,6 +1,6 @@
 import { ExternalLink } from 'lucide-react'
 import { DataQualityPanel } from '@/components/data-quality-panel'
-import { RosterTable } from '@/components/roster-table'
+import { PositionBreakdown } from '@/components/position-breakdown'
 import { PlayerStats } from '@/components/player-stats'
 import { TeamStatsSummary } from '@/components/team-stats-summary'
 import { getRoster, SHEET_URL } from '@/lib/players'
@@ -41,8 +41,8 @@ export default async function Page() {
       <main className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 md:gap-6 md:px-6 md:py-8">
         <TeamStatsSummary stats={stats} />
         <PlayerStats players={stats.players} convocations={convocations.players} />
-<RosterTable players={roster.players} />
-  <DataQualityPanel players={roster.players} />
+        <PositionBreakdown players={roster.players} />
+        <DataQualityPanel players={roster.players} />
       </main>
     </div>
   )

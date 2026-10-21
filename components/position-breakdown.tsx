@@ -1,0 +1,64 @@
+import type { Player } from '@/lib/players'
+
+const POSITION_ORDER = ['gard', 'déf', 'def', 'lat', 'cent', 'mil', 'ail', 'att', 'av']
+
+const positionRank = (position: string) => {
+  const lower = position.toLowerCase()
+  const index = POSITION_ORDER.findIndex((key) => lower.startsWith(key))
+  return index === -1 ? POSITION_ORDER.length : index
+}
+
+export function PositionBreakdown({ players }: { players: Player[] }) {
+  const groups = new Map<string, Player[]>()
+  for (const player of players) {
+    const key = player.position ?? 'Non renseigné'
+    groups.set(key, [...(groups.get(key) ?? []), player])
+  }
+
+  const sorted = [...groups.entries()].sort(([a], [b]) => {
+    if (a === 'Non renseigné') return 1
+    if (b === 'Non renseigné') return -1
+    return positionRank(a) - positionRank(b) || a.localeCompare(b, 'fr')
+  })
+
+  return (
+    <section aria-labelledby="positions-title" className="flex flex-col gap-4 rounded-xl border bg-card p-5">
+      <div>
+        <h2 id="positions-title" className="font-semibold">Répartition par poste</h2>
+        <p className="text-sm text-muted-foreground">
+          {sorted.length} poste{sorted.length > 1 ? 's' : ''} · {players.length} joueurs
+        </p>
+      </div>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {sorted.map(([position, list]) => (
+          <article key={position} className="flex flex-col gap-3 rounded-lg border bg-background p-4">
+            <header className="flex items-center justify-between gap-2">
+              <h3 className="font-semibold">{position}</h3>
+              <span className="rounded-full bg-primary px-2.5 py-0.5 font-mono text-xs font-medium text-primary-foreground">
+                {list.length}
+              </span>
+            </header>
+            <ul className="flex flex-col divide-y text-sm">
+              {[...list]
+                .sort((a, b) => a.lastName.localeCompare(b.lastName, 'fr'))
+                .map((p) => (
+                  <li key={p.number} className="flex items-center gap-3 py-2">
+                    <span className="w-6 shrink-0 font-mono text-xs text-muted-foreground">{p.number}</span>
+                    <span className="truncate">
+                      <span className="font-semibold uppercase tracking-wide">{p.lastName}</span> {p.firstName}
+                    </span>
+                    {p.transferStatus && (
+                      <span className="ml-auto shrink-0 rounded bg-accent px-1.5 py-0.5 text-xs text-accent-foreground">
+                        {p.transferStatus}
+                      </span>
+                    )}
+                  </li>
+                ))}
+            </ul>
+          </article>
+        ))}
+      </div>
+    </section>
+  )
+}

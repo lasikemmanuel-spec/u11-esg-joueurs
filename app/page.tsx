@@ -7,9 +7,10 @@ import { PlayerStats } from '@/components/player-stats'
 import { TeamStatsSummary } from '@/components/team-stats-summary'
 import { getRoster, SHEET_URL } from '@/lib/players'
 import { getStats } from '@/lib/stats'
+import { getConvocations } from '@/lib/convocations'
 
 export default async function Page() {
-  const [roster, stats] = await Promise.all([getRoster(), getStats()])
+  const [roster, stats, convocations] = await Promise.all([getRoster(), getStats(), getConvocations()])
   const updatedAt = new Intl.DateTimeFormat('fr-FR', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -42,7 +43,7 @@ export default async function Page() {
       <main className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 md:gap-6 md:px-6 md:py-8">
         <StatCards players={roster.players} />
         <TeamStatsSummary stats={stats} />
-        <PlayerStats players={stats.players} />
+        <PlayerStats players={stats.players} convocations={convocations.players} />
         <div className="grid gap-4 md:gap-6 lg:grid-cols-2">
           <BirthYearChart players={roster.players} />
           <DataQualityPanel players={roster.players} />

@@ -3,6 +3,85 @@
 import { useMemo, useState } from 'react'
 import { ArrowDownUp, Search } from 'lucide-react'
 import { ireStatus, type IreStatus, type PlayerStats as Stats } from '@/lib/stats'
+import type { Convocation, MatchStatus } from '@/lib/convocations'
+
+const MATCH_STYLES: Record<MatchStatus, { label: string; className: string }> = {
+  called: { label: 'Convoqué', className: 'bg-primary text-primary-foreground' },
+  calledAbsent: { label: 'Convoqué absent', className: 'bg-amber-500 text-white' },
+  absent: { label: 'Absent', className: 'bg-muted-foreground/25 text-foreground' },
+  injured: { label: 'Blessé', className: 'bg-red-600 text-white' },
+  notCalled: { label: 'Non convoqué', className: 'border border-dashed text-muted-foreground' },
+  unknown: { label: '?', className: 'bg-muted text-muted-foreground' },
+}
+
+function RateRow({
+  label,
+  rate,
+  count,
+  barClass,
+}: {
+  label: string
+  rate: number | null
+  count: number | null
+  barClass: string
+}) {
+  return (
+    <div className="flex flex-col gap-1.5">
+      <div className="flex items-baseline justify-between gap-2 text-sm">
+        <span>{label}</span>
+        <span className="flex items-baseline gap-2">
+          {count !== null && <span className="text-xs text-muted-foreground">{count} match{count > 1 ? 's' : ''}</span>}
+          <span className="font-mono font-semibold">{rate !== null ? `${rate}%` : '—'}</span>
+        </span>
+      </div>
+      <div className="h-2 overflow-hidden rounded-full bg-muted">
+        <div className={`h-full ${barClass}`} style={{ width: `${Math.min(rate ?? 0, 100)}%` }} />
+      </div>
+    </div>
+  )
+}
+
+function SaturdaySection({ convocation }: { convocation: Convocation }) {
+  return (
+    <div className="flex flex-col gap-3 border-t pt-4">
+      <h4 className="text-sm font-semibold">Disponibilités du samedi</h4>
+      <RateRow label="Présence le samedi" rate={convocation.presentRate} count={convocation.presentCount} barClass="bg-primary" />
+      <RateRow label="Absence le samedi" rate={convocation.absentRate} count={convocation.absentCount} barClass="bg-amber-500" />
+      <RateRow label="Blessé" rate={convocation.injuredRate} count={convocation.injuredCount} barClass="bg-red-600" />
+      <RateRow label="Non convoqué" rate={convocation.notCalledRate} count={convocation.notCalledCount} barClass="bg-muted-foreground" />
+
+      {convocation.matches.length > 0 && (
+        <div className="flex flex-col gap-2">
+          <p className="text-xs text-muted-foreground">Historique des matchs</p>
+          <ol className="flex flex-wrap gap-1.5">
+            {convocation.matches.map((m) => {
+              const style = MATCH_STYLES[m.status]
+              return (
+                <li
+                  key={m.date}
+                  title={`${m.date} : ${m.raw}`}
+                  className={`flex min-w-12 flex-col items-center rounded-md px-1.5 py-1 text-[11px] leading-tight ${style.className}`}
+                >
+                  <span className="font-mono">{m.date}</span>
+                  <span className="font-semibold">{m.status === 'called' ? (m.team ?? 'Conv.') : style.label.split(' ')[0]}</span>
+                  <span className="sr-only">{style.label}</span>
+                </li>
+              )
+            })}
+          </ol>
+          <ul className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
+            {(['called', 'absent', 'injured', 'notCalled'] as const).map((s) => (
+              <li key={s} className="flex items-center gap-1">
+                <span aria-hidden="true" className={`size-2.5 rounded-sm ${MATCH_STYLES[s].className}`} />
+                {MATCH_STYLES[s].label}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </div>
+  )
+}
 
 type SortKey = keyof Omit<Stats, 'name'> | 'name'
 
@@ -62,7 +141,7 @@ function IreBadge({ stats }: { stats: Stats }) {
   )
 }
 
-function PlayerCard({ stats }: { stats: Stats }) {
+function PlayerCard({ stats, convocation }: { stats: Stats; convocation?: Convocation }) {
   const status = IRE_STYLES[ireStatus(stats)]
   const minutesPerMatch = stats.matchesCalled ? Math.round((stats.minutes ?? 0) / stats.matchesCalled) : null
   const tiles = [
@@ -112,6 +191,8 @@ function PlayerCard({ stats }: { stats: Stats }) {
         </div>
       </div>
 
+      {convocation && <SaturdaySection convocation={convocation} />}
+
       <dl className="grid grid-cols-2 gap-3">
         {tiles.map((t) => (
           <div key={t.label} className="flex flex-col gap-0.5 rounded-lg bg-muted/60 p-3">
@@ -127,7 +208,7 @@ function PlayerCard({ stats }: { stats: Stats }) {
   )
 }
 
-export function PlayerStats({ players }: { players: Stats[] }) {
+export function PlayerStats({ players, convocations }: { players: Stats[]; convocations: Convocation[] }) {
   const [query, setQuery] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('number')
   const [ascending, setAscending] = useState(true)
@@ -245,7 +326,7 @@ export function PlayerStats({ players }: { players: Stats[] }) {
 
       <div className="xl:sticky xl:top-6 xl:self-start">
         {current ? (
-          <PlayerCard stats={current} />
+          <PlayerCard stats={current} convocation={convocations.find((c) => c.number === current.number)} />
         ) : (
           <div className="rounded-xl border bg-card p-5 text-sm text-muted-foreground">Sélectionnez un joueur.</div>
         )}

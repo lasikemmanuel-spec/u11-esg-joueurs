@@ -1,5 +1,4 @@
 import { ExternalLink } from 'lucide-react'
-import { BirthYearChart } from '@/components/birth-year-chart'
 import { DataQualityPanel } from '@/components/data-quality-panel'
 import { RosterTable } from '@/components/roster-table'
 import { PlayerStats } from '@/components/player-stats'
@@ -42,10 +41,7 @@ export default async function Page() {
       <main className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 md:gap-6 md:px-6 md:py-8">
         <TeamStatsSummary stats={stats} />
         <PlayerStats players={stats.players} convocations={convocations.players} />
-        <div className="grid gap-4 md:gap-6 lg:grid-cols-2">
-          <BirthYearChart players={roster.players} />
-          <DataQualityPanel players={roster.players} />
-        </div>
+        <DataQualityPanel players={roster.players} />
         <RosterTable players={roster.players} />
       </main>
     </div>

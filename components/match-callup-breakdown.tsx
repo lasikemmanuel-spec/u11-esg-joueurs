@@ -38,6 +38,9 @@ export function MatchCallupBreakdown({ convocations }: { convocations: Convocati
 
   const totalCalled = rows.reduce((sum, [, values]) => sum + values.convoques, 0)
   const totalPresent = rows.reduce((sum, [, values]) => sum + values.presents, 0)
+  const totalCalledPlayers = convocations.filter((player) => (player.calledCount ?? 0) > 0).length
+  const totalPresentPlayers = convocations.filter((player) => (player.presentCount ?? 0) > 0).length
+  const totalNonCalledPlayers = convocations.filter((player) => (player.calledCount ?? 0) === 0).length
 
   return (
     <section aria-labelledby="match-callups-title" className="flex flex-col gap-4 rounded-xl border bg-card p-5">
@@ -46,6 +49,21 @@ export function MatchCallupBreakdown({ convocations }: { convocations: Convocati
         <span className="inline-flex w-fit rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
           {rows.length} match{rows.length > 1 ? 's' : ''}
         </span>
+      </div>
+
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="rounded-lg bg-muted/60 p-3">
+          <p className="text-xs text-muted-foreground">Joueurs convoqués</p>
+          <p className="mt-1 font-mono text-2xl font-semibold">{totalCalledPlayers}</p>
+        </div>
+        <div className="rounded-lg bg-muted/60 p-3">
+          <p className="text-xs text-muted-foreground">Joueurs présents</p>
+          <p className="mt-1 font-mono text-2xl font-semibold">{totalPresentPlayers}</p>
+        </div>
+        <div className="rounded-lg bg-muted/60 p-3">
+          <p className="text-xs text-muted-foreground">Joueurs non convoqués</p>
+          <p className="mt-1 font-mono text-2xl font-semibold">{totalNonCalledPlayers}</p>
+        </div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

@@ -1,3 +1,4 @@
+import { MatchCallupBreakdown } from '@/components/match-callup-breakdown'
 import { ExternalLink } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import { DataQualityPanel } from '@/components/data-quality-panel'
@@ -33,7 +34,7 @@ export default async function Page() {
               href={SHEET_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex w-fit items-center gap-2 rounded-xl border border-primary-foreground/25 bg-primary-foreground/10 px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-foreground/20"
+              className="inline-flex w-fit items-center gap-2 rounded-xl border border-primary-foreground/25 bg-primary-foreground/10 px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-foreground/15"
             >
               Ouvrir le Google Sheet
               <ExternalLink aria-hidden="true" className="size-4" />
@@ -45,6 +46,7 @@ export default async function Page() {
 
       <main className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 md:gap-6 md:px-6 md:py-8">
         <TeamStatsSummary stats={stats} />
+        <MatchCallupBreakdown convocations={convocations.players} />
         <PlayerStats players={stats.players} convocations={convocations.players} />
         <PositionBreakdown players={roster.players} />
         <DataQualityPanel players={roster.players} />

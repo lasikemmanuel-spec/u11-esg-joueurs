@@ -6,7 +6,7 @@ import { PlayerStats } from '@/components/player-stats'
 import type { Convocation } from '@/lib/convocations'
 import type { PlayerStats as PlayerStat } from '@/lib/stats'
 
-type TabKey = 'history' | 'players'
+type TabKey = 'players' | 'history'
 
 export function DashboardTabs({
   players,
@@ -15,11 +15,11 @@ export function DashboardTabs({
   players: PlayerStat[]
   convocations: Convocation[]
 }) {
-  const [activeTab, setActiveTab] = useState<TabKey>('history')
+  const [activeTab, setActiveTab] = useState<TabKey>('players')
 
   const tabs: { key: TabKey; label: string }[] = [
-    { key: 'history', label: 'Historique match' },
     { key: 'players', label: 'Stat joueurs' },
+    { key: 'history', label: 'Historique match' },
   ]
 
   return (
@@ -43,8 +43,8 @@ export function DashboardTabs({
       </div>
 
       <div className="p-4 md:p-5">
-        {activeTab === 'history' && <MatchCallupBreakdown convocations={convocations} />}
         {activeTab === 'players' && <PlayerStats players={players} convocations={convocations} />}
+        {activeTab === 'history' && <MatchCallupBreakdown convocations={convocations} />}
       </div>
     </section>
   )

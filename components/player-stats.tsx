@@ -8,6 +8,7 @@ import type { Convocation, MatchStatus } from '@/lib/convocations'
 const MATCH_STYLES: Record<MatchStatus, { label: string; className: string }> = {
   called: { label: 'Convoqué', className: 'bg-primary text-primary-foreground' },
   calledAbsent: { label: 'Convoqué absent', className: 'bg-amber-500 text-white' },
+  present: { label: 'Présent', className: 'bg-emerald-600 text-white' },
   absent: { label: 'Absent', className: 'bg-muted-foreground/25 text-foreground' },
   injured: { label: 'Blessé', className: 'bg-red-600 text-white' },
   notCalled: { label: 'Non convoqué', className: 'border border-dashed text-muted-foreground' },
@@ -70,7 +71,7 @@ function SaturdaySection({ convocation }: { convocation: Convocation }) {
             })}
           </ol>
           <ul className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-            {(['called', 'absent', 'injured', 'notCalled'] as const).map((s) => (
+            {(['called', 'present', 'absent', 'injured', 'notCalled'] as const).map((s) => (
               <li key={s} className="flex items-center gap-1">
                 <span aria-hidden="true" className={`size-2.5 rounded-sm ${MATCH_STYLES[s].className}`} />
                 {MATCH_STYLES[s].label}

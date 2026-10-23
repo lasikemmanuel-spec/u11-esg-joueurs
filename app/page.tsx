@@ -2,7 +2,6 @@ import { DashboardTabs } from '@/components/dashboard-tabs'
 import { ExternalLink } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import { DataQualityPanel } from '@/components/data-quality-panel'
-import { PositionBreakdown } from '@/components/position-breakdown'
 import { getRoster, SHEET_URL, type Roster } from '@/lib/players'
 import { getStats, type StatsData } from '@/lib/stats'
 import { getConvocations, type ConvocationsData } from '@/lib/convocations'
@@ -70,11 +69,10 @@ export default async function Page() {
       <main className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 md:gap-6 md:px-6 md:py-8">
         <DashboardTabs
           players={stats.players}
-          stats={stats}
+          rosterPlayers={roster.players}
           convocations={convocations.players}
           presentCounts={convocations.presentCounts}
         />
-        <PositionBreakdown players={roster.players} />
         <DataQualityPanel players={roster.players} />
       </main>
     </div>

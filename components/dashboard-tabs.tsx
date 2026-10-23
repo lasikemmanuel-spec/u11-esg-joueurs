@@ -3,19 +3,21 @@
 import { useState } from 'react'
 import { MatchCallupBreakdown } from '@/components/match-callup-breakdown'
 import { PlayerStats } from '@/components/player-stats'
+import { PositionBreakdown } from '@/components/position-breakdown'
 import type { Convocation } from '@/lib/convocations'
-import type { PlayerStats as PlayerStat, StatsData } from '@/lib/stats'
+import type { Player } from '@/lib/players'
+import type { PlayerStats as PlayerStat } from '@/lib/stats'
 
 type TabKey = 'players' | 'matches'
 
 export function DashboardTabs({
   players,
-  stats,
+  rosterPlayers,
   convocations,
   presentCounts,
 }: {
   players: PlayerStat[]
-  stats: StatsData
+  rosterPlayers: Player[]
   convocations: Convocation[]
   presentCounts: Record<string, number>
 }) {
@@ -55,9 +57,18 @@ export function DashboardTabs({
       </div>
 
       <div className="p-4 md:p-5">
-        {activeTab === 'players' && <PlayerStats players={players} convocations={convocations} />}
+        {activeTab === 'players' && (
+          <div className="flex flex-col gap-6">
+            <PlayerStats players={players} convocations={convocations} />
+            <PositionBreakdown players={rosterPlayers} />
+          </div>
+        )}
         {activeTab === 'matches' && (
-          <MatchCallupBreakdown convocations={convocations} presentCounts={presentCounts} />
+          <MatchCallupBreakdown
+            convocations={convocations}
+            presentCounts={presentCounts}
+            players={players}
+          />
         )}
       </div>
     </section>

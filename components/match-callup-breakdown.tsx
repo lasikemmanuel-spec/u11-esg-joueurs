@@ -47,52 +47,38 @@ export function MatchCallupBreakdown({
     )
   }
 
-  const totalCalled = convocations.reduce((sum, player) => sum + (player.calledCount ?? 0), 0)
-  const totalPresent = convocations.reduce((sum, player) => sum + (player.presentCount ?? 0), 0)
-
-  const totalCalledPlayers = convocations.filter((player) => (player.calledCount ?? 0) > 0).length
-  const totalPresentPlayers = convocations.filter((player) => (player.presentCount ?? 0) > 0).length
-  const totalNonCalledPlayers = convocations.filter((player) => (player.calledCount ?? 0) === 0).length
+  const totalCalled = rows.reduce((sum, [, values]) => sum + values.convoques, 0)
+  const totalPresent = rows.reduce((sum, [, values]) => sum + values.presents, 0)
 
   return (
     <section aria-labelledby="match-callups-title" className="flex flex-col gap-4 rounded-xl border bg-card p-5">
       <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-        <h2 id="match-callups-title" className="font-semibold">Historique des matchs</h2>
+        <div>
+          <h2 id="match-callups-title" className="font-semibold">Historique des matchs</h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Les totaux ci-dessous additionnent les participations de tous les matchs.
+          </p>
+        </div>
         <span className="inline-flex w-fit rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
           {rows.length} match{rows.length > 1 ? 's' : ''}
         </span>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <div className="rounded-lg bg-muted/60 p-3">
-          <p className="text-xs text-muted-foreground">Joueurs convoqués</p>
-          <p className="mt-1 font-mono text-2xl font-semibold">{totalCalledPlayers}</p>
-        </div>
-        <div className="rounded-lg bg-muted/60 p-3">
-          <p className="text-xs text-muted-foreground">Joueurs présents</p>
-          <p className="mt-1 font-mono text-2xl font-semibold">{totalPresentPlayers}</p>
-        </div>
-        <div className="rounded-lg bg-muted/60 p-3">
-          <p className="text-xs text-muted-foreground">Joueurs non convoqués</p>
-          <p className="mt-1 font-mono text-2xl font-semibold">{totalNonCalledPlayers}</p>
-        </div>
-      </div>
-
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div className="rounded-lg bg-muted/60 p-3">
-          <p className="text-xs text-muted-foreground">Présents</p>
+          <p className="text-xs text-muted-foreground">Présences cumulées</p>
           <p className="mt-1 font-mono text-2xl font-semibold">{totalPresent}</p>
         </div>
         <div className="rounded-lg bg-muted/60 p-3">
-          <p className="text-xs text-muted-foreground">Convoqués</p>
+          <p className="text-xs text-muted-foreground">Convocations cumulées</p>
           <p className="mt-1 font-mono text-2xl font-semibold">{totalCalled}</p>
         </div>
         <div className="rounded-lg bg-muted/60 p-3">
-          <p className="text-xs text-muted-foreground">Équipe 1</p>
+          <p className="text-xs text-muted-foreground">Affectations Équipe 1</p>
           <p className="mt-1 font-mono text-2xl font-semibold">{rows.reduce((sum, [, values]) => sum + values.equipe1, 0)}</p>
         </div>
         <div className="rounded-lg bg-muted/60 p-3">
-          <p className="text-xs text-muted-foreground">Équipe 2</p>
+          <p className="text-xs text-muted-foreground">Affectations Équipe 2</p>
           <p className="mt-1 font-mono text-2xl font-semibold">{rows.reduce((sum, [, values]) => sum + values.equipe2, 0)}</p>
         </div>
       </div>

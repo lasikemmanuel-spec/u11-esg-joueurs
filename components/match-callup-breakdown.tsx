@@ -36,8 +36,8 @@ export function MatchCallupBreakdown({ convocations }: { convocations: Convocati
     )
   }
 
-  const totalCalled = convocations.reduce((sum, player) => sum + (player.calledCount ?? 0), 0)
-  const totalPresent = convocations.reduce((sum, player) => sum + (player.presentCount ?? 0), 0)
+  const totalCalled = rows.reduce((sum, [, values]) => sum + values.convoques, 0)
+  const totalPresent = rows.reduce((sum, [, values]) => sum + values.presents, 0)
   const totalCalledPlayers = convocations.filter((player) => (player.calledCount ?? 0) > 0).length
   const totalPresentPlayers = convocations.filter((player) => (player.presentCount ?? 0) > 0).length
   const totalNonCalledPlayers = convocations.filter((player) => (player.calledCount ?? 0) === 0).length

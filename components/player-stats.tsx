@@ -43,13 +43,18 @@ function RateRow({
 }
 
 function SaturdaySection({ convocation }: { convocation: Convocation }) {
+  const availability = [
+    { label: 'Présence le samedi', rate: convocation.presentRate, count: convocation.presentCount, barClass: 'bg-primary' },
+    { label: 'Absence le samedi', rate: convocation.absentRate, count: convocation.absentCount, barClass: 'bg-amber-500' },
+    { label: 'Blessé', rate: convocation.injuredRate, count: convocation.injuredCount, barClass: 'bg-red-600' },
+    { label: 'Non convoqué', rate: convocation.notCalledRate, count: convocation.notCalledCount, barClass: 'bg-muted-foreground' },
+  ].filter((item) => item.rate !== null && item.rate > 0)
+    .sort((a, b) => (b.rate ?? 0) - (a.rate ?? 0))
+
   return (
     <div className="flex flex-col gap-3 border-t pt-4">
       <h4 className="text-sm font-semibold">Disponibilités du samedi</h4>
-      <RateRow label="Présence le samedi" rate={convocation.presentRate} count={convocation.presentCount} barClass="bg-primary" />
-      <RateRow label="Absence le samedi" rate={convocation.absentRate} count={convocation.absentCount} barClass="bg-amber-500" />
-      <RateRow label="Blessé" rate={convocation.injuredRate} count={convocation.injuredCount} barClass="bg-red-600" />
-      <RateRow label="Non convoqué" rate={convocation.notCalledRate} count={convocation.notCalledCount} barClass="bg-muted-foreground" />
+      {availability.map((item) => <RateRow key={item.label} {...item} />)}
 
       {convocation.matches.length > 0 && (
         <div className="flex flex-col gap-2">

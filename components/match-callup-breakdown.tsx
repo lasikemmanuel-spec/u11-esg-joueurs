@@ -1,4 +1,5 @@
 import type { Convocation } from '@/lib/convocations'
+import type { MatchResult, TeamMatchResults } from '@/lib/match-results'
 import type { PlayerStats } from '@/lib/stats'
 
 const CALLED_STATUSES = new Set(['called', 'calledAbsent', 'present'])
@@ -12,10 +13,12 @@ export function MatchCallupBreakdown({
   convocations,
   presentCounts,
   players,
+  matchResults,
 }: {
   convocations: Convocation[]
   presentCounts: Record<string, number>
   players: PlayerStats[]
+  matchResults: TeamMatchResults
 }) {
   const byDate = new Map<string, { equipe1: number; equipe2: number; presents: number; convoques: number }>()
 
@@ -51,9 +54,134 @@ export function MatchCallupBreakdown({
     .slice(0, 5)
   const maxGoals = topScorers[0]?.goals ?? 0
   const maxAssists = topAssisters[0]?.assists ?? 0
+  const resultTeams: { key: keyof TeamMatchResults; label: string; tone: string }[] = [
+    { key: 'E1', label: 'Équipe 1', tone: 'emerald' },
+    { key: 'E2', label: 'Équipe 2', tone: 'violet' },
+  ]
+
+  function summarize(results: MatchResult[]) {
+    return results.reduce(
+      (summary, match) => {
+        summary[match.outcome] += 1
+        summary.goalsFor += match.goalsFor
+        summary.goalsAgainst += match.goalsAgainst
+        return summary
+      },
+      { win: 0, draw: 0, loss: 0, goalsFor: 0, goalsAgainst: 0 },
+    )
+  }
+
+  const outcomeLabel = (outcome: MatchResult['outcome']) => {
+    if (outcome === 'win') return 'Victoire'
+    if (outcome === 'draw') return 'Nul'
+    return 'Défaite'
+  }
 
   return (
     <div className="flex flex-col gap-5">
+      <section aria-labelledby="team-results-title" className="flex flex-col gap-4">
+        <div>
+          <h2 id="team-results-title" className="font-semibold">Bilan des équipes</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Résultats et scores enregistrés dans les feuilles de match.</p>
+        </div>
+        <div className="grid gap-4 xl:grid-cols-2">
+          {resultTeams.map(({ key, label, tone }) => {
+            const results = matchResults[key]
+            const summary = summarize(results)
+            const goalDifference = summary.goalsFor - summary.goalsAgainst
+            const styles = tone === 'emerald'
+              ? {
+                  panel: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-card',
+                  badge: 'bg-emerald-100 text-emerald-800',
+                  win: 'text-emerald-700',
+                  draw: 'text-amber-700',
+                  loss: 'text-rose-700',
+                }
+              : {
+                  panel: 'border-violet-200 bg-gradient-to-br from-violet-50 to-card',
+                  badge: 'bg-violet-100 text-violet-800',
+                  win: 'text-emerald-700',
+                  draw: 'text-amber-700',
+                  loss: 'text-rose-700',
+                }
+
+            return (
+              <article key={key} className={`overflow-hidden rounded-xl border shadow-sm ${styles.panel}`}>
+                <header className="flex items-center justify-between gap-3 border-b border-border/60 px-5 py-4">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Saison</p>
+                    <h3 className="mt-1 text-lg font-bold">{label}</h3>
+                  </div>
+                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${styles.badge}`}>
+                    {results.length} match{results.length === 1 ? '' : 's'}
+                  </span>
+                </header>
+
+                {results.length > 0 ? (
+                  <>
+                    <div className="grid grid-cols-3 gap-2 px-4 pt-4 text-center">
+                      <div className="rounded-lg bg-background/80 px-2 py-3">
+                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Victoires</p>
+                        <p className={`mt-1 font-mono text-2xl font-bold ${styles.win}`}>{summary.win}</p>
+                      </div>
+                      <div className="rounded-lg bg-background/80 px-2 py-3">
+                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Nuls</p>
+                        <p className={`mt-1 font-mono text-2xl font-bold ${styles.draw}`}>{summary.draw}</p>
+                      </div>
+                      <div className="rounded-lg bg-background/80 px-2 py-3">
+                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Défaites</p>
+                        <p className={`mt-1 font-mono text-2xl font-bold ${styles.loss}`}>{summary.loss}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-center gap-6 px-4 py-4">
+                      <div className="text-center">
+                        <p className="text-xs text-muted-foreground">Buts marqués</p>
+                        <p className="font-mono text-xl font-bold">{summary.goalsFor}</p>
+                      </div>
+                      <span aria-hidden="true" className="text-muted-foreground">—</span>
+                      <div className="text-center">
+                        <p className="text-xs text-muted-foreground">Buts encaissés</p>
+                        <p className="font-mono text-xl font-bold">{summary.goalsAgainst}</p>
+                      </div>
+                      <span className="rounded-full bg-background/80 px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                        Diff. {goalDifference > 0 ? '+' : ''}{goalDifference}
+                      </span>
+                    </div>
+                    <div className="border-t border-border/60 bg-background/50 px-4 py-3">
+                      <p className="mb-2 text-xs font-semibold text-muted-foreground">Derniers résultats</p>
+                      <ol className="flex flex-col gap-2">
+                        {[...results].reverse().slice(0, 4).map((match) => {
+                          const badge = match.outcome === 'win'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : match.outcome === 'draw'
+                              ? 'bg-amber-100 text-amber-800'
+                              : 'bg-rose-100 text-rose-800'
+
+                          return (
+                            <li key={`${key}-${match.date}`} className="flex items-center gap-2 text-xs">
+                              <span className="w-[4.5rem] shrink-0 font-mono text-muted-foreground">{match.date.slice(0, 5)}</span>
+                              <span className="min-w-0 flex-1 truncate">{match.opponent ?? 'Adversaire'}</span>
+                              <span className="font-mono font-semibold">{match.goalsFor}–{match.goalsAgainst}</span>
+                              <span className={`w-[4.5rem] rounded-full px-2 py-1 text-center font-medium ${badge}`}>
+                                {outcomeLabel(match.outcome)}
+                              </span>
+                            </li>
+                          )
+                        })}
+                      </ol>
+                    </div>
+                  </>
+                ) : (
+                  <p className="px-5 py-8 text-center text-sm text-muted-foreground">
+                    Aucun score renseigné pour cette équipe.
+                  </p>
+                )}
+              </article>
+            )
+          })}
+        </div>
+      </section>
+
       <section aria-labelledby="match-callups-title" className="flex flex-col gap-4 rounded-xl border bg-card p-5">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>

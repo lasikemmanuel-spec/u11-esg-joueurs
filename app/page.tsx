@@ -5,6 +5,7 @@ import { DataQualityPanel } from '@/components/data-quality-panel'
 import { getRoster, SHEET_URL, type Roster } from '@/lib/players'
 import { getStats, type StatsData } from '@/lib/stats'
 import { getConvocations, type ConvocationsData } from '@/lib/convocations'
+import { getMatchResults, type TeamMatchResults } from '@/lib/match-results'
 
 export const dynamic = 'force-dynamic'
 
@@ -26,11 +27,17 @@ const fallbackConvocations: ConvocationsData = {
   presentCounts: {},
 }
 
+const fallbackMatchResults: TeamMatchResults = {
+  E1: [],
+  E2: [],
+}
+
 export default async function Page() {
-  const [roster, stats, convocations] = await Promise.all([
+  const [roster, stats, convocations, matchResults] = await Promise.all([
     getRoster().catch(() => fallbackRoster),
     getStats().catch(() => fallbackStats),
     getConvocations().catch(() => fallbackConvocations),
+    getMatchResults().catch(() => fallbackMatchResults),
   ])
 
   const updatedAt = new Intl.DateTimeFormat('fr-FR', {
@@ -72,6 +79,7 @@ export default async function Page() {
           rosterPlayers={roster.players}
           convocations={convocations.players}
           presentCounts={convocations.presentCounts}
+          matchResults={matchResults}
         />
         <DataQualityPanel players={roster.players} />
       </main>

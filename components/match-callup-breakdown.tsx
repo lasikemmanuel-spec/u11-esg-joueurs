@@ -1,7 +1,7 @@
 import type { Convocation } from '@/lib/convocations'
 
-const CALLED_STATUSES = new Set(['called', 'calledAbsent'])
-const PRESENT_STATUSES = new Set(['called'])
+const CALLED_STATUSES = new Set(['called', 'calledAbsent', 'present'])
+const PRESENT_STATUSES = new Set(['called', 'present'])
 
 function sortKey(date: string) {
   return date.localeCompare(date, 'fr', { numeric: true, sensitivity: 'base' })
@@ -36,8 +36,8 @@ export function MatchCallupBreakdown({ convocations }: { convocations: Convocati
     )
   }
 
-  const totalCalled = rows.reduce((sum, [, values]) => sum + values.convoques, 0)
-  const totalPresent = rows.reduce((sum, [, values]) => sum + values.presents, 0)
+  const totalCalled = convocations.reduce((sum, player) => sum + (player.calledCount ?? 0), 0)
+  const totalPresent = convocations.reduce((sum, player) => sum + (player.presentCount ?? 0), 0)
   const totalCalledPlayers = convocations.filter((player) => (player.calledCount ?? 0) > 0).length
   const totalPresentPlayers = convocations.filter((player) => (player.presentCount ?? 0) > 0).length
   const totalNonCalledPlayers = convocations.filter((player) => (player.calledCount ?? 0) === 0).length

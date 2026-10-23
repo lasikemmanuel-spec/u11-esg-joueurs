@@ -1,8 +1,8 @@
 import { DashboardTabs } from '@/components/dashboard-tabs'
-import { ExternalLink } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import { DataQualityPanel } from '@/components/data-quality-panel'
-import { getRoster, SHEET_URL, type Roster } from '@/lib/players'
+import { RefreshSheetButton } from '@/components/refresh-sheet-button'
+import { getRoster, type Roster } from '@/lib/players'
 import { getStats, type StatsData } from '@/lib/stats'
 import { getConvocations, type ConvocationsData } from '@/lib/convocations'
 import { getMatchResults, type TeamMatchResults } from '@/lib/match-results'
@@ -59,15 +59,7 @@ export default async function Page() {
             </div>
           </div>
           <div className="flex flex-col gap-2 md:items-end">
-            <a
-              href={SHEET_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex w-fit items-center gap-2 rounded-xl border border-primary-foreground/25 bg-primary-foreground/10 px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-foreground/15"
-            >
-              Ouvrir le Google Sheet
-              <ExternalLink aria-hidden="true" className="size-4" />
-            </a>
+            <RefreshSheetButton />
             <p className="text-xs text-primary-foreground/70">Synchronisé le {updatedAt}</p>
           </div>
         </div>

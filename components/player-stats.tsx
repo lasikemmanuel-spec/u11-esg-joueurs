@@ -99,11 +99,7 @@ const columns: { key: SortKey; label: string }[] = [
   { key: 'trainingRate', label: 'Présence' },
   { key: 'callUpRate', label: 'Taux conv.' },
   { key: 'matchesCalled', label: 'Conv.' },
-  { key: 'starts', label: 'Tit.' },
-  { key: 'subs', label: 'Rempl.' },
   { key: 'minutes', label: 'Min.' },
-  { key: 'goals', label: 'Buts' },
-  { key: 'assists', label: 'Passes D.' },
   { key: 'ire', label: 'IRE' },
 ]
 
@@ -259,7 +255,7 @@ export function PlayerStats({ players, convocations }: { players: Stats[]; convo
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[760px] text-sm">
+          <table className="w-full min-w-[600px] text-sm">
             <thead>
               <tr className="border-b text-left text-muted-foreground">
                 {columns.map((c) => (
@@ -304,11 +300,7 @@ export function PlayerStats({ players, convocations }: { players: Stats[]; convo
                     <td className="py-2.5 pr-2"><RateBar value={p.trainingRate} label={`Présence de ${p.name}`} /></td>
                     <td className="py-2.5 pr-2"><RateBar value={p.callUpRate} label={`Convocation de ${p.name}`} /></td>
                     <td className="py-2.5 pr-2 font-mono tabular-nums">{display(p.matchesCalled)}</td>
-                    <td className="py-2.5 pr-2 font-mono tabular-nums">{display(p.starts)}</td>
-                    <td className="py-2.5 pr-2 font-mono tabular-nums">{display(p.subs)}</td>
                     <td className="py-2.5 pr-2 font-mono tabular-nums">{display(p.minutes)}</td>
-                    <td className="py-2.5 pr-2 font-mono tabular-nums">{display(p.goals)}</td>
-                    <td className="py-2.5 pr-2 font-mono tabular-nums">{display(p.assists)}</td>
                     <td className="py-2.5"><IreBadge stats={p} /></td>
                   </tr>
                 )

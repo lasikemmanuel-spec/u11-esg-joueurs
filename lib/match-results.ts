@@ -33,7 +33,7 @@ function toScore(value: string): number | null {
 
 async function getTeamResults(tab: string): Promise<MatchResult[]> {
   const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`
-  const response = await fetch(url, { next: { revalidate: 300 } })
+  const response = await fetch(url, { next: { revalidate: 300, tags: ['google-sheet'] } })
   if (!response.ok) throw new Error(`Impossible de lire l'onglet ${tab} (${response.status})`)
 
   const rows = parseCsv(await response.text())

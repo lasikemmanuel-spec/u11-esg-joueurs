@@ -40,7 +40,7 @@ export function ireStatus(stats: PlayerStats): IreStatus {
 }
 
 export async function getStats(): Promise<StatsData> {
-  const res = await fetch(STATS_URL, { next: { revalidate: 300 } })
+  const res = await fetch(STATS_URL, { next: { revalidate: 300, tags: ['google-sheet'] } })
   if (!res.ok) throw new Error(`Impossible de lire l'onglet Stats (${res.status})`)
 
   const rows = parseCsv(await res.text())

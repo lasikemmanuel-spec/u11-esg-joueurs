@@ -64,7 +64,7 @@ const clean = (value: string | undefined) => {
 }
 
 export async function getRoster(): Promise<Roster> {
-  const res = await fetch(CSV_URL, { next: { revalidate: 300 } })
+  const res = await fetch(CSV_URL, { next: { revalidate: 300, tags: ['google-sheet'] } })
   if (!res.ok) throw new Error(`Impossible de lire le Google Sheet (${res.status})`)
 
   const rows = parseCsv(await res.text())

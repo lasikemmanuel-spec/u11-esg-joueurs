@@ -69,6 +69,8 @@ function SaturdaySection({ convocation }: { convocation: Convocation }) {
                       ? (m.team ?? 'Conv.')
                       : m.status === 'calledAbsent'
                         ? 'Conv. abs.'
+                        : m.status === 'notCalled'
+                          ? 'Non conv.'
                         : style.label.split(' ')[0]}
                   </span>
                   <span className="sr-only">{style.label}</span>

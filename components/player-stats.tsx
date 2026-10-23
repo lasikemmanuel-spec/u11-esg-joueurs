@@ -11,7 +11,7 @@ const MATCH_STYLES: Record<MatchStatus, { label: string; className: string }> = 
   present: { label: 'Présent', className: 'bg-emerald-600 text-white' },
   absent: { label: 'Absent', className: 'bg-muted-foreground/25 text-foreground' },
   injured: { label: 'Blessé', className: 'bg-red-600 text-white' },
-  notCalled: { label: 'Non convoqué', className: 'border border-dashed text-muted-foreground' },
+  notCalled: { label: 'Non convoqué', className: 'border border-slate-300 bg-slate-200 text-slate-800' },
   unknown: { label: '?', className: 'bg-muted text-muted-foreground' },
 }
 

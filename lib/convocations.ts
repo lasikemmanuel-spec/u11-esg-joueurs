@@ -50,11 +50,33 @@ function parseStatus(raw: string): Pick<MatchEntry, 'status' | 'team'> {
   const team = raw.match(/\bE(\d)\b/)?.[0] ?? null
 
   if (text.includes('bless')) return { status: 'injured', team: null }
-  if (text.includes('non convoq')) return { status: 'notCalled', team: null }
-  if (text.includes('présent') || text.includes('present')) return { status: 'present', team }
-  if (text.includes('convoqué absent') || text.includes('convoque absent')) return { status: 'calledAbsent', team }
+  if (text.includes('non convoq') || text.includes('non convoqué') || text.includes('non convoque')) {
+    return { status: 'notCalled', team: null }
+  }
+  if (
+    text.includes('présent') ||
+    text.includes('present') ||
+    text.includes('convoqué présent') ||
+    text.includes('convoque present') ||
+    text.includes('convoqué present') ||
+    text.includes('convoque présent')
+  ) {
+    return { status: 'present', team }
+  }
+  if (
+    text.includes('convoqué absent') ||
+    text.includes('convoque absent')
+  ) {
+    return { status: 'calledAbsent', team }
+  }
   if (text.includes('absent')) return { status: 'absent', team: null }
-  if (text.includes('convoq') || text.includes('convoqué') || text.includes('convoque')) return { status: 'called', team }
+  if (
+    text.includes('convoq') ||
+    text.includes('convoqué') ||
+    text.includes('convoque')
+  ) {
+    return { status: 'called', team }
+  }
 
   return { status: 'unknown', team: null }
 }
@@ -72,6 +94,7 @@ export async function getConvocations(): Promise<ConvocationsData> {
       dates = r.slice(FIRST_MATCH_COL, TOTALS_COL).map((d) => d.trim())
       continue
     }
+
     const number = Number.parseInt(r[0] ?? '', 10)
     const name = r[1]?.trim()
     if (Number.isNaN(number) || !name) continue

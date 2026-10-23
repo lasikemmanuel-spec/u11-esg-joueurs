@@ -7,7 +7,13 @@ function sortKey(date: string) {
   return date.localeCompare(date, 'fr', { numeric: true, sensitivity: 'base' })
 }
 
-export function MatchCallupBreakdown({ convocations }: { convocations: Convocation[] }) {
+export function MatchCallupBreakdown({
+  convocations,
+  presentCounts,
+}: {
+  convocations: Convocation[]
+  presentCounts: Record<string, number>
+}) {
   const byDate = new Map<string, { equipe1: number; equipe2: number; presents: number; convoques: number }>()
 
   for (const player of convocations) {
@@ -23,6 +29,11 @@ export function MatchCallupBreakdown({ convocations }: { convocations: Convocati
 
       byDate.set(match.date, current)
     }
+  }
+
+  for (const [date, count] of Object.entries(presentCounts)) {
+    const current = byDate.get(date)
+    if (current) current.presents = count
   }
 
   const rows = [...byDate.entries()].sort(([a], [b]) => sortKey(a) - sortKey(b))
@@ -58,7 +69,7 @@ export function MatchCallupBreakdown({ convocations }: { convocations: Convocati
           <p className="mt-1 font-mono text-2xl font-semibold">{totalCalledPlayers}</p>
         </div>
         <div className="rounded-lg bg-muted/60 p-3">
-          <p className=\"text-xs text-muted-foreground\">Joueurs présents</p>
+          <p className="text-xs text-muted-foreground">Joueurs présents</p>
           <p className="mt-1 font-mono text-2xl font-semibold">{totalPresentPlayers}</p>
         </div>
         <div className="rounded-lg bg-muted/60 p-3">

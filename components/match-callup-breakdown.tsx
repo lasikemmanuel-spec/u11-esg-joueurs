@@ -36,8 +36,9 @@ export function MatchCallupBreakdown({ convocations }: { convocations: Convocati
     )
   }
 
-  const totalCalled = rows.reduce((sum, [, values]) => sum + values.convoques, 0)
-  const totalPresent = rows.reduce((sum, [, values]) => sum + values.presents, 0)
+  const totalCalled = convocations.reduce((sum, player) => sum + (player.calledCount ?? 0), 0)
+  const totalPresent = convocations.reduce((sum, player) => sum + (player.presentCount ?? 0), 0)
+
   const totalCalledPlayers = convocations.filter((player) => (player.calledCount ?? 0) > 0).length
   const totalPresentPlayers = convocations.filter((player) => (player.presentCount ?? 0) > 0).length
   const totalNonCalledPlayers = convocations.filter((player) => (player.calledCount ?? 0) === 0).length
@@ -57,7 +58,7 @@ export function MatchCallupBreakdown({ convocations }: { convocations: Convocati
           <p className="mt-1 font-mono text-2xl font-semibold">{totalCalledPlayers}</p>
         </div>
         <div className="rounded-lg bg-muted/60 p-3">
-          <p className="text-xs text-muted-foreground">Joueurs présents</p>
+          <p className=\"text-xs text-muted-foreground\">Joueurs présents</p>
           <p className="mt-1 font-mono text-2xl font-semibold">{totalPresentPlayers}</p>
         </div>
         <div className="rounded-lg bg-muted/60 p-3">

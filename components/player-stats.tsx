@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowDownUp, Search } from 'lucide-react'
 import { ireStatus, type IreStatus, type PlayerStats as Stats } from '@/lib/stats'
 import type { Convocation, MatchStatus } from '@/lib/convocations'
@@ -210,6 +210,24 @@ export function PlayerStats({ players, convocations }: { players: Stats[]; convo
   const [sortKey, setSortKey] = useState<SortKey>('number')
   const [ascending, setAscending] = useState(true)
   const [selected, setSelected] = useState<number | null>(players[0]?.number ?? null)
+  const playerCardRef = useRef<HTMLDivElement>(null)
+  const previousSelected = useRef(selected)
+
+  useEffect(() => {
+    const selectionChanged = previousSelected.current !== selected
+    previousSelected.current = selected
+
+    if (!selectionChanged || selected === null || window.matchMedia('(min-width: 1280px)').matches) return
+
+    const frame = window.requestAnimationFrame(() => {
+      playerCardRef.current?.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+        block: 'start',
+      })
+    })
+
+    return () => window.cancelAnimationFrame(frame)
+  }, [selected])
 
   const visible = useMemo(() => {
     const q = query.trim().toLowerCase()
@@ -239,7 +257,7 @@ export function PlayerStats({ players, convocations }: { players: Stats[]; convo
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 id="player-stats-title" className="font-semibold">Statistiques des joueurs</h2>
-            <p className="text-sm text-muted-foreground">Cliquez sur un joueur pour voir sa fiche. Triez avec les en-têtes.</p>
+            <p className="text-sm text-muted-foreground">Touchez un joueur pour afficher sa fiche. Triez avec les en-têtes.</p>
           </div>
           <label className="relative md:w-64">
             <span className="sr-only">Rechercher un joueur</span>
@@ -317,7 +335,7 @@ export function PlayerStats({ players, convocations }: { players: Stats[]; convo
         </div>
       </div>
 
-      <div className="xl:sticky xl:top-6 xl:self-start">
+      <div ref={playerCardRef} className="scroll-mt-4 xl:sticky xl:top-6 xl:self-start">
         {current ? (
           <PlayerCard stats={current} convocation={convocations.find((c) => c.number === current.number)} />
         ) : (

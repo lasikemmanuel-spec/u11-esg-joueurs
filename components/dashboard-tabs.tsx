@@ -12,10 +12,12 @@ export function DashboardTabs({
   players,
   stats,
   convocations,
+  presentCounts,
 }: {
   players: PlayerStat[]
   stats: StatsData
   convocations: Convocation[]
+  presentCounts: Record<string, number>
 }) {
   const [activeTab, setActiveTab] = useState<TabKey>('players')
 
@@ -54,7 +56,9 @@ export function DashboardTabs({
 
       <div className="p-4 md:p-5">
         {activeTab === 'players' && <PlayerStats players={players} convocations={convocations} />}
-        {activeTab === 'matches' && <MatchCallupBreakdown stats={stats} convocations={convocations} />}
+        {activeTab === 'matches' && (
+          <MatchCallupBreakdown convocations={convocations} presentCounts={presentCounts} />
+        )}
       </div>
     </section>
   )

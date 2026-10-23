@@ -36,6 +36,7 @@ export type Convocation = {
 export type ConvocationsData = {
   players: Convocation[]
   matchesPlayed: number
+  presentCounts: Record<string, number>
 }
 
 const toNumber = (value: string | undefined) => {
@@ -88,10 +89,20 @@ export async function getConvocations(): Promise<ConvocationsData> {
   const rows = parseCsv(await res.text())
   let dates: string[] = []
   const players: Convocation[] = []
+  const presentCounts: Record<string, number> = {}
 
   for (const r of rows) {
     if (r[1]?.trim() === 'Date') {
       dates = r.slice(FIRST_MATCH_COL, TOTALS_COL).map((d) => d.trim())
+      continue
+    }
+
+    if (r[1]?.trim().toLocaleLowerCase('fr-FR') === 'nb présents'.toLocaleLowerCase('fr-FR')) {
+      for (let i = 0; i < MATCH_COLS; i++) {
+        const date = dates[i]
+        const count = toNumber(r[FIRST_MATCH_COL + i])
+        if (date && count !== null) presentCounts[date] = count
+      }
       continue
     }
 
@@ -125,5 +136,5 @@ export async function getConvocations(): Promise<ConvocationsData> {
     })
   }
 
-  return { players, matchesPlayed: dates.filter(Boolean).length }
+  return { players, matchesPlayed: dates.filter(Boolean).length, presentCounts }
 }

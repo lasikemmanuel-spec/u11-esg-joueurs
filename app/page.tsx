@@ -24,6 +24,7 @@ const fallbackStats: StatsData = {
 const fallbackConvocations: ConvocationsData = {
   players: [],
   matchesPlayed: 0,
+  presentCounts: {},
 }
 
 export default async function Page() {
@@ -67,7 +68,12 @@ export default async function Page() {
       </header>
 
       <main className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 md:gap-6 md:px-6 md:py-8">
-        <DashboardTabs players={stats.players} stats={stats} convocations={convocations.players} />
+        <DashboardTabs
+          players={stats.players}
+          stats={stats}
+          convocations={convocations.players}
+          presentCounts={convocations.presentCounts}
+        />
         <PositionBreakdown players={roster.players} />
         <DataQualityPanel players={roster.players} />
       </main>

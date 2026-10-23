@@ -1,7 +1,7 @@
 import type { Convocation } from '@/lib/convocations'
 
 const CALLED_STATUSES = new Set(['called', 'calledAbsent', 'present'])
-const PRESENT_STATUSES = new Set(['called', 'present'])
+const PRESENT_STATUSES = new Set(['present'])
 
 function sortKey(date: string) {
   return date.localeCompare(date, 'fr', { numeric: true, sensitivity: 'base' })

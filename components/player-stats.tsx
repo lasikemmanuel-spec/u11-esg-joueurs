@@ -64,14 +64,20 @@ function SaturdaySection({ convocation }: { convocation: Convocation }) {
                   className={`flex min-w-12 flex-col items-center rounded-md px-1.5 py-1 text-[11px] leading-tight ${style.className}`}
                 >
                   <span className="font-mono">{m.date}</span>
-                  <span className="font-semibold">{m.status === 'called' ? (m.team ?? 'Conv.') : style.label.split(' ')[0]}</span>
+                  <span className="whitespace-nowrap font-semibold">
+                    {m.status === 'called'
+                      ? (m.team ?? 'Conv.')
+                      : m.status === 'calledAbsent'
+                        ? 'Conv. abs.'
+                        : style.label.split(' ')[0]}
+                  </span>
                   <span className="sr-only">{style.label}</span>
                 </li>
               )
             })}
           </ol>
           <ul className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-            {(['called', 'present', 'absent', 'injured', 'notCalled'] as const).map((s) => (
+            {(['called', 'calledAbsent', 'present', 'absent', 'injured', 'notCalled'] as const).map((s) => (
               <li key={s} className="flex items-center gap-1">
                 <span aria-hidden="true" className={`size-2.5 rounded-sm ${MATCH_STYLES[s].className}`} />
                 {MATCH_STYLES[s].label}

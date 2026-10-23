@@ -4,12 +4,36 @@ import { ClubCrest } from '@/components/club-crest'
 import { DataQualityPanel } from '@/components/data-quality-panel'
 import { PositionBreakdown } from '@/components/position-breakdown'
 import { TeamStatsSummary } from '@/components/team-stats-summary'
-import { getRoster, SHEET_URL } from '@/lib/players'
-import { getStats } from '@/lib/stats'
-import { getConvocations } from '@/lib/convocations'
+import { getRoster, SHEET_URL, type Roster } from '@/lib/players'
+import { getStats, type StatsData } from '@/lib/stats'
+import { getConvocations, type ConvocationsData } from '@/lib/convocations'
+
+export const dynamic = 'force-dynamic'
+
+const fallbackRoster: Roster = {
+  club: 'ES Genech',
+  title: 'Liste des joueurs',
+  players: [],
+  fetchedAt: new Date().toISOString(),
+}
+
+const fallbackStats: StatsData = {
+  players: [],
+  teamTrainingRate: null,
+}
+
+const fallbackConvocations: ConvocationsData = {
+  players: [],
+  matchesPlayed: 0,
+}
 
 export default async function Page() {
-  const [roster, stats, convocations] = await Promise.all([getRoster(), getStats(), getConvocations()])
+  const [roster, stats, convocations] = await Promise.all([
+    getRoster().catch(() => fallbackRoster),
+    getStats().catch(() => fallbackStats),
+    getConvocations().catch(() => fallbackConvocations),
+  ])
+
   const updatedAt = new Intl.DateTimeFormat('fr-FR', {
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -33,7 +57,7 @@ export default async function Page() {
               href={SHEET_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex w-fit items-center gap-2 rounded-xl border border-primary-foreground/25 bg-primary-foreground/10 px-4 py-2 text-sm font-semibold text-primary-foreground hover:[...]
+              className="inline-flex w-fit items-center gap-2 rounded-xl border border-primary-foreground/25 bg-primary-foreground/10 px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-foreground/15"
             >
               Ouvrir le Google Sheet
               <ExternalLink aria-hidden="true" className="size-4" />

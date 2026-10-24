@@ -47,7 +47,7 @@ function SaturdaySection({ convocation }: { convocation: Convocation }) {
     { label: 'Présence le samedi', rate: convocation.presentRate, count: convocation.presentCount, barClass: 'bg-emerald-600' },
     { label: 'Absence le samedi', rate: convocation.absentRate, count: convocation.absentCount, barClass: 'bg-blue-950' },
     { label: 'Blessé', rate: convocation.injuredRate, count: convocation.injuredCount, barClass: 'bg-red-600' },
-    { label: 'Non convoqué', rate: convocation.notCalledRate, count: convocation.notCalledCount, barClass: 'bg-sky-500' },
+    { label: 'Non convoqué', rate: convocation.notCalledRate, count: convocation.notCalledCount, barClass: 'bg-lime-400' },
   ].filter((item) => item.rate !== null && item.rate > 0)
     .sort((a, b) => (b.rate ?? 0) - (a.rate ?? 0))
 

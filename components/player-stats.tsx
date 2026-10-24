@@ -9,7 +9,7 @@ const MATCH_STYLES: Record<MatchStatus, { label: string; className: string }> = 
   called: { label: 'Convoqué', className: 'bg-emerald-600 text-white' },
   calledAbsent: { label: 'Convoqué absent', className: 'bg-amber-500 text-white' },
   present: { label: 'Présent', className: 'bg-emerald-600 text-white' },
-  absent: { label: 'Absent', className: 'bg-lime-400 text-lime-950' },
+  absent: { label: 'Absent', className: 'bg-blue-950 text-white' },
   injured: { label: 'Blessé', className: 'bg-red-600 text-white' },
   notCalled: { label: 'Non convoqué', className: 'border border-lime-500 bg-lime-400 text-lime-950' },
   unknown: { label: '?', className: 'bg-muted text-muted-foreground' },

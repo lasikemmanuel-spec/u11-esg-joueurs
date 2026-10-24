@@ -153,6 +153,24 @@ function IreBadge({ stats }: { stats: Stats }) {
 
 function PlayerCard({ stats, convocation }: { stats: Stats; convocation?: Convocation }) {
   const status = IRE_STYLES[ireStatus(stats)]
+  const matchPresenceRate = convocation?.presentRate ?? null
+  const presenceIndicator = stats.trainingRate === null || matchPresenceRate === null
+    ? {
+        title: 'Bilan de présence indisponible',
+        message: 'Les données de présence à l’entraînement ou aux matchs sont manquantes.',
+        className: 'border-border bg-muted text-foreground',
+      }
+    : stats.trainingRate > 75 && matchPresenceRate > 75
+      ? {
+          title: 'Bravo, belle assiduité !',
+          message: `Entraînements : ${stats.trainingRate}% · Matchs : ${matchPresenceRate}%`,
+          className: 'border-emerald-300 bg-emerald-100 text-emerald-950',
+        }
+      : {
+          title: 'On continue les efforts !',
+          message: `Entraînements : ${stats.trainingRate}% · Matchs : ${matchPresenceRate}%`,
+          className: 'border-amber-300 bg-amber-100 text-amber-950',
+        }
   const minutesPerMatch = stats.matchesCalled ? Math.round((stats.minutes ?? 0) / stats.matchesCalled) : null
   const tiles = [
     { label: 'Matchs convoqué', value: display(stats.matchesCalled) },
@@ -178,6 +196,14 @@ function PlayerCard({ stats, convocation }: { stats: Stats; convocation?: Convoc
           </div>
         </div>
         <span className={`rounded-md px-2 py-1 text-xs font-medium ${status.className}`}>{status.label}</span>
+      </div>
+
+      <div
+        role="status"
+        className={`rounded-xl border px-4 py-3 ${presenceIndicator.className}`}
+      >
+        <p className="font-semibold">{presenceIndicator.title}</p>
+        <p className="mt-0.5 text-sm opacity-90">{presenceIndicator.message}</p>
       </div>
 
       <div className="flex flex-col gap-3">

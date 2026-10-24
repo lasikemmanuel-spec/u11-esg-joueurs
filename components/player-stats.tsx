@@ -44,10 +44,10 @@ function RateRow({
 
 function SaturdaySection({ convocation }: { convocation: Convocation }) {
   const availability = [
-    { label: 'Présence le samedi', rate: convocation.presentRate, count: convocation.presentCount, barClass: 'bg-primary' },
-    { label: 'Absence le samedi', rate: convocation.absentRate, count: convocation.absentCount, barClass: 'bg-amber-500' },
+    { label: 'Présence le samedi', rate: convocation.presentRate, count: convocation.presentCount, barClass: 'bg-emerald-600' },
+    { label: 'Absence le samedi', rate: convocation.absentRate, count: convocation.absentCount, barClass: 'bg-purple-100' },
     { label: 'Blessé', rate: convocation.injuredRate, count: convocation.injuredCount, barClass: 'bg-red-600' },
-    { label: 'Non convoqué', rate: convocation.notCalledRate, count: convocation.notCalledCount, barClass: 'bg-indigo-600' },
+    { label: 'Non convoqué', rate: convocation.notCalledRate, count: convocation.notCalledCount, barClass: 'bg-sky-100' },
   ].filter((item) => item.rate !== null && item.rate > 0)
     .sort((a, b) => (b.rate ?? 0) - (a.rate ?? 0))
 

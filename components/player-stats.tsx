@@ -9,9 +9,9 @@ const MATCH_STYLES: Record<MatchStatus, { label: string; className: string }> = 
   called: { label: 'Convoqué', className: 'bg-primary text-primary-foreground' },
   calledAbsent: { label: 'Convoqué absent', className: 'bg-amber-500 text-white' },
   present: { label: 'Présent', className: 'bg-emerald-600 text-white' },
-  absent: { label: 'Absent', className: 'bg-muted-foreground/25 text-foreground' },
+  absent: { label: 'Absent', className: 'bg-purple-100 text-purple-900' },
   injured: { label: 'Blessé', className: 'bg-red-600 text-white' },
-  notCalled: { label: 'Non convoqué', className: 'border border-indigo-200 bg-indigo-100 text-indigo-900' },
+  notCalled: { label: 'Non convoqué', className: 'border border-sky-200 bg-sky-100 text-sky-900' },
   unknown: { label: '?', className: 'bg-muted text-muted-foreground' },
 }
 

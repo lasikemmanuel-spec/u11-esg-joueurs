@@ -11,7 +11,7 @@ const MATCH_STYLES: Record<MatchStatus, { label: string; className: string }> = 
   present: { label: 'Présent', className: 'bg-emerald-600 text-white' },
   absent: { label: 'Absent', className: 'bg-muted-foreground/25 text-foreground' },
   injured: { label: 'Blessé', className: 'bg-red-600 text-white' },
-  notCalled: { label: 'Non convoqué', className: 'border border-slate-300 bg-slate-200 text-slate-800' },
+  notCalled: { label: 'Non convoqué', className: 'border border-indigo-200 bg-indigo-100 text-indigo-900' },
   unknown: { label: '?', className: 'bg-muted text-muted-foreground' },
 }
 
@@ -47,7 +47,7 @@ function SaturdaySection({ convocation }: { convocation: Convocation }) {
     { label: 'Présence le samedi', rate: convocation.presentRate, count: convocation.presentCount, barClass: 'bg-primary' },
     { label: 'Absence le samedi', rate: convocation.absentRate, count: convocation.absentCount, barClass: 'bg-amber-500' },
     { label: 'Blessé', rate: convocation.injuredRate, count: convocation.injuredCount, barClass: 'bg-red-600' },
-    { label: 'Non convoqué', rate: convocation.notCalledRate, count: convocation.notCalledCount, barClass: 'bg-muted-foreground' },
+    { label: 'Non convoqué', rate: convocation.notCalledRate, count: convocation.notCalledCount, barClass: 'bg-indigo-600' },
   ].filter((item) => item.rate !== null && item.rate > 0)
     .sort((a, b) => (b.rate ?? 0) - (a.rate ?? 0))
 

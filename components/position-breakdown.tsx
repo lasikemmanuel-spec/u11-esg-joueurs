@@ -23,7 +23,7 @@ export function PositionBreakdown({
   stats: PlayerStats[]
   convocations: Convocation[]
 }) {
-  const [selectedNumber, setSelectedNumber] = useState<number | null>(players[0]?.number ?? null)
+  const [selectedNumber, setSelectedNumber] = useState<number | null>(null)
   const groups = new Map<string, Player[]>()
   for (const player of players) {
     const key = player.position ?? 'Non renseigné'
@@ -35,7 +35,7 @@ export function PositionBreakdown({
     if (b === 'Non renseigné') return -1
     return positionRank(a) - positionRank(b) || a.localeCompare(b, 'fr')
   })
-  const selectedPlayer = players.find((player) => player.number === selectedNumber) ?? players[0]
+  const selectedPlayer = players.find((player) => player.number === selectedNumber)
   const selectedStats = selectedPlayer
     ? stats.find((playerStats) => playerStats.number === selectedPlayer.number) ?? {
         number: selectedPlayer.number,
@@ -85,7 +85,7 @@ export function PositionBreakdown({
                         <button
                           type="button"
                           aria-pressed={isSelected}
-                          onClick={() => setSelectedNumber(player.number)}
+                          onClick={() => setSelectedNumber(isSelected ? null : player.number)}
                           className={`flex w-full items-center gap-3 rounded-md px-1 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                             isSelected ? 'bg-accent/30' : 'hover:bg-secondary/60'
                           }`}

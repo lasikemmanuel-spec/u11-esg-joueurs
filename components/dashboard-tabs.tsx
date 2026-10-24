@@ -62,7 +62,7 @@ export function DashboardTabs({
 
       <div className="min-w-0 p-4 md:p-5">
         {activeTab === 'players' && (
-          <PlayerStats players={players} convocations={convocations} />
+          <PlayerStats players={players} convocations={convocations} rosterPlayers={rosterPlayers} />
         )}
         {activeTab === 'matches' && (
           <MatchCallupBreakdown

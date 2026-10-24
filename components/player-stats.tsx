@@ -2,8 +2,10 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowDownUp, ArrowUp, Search } from 'lucide-react'
+import { ClubCrest } from '@/components/club-crest'
 import { ireStatus, type IreStatus, type PlayerStats as Stats } from '@/lib/stats'
 import type { Convocation, MatchStatus } from '@/lib/convocations'
+import type { Player } from '@/lib/players'
 
 const MATCH_STYLES: Record<MatchStatus, { label: string; className: string }> = {
   called: { label: 'Convoqué', className: 'bg-emerald-600 text-white' },
@@ -151,7 +153,15 @@ function IreBadge({ stats }: { stats: Stats }) {
   )
 }
 
-function PlayerCard({ stats, convocation }: { stats: Stats; convocation?: Convocation }) {
+function PlayerCard({
+  stats,
+  convocation,
+  player,
+}: {
+  stats: Stats
+  convocation?: Convocation
+  player?: Player
+}) {
   const status = IRE_STYLES[ireStatus(stats)]
   const matchPresenceRate = convocation?.presentRate ?? null
   const presenceIndicator = stats.trainingRate === null || matchPresenceRate === null
@@ -184,19 +194,21 @@ function PlayerCard({ stats, convocation }: { stats: Stats; convocation?: Convoc
   ]
 
   return (
-    <div className="flex flex-col gap-5 rounded-xl border border-accent/60 bg-gradient-to-br from-secondary/50 via-card to-card p-5 shadow-sm" aria-live="polite">
-      <div className="-mx-5 -mt-5 flex items-start justify-between gap-3 rounded-t-xl border-b border-accent/50 bg-primary px-5 py-4 text-primary-foreground">
+    <article
+      aria-live="polite"
+      className="relative isolate flex flex-col gap-4 overflow-hidden rounded-[1.5rem] border-2 border-accent/70 bg-gradient-to-br from-secondary via-card to-accent/15 p-4 shadow-lg"
+    >
+      <div aria-hidden="true" className="pointer-events-none absolute -top-16 -right-14 -z-10 size-48 rounded-full bg-accent/20 blur-3xl" />
+      <header className="-mx-4 -mt-4 flex items-center justify-between gap-3 border-b border-accent/50 bg-gradient-to-r from-primary via-primary to-[oklch(0.32_0.06_272)] px-4 py-3 text-primary-foreground">
         <div className="flex items-center gap-3">
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-accent font-mono text-lg font-semibold text-accent-foreground">
-            {stats.number}
-          </span>
+          <ClubCrest className="size-11 ring-2 ring-accent" />
           <div>
-            <h3 className="text-lg font-semibold">{stats.name}</h3>
-            <p className="text-sm text-accent">Fiche joueur</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-accent">ES Genech · U11</p>
+            <p className="mt-0.5 text-xs font-medium text-primary-foreground/75">Fiche joueur</p>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <span className={`rounded-md px-2 py-1 text-xs font-medium ${status.className}`}>{status.label}</span>
+          <span className={`rounded-md px-2 py-1 text-xs font-semibold ${status.className}`}>{status.label}</span>
           <button
             type="button"
             aria-label="Remonter en haut de la page"
@@ -212,14 +224,30 @@ function PlayerCard({ stats, convocation }: { stats: Stats; convocation?: Convoc
             <ArrowUp aria-hidden="true" className="size-4" />
           </button>
         </div>
+      </header>
+
+      <div className="flex items-center gap-4 py-1">
+        <div className="flex size-24 shrink-0 flex-col items-center justify-center rounded-2xl border-2 border-accent bg-primary text-primary-foreground shadow-md">
+          <span className="font-mono text-4xl font-black leading-none">{stats.number}</span>
+          <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-accent">
+            {player?.position ?? 'Joueur'}
+          </span>
+        </div>
+        <div className="min-w-0">
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/65">Joueur</p>
+          <h3 className="mt-1 break-words text-xl font-black uppercase leading-tight tracking-wide text-primary">
+            {stats.name}
+          </h3>
+          <div className="mt-2 h-1 w-14 rounded-full bg-accent" />
+        </div>
       </div>
 
       <div
         role="status"
-        className={`rounded-xl border px-4 py-3 ${presenceIndicator.className}`}
+        className={`rounded-xl border px-3 py-2.5 ${presenceIndicator.className}`}
       >
-        <p className="font-semibold">{presenceIndicator.title}</p>
-        <p className="mt-0.5 text-sm opacity-90">{presenceIndicator.message}</p>
+        <p className="text-sm font-bold">{presenceIndicator.title}</p>
+        <p className="mt-0.5 text-xs opacity-90">{presenceIndicator.message}</p>
       </div>
 
       <div className="flex flex-col gap-3">
@@ -245,22 +273,30 @@ function PlayerCard({ stats, convocation }: { stats: Stats; convocation?: Convoc
 
       {convocation && <SaturdaySection convocation={convocation} />}
 
-      <dl className="grid grid-cols-2 gap-3">
+      <dl className="grid grid-cols-2 gap-2">
         {tiles.map((t) => (
-          <div key={t.label} className="flex flex-col gap-0.5 rounded-lg bg-muted/60 p-3">
-            <dt className="text-xs text-muted-foreground">{t.label}</dt>
-            <dd className="font-mono text-xl font-semibold">{t.value}</dd>
+          <div key={t.label} className="flex min-h-16 flex-col justify-between gap-0.5 rounded-lg border border-accent/25 bg-card/80 p-2.5">
+            <dt className="text-[10px] font-semibold uppercase tracking-wide text-primary/65">{t.label}</dt>
+            <dd className="font-mono text-lg font-bold text-primary">{t.value}</dd>
           </div>
         ))}
       </dl>
-      <p className="text-xs text-muted-foreground">
+      <p className="border-t border-accent/30 pt-3 text-[11px] text-muted-foreground">
         IRE = taux de convocation ÷ taux de présence. Entre 0,90 et 1,10 inclus : justement convoqué.
       </p>
-    </div>
+    </article>
   )
 }
 
-export function PlayerStats({ players, convocations }: { players: Stats[]; convocations: Convocation[] }) {
+export function PlayerStats({
+  players,
+  convocations,
+  rosterPlayers,
+}: {
+  players: Stats[]
+  convocations: Convocation[]
+  rosterPlayers: Player[]
+}) {
   const [query, setQuery] = useState('')
   const [sortKey, setSortKey] = useState<SortKey>('number')
   const [ascending, setAscending] = useState(true)
@@ -393,7 +429,11 @@ export function PlayerStats({ players, convocations }: { players: Stats[]; convo
 
       <div ref={playerCardRef} className="scroll-mt-4 xl:sticky xl:top-6 xl:self-start">
         {current ? (
-          <PlayerCard stats={current} convocation={convocations.find((c) => c.number === current.number)} />
+          <PlayerCard
+            stats={current}
+            convocation={convocations.find((c) => c.number === current.number)}
+            player={rosterPlayers.find((p) => p.number === current.number)}
+          />
         ) : (
           <div className="rounded-xl border border-accent/60 bg-card p-5 text-sm text-muted-foreground">Sélectionnez un joueur.</div>
         )}

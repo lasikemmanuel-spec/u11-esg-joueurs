@@ -84,7 +84,7 @@ function SaturdaySection({ convocation }: { convocation: Convocation }) {
             })}
           </ol>
           <ul className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-            {(['called', 'calledAbsent', 'present', 'absent', 'injured', 'notCalled'] as const).map((s) => (
+            {(['called', 'calledAbsent', 'absent', 'injured', 'notCalled'] as const).map((s) => (
               <li key={s} className="flex items-center gap-1">
                 <span aria-hidden="true" className={`size-2.5 rounded-sm ${MATCH_STYLES[s].className}`} />
                 {MATCH_STYLES[s].label}

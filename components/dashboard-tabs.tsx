@@ -72,7 +72,9 @@ export function DashboardTabs({
             matchResults={matchResults}
           />
         )}
-        {activeTab === 'roster' && <PositionBreakdown players={rosterPlayers} />}
+        {activeTab === 'roster' && (
+          <PositionBreakdown players={rosterPlayers} stats={players} convocations={convocations} />
+        )}
       </div>
 
       <nav

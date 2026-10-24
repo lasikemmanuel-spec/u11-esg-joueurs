@@ -5,7 +5,7 @@ import { ArrowDownUp, ArrowUp, Search } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import { ireStatus, type IreStatus, type PlayerStats as Stats } from '@/lib/stats'
 import type { Convocation, MatchStatus } from '@/lib/convocations'
-import type { Player } from '@/lib/players'
+import { ageOn, type Player } from '@/lib/players'
 
 const MATCH_STYLES: Record<MatchStatus, { label: string; className: string }> = {
   called: { label: 'Convoqué', className: 'bg-emerald-600 text-white' },
@@ -152,7 +152,7 @@ function IreBadge({ stats }: { stats: Stats }) {
   )
 }
 
-function PlayerCard({
+export function PlayerCard({
   stats,
   convocation,
   player,
@@ -163,6 +163,8 @@ function PlayerCard({
 }) {
   const status = IRE_STYLES[ireStatus(stats)]
   const matchPresenceRate = convocation?.presentRate ?? null
+  const playerName = player ? `${player.firstName} ${player.lastName}`.trim() : stats.name
+  const playerAge = player ? ageOn(player.birthDate) : null
   const presenceIndicator = stats.trainingRate === null || matchPresenceRate === null
     ? {
         title: 'Bilan de présence indisponible',
@@ -239,9 +241,20 @@ function PlayerCard({
         <div className="min-w-0">
           <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/65">Joueur</p>
           <h3 className="mt-1 break-words text-xl font-black uppercase leading-tight tracking-wide text-primary">
-            {stats.name}
+            {playerName}
           </h3>
           <div className="mt-2 h-1 w-14 rounded-full bg-accent" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-2">
+        <div className="rounded-lg border border-accent/40 bg-card/90 px-3 py-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-primary/65">Anniversaire</p>
+          <p className="mt-1 font-mono text-sm font-bold text-primary">{player?.birthDate ?? 'Non renseigné'}</p>
+        </div>
+        <div className="rounded-lg border border-accent/40 bg-card/90 px-3 py-2.5">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-primary/65">Âge</p>
+          <p className="mt-1 font-mono text-sm font-bold text-primary">{playerAge !== null ? `${playerAge} ans` : '—'}</p>
         </div>
       </div>
 

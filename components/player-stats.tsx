@@ -109,7 +109,6 @@ const IRE_STYLES: Record<IreStatus, { label: string; className: string }> = {
 }
 
 const columns: { key: SortKey; label: string }[] = [
-  { key: 'number', label: 'N°' },
   { key: 'name', label: 'Joueur' },
   { key: 'trainingRate', label: 'Présence' },
   { key: 'callUpRate', label: 'Taux conv.' },
@@ -194,12 +193,17 @@ function PlayerCard({
   ]
 
   return (
-    <article
+    <div
       aria-live="polite"
-      className="relative isolate flex flex-col gap-4 overflow-hidden rounded-[1.5rem] border-2 border-accent/70 bg-gradient-to-br from-secondary via-card to-accent/15 p-4 shadow-lg"
+      className="bg-accent p-[2px] drop-shadow-[0_8px_12px_rgba(0,0,0,0.18)]"
+      style={{ clipPath: 'polygon(0 0, 100% 0, 100% 94%, 50% 100%, 0 94%)' }}
     >
+      <article
+        className="relative isolate flex flex-col gap-4 overflow-hidden bg-gradient-to-br from-secondary via-card to-accent/15 px-4 pt-4 pb-14"
+        style={{ clipPath: 'polygon(0 0, 100% 0, 100% 94%, 50% 100%, 0 94%)' }}
+      >
       <div aria-hidden="true" className="pointer-events-none absolute -top-16 -right-14 -z-10 size-48 rounded-full bg-accent/20 blur-3xl" />
-      <header className="-mx-4 -mt-4 flex items-center justify-between gap-3 border-b border-accent/50 bg-gradient-to-r from-primary via-primary to-[oklch(0.32_0.06_272)] px-4 py-3 text-primary-foreground">
+      <header className="-mx-4 -mt-4 flex items-center justify-between gap-3 bg-gradient-to-r from-primary via-primary to-[oklch(0.32_0.06_272)] px-4 py-3 text-primary-foreground">
         <div className="flex items-center gap-3">
           <ClubCrest className="size-11 ring-2 ring-accent" />
           <div>
@@ -227,9 +231,8 @@ function PlayerCard({
       </header>
 
       <div className="flex items-center gap-4 py-1">
-        <div className="flex size-24 shrink-0 flex-col items-center justify-center rounded-2xl border-2 border-accent bg-primary text-primary-foreground shadow-md">
-          <span className="font-mono text-4xl font-black leading-none">{stats.number}</span>
-          <span className="mt-1 text-[10px] font-bold uppercase tracking-[0.2em] text-accent">
+        <div className="flex size-24 shrink-0 flex-col items-center justify-center rounded-2xl border-2 border-accent bg-primary px-2 text-center text-primary-foreground shadow-md">
+          <span className="text-xs font-black uppercase tracking-[0.16em] text-accent">
             {player?.position ?? 'Joueur'}
           </span>
         </div>
@@ -284,7 +287,8 @@ function PlayerCard({
       <p className="border-t border-accent/30 pt-3 text-[11px] text-muted-foreground">
         IRE = taux de convocation ÷ taux de présence. Entre 0,90 et 1,10 inclus : justement convoqué.
       </p>
-    </article>
+      </article>
+    </div>
   )
 }
 
@@ -397,7 +401,6 @@ export function PlayerStats({
                     aria-selected={isSelected}
                     className={`cursor-pointer border-b last:border-0 ${isSelected ? 'bg-accent/20' : 'hover:bg-secondary/60'}`}
                   >
-                    <td className="py-2.5 pr-2 font-mono text-muted-foreground">{p.number}</td>
                     <td className="py-2.5 pr-2 font-medium whitespace-nowrap">
                       <button
                         type="button"

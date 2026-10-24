@@ -212,7 +212,7 @@ function PlayerCard({ stats, convocation }: { stats: Stats; convocation?: Convoc
         ))}
       </dl>
       <p className="text-xs text-muted-foreground">
-        IRE = taux de convocation ÷ taux de présence. Entre 1,00 et 1,10 : justement convoqué.
+        IRE = taux de convocation ÷ taux de présence. Entre 0,90 et 1,10 inclus : justement convoqué.
       </p>
     </div>
   )

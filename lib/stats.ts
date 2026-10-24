@@ -34,7 +34,7 @@ const toNumber = (value: string | undefined) => {
 
 export function ireStatus(stats: PlayerStats): IreStatus {
   if (stats.ire === null || stats.ire === 0 || !stats.matchesCalled) return 'none'
-  if (stats.ire < 1) return 'under'
+  if (stats.ire < 0.9) return 'under'
   if (stats.ire > 1.1) return 'over'
   return 'fair'
 }

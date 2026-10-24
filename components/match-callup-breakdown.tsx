@@ -71,6 +71,10 @@ export function MatchCallupBreakdown({
     )
   }
 
+  const groupResults = [...matchResults.E1, ...matchResults.E2]
+  const groupSummary = summarize(groupResults)
+  const groupGoalDifference = groupSummary.goalsFor - groupSummary.goalsAgainst
+
   const outcomeLabel = (outcome: MatchResult['outcome']) => {
     if (outcome === 'win') return 'Victoire'
     if (outcome === 'draw') return 'Nul'
@@ -84,6 +88,41 @@ export function MatchCallupBreakdown({
           <h2 id="team-results-title" className="font-semibold">Bilan des équipes</h2>
           <p className="mt-1 text-xs text-muted-foreground">Résultats et scores enregistrés dans les feuilles de match.</p>
         </div>
+        <article aria-labelledby="group-results-title" className="overflow-hidden rounded-xl border border-accent/70 bg-gradient-to-br from-secondary via-card to-accent/10 shadow-sm">
+          <header className="flex flex-wrap items-center justify-between gap-3 bg-primary px-5 py-4 text-primary-foreground">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Bilan général</p>
+              <h3 id="group-results-title" className="mt-1 text-lg font-bold">Groupe U11 · E1 + E2</h3>
+            </div>
+            <span className="rounded-full bg-accent px-3 py-1 text-xs font-bold text-accent-foreground">
+              {groupResults.length} match{groupResults.length === 1 ? '' : 's'}
+            </span>
+          </header>
+          {groupResults.length > 0 ? (
+            <>
+              <dl className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 lg:grid-cols-6">
+                {[
+                  { label: 'Victoires', value: groupSummary.win },
+                  { label: 'Nuls', value: groupSummary.draw },
+                  { label: 'Défaites', value: groupSummary.loss },
+                  { label: 'Buts marqués', value: groupSummary.goalsFor },
+                  { label: 'Buts encaissés', value: groupSummary.goalsAgainst },
+                  { label: 'Différence', value: `${groupGoalDifference > 0 ? '+' : ''}${groupGoalDifference}` },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-lg border border-accent/40 bg-card/90 px-3 py-3 shadow-sm">
+                    <dt className="text-[11px] font-semibold uppercase tracking-wide text-primary/70">{item.label}</dt>
+                    <dd className="mt-1 font-mono text-2xl font-bold text-primary">{item.value}</dd>
+                  </div>
+                ))}
+              </dl>
+              <p className="border-t border-accent/40 px-4 py-3 text-xs text-muted-foreground">
+                Total combiné des résultats enregistrés pour les deux équipes.
+              </p>
+            </>
+          ) : (
+            <p className="px-5 py-6 text-sm text-muted-foreground">Aucun score renseigné pour le groupe U11.</p>
+          )}
+        </article>
         <div className="grid gap-4 xl:grid-cols-2">
           {resultTeams.map(({ key, label, tone }) => {
             const results = matchResults[key]

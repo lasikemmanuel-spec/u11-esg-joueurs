@@ -65,7 +65,7 @@ export default async function Page() {
         </div>
       </header>
 
-      <main className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 md:gap-6 md:px-6 md:py-8">
+      <main className="mx-auto flex max-w-7xl flex-col gap-4 px-4 pt-6 pb-24 md:gap-6 md:px-6 md:pt-8 md:pb-24 xl:pb-8">
         <DashboardTabs
           players={stats.players}
           rosterPlayers={roster.players}

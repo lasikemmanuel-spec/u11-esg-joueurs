@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowDownUp, Search } from 'lucide-react'
+import { ArrowDownUp, ArrowUp, Search } from 'lucide-react'
 import { ireStatus, type IreStatus, type PlayerStats as Stats } from '@/lib/stats'
 import type { Convocation, MatchStatus } from '@/lib/convocations'
 
@@ -184,18 +184,34 @@ function PlayerCard({ stats, convocation }: { stats: Stats; convocation?: Convoc
   ]
 
   return (
-    <div className="flex flex-col gap-5 rounded-xl border bg-card p-5" aria-live="polite">
-      <div className="flex items-start justify-between gap-3">
+    <div className="flex flex-col gap-5 rounded-xl border border-accent/60 bg-gradient-to-br from-secondary/50 via-card to-card p-5 shadow-sm" aria-live="polite">
+      <div className="-mx-5 -mt-5 flex items-start justify-between gap-3 rounded-t-xl border-b border-accent/50 bg-primary px-5 py-4 text-primary-foreground">
         <div className="flex items-center gap-3">
-          <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-primary font-mono text-lg font-semibold text-primary-foreground">
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-full bg-accent font-mono text-lg font-semibold text-accent-foreground">
             {stats.number}
           </span>
           <div>
             <h3 className="text-lg font-semibold">{stats.name}</h3>
-            <p className="text-sm text-muted-foreground">Fiche joueur</p>
+            <p className="text-sm text-accent">Fiche joueur</p>
           </div>
         </div>
-        <span className={`rounded-md px-2 py-1 text-xs font-medium ${status.className}`}>{status.label}</span>
+        <div className="flex shrink-0 items-center gap-2">
+          <span className={`rounded-md px-2 py-1 text-xs font-medium ${status.className}`}>{status.label}</span>
+          <button
+            type="button"
+            aria-label="Remonter en haut de la page"
+            title="Remonter en haut de la page"
+            onClick={() => {
+              window.scrollTo({
+                top: 0,
+                behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+              })
+            }}
+            className="inline-flex size-8 items-center justify-center rounded-full bg-accent text-accent-foreground transition-colors hover:bg-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
+          >
+            <ArrowUp aria-hidden="true" className="size-4" />
+          </button>
+        </div>
       </div>
 
       <div
@@ -292,10 +308,11 @@ export function PlayerStats({ players, convocations }: { players: Stats[]; convo
 
   return (
     <section aria-labelledby="player-stats-title" className="grid gap-4 md:gap-6 xl:grid-cols-[1fr_320px]">
-      <div className="flex min-w-0 flex-col gap-4 rounded-xl border bg-card p-5">
+      <div className="flex min-w-0 flex-col gap-4 rounded-xl border border-accent/60 bg-gradient-to-br from-secondary/30 via-card to-card p-5 shadow-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 id="player-stats-title" className="font-semibold">Statistiques des joueurs</h2>
+            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary/70">ES Genech</p>
+            <h2 id="player-stats-title" className="font-semibold text-primary">Statistiques des joueurs</h2>
             <p className="text-sm text-muted-foreground">Touchez un joueur pour afficher sa fiche. Triez avec les en-têtes.</p>
           </div>
           <label className="relative md:w-64">
@@ -314,7 +331,7 @@ export function PlayerStats({ players, convocations }: { players: Stats[]; convo
         <div className="overflow-x-auto">
           <table className="w-full min-w-[600px] text-sm">
             <thead>
-              <tr className="border-b text-left text-muted-foreground">
+              <tr className="border-b border-accent/50 bg-primary text-left text-primary-foreground">
                 {columns.map((c) => (
                   <th
                     key={c.key}
@@ -325,7 +342,7 @@ export function PlayerStats({ players, convocations }: { players: Stats[]; convo
                     <button
                       type="button"
                       onClick={() => toggleSort(c.key)}
-                      className="inline-flex items-center gap-1.5 rounded hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                      className="inline-flex items-center gap-1.5 rounded hover:text-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                     >
                       {c.label}
                       <ArrowDownUp aria-hidden="true" className={sortKey === c.key ? 'size-3.5 text-primary' : 'size-3.5 opacity-40'} />
@@ -342,7 +359,7 @@ export function PlayerStats({ players, convocations }: { players: Stats[]; convo
                     key={p.number}
                     onClick={() => setSelected(p.number)}
                     aria-selected={isSelected}
-                    className={`cursor-pointer border-b last:border-0 ${isSelected ? 'bg-primary/10' : 'hover:bg-muted/50'}`}
+                    className={`cursor-pointer border-b last:border-0 ${isSelected ? 'bg-accent/20' : 'hover:bg-secondary/60'}`}
                   >
                     <td className="py-2.5 pr-2 font-mono text-muted-foreground">{p.number}</td>
                     <td className="py-2.5 pr-2 font-medium whitespace-nowrap">
@@ -378,7 +395,7 @@ export function PlayerStats({ players, convocations }: { players: Stats[]; convo
         {current ? (
           <PlayerCard stats={current} convocation={convocations.find((c) => c.number === current.number)} />
         ) : (
-          <div className="rounded-xl border bg-card p-5 text-sm text-muted-foreground">Sélectionnez un joueur.</div>
+          <div className="rounded-xl border border-accent/60 bg-card p-5 text-sm text-muted-foreground">Sélectionnez un joueur.</div>
         )}
       </div>
     </section>

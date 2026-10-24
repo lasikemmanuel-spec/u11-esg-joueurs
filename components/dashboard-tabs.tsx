@@ -32,9 +32,9 @@ export function DashboardTabs({
   ]
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
-      <div className="border-b border-border bg-card p-2">
-        <div className="mx-auto flex max-w-3xl gap-2 rounded-full bg-muted p-1">
+    <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm xl:grid xl:grid-cols-[220px_minmax(0,1fr)]">
+      <nav aria-label="Statistiques" className="border-b border-border bg-card p-2 xl:border-r xl:border-b-0 xl:p-3">
+        <div className="mx-auto flex max-w-3xl gap-2 rounded-full bg-muted p-1 xl:flex-col xl:rounded-xl">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.key
 
@@ -45,7 +45,7 @@ export function DashboardTabs({
                 aria-pressed={isActive}
                 onClick={() => setActiveTab(tab.key)}
                 className={[
-                  'flex-1 rounded-full px-4 py-2.5 text-sm font-semibold transition-all duration-200',
+                  'flex-1 rounded-full px-4 py-2.5 text-sm font-semibold transition-all duration-200 xl:flex-none xl:text-left',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                   isActive
                     ? 'bg-primary text-primary-foreground shadow-sm'
@@ -57,9 +57,9 @@ export function DashboardTabs({
             )
           })}
         </div>
-      </div>
+      </nav>
 
-      <div className="p-4 md:p-5">
+      <div className="min-w-0 p-4 md:p-5">
         {activeTab === 'players' && (
           <div className="flex flex-col gap-6">
             <PlayerStats players={players} convocations={convocations} />

@@ -9,9 +9,9 @@ const MATCH_STYLES: Record<MatchStatus, { label: string; className: string }> = 
   called: { label: 'Convoqué', className: 'bg-primary text-primary-foreground' },
   calledAbsent: { label: 'Convoqué absent', className: 'bg-amber-500 text-white' },
   present: { label: 'Présent', className: 'bg-emerald-600 text-white' },
-  absent: { label: 'Absent', className: 'bg-purple-100 text-purple-900' },
+  absent: { label: 'Absent', className: 'bg-purple-300 text-purple-950' },
   injured: { label: 'Blessé', className: 'bg-red-600 text-white' },
-  notCalled: { label: 'Non convoqué', className: 'border border-sky-200 bg-sky-100 text-sky-900' },
+  notCalled: { label: 'Non convoqué', className: 'border border-sky-300 bg-sky-300 text-sky-950' },
   unknown: { label: '?', className: 'bg-muted text-muted-foreground' },
 }
 
@@ -45,9 +45,9 @@ function RateRow({
 function SaturdaySection({ convocation }: { convocation: Convocation }) {
   const availability = [
     { label: 'Présence le samedi', rate: convocation.presentRate, count: convocation.presentCount, barClass: 'bg-emerald-600' },
-    { label: 'Absence le samedi', rate: convocation.absentRate, count: convocation.absentCount, barClass: 'bg-purple-100' },
+    { label: 'Absence le samedi', rate: convocation.absentRate, count: convocation.absentCount, barClass: 'bg-purple-500' },
     { label: 'Blessé', rate: convocation.injuredRate, count: convocation.injuredCount, barClass: 'bg-red-600' },
-    { label: 'Non convoqué', rate: convocation.notCalledRate, count: convocation.notCalledCount, barClass: 'bg-sky-100' },
+    { label: 'Non convoqué', rate: convocation.notCalledRate, count: convocation.notCalledCount, barClass: 'bg-sky-500' },
   ].filter((item) => item.rate !== null && item.rate > 0)
     .sort((a, b) => (b.rate ?? 0) - (a.rate ?? 0))
 

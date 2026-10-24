@@ -54,9 +54,9 @@ export function MatchCallupBreakdown({
     .slice(0, 5)
   const maxGoals = topScorers[0]?.goals ?? 0
   const maxAssists = topAssisters[0]?.assists ?? 0
-  const resultTeams: { key: keyof TeamMatchResults; label: string; tone: string }[] = [
-    { key: 'E1', label: 'Équipe 1', tone: 'emerald' },
-    { key: 'E2', label: 'Équipe 2', tone: 'violet' },
+  const resultTeams: { key: keyof TeamMatchResults; label: string }[] = [
+    { key: 'E1', label: 'Équipe 1' },
+    { key: 'E2', label: 'Équipe 2' },
   ]
 
   function summarize(results: MatchResult[]) {
@@ -92,7 +92,7 @@ export function MatchCallupBreakdown({
           <header className="flex flex-wrap items-center justify-between gap-3 bg-primary px-5 py-4 text-primary-foreground">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Bilan général</p>
-              <h3 id="group-results-title" className="mt-1 text-lg font-bold">Groupe U11 · E1 + E2</h3>
+              <h3 id="group-results-title" className="mt-1 text-lg font-bold">Groupe U11</h3>
             </div>
             <span className="rounded-full bg-accent px-3 py-1 text-xs font-bold text-accent-foreground">
               {groupResults.length} match{groupResults.length === 1 ? '' : 's'}
@@ -124,31 +124,23 @@ export function MatchCallupBreakdown({
           )}
         </article>
         <div className="grid gap-4 xl:grid-cols-2">
-          {resultTeams.map(({ key, label, tone }) => {
+          {resultTeams.map(({ key, label }) => {
             const results = matchResults[key]
             const summary = summarize(results)
             const goalDifference = summary.goalsFor - summary.goalsAgainst
-            const styles = tone === 'emerald'
-              ? {
-                  panel: 'border-emerald-200 bg-gradient-to-br from-emerald-50 to-card',
-                  badge: 'bg-emerald-100 text-emerald-800',
-                  win: 'text-emerald-700',
-                  draw: 'text-amber-700',
-                  loss: 'text-rose-700',
-                }
-              : {
-                  panel: 'border-violet-200 bg-gradient-to-br from-violet-50 to-card',
-                  badge: 'bg-violet-100 text-violet-800',
-                  win: 'text-emerald-700',
-                  draw: 'text-amber-700',
-                  loss: 'text-rose-700',
-                }
+            const styles = {
+              panel: 'border-accent/60 bg-gradient-to-br from-secondary via-card to-accent/10',
+              badge: 'bg-accent text-accent-foreground',
+              win: 'text-emerald-700',
+              draw: 'text-amber-700',
+              loss: 'text-rose-700',
+            }
 
             return (
               <article key={key} className={`overflow-hidden rounded-xl border shadow-sm ${styles.panel}`}>
-                <header className="flex items-center justify-between gap-3 border-b border-border/60 px-5 py-4">
+                <header className="flex items-center justify-between gap-3 border-b border-accent/50 bg-primary px-5 py-4 text-primary-foreground">
                   <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted-foreground">Saison</p>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Saison</p>
                     <h3 className="mt-1 text-lg font-bold">{label}</h3>
                   </div>
                   <span className={`rounded-full px-3 py-1 text-xs font-semibold ${styles.badge}`}>
@@ -265,28 +257,28 @@ export function MatchCallupBreakdown({
       </section>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <section aria-labelledby="top-scorers-title" className="overflow-hidden rounded-xl border bg-gradient-to-br from-amber-50 via-card to-card shadow-sm">
-          <div className="border-b border-amber-200/70 px-5 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-700">Classement offensif</p>
-            <h2 id="top-scorers-title" className="mt-1 text-lg font-bold text-foreground">Top 5 buteurs</h2>
+        <section aria-labelledby="top-scorers-title" className="overflow-hidden rounded-xl border border-accent/60 bg-gradient-to-br from-secondary via-card to-accent/10 shadow-sm">
+          <div className="border-b border-accent/50 bg-primary px-5 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Classement offensif</p>
+            <h2 id="top-scorers-title" className="mt-1 text-lg font-bold text-primary-foreground">Top 5 buteurs</h2>
           </div>
           {topScorers.length > 0 ? (
-            <ol className="divide-y divide-amber-100 px-4">
+            <ol className="divide-y divide-accent/30 px-4">
               {topScorers.map((player, index) => (
                 <li key={player.number} className="flex items-center gap-3 py-3">
                   <span className={[
                     'flex size-8 shrink-0 items-center justify-center rounded-full font-mono text-sm font-bold',
-                    index === 0 ? 'bg-amber-400 text-amber-950' : 'bg-amber-100 text-amber-800',
+                    index === 0 ? 'bg-accent text-accent-foreground' : 'bg-secondary text-primary',
                   ].join(' ')}>
                     {index + 1}
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold">{player.name}</p>
-                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-amber-100">
-                      <div className="h-full rounded-full bg-amber-500" style={{ width: `${((player.goals ?? 0) / maxGoals) * 100}%` }} />
+                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-accent/30">
+                      <div className="h-full rounded-full bg-accent" style={{ width: `${((player.goals ?? 0) / maxGoals) * 100}%` }} />
                     </div>
                   </div>
-                  <span className="shrink-0 rounded-lg bg-amber-100 px-2.5 py-1 font-mono text-sm font-bold text-amber-900">
+                  <span className="shrink-0 rounded-lg bg-accent/30 px-2.5 py-1 font-mono text-sm font-bold text-accent-foreground">
                     {player.goals} <span className="font-sans text-xs font-medium">but{player.goals === 1 ? '' : 's'}</span>
                   </span>
                 </li>
@@ -296,28 +288,28 @@ export function MatchCallupBreakdown({
             <p className="px-5 py-6 text-sm text-muted-foreground">Aucun but renseigné pour le moment.</p>
           )}
         </section>
-        <section aria-labelledby="top-assisters-title" className="overflow-hidden rounded-xl border bg-gradient-to-br from-sky-50 via-card to-card shadow-sm">
-          <div className="border-b border-sky-200/70 px-5 py-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-sky-700">Classement collectif</p>
-            <h2 id="top-assisters-title" className="mt-1 text-lg font-bold text-foreground">Top 5 passeurs</h2>
+        <section aria-labelledby="top-assisters-title" className="overflow-hidden rounded-xl border border-accent/60 bg-gradient-to-br from-secondary via-card to-accent/10 shadow-sm">
+          <div className="border-b border-accent/50 bg-primary px-5 py-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">Classement collectif</p>
+            <h2 id="top-assisters-title" className="mt-1 text-lg font-bold text-primary-foreground">Top 5 passeurs</h2>
           </div>
           {topAssisters.length > 0 ? (
-            <ol className="divide-y divide-sky-100 px-4">
+            <ol className="divide-y divide-accent/30 px-4">
               {topAssisters.map((player, index) => (
                 <li key={player.number} className="flex items-center gap-3 py-3">
                   <span className={[
                     'flex size-8 shrink-0 items-center justify-center rounded-full font-mono text-sm font-bold',
-                    index === 0 ? 'bg-sky-500 text-white' : 'bg-sky-100 text-sky-800',
+                    index === 0 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-primary',
                   ].join(' ')}>
                     {index + 1}
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold">{player.name}</p>
-                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-sky-100">
-                      <div className="h-full rounded-full bg-sky-500" style={{ width: `${((player.assists ?? 0) / maxAssists) * 100}%` }} />
+                    <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-secondary">
+                      <div className="h-full rounded-full bg-primary" style={{ width: `${((player.assists ?? 0) / maxAssists) * 100}%` }} />
                     </div>
                   </div>
-                  <span className="shrink-0 rounded-lg bg-sky-100 px-2.5 py-1 font-mono text-sm font-bold text-sky-900">
+                  <span className="shrink-0 rounded-lg bg-secondary px-2.5 py-1 font-mono text-sm font-bold text-primary">
                     {player.assists} <span className="font-sans text-xs font-medium">passe{player.assists === 1 ? '' : 's'}</span>
                   </span>
                 </li>

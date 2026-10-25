@@ -1,5 +1,6 @@
 import type { PlayerStats } from '@/lib/stats'
 import { Crown, Sparkles, Trophy } from 'lucide-react'
+import { ClubCrest } from '@/components/club-crest'
 
 type RankingProps = {
   id: string
@@ -44,6 +45,7 @@ function Ranking({
           <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-[#d4af37]/50 bg-[#d4af37]/15 text-[#f0cf68] shadow-inner">
             <Trophy aria-hidden="true" className="size-5" />
           </span>
+          <ClubCrest className="size-10 ring-2 ring-[#d4af37]" />
           <div className="min-w-0">
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#f0cf68]">{kicker}</p>
             <h2 id={id} className="mt-0.5 text-base font-extrabold leading-tight text-white sm:text-lg">{title}</h2>

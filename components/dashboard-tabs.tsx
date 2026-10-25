@@ -27,9 +27,9 @@ export function DashboardTabs({
   const [activeTab, setActiveTab] = useState<TabKey>('players')
 
   const tabs: { key: TabKey; label: string }[] = [
+    { key: 'roster', label: 'Effectifs' },
     { key: 'players', label: 'Stats Joueurs' },
     { key: 'matches', label: 'Stats Matchs' },
-    { key: 'roster', label: 'Effectifs' },
   ]
 
   return (

@@ -1,6 +1,5 @@
 'use client'
 
-import { ArrowUp } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import { PlayerOffensiveRankings } from '@/components/player-offensive-rankings'
 import { ireStatus, type IreStatus, type PlayerStats as Stats } from '@/lib/stats'
@@ -171,20 +170,6 @@ export function PlayerCard({
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <span className={`rounded-md px-2 py-1 text-xs font-semibold ${status.className}`}>{status.label}</span>
-          <button
-            type="button"
-            aria-label="Remonter en haut de la page"
-            title="Remonter en haut de la page"
-            onClick={() => {
-              window.scrollTo({
-                top: 0,
-                behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
-              })
-            }}
-            className="inline-flex size-8 items-center justify-center rounded-full bg-accent text-accent-foreground transition-colors hover:bg-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-primary"
-          >
-            <ArrowUp aria-hidden="true" className="size-4" />
-          </button>
         </div>
       </header>
 

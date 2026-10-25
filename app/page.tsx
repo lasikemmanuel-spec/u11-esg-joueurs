@@ -2,6 +2,7 @@ import { DashboardTabs } from '@/components/dashboard-tabs'
 import { ClubCrest } from '@/components/club-crest'
 import { DataQualityPanel } from '@/components/data-quality-panel'
 import { RefreshSheetButton } from '@/components/refresh-sheet-button'
+import { ScrollToTopButton } from '@/components/scroll-to-top-button'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { getRoster, type Roster } from '@/lib/players'
 import { getStats, type StatsData } from '@/lib/stats'
@@ -79,6 +80,7 @@ export default async function Page() {
         />
         <DataQualityPanel players={roster.players} />
       </main>
+      <ScrollToTopButton />
     </div>
   )
 }

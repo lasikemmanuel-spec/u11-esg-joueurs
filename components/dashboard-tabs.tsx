@@ -29,7 +29,7 @@ export function DashboardTabs({
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'players', label: 'Stats Joueurs' },
     { key: 'matches', label: 'Stats Matchs' },
-    { key: 'roster', label: 'Effectif' },
+    { key: 'roster', label: 'Effectifs' },
   ]
 
   return (
@@ -68,7 +68,6 @@ export function DashboardTabs({
           <MatchCallupBreakdown
             convocations={convocations}
             presentCounts={presentCounts}
-            players={players}
             matchResults={matchResults}
           />
         )}

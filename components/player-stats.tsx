@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ArrowDownUp, ArrowUp, Search } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
+import { PlayerOffensiveRankings } from '@/components/player-offensive-rankings'
 import { ireStatus, type IreStatus, type PlayerStats as Stats } from '@/lib/stats'
 import type { Convocation, MatchStatus } from '@/lib/convocations'
 import { ageOn, type Player } from '@/lib/players'
@@ -360,7 +361,8 @@ export function PlayerStats({
   const current = players.find((p) => p.number === selected)
 
   return (
-    <section aria-labelledby="player-stats-title" className="grid gap-4 md:gap-6 xl:grid-cols-[1fr_320px]">
+    <section aria-labelledby="player-stats-title" className="flex flex-col gap-4">
+      <div className="grid gap-4 md:gap-6 xl:grid-cols-[1fr_320px]">
       <div className="flex min-w-0 flex-col gap-4 rounded-xl border border-accent/60 bg-gradient-to-br from-secondary/30 via-card to-card p-5 shadow-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
@@ -454,6 +456,8 @@ export function PlayerStats({
           <div className="rounded-xl border border-accent/60 bg-card p-5 text-sm text-muted-foreground">Sélectionnez un joueur.</div>
         )}
       </div>
+      </div>
+      <PlayerOffensiveRankings players={players} />
     </section>
   )
 }

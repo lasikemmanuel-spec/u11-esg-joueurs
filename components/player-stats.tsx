@@ -1,7 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowDownUp, ArrowUp, Search } from 'lucide-react'
+import { ArrowUp } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import { PlayerOffensiveRankings } from '@/components/player-offensive-rankings'
 import { ireStatus, type IreStatus, type PlayerStats as Stats } from '@/lib/stats'
@@ -100,8 +99,6 @@ function SaturdaySection({ convocation }: { convocation: Convocation }) {
   )
 }
 
-type SortKey = keyof Omit<Stats, 'name'> | 'name'
-
 const IRE_STYLES: Record<IreStatus, { label: string; className: string }> = {
   fair: { label: 'Juste', className: 'bg-emerald-100 text-emerald-800' },
   under: { label: 'Sous-convoqué', className: 'bg-amber-100 text-amber-900' },
@@ -109,49 +106,7 @@ const IRE_STYLES: Record<IreStatus, { label: string; className: string }> = {
   none: { label: 'Non convoqué', className: 'bg-muted text-muted-foreground' },
 }
 
-const columns: { key: SortKey; label: string }[] = [
-  { key: 'name', label: 'Joueur' },
-  { key: 'trainingRate', label: 'Présence' },
-  { key: 'callUpRate', label: 'Taux conv.' },
-  { key: 'matchesCalled', label: 'Conv.' },
-  { key: 'minutes', label: 'Min.' },
-  { key: 'ire', label: 'IRE' },
-]
-
 const display = (v: number | null) => (v === null ? '—' : v)
-
-function RateBar({ value, label }: { value: number | null; label: string }) {
-  if (value === null) return <span className="text-muted-foreground">—</span>
-  return (
-    <div className="flex items-center gap-2">
-      <div
-        role="meter"
-        aria-label={label}
-        aria-valuenow={value}
-        aria-valuemin={0}
-        aria-valuemax={100}
-        className="h-1.5 w-10 overflow-hidden rounded-full bg-muted"
-      >
-        <div
-          className={value >= 80 ? 'h-full bg-primary' : value >= 50 ? 'h-full bg-amber-500' : 'h-full bg-red-600'}
-          style={{ width: `${Math.min(value, 100)}%` }}
-        />
-      </div>
-      <span className="w-10 font-mono tabular-nums">{value}%</span>
-    </div>
-  )
-}
-
-function IreBadge({ stats }: { stats: Stats }) {
-  const status = ireStatus(stats)
-  const style = IRE_STYLES[status]
-  return (
-    <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-xs font-medium ${style.className}`}>
-      <span className="font-mono">{stats.ire !== null && status !== 'none' ? stats.ire.toFixed(2).replace('.', ',') : '—'}</span>
-      <span className="sr-only">{style.label}</span>
-    </span>
-  )
-}
 
 export function PlayerCard({
   stats,
@@ -306,158 +261,6 @@ export function PlayerCard({
   )
 }
 
-export function PlayerStats({
-  players,
-  convocations,
-  rosterPlayers,
-}: {
-  players: Stats[]
-  convocations: Convocation[]
-  rosterPlayers: Player[]
-}) {
-  const [query, setQuery] = useState('')
-  const [sortKey, setSortKey] = useState<SortKey>('number')
-  const [ascending, setAscending] = useState(true)
-  const [selected, setSelected] = useState<number | null>(players[0]?.number ?? null)
-  const playerCardRef = useRef<HTMLDivElement>(null)
-  const previousSelected = useRef(selected)
-
-  useEffect(() => {
-    const selectionChanged = previousSelected.current !== selected
-    previousSelected.current = selected
-
-    if (!selectionChanged || selected === null || window.matchMedia('(min-width: 1280px)').matches) return
-
-    const frame = window.requestAnimationFrame(() => {
-      playerCardRef.current?.scrollIntoView({
-        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
-        block: 'start',
-      })
-    })
-
-    return () => window.cancelAnimationFrame(frame)
-  }, [selected])
-
-  const visible = useMemo(() => {
-    const q = query.trim().toLowerCase()
-    const filtered = q ? players.filter((p) => p.name.toLowerCase().includes(q) || String(p.number) === q) : players
-    return [...filtered].sort((a, b) => {
-      const result =
-        sortKey === 'name'
-          ? a.name.localeCompare(b.name, 'fr')
-          : (a[sortKey] ?? -Infinity) - (b[sortKey] ?? -Infinity)
-      return ascending ? result : -result
-    })
-  }, [players, query, sortKey, ascending])
-
-  const toggleSort = (key: SortKey) => {
-    if (key === sortKey) setAscending((v) => !v)
-    else {
-      setSortKey(key)
-      setAscending(key === 'number' || key === 'name')
-    }
-  }
-
-  const current = players.find((p) => p.number === selected)
-
-  return (
-    <section aria-labelledby="player-stats-title" className="flex flex-col gap-4">
-      <div className="grid gap-4 md:gap-6 xl:grid-cols-[1fr_320px]">
-      <div className="flex min-w-0 flex-col gap-4 rounded-xl border border-accent/60 bg-gradient-to-br from-secondary/30 via-card to-card p-5 shadow-sm">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary/70">ES Genech</p>
-            <h2 id="player-stats-title" className="font-semibold text-primary">Statistiques des joueurs</h2>
-            <p className="text-sm text-muted-foreground">Touchez un joueur pour afficher sa fiche. Triez avec les en-têtes.</p>
-          </div>
-          <label className="relative md:w-64">
-            <span className="sr-only">Rechercher un joueur</span>
-            <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Nom ou numéro…"
-              className="h-10 w-full rounded-lg border bg-background pr-3 pl-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
-          </label>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[600px] text-sm">
-            <thead>
-              <tr className="border-b border-accent/50 bg-primary text-left text-primary-foreground">
-                {columns.map((c) => (
-                  <th
-                    key={c.key}
-                    scope="col"
-                    className="py-2.5 pr-2 font-medium whitespace-nowrap"
-                    aria-sort={sortKey === c.key ? (ascending ? 'ascending' : 'descending') : 'none'}
-                  >
-                    <button
-                      type="button"
-                      onClick={() => toggleSort(c.key)}
-                      className="inline-flex items-center gap-1.5 rounded hover:text-accent focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                    >
-                      {c.label}
-                      <ArrowDownUp aria-hidden="true" className={sortKey === c.key ? 'size-3.5 text-primary' : 'size-3.5 opacity-40'} />
-                    </button>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {visible.map((p) => {
-                const isSelected = p.number === selected
-                return (
-                  <tr
-                    key={p.number}
-                    onClick={() => setSelected(p.number)}
-                    aria-selected={isSelected}
-                    className={`cursor-pointer border-b last:border-0 ${isSelected ? 'bg-accent/20' : 'hover:bg-secondary/60'}`}
-                  >
-                    <td className="py-2.5 pr-2 font-medium whitespace-nowrap">
-                      <button
-                        type="button"
-                        onClick={() => setSelected(p.number)}
-                        className="rounded text-left hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-                      >
-                        {p.name}
-                      </button>
-                    </td>
-                    <td className="py-2.5 pr-2"><RateBar value={p.trainingRate} label={`Présence de ${p.name}`} /></td>
-                    <td className="py-2.5 pr-2"><RateBar value={p.callUpRate} label={`Convocation de ${p.name}`} /></td>
-                    <td className="py-2.5 pr-2 font-mono tabular-nums">{display(p.matchesCalled)}</td>
-                    <td className="py-2.5 pr-2 font-mono tabular-nums">{display(p.minutes)}</td>
-                    <td className="py-2.5"><IreBadge stats={p} /></td>
-                  </tr>
-                )
-              })}
-              {visible.length === 0 && (
-                <tr>
-                  <td colSpan={columns.length} className="py-10 text-center text-muted-foreground">
-                    Aucun joueur ne correspond à « {query} ».
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div ref={playerCardRef} className="scroll-mt-4 xl:sticky xl:top-6 xl:self-start">
-        {current ? (
-          <PlayerCard
-            stats={current}
-            convocation={convocations.find((c) => c.number === current.number)}
-            player={rosterPlayers.find((p) => p.number === current.number)}
-          />
-        ) : (
-          <div className="rounded-xl border border-accent/60 bg-card p-5 text-sm text-muted-foreground">Sélectionnez un joueur.</div>
-        )}
-      </div>
-      </div>
-      <PlayerOffensiveRankings players={players} />
-    </section>
-  )
+export function PlayerStats({ players }: { players: Stats[] }) {
+  return <PlayerOffensiveRankings players={players} />
 }

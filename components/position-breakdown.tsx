@@ -29,13 +29,22 @@ export function PositionBreakdown({
 }) {
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null)
   const [query, setQuery] = useState('')
+  const [selectedPosition, setSelectedPosition] = useState('all')
   const playerCardRef = useRef<HTMLDivElement>(null)
   const searchTerm = normalizeName(query.trim())
-  const filteredPlayers = searchTerm
+  const matchingPlayers = searchTerm
     ? players.filter((player) =>
         normalizeName(`${player.firstName} ${player.lastName}`).includes(searchTerm),
       )
     : players
+  const filteredPlayers = selectedPosition === 'all'
+    ? matchingPlayers
+    : matchingPlayers.filter((player) => (player.position ?? 'Non renseigné') === selectedPosition)
+  const positions = [...new Set(players.map((player) => player.position ?? 'Non renseigné'))].sort((a, b) => {
+    if (a === 'Non renseigné') return 1
+    if (b === 'Non renseigné') return -1
+    return positionRank(a) - positionRank(b) || a.localeCompare(b, 'fr')
+  })
   const groups = new Map<string, Player[]>()
   for (const player of filteredPlayers) {
     const key = player.position ?? 'Non renseigné'
@@ -91,26 +100,49 @@ export function PositionBreakdown({
       </div>
 
       <div className="flex flex-col gap-4">
-        <label className="relative block md:max-w-sm">
-          <span className="sr-only">Rechercher par nom ou prénom</span>
-          <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="search"
-            value={query}
-            onChange={(event) => {
-              setQuery(event.target.value)
-              setSelectedNumber(null)
-            }}
-            placeholder="Rechercher par nom ou prénom…"
-            className="h-10 w-full rounded-lg border border-accent/40 bg-background pr-3 pl-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          />
-        </label>
+        <div className="grid gap-3 md:max-w-2xl md:grid-cols-2">
+          <label className="relative block">
+            <span className="sr-only">Rechercher par nom ou prénom</span>
+            <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value)
+                setSelectedNumber(null)
+              }}
+              placeholder="Rechercher par nom ou prénom…"
+              className="h-10 w-full rounded-lg border border-accent/40 bg-background pr-3 pl-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm font-medium">
+            <span className="sr-only">Filtrer par poste</span>
+            <select
+              value={selectedPosition}
+              onChange={(event) => {
+                setSelectedPosition(event.target.value)
+                setSelectedNumber(null)
+              }}
+              aria-label="Filtrer par poste"
+              className="h-10 w-full rounded-lg border border-accent/40 bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <option value="all">Tous les postes</option>
+              {positions.map((position) => (
+                <option key={position} value={position}>{position}</option>
+              ))}
+            </select>
+          </label>
+        </div>
 
         <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
           <div className="grid content-start gap-4 sm:grid-cols-2">
             {filteredPlayers.length === 0 && (
               <p className="rounded-lg border border-accent/40 bg-card p-4 text-sm text-muted-foreground sm:col-span-2">
-                Aucun joueur ne correspond à « {query} ».
+                {searchTerm
+                  ? `Aucun joueur ne correspond à « ${query} ».`
+                  : selectedPosition !== 'all'
+                    ? `Aucun joueur avec le poste « ${selectedPosition} ».`
+                    : 'Aucun joueur dans l’effectif.'}
               </p>
             )}
             {sorted.map(([position, list]) => (

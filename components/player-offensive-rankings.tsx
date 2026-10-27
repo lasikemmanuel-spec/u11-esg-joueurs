@@ -78,8 +78,11 @@ function Ranking({
                 {index + 1}
               </span>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2">
-                  <p className="truncate text-sm font-bold">{player.name}</p>
+                <div className={index === 0
+                  ? 'flex min-w-0 flex-col items-start gap-1 sm:flex-row sm:items-center sm:gap-2'
+                  : 'min-w-0'}
+                >
+                  <p className="min-w-0 break-words text-sm font-bold">{player.name}</p>
                   {index === 0 && (
                     <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[#172554] px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-wide text-[#f0cf68]">
                       <Sparkles aria-hidden="true" className="size-2.5" />

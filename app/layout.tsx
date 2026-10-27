@@ -6,6 +6,10 @@ export const metadata: Metadata = {
   title: 'ES Genech U11 – Effectif',
   description: "Tableau de bord de l'effectif U11 de l'Entente Sportive de Genech",
   generator: 'v0.app',
+  appleWebApp: {
+    capable: true,
+    title: 'ESG - U11',
+  },
   icons: {
     icon: [
       {

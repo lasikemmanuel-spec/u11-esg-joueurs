@@ -1,3 +1,4 @@
+import crypto from 'node:crypto'
 import { parseCsv } from '@/lib/players'
 
 export const SHEET_ID =
@@ -6,61 +7,133 @@ export const SHEET_ID =
 let cachedAccessToken: { token: string; expiresAt: number } | null = null
 
 /**
- * Récupère un token d'accès Google OAuth2 valide à partir de GOOGLE_CLIENT_ID,
- * GOOGLE_CLIENT_SECRET et GOOGLE_REFRESH_TOKEN.
+ * Crée un token JWT signé RS256 pour l'authentification avec un Compte de Service Google.
+ */
+function getServiceAccountJwt(clientEmail: string, privateKey: string): string {
+  const now = Math.floor(Date.now() / 1000)
+  const header = { alg: 'RS256', typ: 'JWT' }
+  const payload = {
+    iss: clientEmail,
+    scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: now + 3600,
+    iat: now,
+  }
+
+  const base64Url = (input: string) =>
+    Buffer.from(input)
+      .toString('base64')
+      .replace(/=/g, '')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+
+  const unsignedToken = `${base64Url(JSON.stringify(header))}.${base64Url(JSON.stringify(payload))}`
+
+  const cleanKey = privateKey.replace(/\\n/g, '\n')
+  const sign = crypto.createSign('RSA-SHA256')
+  sign.update(unsignedToken)
+  const signature = sign
+    .sign(cleanKey, 'base64')
+    .replace(/=/g, '')
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+
+  return `${unsignedToken}.${signature}`
+}
+
+/**
+ * Récupère un token d'accès Google valide :
+ * 1. D'abord via Compte de Service (GOOGLE_SERVICE_ACCOUNT_EMAIL et GOOGLE_PRIVATE_KEY) - N'expire jamais !
+ * 2. Sinon via OAuth2 classique (GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN).
  * Le token est mis en cache mémoire jusqu'à son expiration (~1h).
  */
 export async function getGoogleAccessToken(): Promise<string | null> {
-  const clientId = process.env.GOOGLE_CLIENT_ID
-  const clientSecret = process.env.GOOGLE_CLIENT_SECRET
-  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN
-
-  if (!clientId || !clientSecret || !refreshToken) {
-    return null
-  }
+  const serviceAccountEmail = process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL
+  const serviceAccountPrivateKey = process.env.GOOGLE_PRIVATE_KEY
 
   // Utilise le token en cache s'il est encore valide (avec 60s de marge de sécurité)
   if (cachedAccessToken && Date.now() < cachedAccessToken.expiresAt - 60_000) {
     return cachedAccessToken.token
   }
 
-  try {
-    const res = await fetch('https://oauth2.googleapis.com/token', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        refresh_token: refreshToken,
-        grant_type: 'refresh_token',
-      }),
-      cache: 'no-store',
-    })
+  // 1. Authentification par Compte de Service (Recommandé)
+  if (serviceAccountEmail && serviceAccountPrivateKey) {
+    try {
+      const assertion = getServiceAccountJwt(serviceAccountEmail, serviceAccountPrivateKey)
+      const res = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+          assertion,
+        }),
+        cache: 'no-store',
+      })
 
-    if (!res.ok) {
-      const errText = await res.text()
-      console.error(`Erreur renouvellement token Google OAuth (${res.status}):`, errText)
+      if (!res.ok) {
+        const errText = await res.text()
+        console.error(`Erreur token Compte de Service (${res.status}):`, errText)
+        return null
+      }
+
+      const data = (await res.json()) as { access_token: string; expires_in: number }
+      cachedAccessToken = {
+        token: data.access_token,
+        expiresAt: Date.now() + (data.expires_in || 3600) * 1000,
+      }
+
+      return cachedAccessToken.token
+    } catch (err) {
+      console.error('Erreur authentification Compte de Service Google:', err)
       return null
     }
-
-    const data = (await res.json()) as { access_token: string; expires_in: number }
-    cachedAccessToken = {
-      token: data.access_token,
-      expiresAt: Date.now() + (data.expires_in || 3600) * 1000,
-    }
-
-    return cachedAccessToken.token
-  } catch (err) {
-    console.error('Erreur lors de la récupération du token Google:', err)
-    return null
   }
+
+  // 2. Authentification par OAuth2 classique (Client ID + Secret + Refresh Token)
+  const clientId = process.env.GOOGLE_CLIENT_ID
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN
+
+  if (clientId && clientSecret && refreshToken) {
+    try {
+      const res = await fetch('https://oauth2.googleapis.com/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          client_id: clientId,
+          client_secret: clientSecret,
+          refresh_token: refreshToken,
+          grant_type: 'refresh_token',
+        }),
+        cache: 'no-store',
+      })
+
+      if (!res.ok) {
+        const errText = await res.text()
+        console.error(`Erreur renouvellement token Google OAuth (${res.status}):`, errText)
+        return null
+      }
+
+      const data = (await res.json()) as { access_token: string; expires_in: number }
+      cachedAccessToken = {
+        token: data.access_token,
+        expiresAt: Date.now() + (data.expires_in || 3600) * 1000,
+      }
+
+      return cachedAccessToken.token
+    } catch (err) {
+      console.error('Erreur lors de la récupération du token Google OAuth:', err)
+      return null
+    }
+  }
+
+  return null
 }
 
 /**
  * Récupère les lignes d'un onglet de la feuille Google Sheet sous forme de tableau 2D (string[][]).
- * 1. Tente d'utiliser l'API officielle Google Sheets v4 avec le token d'accès OAuth2 si configuré.
- * 2. Si les identifiants OAuth ne sont pas encore configurés ou en cas d'erreur, bascule sur
- *    l'export public CSV (compatibilité ascendante sans interruption).
+ * 1. Tente d'utiliser l'API officielle Google Sheets v4 avec le token d'accès authentifié.
+ * 2. Si aucun token n'est disponible ou en cas d'erreur, bascule sur l'export public CSV.
  */
 export async function getSheetRows(tabName?: string): Promise<string[][]> {
   const accessToken = await getGoogleAccessToken()
@@ -153,4 +226,3 @@ export async function getSheetRows(tabName?: string): Promise<string[][]> {
   const text = await res.text()
   return parseCsv(text)
 }
-

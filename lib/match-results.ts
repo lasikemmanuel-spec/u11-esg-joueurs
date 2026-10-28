@@ -1,6 +1,5 @@
-import { parseCsv } from '@/lib/players'
+import { getSheetRows } from '@/lib/google-sheets'
 
-const SHEET_ID = '1zDC6a-hTSKFV2E5JHvj382q6eW9-xURii-5r5O_L4n4'
 const MATCH_TABS = {
   E1: '⚽ Feuille de Match Equipe 1',
   E2: '⚽ Feuille de Match Equipe 2',
@@ -32,11 +31,7 @@ function toScore(value: string): number | null {
 }
 
 async function getTeamResults(tab: string): Promise<MatchResult[]> {
-  const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`
-  const response = await fetch(url, { next: { revalidate: 300, tags: ['google-sheet'] } })
-  if (!response.ok) throw new Error(`Impossible de lire l'onglet ${tab} (${response.status})`)
-
-  const rows = parseCsv(await response.text())
+  const rows = await getSheetRows(tab)
   const [headers, dates, competitions, homeAway, , goalsForRow, goalsAgainstRow] = rows
   const matches: MatchResult[] = []
 

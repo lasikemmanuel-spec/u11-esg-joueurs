@@ -1,8 +1,6 @@
-import { parseCsv } from '@/lib/players'
+import { getSheetRows } from '@/lib/google-sheets'
 
-const SHEET_ID = '1zDC6a-hTSKFV2E5JHvj382q6eW9-xURii-5r5O_L4n4'
 const TAB = '📣 Convocations Matchs'
-const URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(TAB)}`
 
 const FIRST_MATCH_COL = 2
 const MATCH_COLS = 30
@@ -83,10 +81,7 @@ function parseStatus(raw: string): Pick<MatchEntry, 'status' | 'team'> {
 }
 
 export async function getConvocations(): Promise<ConvocationsData> {
-  const res = await fetch(URL, { next: { revalidate: 300, tags: ['google-sheet'] } })
-  if (!res.ok) throw new Error(`Impossible de lire l'onglet Convocations (${res.status})`)
-
-  const rows = parseCsv(await res.text())
+  const rows = await getSheetRows(TAB)
   let dates: string[] = []
   const players: Convocation[] = []
   const presentCounts: Record<string, number> = {}

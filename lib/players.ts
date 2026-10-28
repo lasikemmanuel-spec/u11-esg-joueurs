@@ -1,5 +1,5 @@
-const SHEET_ID = '1zDC6a-hTSKFV2E5JHvj382q6eW9-xURii-5r5O_L4n4'
-const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`
+import { getSheetRows, SHEET_ID } from '@/lib/google-sheets'
+
 export const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`
 
 export type Player = {
@@ -64,10 +64,7 @@ const clean = (value: string | undefined) => {
 }
 
 export async function getRoster(): Promise<Roster> {
-  const res = await fetch(CSV_URL, { next: { revalidate: 300, tags: ['google-sheet'] } })
-  if (!res.ok) throw new Error(`Impossible de lire le Google Sheet (${res.status})`)
-
-  const rows = parseCsv(await res.text())
+  const rows = await getSheetRows()
   const nonEmpty = rows.map((r) => r.map((c) => c.trim()).filter(Boolean))
   const club = nonEmpty.find((r) => r.length > 0)?.[0] ?? 'Équipe'
   const title = nonEmpty.filter((r) => r.length > 0)[1]?.[0] ?? 'Liste des joueurs'

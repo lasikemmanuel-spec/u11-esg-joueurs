@@ -1,8 +1,6 @@
-import { parseCsv } from '@/lib/players'
+import { getSheetRows } from '@/lib/google-sheets'
 
-const SHEET_ID = '1zDC6a-hTSKFV2E5JHvj382q6eW9-xURii-5r5O_L4n4'
 const STATS_TAB = '📊 Stats Générales'
-const STATS_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(STATS_TAB)}`
 
 export type PlayerStats = {
   number: number
@@ -40,10 +38,7 @@ export function ireStatus(stats: PlayerStats): IreStatus {
 }
 
 export async function getStats(): Promise<StatsData> {
-  const res = await fetch(STATS_URL, { next: { revalidate: 300, tags: ['google-sheet'] } })
-  if (!res.ok) throw new Error(`Impossible de lire l'onglet Stats (${res.status})`)
-
-  const rows = parseCsv(await res.text())
+  const rows = await getSheetRows(STATS_TAB)
   const players: PlayerStats[] = []
   let teamTrainingRate: number | null = null
 

@@ -4,12 +4,13 @@ import { useState } from 'react'
 import { MatchCallupBreakdown } from '@/components/match-callup-breakdown'
 import { PlayerStats } from '@/components/player-stats'
 import { PositionBreakdown } from '@/components/position-breakdown'
+import { EducatorRoster } from '@/components/educator-roster'
 import type { Convocation } from '@/lib/convocations'
 import type { Player } from '@/lib/players'
 import type { TeamMatchResults } from '@/lib/match-results'
 import type { PlayerStats as PlayerStat } from '@/lib/stats'
 
-type TabKey = 'players' | 'matches' | 'roster'
+type TabKey = 'roster' | 'educator' | 'players' | 'matches'
 
 export function DashboardTabs({
   players,
@@ -24,10 +25,11 @@ export function DashboardTabs({
   presentCounts: Record<string, number>
   matchResults: TeamMatchResults
 }) {
-  const [activeTab, setActiveTab] = useState<TabKey>('players')
+  const [activeTab, setActiveTab] = useState<TabKey>('roster')
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'roster', label: 'Effectifs' },
+    { key: 'educator', label: 'Éducateurs' },
     { key: 'players', label: 'Stats Joueurs' },
     { key: 'matches', label: 'Stats Matchs' },
   ]
@@ -73,6 +75,9 @@ export function DashboardTabs({
         )}
         {activeTab === 'roster' && (
           <PositionBreakdown players={rosterPlayers} stats={players} convocations={convocations} />
+        )}
+        {activeTab === 'educator' && (
+          <EducatorRoster players={rosterPlayers} />
         )}
       </div>
 

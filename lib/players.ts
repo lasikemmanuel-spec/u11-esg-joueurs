@@ -10,6 +10,7 @@ export type Player = {
   birthYear: number | null
   position: string | null
   transferStatus: string | null
+  licenseNumber: string | null
 }
 
 export type Roster = {
@@ -81,6 +82,7 @@ export async function getRoster(): Promise<Roster> {
     birthDate: col('date'),
     position: col('poste'),
     transfer: col('muté'),
+    license: header.findIndex((h) => h.includes('licence') || h.includes('license')),
   }
 
   const players: Player[] = []
@@ -99,6 +101,7 @@ export async function getRoster(): Promise<Roster> {
       birthYear: yearMatch ? Number(yearMatch[1]) : null,
       position: clean(r[idx.position]),
       transferStatus: clean(r[idx.transfer]),
+      licenseNumber: clean(r[idx.license]),
     })
   }
 

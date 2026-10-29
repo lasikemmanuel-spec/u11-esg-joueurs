@@ -44,8 +44,13 @@ function RateRow({
 }
 
 function SaturdaySection({ convocation }: { convocation: Convocation }) {
+  const calledMatches = {
+    label: 'Convoqués matchs',
+    rate: convocation.callUpRate,
+    count: convocation.calledCount,
+    barClass: 'bg-emerald-600',
+  }
   const availability = [
-    { label: 'Présence le samedi', rate: convocation.presentRate, count: convocation.presentCount, barClass: 'bg-emerald-600' },
     { label: 'Absence le samedi', rate: convocation.absentRate, count: convocation.absentCount, barClass: 'bg-blue-950' },
     { label: 'Blessé', rate: convocation.injuredRate, count: convocation.injuredCount, barClass: 'bg-red-600' },
     { label: 'Non convoqué', rate: convocation.notCalledRate, count: convocation.notCalledCount, barClass: 'bg-lime-400' },
@@ -54,7 +59,8 @@ function SaturdaySection({ convocation }: { convocation: Convocation }) {
 
   return (
     <div className="flex flex-col gap-3 border-t pt-4">
-      <h4 className="text-sm font-semibold">Disponibilités du samedi</h4>
+      <h4 className="text-sm font-semibold">Disponibilité match</h4>
+      <RateRow {...calledMatches} />
       {availability.map((item) => <RateRow key={item.label} {...item} />)}
 
       {convocation.matches.length > 0 && (
@@ -198,6 +204,13 @@ export function PlayerCard({
           <p className="mt-1 font-mono text-sm font-bold text-primary">{playerAge !== null ? `${playerAge} ans` : '—'}</p>
         </div>
       </div>
+
+      {player?.licenseNumber && (
+        <div className="rounded-lg border border-accent/40 bg-card/90 px-3 py-2 text-xs flex items-center justify-between">
+          <span className="text-[10px] font-semibold uppercase tracking-wide text-primary/65">N° de licence FFF</span>
+          <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">{player.licenseNumber}</span>
+        </div>
+      )}
 
       <div
         role="status"

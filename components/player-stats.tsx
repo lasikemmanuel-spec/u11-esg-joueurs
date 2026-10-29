@@ -110,10 +110,12 @@ export function PlayerCard({
   stats,
   convocation,
   player,
+  matchesPlayed,
 }: {
   stats: Stats
   convocation?: Convocation
   player?: Player
+  matchesPlayed: number
 }) {
   const status = IRE_STYLES[ireStatus(stats)]
   const matchPresenceRate = convocation?.presentRate ?? null
@@ -141,6 +143,7 @@ export function PlayerCard({
     { label: 'Minutes / match', value: display(minutesPerMatch) },
     { label: 'Buts', value: display(stats.goals) },
     { label: 'Passes décisives', value: display(stats.assists) },
+    { label: 'Matchs programmés', value: display(matchesPlayed) },
   ]
 
   return (
@@ -163,9 +166,9 @@ export function PlayerCard({
       </header>
 
       <div className="flex items-center gap-3 rounded-xl bg-secondary/60 p-3">
-        <div className="flex size-14 shrink-0 flex-col items-center justify-center rounded-xl border border-[oklch(0.8_0.08_85)] bg-[oklch(0.24_0.07_272)] px-1 text-center text-white shadow-sm">
+        <div className="flex min-h-16 min-w-20 shrink-0 flex-col items-center justify-center rounded-xl border-2 border-[oklch(0.8_0.08_85)] bg-[oklch(0.24_0.07_272)] px-2.5 py-2 text-center text-white shadow-sm">
           <span className="text-[9px] font-bold uppercase tracking-wider text-[oklch(0.8_0.08_85)]">Poste</span>
-          <span className="mt-0.5 text-xs font-black uppercase leading-tight">
+          <span className="mt-1 text-sm font-black uppercase leading-tight text-[oklch(0.8_0.08_85)] sm:text-base">
             {player?.position ?? 'Joueur'}
           </span>
         </div>

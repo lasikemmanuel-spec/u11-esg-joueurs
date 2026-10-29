@@ -22,10 +22,12 @@ export function PositionBreakdown({
   players,
   stats,
   convocations,
+  matchesPlayed,
 }: {
   players: Player[]
   stats: PlayerStats[]
   convocations: Convocation[]
+  matchesPlayed: number
 }) {
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null)
   const [query, setQuery] = useState('')
@@ -198,6 +200,7 @@ export function PositionBreakdown({
                 stats={selectedStats}
                 player={selectedPlayer}
                 convocation={convocations.find((convocation) => convocation.number === selectedPlayer.number)}
+                matchesPlayed={matchesPlayed}
               />
             </div>
           )}

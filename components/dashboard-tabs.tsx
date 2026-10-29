@@ -16,12 +16,14 @@ export function DashboardTabs({
   players,
   rosterPlayers,
   convocations,
+  matchesPlayed,
   presentCounts,
   matchResults,
 }: {
   players: PlayerStat[]
   rosterPlayers: Player[]
   convocations: Convocation[]
+  matchesPlayed: number
   presentCounts: Record<string, number>
   matchResults: TeamMatchResults
 }) {
@@ -74,7 +76,12 @@ export function DashboardTabs({
           />
         )}
         {activeTab === 'roster' && (
-          <PositionBreakdown players={rosterPlayers} stats={players} convocations={convocations} />
+          <PositionBreakdown
+            players={rosterPlayers}
+            stats={players}
+            convocations={convocations}
+            matchesPlayed={matchesPlayed}
+          />
         )}
         {activeTab === 'educator' && (
           <EducatorRoster players={rosterPlayers} />

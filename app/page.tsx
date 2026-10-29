@@ -75,6 +75,7 @@ export default async function Page() {
           players={stats.players}
           rosterPlayers={roster.players}
           convocations={convocations.players}
+          matchesPlayed={convocations.matchesPlayed}
           presentCounts={convocations.presentCounts}
           matchResults={matchResults}
         />

@@ -59,7 +59,9 @@ export function PositionBreakdown({
     if (b === 'Non renseigné') return -1
     return positionRank(a) - positionRank(b) || a.localeCompare(b, 'fr')
   })
-  const allGroupsExpanded = sorted.length > 0 && sorted.every(([position]) => expandedPositions.has(position))
+  const allGroupsExpanded = sorted.length > 0 && sorted.every(([position, list]) =>
+    expandedPositions.has(position) || list.some((player) => player.number === selectedNumber),
+  )
   const selectedPlayer = players.find((player) => player.number === selectedNumber)
   const selectedStats = selectedPlayer
     ? stats.find((playerStats) => playerStats.number === selectedPlayer.number) ?? {
@@ -108,20 +110,11 @@ export function PositionBreakdown({
           <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
             {sorted.length} poste{sorted.length !== 1 ? 's' : ''}
           </span>
-          {sorted.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setExpandedPositions(allGroupsExpanded ? new Set() : new Set(sorted.map(([position]) => position)))}
-              className="rounded-lg px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {allGroupsExpanded ? 'Tout replier' : 'Tout déplier'}
-            </button>
-          )}
         </div>
       </div>
 
       <div className="flex flex-col gap-3">
-        <div className="grid gap-2 md:max-w-2xl md:grid-cols-2">
+        <div className="grid gap-2 md:max-w-5xl md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center">
           <label className="relative block">
             <span className="sr-only">Rechercher par nom ou prénom</span>
             <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -153,12 +146,28 @@ export function PositionBreakdown({
               ))}
             </select>
           </label>
+          {sorted.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                if (allGroupsExpanded) {
+                  setExpandedPositions(new Set())
+                  setSelectedNumber(null)
+                } else {
+                  setExpandedPositions(new Set(sorted.map(([position]) => position)))
+                }
+              }}
+              className="h-10 rounded-lg border border-accent/40 bg-card px-3 text-sm font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {allGroupsExpanded ? 'Tout replier' : 'Tout déplier'}
+            </button>
+          )}
         </div>
 
         <div className={`grid items-start gap-4 ${selectedPlayer ? 'xl:grid-cols-[minmax(0,1fr)_320px]' : ''}`}>
-          <div className={`grid content-start gap-3 sm:grid-cols-2 ${selectedPlayer ? '2xl:grid-cols-2' : 'xl:grid-cols-3'}`}>
+          <div className={`columns-1 gap-3 sm:columns-2 ${selectedPlayer ? '2xl:columns-2' : 'xl:columns-3'}`}>
             {filteredPlayers.length === 0 && (
-              <p className="rounded-lg border border-accent/40 bg-card p-3 text-sm text-muted-foreground sm:col-span-2 xl:col-span-3">
+              <p className="break-inside-avoid rounded-lg border border-accent/40 bg-card p-3 text-sm text-muted-foreground">
                 {searchTerm
                   ? `Aucun joueur ne correspond à « ${query} ».`
                   : selectedPosition !== 'all'
@@ -171,12 +180,12 @@ export function PositionBreakdown({
               const isExpanded = expandedPositions.has(position) || isSelectedGroup
               const groupId = `roster-position-${groupIndex}`
               return (
-              <article key={position} className="flex flex-col overflow-hidden rounded-lg border border-accent/50 bg-card shadow-sm">
+              <article key={position} className="mb-3 flex break-inside-avoid flex-col overflow-hidden rounded-lg border border-accent/50 bg-card shadow-sm">
                 <h3>
                   <button
                     type="button"
                     aria-expanded={isExpanded}
-                    aria-controls={groupId}
+                    aria-controls={isExpanded ? groupId : undefined}
                     onClick={() => setExpandedPositions((current) => {
                       const next = new Set(current)
                       if (next.has(position)) next.delete(position)

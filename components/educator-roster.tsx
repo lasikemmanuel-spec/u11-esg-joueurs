@@ -92,19 +92,30 @@ export function EducatorRoster({ players }: { players: Player[] }) {
         </div>
       </div>
 
-      <div className="relative max-w-xl">
-        <label htmlFor="educator-search" className="sr-only">
-          Rechercher par nom ou prénom
-        </label>
-        <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-        <input
-          id="educator-search"
-          type="search"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="Rechercher par nom, prénom ou les deux…"
-          className="h-10 w-full rounded-xl border border-accent/40 bg-background pr-3 pl-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        />
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="relative max-w-xl flex-1">
+          <label htmlFor="educator-search" className="sr-only">
+            Rechercher par nom ou prénom
+          </label>
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            id="educator-search"
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Rechercher par nom, prénom ou les deux…"
+            className="h-10 w-full rounded-xl border border-accent/40 bg-background pr-3 pl-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+        </div>
+        {groups.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setExpandedPositions(allGroupsExpanded ? new Set() : new Set(groups.map(([position]) => position)))}
+            className="h-10 shrink-0 rounded-lg border border-accent/40 bg-card px-3 text-sm font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {allGroupsExpanded ? 'Tout replier' : 'Tout déplier'}
+          </button>
+        )}
       </div>
 
       {groups.length === 0 ? (
@@ -112,22 +123,12 @@ export function EducatorRoster({ players }: { players: Player[] }) {
           Aucun joueur ne correspond à votre recherche.
         </p>
       ) : (
-        <div className="flex flex-col gap-2">
-          <div className="flex justify-end">
-            <button
-              type="button"
-              onClick={() => setExpandedPositions(allGroupsExpanded ? new Set() : new Set(groups.map(([position]) => position)))}
-              className="rounded-lg px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {allGroupsExpanded ? 'Tout replier' : 'Tout déplier'}
-            </button>
-          </div>
-          <div className="grid items-start gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="columns-1 gap-3 sm:columns-2 xl:columns-3">
           {groups.map(([position, list], groupIndex) => {
             const isExpanded = expandedPositions.has(position)
             const groupId = `educator-position-${groupIndex}`
             return (
-            <section key={position} aria-label={`Poste : ${position}`} className="overflow-hidden rounded-xl border border-accent/50 bg-card shadow-sm">
+            <section key={position} aria-label={`Poste : ${position}`} className="mb-3 break-inside-avoid overflow-hidden rounded-xl border border-accent/50 bg-card shadow-sm">
               <h3>
                 <button
                   type="button"
@@ -194,7 +195,6 @@ export function EducatorRoster({ players }: { players: Player[] }) {
               </ul>}
             </section>
           )})}
-          </div>
         </div>
       )}
     </section>

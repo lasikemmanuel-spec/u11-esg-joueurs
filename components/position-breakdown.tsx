@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Search } from 'lucide-react'
+import { Search, Users } from 'lucide-react'
 import { PlayerCard } from '@/components/player-stats'
 import type { Convocation } from '@/lib/convocations'
 import type { Player } from '@/lib/players'
@@ -89,18 +89,26 @@ export function PositionBreakdown({
   return (
     <section
       aria-labelledby="positions-title"
-      className="flex flex-col gap-4 rounded-xl border border-accent/60 bg-gradient-to-br from-secondary/30 via-card to-card p-5 shadow-sm"
+      className="flex flex-col gap-3 rounded-xl border border-accent/60 bg-gradient-to-br from-secondary/30 via-card to-card p-4 shadow-sm"
     >
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary/70">ES Genech</p>
-        <h2 id="positions-title" className="font-semibold text-primary">Effectifs par poste</h2>
-        <p className="text-sm text-muted-foreground">
-          {sorted.length} poste{sorted.length > 1 ? 's' : ''} · {filteredPlayers.length} joueur{filteredPlayers.length !== 1 ? 's' : ''}
-        </p>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h2 id="positions-title" className="font-semibold text-primary">Effectif par poste</h2>
+          <p className="text-xs text-muted-foreground">Touchez un joueur pour afficher sa fiche.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-card px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+            <Users aria-hidden="true" className="size-3.5 text-primary" />
+            {filteredPlayers.length} joueur{filteredPlayers.length !== 1 ? 's' : ''}
+          </span>
+          <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+            {sorted.length} poste{sorted.length !== 1 ? 's' : ''}
+          </span>
+        </div>
       </div>
 
-      <div className="flex flex-col gap-4">
-        <div className="grid gap-3 md:max-w-2xl md:grid-cols-2">
+      <div className="flex flex-col gap-3">
+        <div className="grid gap-2 md:max-w-2xl md:grid-cols-2">
           <label className="relative block">
             <span className="sr-only">Rechercher par nom ou prénom</span>
             <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -134,10 +142,10 @@ export function PositionBreakdown({
           </label>
         </div>
 
-        <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
-          <div className="grid content-start gap-4 sm:grid-cols-2">
+        <div className={`grid items-start gap-4 ${selectedPlayer ? 'xl:grid-cols-[minmax(0,1fr)_320px]' : ''}`}>
+          <div className={`grid content-start gap-3 sm:grid-cols-2 ${selectedPlayer ? '2xl:grid-cols-2' : 'xl:grid-cols-3'}`}>
             {filteredPlayers.length === 0 && (
-              <p className="rounded-lg border border-accent/40 bg-card p-4 text-sm text-muted-foreground sm:col-span-2">
+              <p className="rounded-lg border border-accent/40 bg-card p-3 text-sm text-muted-foreground sm:col-span-2 xl:col-span-3">
                 {searchTerm
                   ? `Aucun joueur ne correspond à « ${query} ».`
                   : selectedPosition !== 'all'
@@ -147,13 +155,13 @@ export function PositionBreakdown({
             )}
             {sorted.map(([position, list]) => (
               <article key={position} className="flex flex-col overflow-hidden rounded-lg border border-accent/50 bg-card shadow-sm">
-                <header className="flex items-center justify-between gap-2 bg-primary px-4 py-3 text-primary-foreground">
+                <header className="flex items-center justify-between gap-2 bg-primary px-3 py-2 text-primary-foreground">
                   <h3 className="font-semibold">{position}</h3>
                   <span className="rounded-full bg-accent px-2.5 py-0.5 font-mono text-xs font-bold text-accent-foreground">
                     {list.length}
                   </span>
                 </header>
-                <ul className="flex flex-col divide-y divide-accent/30 px-3 text-sm">
+                <ul className="flex flex-col divide-y divide-accent/30 px-2.5 text-sm">
                   {[...list]
                     .sort((a, b) => a.lastName.localeCompare(b.lastName, 'fr'))
                     .map((player) => {

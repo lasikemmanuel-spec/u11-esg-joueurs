@@ -126,23 +126,6 @@ export function PlayerCard({
   const matchPresenceRate = convocation?.presentRate ?? null
   const playerName = player ? `${player.firstName} ${player.lastName}`.trim() : stats.name
   const playerAge = player ? ageOn(player.birthDate) : null
-  const presenceIndicator = stats.trainingRate === null || matchPresenceRate === null
-    ? {
-        title: 'Bilan de présence indisponible',
-        message: 'Les données de présence à l’entraînement ou aux matchs sont manquantes.',
-        className: 'border-border bg-muted text-foreground',
-      }
-    : stats.trainingRate > 75 && matchPresenceRate > 75
-      ? {
-          title: 'Bravo, belle assiduité !',
-          message: `Entraînements : ${stats.trainingRate}% · Matchs : ${matchPresenceRate}%`,
-          className: 'border-emerald-300 bg-emerald-100 text-emerald-950',
-        }
-      : {
-          title: 'On continue les efforts !',
-          message: `Entraînements : ${stats.trainingRate}% · Matchs : ${matchPresenceRate}%`,
-          className: 'border-amber-300 bg-amber-100 text-amber-950',
-        }
   const minutesPerMatch = stats.matchesCalled ? Math.round((stats.minutes ?? 0) / stats.matchesCalled) : null
   const tiles = [
     { label: 'Matchs convoqué', value: display(stats.matchesCalled) },
@@ -205,41 +188,32 @@ export function PlayerCard({
         </div>
       </div>
 
-      {player?.licenseNumber && (
-        <div className="rounded-lg border border-accent/40 bg-card/90 px-3 py-2 text-xs flex items-center justify-between">
-          <span className="text-[10px] font-semibold uppercase tracking-wide text-primary/65">N° de licence FFF</span>
-          <span className="font-mono font-bold text-emerald-700 dark:text-emerald-400">{player.licenseNumber}</span>
+      <dl className="grid grid-cols-3 gap-1.5 rounded-xl border border-accent/40 bg-card/80 p-2">
+        <div className="min-w-0 px-1.5 py-1 text-center">
+          <dt className="text-[9px] font-semibold uppercase leading-tight tracking-wide text-primary/65 sm:text-[10px]">
+            Entraînement
+          </dt>
+          <dd className="mt-1 font-mono text-sm font-bold text-primary">
+            {stats.trainingRate !== null ? `${stats.trainingRate}%` : '—'}
+          </dd>
         </div>
-      )}
-
-      <div
-        role="status"
-        className={`rounded-xl border px-3 py-2.5 ${presenceIndicator.className}`}
-      >
-        <p className="text-sm font-bold">{presenceIndicator.title}</p>
-        <p className="mt-0.5 text-xs opacity-90">{presenceIndicator.message}</p>
-      </div>
-
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-1.5">
-          <div className="flex justify-between text-sm">
-            <span>Taux de présence entraînement</span>
-            <span className="font-mono font-semibold">{stats.trainingRate !== null ? `${stats.trainingRate}%` : '—'}</span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-muted">
-            <div className="h-full bg-primary" style={{ width: `${Math.min(stats.trainingRate ?? 0, 100)}%` }} />
-          </div>
+        <div className="min-w-0 border-x border-accent/30 px-1.5 py-1 text-center">
+          <dt className="text-[9px] font-semibold uppercase leading-tight tracking-wide text-primary/65 sm:text-[10px]">
+            Présence samedi
+          </dt>
+          <dd className="mt-1 font-mono text-sm font-bold text-primary">
+            {matchPresenceRate !== null ? `${matchPresenceRate}%` : '—'}
+          </dd>
         </div>
-        <div className="flex flex-col gap-1.5">
-          <div className="flex justify-between text-sm">
-            <span>Taux de convocation</span>
-            <span className="font-mono font-semibold">{stats.callUpRate !== null ? `${stats.callUpRate}%` : '—'}</span>
-          </div>
-          <div className="h-2 overflow-hidden rounded-full bg-muted">
-            <div className="h-full bg-primary" style={{ width: `${Math.min(stats.callUpRate ?? 0, 100)}%` }} />
-          </div>
+        <div className="min-w-0 px-1.5 py-1 text-center">
+          <dt className="text-[9px] font-semibold uppercase leading-tight tracking-wide text-primary/65 sm:text-[10px]">
+            Convocation / présence
+          </dt>
+          <dd className="mt-1 font-mono text-sm font-bold text-primary">
+            {stats.ire !== null ? stats.ire.toFixed(2).replace('.', ',') : '—'}
+          </dd>
         </div>
-      </div>
+      </dl>
 
       {convocation && <SaturdaySection convocation={convocation} />}
 

@@ -29,9 +29,9 @@ export function DashboardTabs({
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'roster', label: 'Effectifs' },
-    { key: 'educator', label: 'Éducateurs' },
     { key: 'players', label: 'Stats Joueurs' },
     { key: 'matches', label: 'Stats Matchs' },
+    { key: 'educator', label: 'Éducateurs' },
   ]
 
   return (

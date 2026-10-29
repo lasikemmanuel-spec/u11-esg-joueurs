@@ -7,6 +7,23 @@ export const SHEET_ID =
 let cachedAccessToken: { token: string; expiresAt: number } | null = null
 
 /**
+ * Nettoie et formate la clé privée PEM :
+ * - Retire les guillemets superflus au début et à la fin (", ')
+ * - Remplace les séquences littérales \n par de véritables sauts de ligne
+ * - Supprime les retours chariot Windows (\r)
+ */
+function formatPrivateKey(key: string): string {
+  let cleaned = key.trim()
+  while (
+    (cleaned.startsWith('"') && cleaned.endsWith('"')) ||
+    (cleaned.startsWith("'") && cleaned.endsWith("'"))
+  ) {
+    cleaned = cleaned.slice(1, -1).trim()
+  }
+  return cleaned.replace(/\\n/g, '\n').replace(/\r/g, '').trim()
+}
+
+/**
  * Crée un token JWT signé RS256 pour l'authentification avec un Compte de Service Google.
  */
 function getServiceAccountJwt(clientEmail: string, privateKey: string): string {
@@ -29,7 +46,7 @@ function getServiceAccountJwt(clientEmail: string, privateKey: string): string {
 
   const unsignedToken = `${base64Url(JSON.stringify(header))}.${base64Url(JSON.stringify(payload))}`
 
-  const cleanKey = privateKey.replace(/\\n/g, '\n')
+  const cleanKey = formatPrivateKey(privateKey)
   const sign = crypto.createSign('RSA-SHA256')
   sign.update(unsignedToken)
   const signature = sign

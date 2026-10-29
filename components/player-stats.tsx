@@ -161,8 +161,8 @@ export function PlayerCard({
           message: 'Une belle régularité aux entraînements et aux matchs.',
         }
       : {
-          title: 'On peut faire encore mieux !',
-          message: 'Continue à t’accrocher : chaque entraînement et chaque match sont une occasion de progresser.',
+          title: 'On continue les efforts !',
+          message: 'Chaque présence compte.',
         }
   const minutesPerMatch = stats.matchesCalled ? Math.round((stats.minutes ?? 0) / stats.matchesCalled) : null
   const tiles = [

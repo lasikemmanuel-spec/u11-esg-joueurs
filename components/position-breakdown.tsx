@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Search, Users } from 'lucide-react'
+import { ChevronDown, Search, Users } from 'lucide-react'
 import { PlayerCard } from '@/components/player-stats'
 import type { Convocation } from '@/lib/convocations'
 import type { Player } from '@/lib/players'
@@ -32,6 +32,7 @@ export function PositionBreakdown({
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null)
   const [query, setQuery] = useState('')
   const [selectedPosition, setSelectedPosition] = useState('all')
+  const [expandedPositions, setExpandedPositions] = useState<Set<string>>(() => new Set())
   const playerCardRef = useRef<HTMLDivElement>(null)
   const searchTerm = normalizeName(query.trim())
   const matchingPlayers = searchTerm
@@ -58,6 +59,7 @@ export function PositionBreakdown({
     if (b === 'Non renseigné') return -1
     return positionRank(a) - positionRank(b) || a.localeCompare(b, 'fr')
   })
+  const allGroupsExpanded = sorted.length > 0 && sorted.every(([position]) => expandedPositions.has(position))
   const selectedPlayer = players.find((player) => player.number === selectedNumber)
   const selectedStats = selectedPlayer
     ? stats.find((playerStats) => playerStats.number === selectedPlayer.number) ?? {
@@ -106,6 +108,15 @@ export function PositionBreakdown({
           <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
             {sorted.length} poste{sorted.length !== 1 ? 's' : ''}
           </span>
+          {sorted.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setExpandedPositions(allGroupsExpanded ? new Set() : new Set(sorted.map(([position]) => position)))}
+              className="rounded-lg px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {allGroupsExpanded ? 'Tout replier' : 'Tout déplier'}
+            </button>
+          )}
         </div>
       </div>
 
@@ -155,15 +166,35 @@ export function PositionBreakdown({
                     : 'Aucun joueur dans l’effectif.'}
               </p>
             )}
-            {sorted.map(([position, list]) => (
+            {sorted.map(([position, list], groupIndex) => {
+              const isSelectedGroup = list.some((player) => player.number === selectedPlayer?.number)
+              const isExpanded = expandedPositions.has(position) || isSelectedGroup
+              const groupId = `roster-position-${groupIndex}`
+              return (
               <article key={position} className="flex flex-col overflow-hidden rounded-lg border border-accent/50 bg-card shadow-sm">
-                <header className="flex items-center justify-between gap-2 bg-primary px-3 py-2 text-primary-foreground">
-                  <h3 className="font-semibold">{position}</h3>
-                  <span className="rounded-full bg-accent px-2.5 py-0.5 font-mono text-xs font-bold text-accent-foreground">
-                    {list.length}
-                  </span>
-                </header>
-                <ul className="flex flex-col divide-y divide-accent/30 px-2.5 text-sm">
+                <h3>
+                  <button
+                    type="button"
+                    aria-expanded={isExpanded}
+                    aria-controls={groupId}
+                    onClick={() => setExpandedPositions((current) => {
+                      const next = new Set(current)
+                      if (next.has(position)) next.delete(position)
+                      else next.add(position)
+                      return next
+                    })}
+                    className="flex w-full items-center justify-between gap-2 bg-primary px-3 py-2 text-left text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                  >
+                    <span className="flex min-w-0 items-center gap-2">
+                      <ChevronDown aria-hidden="true" className={`size-4 shrink-0 transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
+                      <span className="truncate font-semibold">{position}</span>
+                    </span>
+                    <span className="rounded-full bg-accent px-2.5 py-0.5 font-mono text-xs font-bold text-accent-foreground">
+                      {list.length}
+                    </span>
+                  </button>
+                </h3>
+                {isExpanded && <ul id={groupId} className="flex flex-col divide-y divide-accent/30 px-2.5 text-sm">
                   {[...list]
                     .sort((a, b) => a.lastName.localeCompare(b.lastName, 'fr'))
                     .map((player) => {
@@ -190,9 +221,9 @@ export function PositionBreakdown({
                         </li>
                       )
                     })}
-                </ul>
+                </ul>}
               </article>
-            ))}
+            )})}
           </div>
           {selectedPlayer && selectedStats && (
             <div ref={playerCardRef} className="scroll-mt-4 xl:sticky xl:top-6">

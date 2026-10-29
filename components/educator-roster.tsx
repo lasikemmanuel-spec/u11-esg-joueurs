@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Search, Copy, Check, ShieldCheck, Users, Award } from 'lucide-react'
+import { Search, Copy, Check, ShieldCheck, Users, Award, ChevronDown } from 'lucide-react'
 import type { Player } from '@/lib/players'
 
 const normalize = (value: string) =>
@@ -18,6 +18,7 @@ const positionRank = (position: string | null) => {
 
 export function EducatorRoster({ players }: { players: Player[] }) {
   const [query, setQuery] = useState('')
+  const [expandedPositions, setExpandedPositions] = useState<Set<string>>(() => new Set())
   const [copiedId, setCopiedId] = useState<string | null>(null)
 
   const groups = useMemo(() => {
@@ -50,6 +51,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
 
   const licensedCount = players.filter((p) => Boolean(p.licenseNumber)).length
   const filteredCount = groups.reduce((count, [, list]) => count + list.length, 0)
+  const allGroupsExpanded = groups.length > 0 && groups.every(([position]) => expandedPositions.has(position))
 
   const handleCopy = (licenseNumber: string) => {
     navigator.clipboard.writeText(licenseNumber)
@@ -110,16 +112,45 @@ export function EducatorRoster({ players }: { players: Player[] }) {
           Aucun joueur ne correspond à votre recherche.
         </p>
       ) : (
-        <div className="grid items-start gap-3 sm:grid-cols-2 xl:grid-cols-3">
-          {groups.map(([position, list]) => (
+        <div className="flex flex-col gap-2">
+          <div className="flex justify-end">
+            <button
+              type="button"
+              onClick={() => setExpandedPositions(allGroupsExpanded ? new Set() : new Set(groups.map(([position]) => position)))}
+              className="rounded-lg px-2 py-1 text-xs font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              {allGroupsExpanded ? 'Tout replier' : 'Tout déplier'}
+            </button>
+          </div>
+          <div className="grid items-start gap-3 sm:grid-cols-2 xl:grid-cols-3">
+          {groups.map(([position, list], groupIndex) => {
+            const isExpanded = expandedPositions.has(position)
+            const groupId = `educator-position-${groupIndex}`
+            return (
             <section key={position} aria-label={`Poste : ${position}`} className="overflow-hidden rounded-xl border border-accent/50 bg-card shadow-sm">
-              <header className="flex items-center justify-between bg-primary px-3 py-2.5 text-primary-foreground">
-                <h3 className="font-semibold">{position}</h3>
-                <span className="rounded-full bg-accent px-2 py-0.5 font-mono text-xs font-bold text-accent-foreground">
+              <h3>
+                <button
+                  type="button"
+                  aria-expanded={isExpanded}
+                  aria-controls={isExpanded ? groupId : undefined}
+                  onClick={() => setExpandedPositions((current) => {
+                    const next = new Set(current)
+                    if (next.has(position)) next.delete(position)
+                    else next.add(position)
+                    return next
+                  })}
+                  className="flex w-full items-center justify-between gap-2 bg-primary px-3 py-2.5 text-left text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                >
+                  <span className="flex min-w-0 items-center gap-2">
+                    <ChevronDown aria-hidden="true" className={`size-4 shrink-0 transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
+                    <span className="truncate font-semibold">{position}</span>
+                  </span>
+                  <span className="rounded-full bg-accent px-2 py-0.5 font-mono text-xs font-bold text-accent-foreground">
                   {list.length}
-                </span>
-              </header>
-              <ul className="divide-y divide-accent/25">
+                  </span>
+                </button>
+              </h3>
+              {isExpanded && <ul id={groupId} className="divide-y divide-accent/25">
                 {list.map((player) => {
                   const licenseNumber = player.licenseNumber
                   const isCopied = licenseNumber && copiedId === licenseNumber
@@ -160,9 +191,10 @@ export function EducatorRoster({ players }: { players: Player[] }) {
                     </li>
                   )
                 })}
-              </ul>
+              </ul>}
             </section>
-          ))}
+          )})}
+          </div>
         </div>
       )}
     </section>

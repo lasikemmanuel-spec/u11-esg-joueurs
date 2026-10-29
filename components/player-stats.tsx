@@ -43,7 +43,13 @@ function RateRow({
   )
 }
 
-function SaturdaySection({ convocation }: { convocation: Convocation }) {
+function SaturdaySection({
+  convocation,
+  matchesPlayed,
+}: {
+  convocation: Convocation
+  matchesPlayed: number
+}) {
   const availability = [
     { label: 'Absence le samedi', rate: convocation.absentRate, count: convocation.absentCount, barClass: 'bg-blue-950' },
     { label: 'Blessé', rate: convocation.injuredRate, count: convocation.injuredCount, barClass: 'bg-red-600' },
@@ -58,7 +64,7 @@ function SaturdaySection({ convocation }: { convocation: Convocation }) {
 
       {convocation.matches.length > 0 && (
         <div className="flex flex-col gap-2">
-          <p className="text-xs text-muted-foreground">Historique des matchs</p>
+          <p className="text-xs text-muted-foreground">Historique des matchs ({matchesPlayed})</p>
           <ol className="flex flex-wrap gap-1.5">
             {convocation.matches.map((m) => {
               const style = MATCH_STYLES[m.status]
@@ -106,6 +112,13 @@ const IRE_STYLES: Record<IreStatus, { label: string; className: string }> = {
 
 const display = (v: number | null) => (v === null ? '—' : v)
 
+const rateTone = (rate: number | null) => {
+  if (rate === null) return 'border-border bg-muted text-muted-foreground'
+  return rate > 75
+    ? 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-200'
+    : 'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200'
+}
+
 export function PlayerCard({
   stats,
   convocation,
@@ -121,6 +134,22 @@ export function PlayerCard({
   const matchPresenceRate = convocation?.presentRate ?? null
   const saturdayCallUpRate = convocation?.callUpRate ?? null
   const playerName = player ? `${player.firstName} ${player.lastName}`.trim() : stats.name
+  const rateTiles = [
+    { label: 'Présence entraînement', value: stats.trainingRate, tone: rateTone(stats.trainingRate) },
+    { label: 'Présence samedi', value: matchPresenceRate, tone: rateTone(matchPresenceRate) },
+    { label: 'Convocation samedi', value: saturdayCallUpRate, tone: rateTone(saturdayCallUpRate) },
+  ]
+  const summaryTiles = [
+    ...rateTiles.map((tile) => ({
+      ...tile,
+      displayValue: tile.value !== null ? `${tile.value}%` : '—',
+    })),
+    {
+      label: 'IRE',
+      displayValue: stats.ire !== null ? stats.ire.toFixed(2).replace('.', ',') : '—',
+      tone: status.className,
+    },
+  ]
   const encouragement = stats.trainingRate === null || matchPresenceRate === null
     ? {
         title: 'Bilan de présence indisponible',
@@ -132,8 +161,8 @@ export function PlayerCard({
           message: 'Une belle régularité aux entraînements et aux matchs.',
         }
       : {
-          title: 'On continue les efforts !',
-          message: 'Chaque présence compte, continue comme ça !',
+          title: 'On peut faire encore mieux !',
+          message: 'Continue à t’accrocher : chaque entraînement et chaque match sont une occasion de progresser.',
         }
   const minutesPerMatch = stats.matchesCalled ? Math.round((stats.minutes ?? 0) / stats.matchesCalled) : null
   const tiles = [
@@ -143,7 +172,6 @@ export function PlayerCard({
     { label: 'Minutes / match', value: display(minutesPerMatch) },
     { label: 'Buts', value: display(stats.goals) },
     { label: 'Passes décisives', value: display(stats.assists) },
-    { label: 'Matchs programmés', value: display(matchesPlayed) },
   ]
 
   return (
@@ -167,54 +195,17 @@ export function PlayerCard({
 
       <div className="flex items-center gap-3 rounded-xl bg-secondary/60 p-3">
         <div className="flex min-h-16 min-w-20 shrink-0 flex-col items-center justify-center rounded-xl border-2 border-[oklch(0.8_0.08_85)] bg-[oklch(0.24_0.07_272)] px-2.5 py-2 text-center text-white shadow-sm">
-          <span className="text-[9px] font-bold uppercase tracking-wider text-[oklch(0.8_0.08_85)]">Poste</span>
-          <span className="mt-1 text-sm font-black uppercase leading-tight text-[oklch(0.8_0.08_85)] sm:text-base">
+          <span className="text-sm font-black uppercase leading-tight text-[oklch(0.8_0.08_85)] sm:text-base">
             {player?.position ?? 'Joueur'}
           </span>
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Joueur</p>
-          <h3 className="mt-0.5 break-words text-lg font-black uppercase leading-tight tracking-wide text-primary">
+          <h3 className="break-words text-lg font-black uppercase leading-tight tracking-wide text-primary">
             {playerName}
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">{player?.birthDate ?? 'Date de naissance non renseignée'}</p>
         </div>
       </div>
-
-      <dl className="grid grid-cols-2 gap-2">
-        <div className="min-w-0 rounded-xl border border-accent/50 border-t-2 border-t-[oklch(0.8_0.08_85)] bg-card px-2 py-2.5 text-center shadow-sm">
-          <dt className="text-[9px] font-bold uppercase leading-tight tracking-wide text-muted-foreground sm:text-[10px]">
-            Présence entraînement
-          </dt>
-          <dd className="mt-1 font-mono text-xl font-black text-primary">
-            {stats.trainingRate !== null ? `${stats.trainingRate}%` : '—'}
-          </dd>
-        </div>
-        <div className="min-w-0 rounded-xl border border-accent/50 border-t-2 border-t-[oklch(0.8_0.08_85)] bg-card px-2 py-2.5 text-center shadow-sm">
-          <dt className="text-[9px] font-bold uppercase leading-tight tracking-wide text-muted-foreground sm:text-[10px]">
-            Présence samedi
-          </dt>
-          <dd className="mt-1 font-mono text-xl font-black text-primary">
-            {matchPresenceRate !== null ? `${matchPresenceRate}%` : '—'}
-          </dd>
-        </div>
-        <div className="min-w-0 rounded-xl border border-accent/50 border-t-2 border-t-[oklch(0.8_0.08_85)] bg-card px-2 py-2.5 text-center shadow-sm">
-          <dt className="text-[9px] font-bold uppercase leading-tight tracking-wide text-muted-foreground sm:text-[10px]">
-            Convocation samedi
-          </dt>
-          <dd className="mt-1 font-mono text-xl font-black text-primary">
-            {saturdayCallUpRate !== null ? `${saturdayCallUpRate}%` : '—'}
-          </dd>
-        </div>
-        <div className="min-w-0 rounded-xl border border-accent/50 border-t-2 border-t-[oklch(0.8_0.08_85)] bg-card px-2 py-2.5 text-center shadow-sm">
-          <dt className="text-[9px] font-bold uppercase leading-tight tracking-wide text-muted-foreground sm:text-[10px]">
-            IRE
-          </dt>
-          <dd className="mt-1 font-mono text-xl font-black text-primary">
-            {stats.ire !== null ? stats.ire.toFixed(2).replace('.', ',') : '—'}
-          </dd>
-        </div>
-      </dl>
 
       <div role="status" className="flex items-center gap-3 rounded-xl border border-[oklch(0.8_0.08_85)]/70 bg-[oklch(0.24_0.07_272)] px-3 py-2.5 text-white shadow-sm">
         <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[oklch(0.8_0.08_85)] text-sm font-black text-[oklch(0.24_0.07_272)]">★</span>
@@ -224,7 +215,23 @@ export function PlayerCard({
         </div>
       </div>
 
-      {convocation && <SaturdaySection convocation={convocation} />}
+      <dl className="grid grid-cols-2 gap-2">
+        {summaryTiles.map((tile) => (
+          <div
+            key={tile.label}
+            className={`min-w-0 rounded-xl border border-t-2 border-t-[oklch(0.8_0.08_85)] px-2 py-2.5 text-center shadow-sm ${tile.tone}`}
+          >
+            <dt className="text-[9px] font-bold uppercase leading-tight tracking-wide opacity-75 sm:text-[10px]">
+              {tile.label}
+            </dt>
+            <dd className="mt-1 font-mono text-xl font-black">
+              {tile.displayValue}
+            </dd>
+          </div>
+        ))}
+      </dl>
+
+      {convocation && <SaturdaySection convocation={convocation} matchesPlayed={matchesPlayed} />}
 
       <dl className="grid grid-cols-2 gap-2">
         {tiles.map((t) => (

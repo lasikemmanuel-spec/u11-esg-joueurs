@@ -4,7 +4,7 @@ import { ClubCrest } from '@/components/club-crest'
 import { PlayerOffensiveRankings } from '@/components/player-offensive-rankings'
 import { ireStatus, type IreStatus, type PlayerStats as Stats } from '@/lib/stats'
 import type { Convocation, MatchStatus } from '@/lib/convocations'
-import { ageOn, type Player } from '@/lib/players'
+import type { Player } from '@/lib/players'
 
 const MATCH_STYLES: Record<MatchStatus, { label: string; className: string }> = {
   called: { label: 'Convoqué', className: 'bg-emerald-600 text-white' },
@@ -44,12 +44,6 @@ function RateRow({
 }
 
 function SaturdaySection({ convocation }: { convocation: Convocation }) {
-  const calledMatches = {
-    label: 'Convoqués matchs',
-    rate: convocation.callUpRate,
-    count: convocation.calledCount,
-    barClass: 'bg-emerald-600',
-  }
   const availability = [
     { label: 'Absence le samedi', rate: convocation.absentRate, count: convocation.absentCount, barClass: 'bg-blue-950' },
     { label: 'Blessé', rate: convocation.injuredRate, count: convocation.injuredCount, barClass: 'bg-red-600' },
@@ -60,7 +54,6 @@ function SaturdaySection({ convocation }: { convocation: Convocation }) {
   return (
     <div className="flex flex-col gap-3 border-t pt-4">
       <h4 className="text-sm font-semibold">Disponibilité match</h4>
-      <RateRow {...calledMatches} />
       {availability.map((item) => <RateRow key={item.label} {...item} />)}
 
       {convocation.matches.length > 0 && (
@@ -124,18 +117,33 @@ export function PlayerCard({
 }) {
   const status = IRE_STYLES[ireStatus(stats)]
   const matchPresenceRate = convocation?.presentRate ?? null
+  const saturdayCallUpRate = convocation?.callUpRate ?? null
   const playerName = player ? `${player.firstName} ${player.lastName}`.trim() : stats.name
-  const playerAge = player ? ageOn(player.birthDate) : null
+  const encouragement = stats.trainingRate === null || matchPresenceRate === null
+    ? {
+        title: 'Bilan de présence indisponible',
+        message: 'Les données de présence à l’entraînement ou aux matchs sont manquantes.',
+        className: 'border-border bg-muted text-foreground',
+      }
+    : stats.trainingRate > 75 && matchPresenceRate > 75
+      ? {
+          title: 'Bravo, belle assiduité !',
+          message: 'Une belle régularité aux entraînements et aux matchs.',
+          className: 'border-emerald-300 bg-emerald-100 text-emerald-950',
+        }
+      : {
+          title: 'On continue les efforts !',
+          message: 'Chaque présence compte, continue comme ça !',
+          className: 'border-amber-300 bg-amber-100 text-amber-950',
+        }
   const minutesPerMatch = stats.matchesCalled ? Math.round((stats.minutes ?? 0) / stats.matchesCalled) : null
   const tiles = [
-    { label: 'Matchs convoqué', value: display(stats.matchesCalled) },
     { label: 'Titulaire', value: display(stats.starts) },
     { label: 'Remplaçant', value: display(stats.subs) },
     { label: 'Minutes jouées', value: display(stats.minutes) },
     { label: 'Minutes / match', value: display(minutesPerMatch) },
     { label: 'Buts', value: display(stats.goals) },
     { label: 'Passes décisives', value: display(stats.assists) },
-    { label: 'Indice IRE', value: stats.ire !== null ? stats.ire.toFixed(2).replace('.', ',') : '—' },
   ]
 
   return (
@@ -177,18 +185,14 @@ export function PlayerCard({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
+      <div className="grid grid-cols-1 gap-2">
         <div className="rounded-lg border border-accent/40 bg-card/90 px-3 py-2.5">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-primary/65">Anniversaire</p>
           <p className="mt-1 font-mono text-sm font-bold text-primary">{player?.birthDate ?? 'Non renseigné'}</p>
         </div>
-        <div className="rounded-lg border border-accent/40 bg-card/90 px-3 py-2.5">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-primary/65">Âge</p>
-          <p className="mt-1 font-mono text-sm font-bold text-primary">{playerAge !== null ? `${playerAge} ans` : '—'}</p>
-        </div>
       </div>
 
-      <dl className="grid grid-cols-3 gap-1.5 rounded-xl border border-accent/40 bg-card/80 p-2">
+      <dl className="grid grid-cols-2 gap-1.5 rounded-xl border border-accent/40 bg-card/80 p-2">
         <div className="min-w-0 px-1.5 py-1 text-center">
           <dt className="text-[9px] font-semibold uppercase leading-tight tracking-wide text-primary/65 sm:text-[10px]">
             Entraînement
@@ -197,7 +201,7 @@ export function PlayerCard({
             {stats.trainingRate !== null ? `${stats.trainingRate}%` : '—'}
           </dd>
         </div>
-        <div className="min-w-0 border-x border-accent/30 px-1.5 py-1 text-center">
+        <div className="min-w-0 border-l border-accent/30 px-1.5 py-1 text-center">
           <dt className="text-[9px] font-semibold uppercase leading-tight tracking-wide text-primary/65 sm:text-[10px]">
             Présence samedi
           </dt>
@@ -205,15 +209,28 @@ export function PlayerCard({
             {matchPresenceRate !== null ? `${matchPresenceRate}%` : '—'}
           </dd>
         </div>
-        <div className="min-w-0 px-1.5 py-1 text-center">
+        <div className="min-w-0 border-t border-accent/30 px-1.5 py-1 text-center">
           <dt className="text-[9px] font-semibold uppercase leading-tight tracking-wide text-primary/65 sm:text-[10px]">
-            Convocation / présence
+            Taux de convocation samedi
+          </dt>
+          <dd className="mt-1 font-mono text-sm font-bold text-primary">
+            {saturdayCallUpRate !== null ? `${saturdayCallUpRate}%` : '—'}
+          </dd>
+        </div>
+        <div className="min-w-0 border-l border-t border-accent/30 px-1.5 py-1 text-center">
+          <dt className="text-[9px] font-semibold uppercase leading-tight tracking-wide text-primary/65 sm:text-[10px]">
+            IRE
           </dt>
           <dd className="mt-1 font-mono text-sm font-bold text-primary">
             {stats.ire !== null ? stats.ire.toFixed(2).replace('.', ',') : '—'}
           </dd>
         </div>
       </dl>
+
+      <div role="status" className={`rounded-xl border px-3 py-2.5 ${encouragement.className}`}>
+        <p className="text-sm font-bold">{encouragement.title}</p>
+        <p className="mt-0.5 text-xs opacity-90">{encouragement.message}</p>
+      </div>
 
       {convocation && <SaturdaySection convocation={convocation} />}
 

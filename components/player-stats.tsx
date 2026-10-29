@@ -123,18 +123,15 @@ export function PlayerCard({
     ? {
         title: 'Bilan de présence indisponible',
         message: 'Les données de présence à l’entraînement ou aux matchs sont manquantes.',
-        className: 'border-border bg-muted text-foreground',
       }
     : stats.trainingRate > 75 && matchPresenceRate > 75
       ? {
           title: 'Bravo, belle assiduité !',
           message: 'Une belle régularité aux entraînements et aux matchs.',
-          className: 'border-emerald-300 bg-emerald-100 text-emerald-950',
         }
       : {
           title: 'On continue les efforts !',
           message: 'Chaque présence compte, continue comme ça !',
-          className: 'border-amber-300 bg-amber-100 text-amber-950',
         }
   const minutesPerMatch = stats.matchesCalled ? Math.round((stats.minutes ?? 0) / stats.matchesCalled) : null
   const tiles = [
@@ -147,22 +144,17 @@ export function PlayerCard({
   ]
 
   return (
-    <div
+    <article
       aria-live="polite"
-      className="bg-accent p-[2px] drop-shadow-[0_8px_12px_rgba(0,0,0,0.18)]"
-      style={{ clipPath: 'polygon(0 0, 100% 0, 100% 94%, 50% 100%, 0 94%)' }}
+      className="relative isolate flex flex-col gap-3 overflow-hidden rounded-2xl border-2 border-[oklch(0.8_0.08_85)] bg-card p-3 shadow-lg sm:p-4"
     >
-      <article
-        className="relative isolate flex flex-col gap-4 overflow-hidden bg-gradient-to-br from-secondary via-card to-accent/15 px-4 pt-4 pb-14"
-        style={{ clipPath: 'polygon(0 0, 100% 0, 100% 94%, 50% 100%, 0 94%)' }}
-      >
-      <div aria-hidden="true" className="pointer-events-none absolute -top-16 -right-14 -z-10 size-48 rounded-full bg-accent/20 blur-3xl" />
-      <header className="-mx-4 -mt-4 flex items-center justify-between gap-3 bg-gradient-to-r from-primary via-primary to-[oklch(0.32_0.06_272)] px-4 py-3 text-primary-foreground">
+      <div aria-hidden="true" className="pointer-events-none absolute -top-16 -right-16 -z-10 size-40 rounded-full bg-[oklch(0.8_0.08_85)]/20 blur-3xl" />
+      <header className="-mx-3 -mt-3 flex items-center justify-between gap-3 border-b-4 border-[oklch(0.8_0.08_85)] bg-[oklch(0.24_0.07_272)] px-3 py-3 text-white sm:-mx-4 sm:-mt-4 sm:px-4">
         <div className="flex items-center gap-3">
-          <ClubCrest className="size-11 ring-2 ring-accent" />
+          <ClubCrest className="size-11 ring-2 ring-[oklch(0.8_0.08_85)]" />
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-accent">ES Genech · U11</p>
-            <p className="mt-0.5 text-xs font-medium text-primary-foreground/75">Fiche joueur</p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[oklch(0.8_0.08_85)]">ES Genech · U11</p>
+            <p className="mt-0.5 text-xs font-medium text-white/75">Fiche joueur</p>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
@@ -170,83 +162,79 @@ export function PlayerCard({
         </div>
       </header>
 
-      <div className="flex items-center gap-4 py-1">
-        <div className="flex size-24 shrink-0 flex-col items-center justify-center rounded-2xl border-2 border-accent bg-primary px-2 text-center text-primary-foreground shadow-md">
-          <span className="text-xs font-black uppercase tracking-[0.16em] text-accent">
+      <div className="flex items-center gap-3 rounded-xl bg-secondary/60 p-3">
+        <div className="flex size-14 shrink-0 flex-col items-center justify-center rounded-xl border border-[oklch(0.8_0.08_85)] bg-[oklch(0.24_0.07_272)] px-1 text-center text-white shadow-sm">
+          <span className="text-[9px] font-bold uppercase tracking-wider text-[oklch(0.8_0.08_85)]">Poste</span>
+          <span className="mt-0.5 text-xs font-black uppercase leading-tight">
             {player?.position ?? 'Joueur'}
           </span>
         </div>
-        <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/65">Joueur</p>
-          <h3 className="mt-1 break-words text-xl font-black uppercase leading-tight tracking-wide text-primary">
+        <div className="min-w-0 flex-1">
+          <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Joueur</p>
+          <h3 className="mt-0.5 break-words text-lg font-black uppercase leading-tight tracking-wide text-primary">
             {playerName}
           </h3>
-          <div className="mt-2 h-1 w-14 rounded-full bg-accent" />
+          <p className="mt-1 text-xs text-muted-foreground">{player?.birthDate ?? 'Date de naissance non renseignée'}</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-2">
-        <div className="rounded-lg border border-accent/40 bg-card/90 px-3 py-2.5">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-primary/65">Anniversaire</p>
-          <p className="mt-1 font-mono text-sm font-bold text-primary">{player?.birthDate ?? 'Non renseigné'}</p>
-        </div>
-      </div>
-
-      <dl className="grid grid-cols-2 gap-1.5 rounded-xl border border-accent/40 bg-card/80 p-2">
-        <div className="min-w-0 px-1.5 py-1 text-center">
-          <dt className="text-[9px] font-semibold uppercase leading-tight tracking-wide text-primary/65 sm:text-[10px]">
-            Entraînement
+      <dl className="grid grid-cols-2 gap-2">
+        <div className="min-w-0 rounded-xl border border-accent/50 border-t-2 border-t-[oklch(0.8_0.08_85)] bg-card px-2 py-2.5 text-center shadow-sm">
+          <dt className="text-[9px] font-bold uppercase leading-tight tracking-wide text-muted-foreground sm:text-[10px]">
+            Présence entraînement
           </dt>
-          <dd className="mt-1 font-mono text-sm font-bold text-primary">
+          <dd className="mt-1 font-mono text-xl font-black text-primary">
             {stats.trainingRate !== null ? `${stats.trainingRate}%` : '—'}
           </dd>
         </div>
-        <div className="min-w-0 border-l border-accent/30 px-1.5 py-1 text-center">
-          <dt className="text-[9px] font-semibold uppercase leading-tight tracking-wide text-primary/65 sm:text-[10px]">
+        <div className="min-w-0 rounded-xl border border-accent/50 border-t-2 border-t-[oklch(0.8_0.08_85)] bg-card px-2 py-2.5 text-center shadow-sm">
+          <dt className="text-[9px] font-bold uppercase leading-tight tracking-wide text-muted-foreground sm:text-[10px]">
             Présence samedi
           </dt>
-          <dd className="mt-1 font-mono text-sm font-bold text-primary">
+          <dd className="mt-1 font-mono text-xl font-black text-primary">
             {matchPresenceRate !== null ? `${matchPresenceRate}%` : '—'}
           </dd>
         </div>
-        <div className="min-w-0 border-t border-accent/30 px-1.5 py-1 text-center">
-          <dt className="text-[9px] font-semibold uppercase leading-tight tracking-wide text-primary/65 sm:text-[10px]">
-            Taux de convocation samedi
+        <div className="min-w-0 rounded-xl border border-accent/50 border-t-2 border-t-[oklch(0.8_0.08_85)] bg-card px-2 py-2.5 text-center shadow-sm">
+          <dt className="text-[9px] font-bold uppercase leading-tight tracking-wide text-muted-foreground sm:text-[10px]">
+            Convocation samedi
           </dt>
-          <dd className="mt-1 font-mono text-sm font-bold text-primary">
+          <dd className="mt-1 font-mono text-xl font-black text-primary">
             {saturdayCallUpRate !== null ? `${saturdayCallUpRate}%` : '—'}
           </dd>
         </div>
-        <div className="min-w-0 border-l border-t border-accent/30 px-1.5 py-1 text-center">
-          <dt className="text-[9px] font-semibold uppercase leading-tight tracking-wide text-primary/65 sm:text-[10px]">
+        <div className="min-w-0 rounded-xl border border-accent/50 border-t-2 border-t-[oklch(0.8_0.08_85)] bg-card px-2 py-2.5 text-center shadow-sm">
+          <dt className="text-[9px] font-bold uppercase leading-tight tracking-wide text-muted-foreground sm:text-[10px]">
             IRE
           </dt>
-          <dd className="mt-1 font-mono text-sm font-bold text-primary">
+          <dd className="mt-1 font-mono text-xl font-black text-primary">
             {stats.ire !== null ? stats.ire.toFixed(2).replace('.', ',') : '—'}
           </dd>
         </div>
       </dl>
 
-      <div role="status" className={`rounded-xl border px-3 py-2.5 ${encouragement.className}`}>
-        <p className="text-sm font-bold">{encouragement.title}</p>
-        <p className="mt-0.5 text-xs opacity-90">{encouragement.message}</p>
+      <div role="status" className="flex items-center gap-3 rounded-xl border border-[oklch(0.8_0.08_85)]/70 bg-[oklch(0.24_0.07_272)] px-3 py-2.5 text-white shadow-sm">
+        <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[oklch(0.8_0.08_85)] text-sm font-black text-[oklch(0.24_0.07_272)]">★</span>
+        <div>
+          <p className="text-sm font-bold">{encouragement.title}</p>
+          <p className="mt-0.5 text-xs text-white/75">{encouragement.message}</p>
+        </div>
       </div>
 
       {convocation && <SaturdaySection convocation={convocation} />}
 
       <dl className="grid grid-cols-2 gap-2">
         {tiles.map((t) => (
-          <div key={t.label} className="flex min-h-16 flex-col justify-between gap-0.5 rounded-lg border border-accent/25 bg-card/80 p-2.5">
-            <dt className="text-[10px] font-semibold uppercase tracking-wide text-primary/65">{t.label}</dt>
-            <dd className="font-mono text-lg font-bold text-primary">{t.value}</dd>
+          <div key={t.label} className="flex min-h-14 flex-col justify-between gap-0.5 rounded-lg border border-accent/40 bg-secondary/40 p-2.5">
+            <dt className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">{t.label}</dt>
+            <dd className="font-mono text-lg font-black text-primary">{t.value}</dd>
           </div>
         ))}
       </dl>
-      <p className="border-t border-accent/30 pt-3 text-[11px] text-muted-foreground">
+      <p className="rounded-lg border-l-4 border-[oklch(0.8_0.08_85)] bg-secondary/50 px-3 py-2 text-[10px] leading-relaxed text-muted-foreground">
         IRE = taux de convocation ÷ taux de présence. Entre 0,90 et 1,10 inclus : justement convoqué.
       </p>
-      </article>
-    </div>
+    </article>
   )
 }
 

@@ -202,12 +202,19 @@ export async function updateEducatorParentPhones(number: number, fatherPhone: st
   )
   const destinationRowIndex = destinationRow < 0 ? rows.length : destinationRow
   const legacyPhone = destinationRow < 0 ? '' : rows[destinationRow][1] ?? ''
+  const storedFatherPhone = destinationRow < 0 ? '' : rows[destinationRow][2] ?? ''
+  const storedMotherPhone = destinationRow < 0 ? '' : rows[destinationRow][3] ?? ''
   const normalizedFather = fatherPhone.trim()
   const normalizedMother = motherPhone.trim()
   await updateAuthenticatedSheetValues([
     {
       range: "'" + sheetTitle.replace(/'/g, "''") + "'!A" + (destinationRowIndex + 1) + ":D" + (destinationRowIndex + 1),
-      values: [[String(number), legacyPhone, encryptPhone(normalizedFather), encryptPhone(normalizedMother)]],
+      values: [[
+        String(number),
+        legacyPhone,
+        normalizedFather ? encryptPhone(normalizedFather) : storedFatherPhone,
+        normalizedMother ? encryptPhone(normalizedMother) : storedMotherPhone,
+      ]],
     },
   ])
 }

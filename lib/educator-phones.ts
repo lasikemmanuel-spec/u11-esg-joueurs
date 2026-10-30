@@ -1,5 +1,6 @@
 import 'server-only'
 import {
+  ensureAuthenticatedSheetColumnCount,
   ensureAuthenticatedSheetTab,
   getAuthenticatedSheetRows,
   updateAuthenticatedSheetValues,
@@ -192,29 +193,104 @@ export async function migrateEducatorPhones() {
   return migratedCount
 }
 
-export async function updateEducatorParentPhones(number: number, fatherPhone: string, motherPhone: string) {
-  if (!Number.isSafeInteger(number) || number < 0) throw new Error('Numéro de joueur invalide.')
-  if (fatherPhone.length > 80 || motherPhone.length > 80) throw new Error('Le numéro de téléphone est trop long.')
+function getParentPhoneColumns(rows: string[][], headerIndex: number) {
+  const header = rows[headerIndex].map((cell) =>
+    cell.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr-FR').trim(),
+  )
+  const findColumn = (parent: 'pere' | 'mere') =>
+    header.findIndex((cell) => new RegExp(`^(?:telephone|tel|portable|mobile)\\s+(?:du\\s+)?${parent}$`).test(cell))
 
-  const { sheetTitle, rows } = await getPhoneTabRows()
+  let fatherIndex = findColumn('pere')
+  let motherIndex = findColumn('mere')
+  let nextColumn = 0
+  header.forEach((cell, index) => {
+    if (cell) nextColumn = index + 1
+  })
+  if (fatherIndex < 0) fatherIndex = nextColumn++
+  if (motherIndex < 0) motherIndex = nextColumn++
+  return { fatherIndex, motherIndex }
+}
+
+export async function updateEducatorParentPhone(
+  number: number,
+  parent: 'father' | 'mother',
+  phone: string,
+) {
+  if (!Number.isSafeInteger(number) || number < 0) throw new Error('Numéro de joueur invalide.')
+  if (parent !== 'father' && parent !== 'mother') throw new Error('Parent invalide.')
+  if (phone.length > 80) throw new Error('Le numéro de téléphone est trop long.')
+
+  const [{ sheetTitle, rows }, source] = await Promise.all([
+    getPhoneTabRows(),
+    getAuthenticatedSheetRows('Joueurs'),
+  ])
+  const { headerIndex, numberIndex, phoneIndex } = getPhoneSheetLayout(source.rows)
+  const { fatherIndex, motherIndex } = getParentPhoneColumns(source.rows, headerIndex)
+  const requiredColumns = Math.max(fatherIndex, motherIndex) + 1
+  await ensureAuthenticatedSheetColumnCount(source.sheetTitle, requiredColumns)
+
+  const sourceRowIndex = source.rows.findIndex(
+    (row, index) => index > headerIndex && Number.parseInt(row[numberIndex] ?? '', 10) === number,
+  )
+  if (sourceRowIndex < 0) throw new Error(`Joueur ${number} introuvable dans l’onglet Joueurs.`)
+
   const destinationRow = rows.findIndex(
     (row, index) => index > 0 && Number.parseInt(row[0] ?? '', 10) === number,
   )
-  const destinationRowIndex = destinationRow < 0 ? rows.length : destinationRow
-  const legacyPhone = destinationRow < 0 ? '' : rows[destinationRow][1] ?? ''
-  const storedFatherPhone = destinationRow < 0 ? '' : rows[destinationRow][2] ?? ''
-  const storedMotherPhone = destinationRow < 0 ? '' : rows[destinationRow][3] ?? ''
-  const normalizedFather = fatherPhone.trim()
-  const normalizedMother = motherPhone.trim()
-  await updateAuthenticatedSheetValues([
+  const destinationRowIndex = destinationRow < 0 ? Math.max(rows.length, 1) : destinationRow
+  const storedLegacyPhone = destinationRow < 0 ? '' : rows[destinationRow][1] ?? ''
+  const sourceLegacyPhone = source.rows[sourceRowIndex][phoneIndex] ?? ''
+  const legacyPhone = decryptPhone(storedLegacyPhone || sourceLegacyPhone).trim()
+  const storedFatherPhone = destinationRow < 0
+    ? source.rows[sourceRowIndex][fatherIndex] ?? ''
+    : rows[destinationRow][2] || source.rows[sourceRowIndex][fatherIndex] || ''
+  const storedMotherPhone = destinationRow < 0
+    ? source.rows[sourceRowIndex][motherIndex] ?? ''
+    : rows[destinationRow][3] || source.rows[sourceRowIndex][motherIndex] || ''
+  const fatherPhone = parent === 'father' ? phone.trim() : decryptPhone(storedFatherPhone).trim()
+  const motherPhone = parent === 'mother' ? phone.trim() : decryptPhone(storedMotherPhone).trim()
+
+  const updates: Array<{ range: string; values: string[][] }> = [
     {
       range: "'" + sheetTitle.replace(/'/g, "''") + "'!A" + (destinationRowIndex + 1) + ":D" + (destinationRowIndex + 1),
       values: [[
         String(number),
-        legacyPhone,
-        normalizedFather ? encryptPhone(normalizedFather) : storedFatherPhone,
-        normalizedMother ? encryptPhone(normalizedMother) : storedMotherPhone,
+        encryptPhone(legacyPhone),
+        encryptPhone(fatherPhone),
+        encryptPhone(motherPhone),
       ]],
     },
-  ])
+  ]
+  if (rows.length === 0 || rows[0]?.[1] === LEGACY_PHONE_TAB_HEADERS[1]) {
+    updates.push({
+      range: "'" + sheetTitle.replace(/'/g, "''") + "'!A1:D1",
+      values: [PHONE_TAB_HEADERS],
+    })
+  }
+  const sourceHeaderRowIndex = headerIndex
+  const sourceRowSheetIndex = sourceRowIndex
+  updates.push(
+    {
+      range: phoneCellRange(source.sheetTitle, sourceHeaderRowIndex, fatherIndex),
+      values: [['Téléphone père']],
+    },
+    {
+      range: phoneCellRange(source.sheetTitle, sourceHeaderRowIndex, motherIndex),
+      values: [['Téléphone mère']],
+    },
+    {
+      range: phoneCellRange(source.sheetTitle, sourceRowSheetIndex, fatherIndex),
+      values: [[encryptPhone(fatherPhone)]],
+    },
+    {
+      range: phoneCellRange(source.sheetTitle, sourceRowSheetIndex, motherIndex),
+      values: [[encryptPhone(motherPhone)]],
+    },
+    {
+      range: phoneCellRange(source.sheetTitle, sourceRowSheetIndex, phoneIndex),
+      values: [[encryptPhone(legacyPhone)]],
+    },
+  )
+
+  await updateAuthenticatedSheetValues(updates)
 }

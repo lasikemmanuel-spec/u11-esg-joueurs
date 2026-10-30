@@ -3,7 +3,7 @@ import { getEducatorSession, isSameOriginRequest } from '@/lib/educator-auth'
 import {
   getEducatorPhones,
   PhoneMigrationRequiredError,
-  updateEducatorPhone,
+  updateEducatorParentPhones,
 } from '@/lib/educator-phones'
 
 export const runtime = 'nodejs'
@@ -47,18 +47,22 @@ export async function PUT(request: Request) {
     return jsonResponse({ error: 'Requête trop volumineuse.' }, 413)
   }
 
-  let input: { number?: unknown; phone?: unknown }
+  let input: { number?: unknown; fatherPhone?: unknown; motherPhone?: unknown }
   try {
     input = await request.json()
   } catch {
     return jsonResponse({ error: 'Coordonnée invalide.' }, 400)
   }
-  if (typeof input.number !== 'number' || typeof input.phone !== 'string') {
+  if (
+    typeof input.number !== 'number' ||
+    typeof input.fatherPhone !== 'string' ||
+    typeof input.motherPhone !== 'string'
+  ) {
     return jsonResponse({ error: 'Coordonnée invalide.' }, 400)
   }
 
   try {
-    await updateEducatorPhone(input.number, input.phone)
+    await updateEducatorParentPhones(input.number, input.fatherPhone, input.motherPhone)
     return jsonResponse({ ok: true })
   } catch (error) {
     console.error('Erreur de mise à jour du téléphone éducateur:', error)

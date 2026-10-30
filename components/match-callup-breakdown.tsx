@@ -366,9 +366,9 @@ export function MatchCallupBreakdown({
                     </th>
                     {kind === 'cohesion' ? (
                       <td colSpan={2} className="border-l border-border/70 px-0.5 py-1.5 sm:px-2">
-                        <span className="block font-mono text-sm font-black text-primary sm:text-base">{invitedCount}</span>
+                        <span className="block font-mono text-sm font-black text-primary sm:text-base">{values.presents}</span>
                         <span className="block text-[8px] font-semibold uppercase leading-tight text-muted-foreground sm:text-[10px]">
-                          Invités · E1 + E2
+                          Présents · E1 + E2
                         </span>
                       </td>
                     ) : kind === 'combined-tournament' ? (
@@ -397,7 +397,12 @@ export function MatchCallupBreakdown({
                       ))
                     )}
                     <td className="border-l border-emerald-200/70 bg-emerald-50/60 px-0.5 py-1.5 dark:border-emerald-900/50 dark:bg-emerald-950/20 sm:px-2">
-                      <span className="font-mono text-sm font-black text-emerald-800 dark:text-emerald-200 sm:text-base">{values.presents}</span>
+                      <span className="block font-mono text-sm font-black text-emerald-800 dark:text-emerald-200 sm:text-base">{values.presents}</span>
+                      {kind === 'cohesion' && invitedCount > 0 && (
+                        <span className="block text-[8px] font-semibold leading-tight text-emerald-800 dark:text-emerald-200 sm:text-[10px]">
+                          {Math.round(values.presents / invitedCount * 100)}% présents
+                        </span>
+                      )}
                     </td>
                   </tr>
                 ))}

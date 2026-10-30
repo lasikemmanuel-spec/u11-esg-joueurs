@@ -1,5 +1,5 @@
 import crypto from 'node:crypto'
-import { parseCsv } from '@/lib/players'
+import { parseCsv } from '@/lib/csv'
 
 export const SHEET_ID =
   process.env.GOOGLE_SHEET_ID || '1zDC6a-hTSKFV2E5JHvj382q6eW9-xURii-5r5O_L4n4'
@@ -31,7 +31,7 @@ function getServiceAccountJwt(clientEmail: string, privateKey: string): string {
   const header = { alg: 'RS256', typ: 'JWT' }
   const payload = {
     iss: clientEmail,
-    scope: 'https://www.googleapis.com/auth/spreadsheets.readonly',
+    scope: 'https://www.googleapis.com/auth/spreadsheets',
     aud: 'https://oauth2.googleapis.com/token',
     exp: now + 3600,
     iat: now,
@@ -248,4 +248,116 @@ export async function getSheetRows(tabName?: string): Promise<string[][]> {
 
   const text = await res.text()
   return parseCsv(text)
+}
+
+export async function getAuthenticatedSheetRows(tabName?: string) {
+  const accessToken = await getGoogleAccessToken()
+  if (!accessToken) throw new Error('Authentification Google indisponible pour les coordonnées éducateurs.')
+
+  const metadataResponse = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties.title`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: 'no-store',
+    },
+  )
+  if (!metadataResponse.ok) {
+    throw new Error(`Impossible de lire les onglets Google Sheets (${metadataResponse.status}).`)
+  }
+
+  const metadata = (await metadataResponse.json()) as {
+    sheets?: Array<{ properties?: { title?: string } }>
+  }
+  const normalizeTitle = (value: string) =>
+    value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr-FR')
+  const sheetTitle = tabName
+    ? metadata.sheets?.find((sheet) =>
+        normalizeTitle(sheet.properties?.title ?? '').includes(normalizeTitle(tabName)),
+      )?.properties?.title
+    : metadata.sheets?.[0]?.properties?.title
+  if (!sheetTitle) throw new Error('Aucun onglet Google Sheets trouvé.')
+
+  const range = `'${sheetTitle.replace(/'/g, "''")}'`
+  const response = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}?valueRenderOption=FORMATTED_VALUE`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: 'no-store',
+    },
+  )
+  if (!response.ok) {
+    throw new Error(`Impossible de lire l’onglet protégé (${response.status}).`)
+  }
+
+  const data = (await response.json()) as { values?: unknown[][] }
+  const rows = data.values ?? []
+  const maxColumns = Math.max(...rows.map((row) => row.length), 40)
+  return {
+    sheetTitle,
+    rows: rows.map((row) => {
+      const cells = row.map((cell) => cell === null || cell === undefined ? '' : String(cell))
+      while (cells.length < maxColumns) cells.push('')
+      return cells
+    }),
+  }
+}
+
+export async function ensureAuthenticatedSheetTab(title: string) {
+  const accessToken = await getGoogleAccessToken()
+  if (!accessToken) throw new Error('Authentification Google indisponible pour créer l’onglet protégé.')
+
+  const metadataResponse = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties.title`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: 'no-store',
+    },
+  )
+  if (!metadataResponse.ok) {
+    throw new Error(`Impossible de vérifier les onglets Google Sheets (${metadataResponse.status}).`)
+  }
+
+  const metadata = (await metadataResponse.json()) as {
+    sheets?: Array<{ properties?: { title?: string } }>
+  }
+  if (metadata.sheets?.some((sheet) => sheet.properties?.title === title)) return
+
+  const response = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}:batchUpdate`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ requests: [{ addSheet: { properties: { title } } }] }),
+      cache: 'no-store',
+    },
+  )
+  if (!response.ok) {
+    throw new Error(`Impossible de créer l’onglet protégé (${response.status}).`)
+  }
+}
+
+export async function updateAuthenticatedSheetValues(
+  updates: Array<{ range: string; values: string[][] }>,
+) {
+  const accessToken = await getGoogleAccessToken()
+  if (!accessToken) throw new Error('Authentification Google indisponible pour modifier les coordonnées.')
+
+  const response = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchUpdate?valueInputOption=RAW`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ valueInputOption: 'RAW', data: updates }),
+      cache: 'no-store',
+    },
+  )
+  if (!response.ok) {
+    throw new Error(`Impossible de mettre à jour l’onglet protégé (${response.status}).`)
+  }
 }

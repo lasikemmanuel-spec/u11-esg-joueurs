@@ -1,8 +1,10 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import { Search, Copy, Check, Users, Award, ChevronDown, ChevronUp } from 'lucide-react'
+import { useState, useMemo, useEffect, useCallback, type FormEvent } from 'react'
+import { Search, Copy, Check, Users, Award, LockKeyhole, LogOut, Phone, Save, ChevronDown, ChevronUp } from 'lucide-react'
 import type { Player } from '@/lib/players'
+
+type EducatorIdentity = { displayName: string; role: 'educator' | 'admin' }
 
 const normalize = (value: string) =>
   value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr-FR')
@@ -20,6 +22,132 @@ export function EducatorRoster({ players }: { players: Player[] }) {
   const [query, setQuery] = useState('')
   const [expandedPositions, setExpandedPositions] = useState<Set<string>>(() => new Set())
   const [copiedId, setCopiedId] = useState<string | null>(null)
+  const [educator, setEducator] = useState<EducatorIdentity | null>(null)
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [phones, setPhones] = useState<Record<number, string>>({})
+  const [phoneDrafts, setPhoneDrafts] = useState<Record<number, string>>({})
+  const [migrationRequired, setMigrationRequired] = useState(false)
+  const [sessionChecked, setSessionChecked] = useState(false)
+  const [requestPending, setRequestPending] = useState(false)
+  const [authError, setAuthError] = useState('')
+  const [notice, setNotice] = useState('')
+
+  const loadPhoneContacts = useCallback(async () => {
+    setRequestPending(true)
+    setAuthError('')
+    try {
+      const response = await fetch('/api/educators/contacts', { cache: 'no-store' })
+      const result = await response.json()
+      if (response.status === 401) {
+        setEducator(null)
+        setPhones({})
+        setPhoneDrafts({})
+        return
+      }
+      if (response.status === 409 && result.migrationRequired) {
+        setEducator(result.educator)
+        setPhones({})
+        setPhoneDrafts({})
+        setMigrationRequired(true)
+        return
+      }
+      if (!response.ok) throw new Error(result.error ?? 'Impossible de charger les coordonnées.')
+
+      const nextPhones = Object.fromEntries(
+        (result.phones as Array<{ number: number; phone: string }>).map(({ number, phone }) => [number, phone]),
+      )
+      setEducator(result.educator)
+      setPhones(nextPhones)
+      setPhoneDrafts(nextPhones)
+      setMigrationRequired(false)
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Impossible de charger les coordonnées.')
+    } finally {
+      setRequestPending(false)
+      setSessionChecked(true)
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadPhoneContacts()
+  }, [loadPhoneContacts])
+
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setRequestPending(true)
+    setAuthError('')
+    try {
+      const response = await fetch('/api/educators/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error ?? 'Connexion impossible.')
+      setEducator(result.educator)
+      setPassword('')
+      await loadPhoneContacts()
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Connexion impossible.')
+    } finally {
+      setRequestPending(false)
+    }
+  }
+
+  const handleLogout = async () => {
+    setRequestPending(true)
+    try {
+      const response = await fetch('/api/educators/session', { method: 'DELETE' })
+      if (!response.ok) throw new Error('Déconnexion impossible.')
+      setEducator(null)
+      setPhones({})
+      setPhoneDrafts({})
+      setMigrationRequired(false)
+      setAuthError('')
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Déconnexion impossible.')
+    } finally {
+      setRequestPending(false)
+    }
+  }
+
+  const handlePhoneMigration = async () => {
+    setRequestPending(true)
+    setAuthError('')
+    try {
+      const response = await fetch('/api/educators/contacts/migrate', { method: 'POST' })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error ?? 'Migration impossible.')
+      setNotice(`${result.migratedCount} numéro${result.migratedCount !== 1 ? 's' : ''} copié${result.migratedCount !== 1 ? 's' : ''} dans l’onglet éducateurs.`)
+      await loadPhoneContacts()
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Migration impossible.')
+    } finally {
+      setRequestPending(false)
+    }
+  }
+
+  const handleSavePhone = async (number: number) => {
+    setRequestPending(true)
+    setAuthError('')
+    setNotice('')
+    try {
+      const response = await fetch('/api/educators/contacts', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ number, phone: phoneDrafts[number] ?? '' }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error ?? 'Enregistrement impossible.')
+      await loadPhoneContacts()
+      setNotice('Téléphone enregistré.')
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Enregistrement impossible.')
+    } finally {
+      setRequestPending(false)
+    }
+  }
 
   const groups = useMemo(() => {
     const searchTerms = normalize(query.trim()).split(/\s+/).filter(Boolean)
@@ -53,6 +181,92 @@ export function EducatorRoster({ players }: { players: Player[] }) {
   const filteredCount = groups.reduce((count, [, list]) => count + list.length, 0)
   const allGroupsExpanded = groups.length > 0 && groups.every(([position]) => expandedPositions.has(position))
 
+  if (!sessionChecked) {
+    return (
+      <section aria-live="polite" className="rounded-2xl border border-accent/50 bg-card p-6 text-center text-sm text-muted-foreground">
+        Vérification de la connexion…
+      </section>
+    )
+  }
+
+  if (!educator) {
+    return (
+      <section aria-labelledby="educator-login-title" className="mx-auto flex w-full max-w-md flex-col gap-4 rounded-2xl border border-accent/60 bg-gradient-to-br from-secondary/40 via-card to-card p-5 shadow-sm">
+        <div className="flex items-center gap-3">
+          <div className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
+            <LockKeyhole className="size-5" />
+          </div>
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">ES Genech · U11</p>
+            <h2 id="educator-login-title" className="text-xl font-black text-primary">Espace éducateurs</h2>
+          </div>
+        </div>
+        <form onSubmit={handleLogin} className="flex flex-col gap-3">
+          <label className="flex flex-col gap-1.5 text-sm font-medium">
+            Identifiant
+            <input
+              autoComplete="username"
+              value={username}
+              onChange={(event) => setUsername(event.target.value)}
+              required
+              className="h-10 rounded-xl border border-accent/40 bg-background px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm font-medium">
+            Mot de passe
+            <input
+              type="password"
+              autoComplete="current-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+              className="h-10 rounded-xl border border-accent/40 bg-background px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </label>
+          {authError && <p role="alert" className="text-sm font-medium text-destructive">{authError}</p>}
+          <button
+            type="submit"
+            disabled={requestPending}
+            className="h-10 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+          >
+            {requestPending ? 'Connexion…' : 'Se connecter'}
+          </button>
+        </form>
+      </section>
+    )
+  }
+
+  if (migrationRequired) {
+    return (
+      <section aria-labelledby="phone-migration-title" className="mx-auto flex w-full max-w-xl flex-col gap-4 rounded-2xl border border-accent/60 bg-card p-5 shadow-sm">
+        <div>
+          <h2 id="phone-migration-title" className="text-lg font-black text-primary">Création de l’onglet téléphones</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Un onglet « Téléphones éducateurs » sera ajouté au classeur actuel et les numéros y seront copiés. L’onglet « Joueurs » restera inchangé.
+          </p>
+        </div>
+        {educator.role === 'admin' ? (
+          <button
+            type="button"
+            onClick={handlePhoneMigration}
+            disabled={requestPending}
+            className="min-h-10 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60"
+          >
+            {requestPending ? 'Création et copie…' : 'Créer l’onglet et copier les numéros'}
+          </button>
+        ) : (
+          <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+            Demandez à un administrateur éducateur de créer l’onglet des téléphones.
+          </p>
+        )}
+        {authError && <p role="alert" className="text-sm font-medium text-destructive">{authError}</p>}
+        <button type="button" onClick={handleLogout} className="self-start text-sm font-semibold text-muted-foreground underline">
+          Se déconnecter
+        </button>
+      </section>
+    )
+  }
+
   const handleCopy = (licenseNumber: string) => {
     navigator.clipboard.writeText(licenseNumber)
     setCopiedId(licenseNumber)
@@ -61,7 +275,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
 
   return (
     <section aria-label="Liste des éducateurs" className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-end gap-2">
+      <div className="flex flex-wrap items-center justify-end gap-2 rounded-xl border border-accent/40 bg-card p-3">
         <div className="flex items-center gap-1.5 rounded-full border border-accent/40 bg-card px-3 py-1.5 text-xs font-semibold">
           <Users className="size-3.5 text-primary" />
           <span>
@@ -74,7 +288,21 @@ export function EducatorRoster({ players }: { players: Player[] }) {
             <strong className="text-emerald-600 dark:text-emerald-400">{licensedCount}</strong> licences
           </span>
         </div>
+        <span className="text-xs text-muted-foreground">{educator.displayName}</span>
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={requestPending}
+          aria-label="Se déconnecter"
+          title="Se déconnecter"
+          className="inline-flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-accent/40"
+        >
+          <LogOut className="size-4" />
+        </button>
       </div>
+
+      {authError && <p role="alert" className="text-sm font-medium text-destructive">{authError}</p>}
+      {notice && <p role="status" className="text-sm font-medium text-emerald-700 dark:text-emerald-300">{notice}</p>}
 
       <div className="flex items-center gap-2">
         {groups.length > 0 && (
@@ -144,7 +372,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
                     <span className="truncate font-semibold">{position}</span>
                   </span>
                   <span className="rounded-full bg-accent px-2 py-0.5 font-mono text-xs font-bold text-accent-foreground">
-                  {list.length}
+                    {list.length}
                   </span>
                 </button>
               </h3>
@@ -152,6 +380,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
                 {list.map((player) => {
                   const licenseNumber = player.licenseNumber
                   const isCopied = licenseNumber && copiedId === licenseNumber
+                  const phone = phones[player.number]
 
                   return (
                     <li key={player.number} className="flex min-w-0 items-center justify-between gap-2 px-3 py-2.5 transition-colors hover:bg-muted/40">
@@ -162,6 +391,46 @@ export function EducatorRoster({ players }: { players: Player[] }) {
                         <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
                           {licenseNumber ?? 'Licence non renseignée'}
                         </p>
+                        {educator.role === 'admin' ? (
+                          <div className="mt-1.5 flex max-w-sm items-center gap-1.5">
+                            <label htmlFor={`phone-${player.number}`} className="sr-only">
+                              Téléphone de {player.firstName} {player.lastName}
+                            </label>
+                            <input
+                              id={`phone-${player.number}`}
+                              type="tel"
+                              autoComplete="off"
+                              value={phoneDrafts[player.number] ?? ''}
+                              onChange={(event) => setPhoneDrafts((current) => ({
+                                ...current,
+                                [player.number]: event.target.value,
+                              }))}
+                              placeholder="Téléphone"
+                              maxLength={80}
+                              className="h-8 min-w-0 flex-1 rounded-md border border-accent/40 bg-background px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleSavePhone(player.number)}
+                              disabled={requestPending || (phoneDrafts[player.number] ?? '') === (phone ?? '')}
+                              aria-label={`Enregistrer le téléphone de ${player.firstName} ${player.lastName}`}
+                              title="Enregistrer le téléphone"
+                              className="inline-flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground disabled:opacity-40"
+                            >
+                              <Save className="size-3.5" />
+                            </button>
+                          </div>
+                        ) : phone ? (
+                          <a
+                            href={`tel:${phone.replace(/[^\d+]/g, '')}`}
+                            className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                          >
+                            <Phone aria-hidden="true" className="size-3" />
+                            {phone}
+                          </a>
+                        ) : (
+                          <p className="mt-1 text-xs text-muted-foreground">Téléphone non renseigné</p>
+                        )}
                       </div>
                       <div className="shrink-0">
                         {licenseNumber ? (

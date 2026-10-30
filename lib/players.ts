@@ -1,4 +1,5 @@
 import { getSheetRows, SHEET_ID } from '@/lib/google-sheets'
+export { parseCsv } from '@/lib/csv'
 
 export const SHEET_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/edit`
 
@@ -18,45 +19,6 @@ export type Roster = {
   title: string
   players: Player[]
   fetchedAt: string
-}
-
-export function parseCsv(text: string): string[][] {
-  const rows: string[][] = []
-  let row: string[] = []
-  let field = ''
-  let inQuotes = false
-
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i]
-    if (inQuotes) {
-      if (char === '"' && text[i + 1] === '"') {
-        field += '"'
-        i++
-      } else if (char === '"') {
-        inQuotes = false
-      } else {
-        field += char
-      }
-    } else if (char === '"') {
-      inQuotes = true
-    } else if (char === ',') {
-      row.push(field)
-      field = ''
-    } else if (char === '\n' || char === '\r') {
-      if (char === '\r' && text[i + 1] === '\n') i++
-      row.push(field)
-      rows.push(row)
-      row = []
-      field = ''
-    } else {
-      field += char
-    }
-  }
-  if (field || row.length) {
-    row.push(field)
-    rows.push(row)
-  }
-  return rows
 }
 
 const clean = (value: string | undefined) => {

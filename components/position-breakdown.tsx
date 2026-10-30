@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, ChevronUp, Search, Users } from 'lucide-react'
+import { ChevronDown, ChevronUp, Search } from 'lucide-react'
 import { PlayerCard } from '@/components/player-stats'
 import type { Convocation } from '@/lib/convocations'
 import type { Player } from '@/lib/players'
@@ -88,55 +88,48 @@ export function PositionBreakdown({
       aria-label="Effectifs regroupés par poste"
       className="flex flex-col gap-3 rounded-xl border border-accent/60 bg-gradient-to-br from-secondary/30 via-card to-card p-4 shadow-sm"
     >
-      <div className="flex items-center justify-end gap-2">
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-card px-2.5 py-1 text-xs font-semibold text-muted-foreground">
-          <Users aria-hidden="true" className="size-3.5 text-primary" />
-          {matchingPlayers.length} joueur{matchingPlayers.length !== 1 ? 's' : ''}
-        </span>
-        <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-          {sorted.length} poste{sorted.length !== 1 ? 's' : ''}
+      <div className="flex items-center gap-2">
+        {sorted.length > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              if (allGroupsExpanded) {
+                setExpandedPositions(new Set())
+                setSelectedNumber(null)
+              } else {
+                setExpandedPositions(new Set(sorted.map(([position]) => position)))
+              }
+            }}
+            aria-label={allGroupsExpanded ? 'Fermer tous les postes' : 'Ouvrir tous les postes'}
+            title={allGroupsExpanded ? 'Fermer tous les postes' : 'Ouvrir tous les postes'}
+            className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border border-accent/40 bg-card px-2 text-xs font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {allGroupsExpanded ? <ChevronUp aria-hidden="true" className="size-3.5" /> : <ChevronDown aria-hidden="true" className="size-3.5" />}
+            <span>{allGroupsExpanded ? 'Tout −' : 'Tout +'}</span>
+          </button>
+        )}
+        <label className="relative block min-w-0 flex-1">
+          <span className="sr-only">Recherche par joueurs</span>
+          <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="search"
+            aria-label="Recherche par joueurs"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value)
+              setSelectedNumber(null)
+            }}
+            placeholder="Recherche par joueurs"
+            className="h-9 w-full rounded-lg border border-accent/40 bg-background pr-3 pl-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+        </label>
+        <span className="hidden shrink-0 text-xs text-muted-foreground lg:inline">
+          {matchingPlayers.length} joueurs · {sorted.length} postes
         </span>
       </div>
 
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          {sorted.length > 0 && (
-            <button
-              type="button"
-              onClick={() => {
-                if (allGroupsExpanded) {
-                  setExpandedPositions(new Set())
-                  setSelectedNumber(null)
-                } else {
-                  setExpandedPositions(new Set(sorted.map(([position]) => position)))
-                }
-              }}
-              aria-label={allGroupsExpanded ? 'Fermer tous les postes' : 'Ouvrir tous les postes'}
-              title={allGroupsExpanded ? 'Fermer tous les postes' : 'Ouvrir tous les postes'}
-              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border border-accent/40 bg-card px-2 text-xs font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              {allGroupsExpanded ? <ChevronUp aria-hidden="true" className="size-3.5" /> : <ChevronDown aria-hidden="true" className="size-3.5" />}
-              <span>{allGroupsExpanded ? 'Tout −' : 'Tout +'}</span>
-            </button>
-          )}
-          <label className="relative block min-w-0 flex-1">
-            <span className="sr-only">Rechercher par nom ou prénom</span>
-            <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value)
-                setSelectedNumber(null)
-              }}
-              placeholder="Rechercher par nom ou prénom…"
-              className="h-9 w-full rounded-lg border border-accent/40 bg-background pr-3 pl-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
-          </label>
-        </div>
-
-        <div className={`grid items-start gap-4 ${selectedPlayer ? 'xl:grid-cols-[minmax(0,1fr)_320px]' : ''}`}>
-          <div className={`columns-1 gap-3 sm:columns-2 ${selectedPlayer ? '2xl:columns-2' : 'xl:columns-3'}`}>
+      <div className={`roster-player-layout grid items-start gap-4 ${selectedPlayer ? 'has-selected-player' : ''}`}>
+        <div className={`roster-player-groups columns-1 gap-3 sm:columns-2 ${selectedPlayer ? '2xl:columns-2' : 'xl:columns-3'}`}>
             {matchingPlayers.length === 0 && (
               <p className="break-inside-avoid rounded-lg border border-accent/40 bg-card p-3 text-sm text-muted-foreground">
                 {searchTerm
@@ -213,17 +206,16 @@ export function PositionBreakdown({
               </article>
             )})}
           </div>
-          {selectedPlayer && selectedStats && (
-            <div ref={playerCardRef} className="scroll-mt-4 xl:sticky xl:top-6">
-              <PlayerCard
-                stats={selectedStats}
-                player={selectedPlayer}
-                convocation={convocations.find((convocation) => convocation.number === selectedPlayer.number)}
-                matchesPlayed={matchesPlayed}
-              />
-            </div>
-          )}
-        </div>
+        {selectedPlayer && selectedStats && (
+          <div ref={playerCardRef} className="roster-player-card scroll-mt-4 xl:sticky xl:top-6">
+            <PlayerCard
+              stats={selectedStats}
+              player={selectedPlayer}
+              convocation={convocations.find((convocation) => convocation.number === selectedPlayer.number)}
+              matchesPlayed={matchesPlayed}
+            />
+          </div>
+        )}
       </div>
     </section>
   )

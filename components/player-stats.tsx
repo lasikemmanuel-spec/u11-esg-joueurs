@@ -58,7 +58,7 @@ function SaturdaySection({
     .sort((a, b) => (b.rate ?? 0) - (a.rate ?? 0))
 
   return (
-    <div className="flex flex-col gap-3 border-t pt-4">
+    <div className="player-saturday-section flex flex-col gap-3 border-t pt-4">
       <h4 className="text-sm font-semibold">Disponibilité match</h4>
       {availability.map((item) => <RateRow key={item.label} {...item} />)}
 
@@ -177,10 +177,10 @@ export function PlayerCard({
   return (
     <article
       aria-live="polite"
-      className="relative isolate flex flex-col gap-3 overflow-hidden rounded-2xl border-2 border-[oklch(0.8_0.08_85)] bg-card p-3 shadow-lg sm:p-4"
+      className="player-stats-card relative isolate flex flex-col gap-3 overflow-hidden rounded-2xl border-2 border-[oklch(0.8_0.08_85)] bg-card p-3 shadow-lg sm:p-4"
     >
       <div aria-hidden="true" className="pointer-events-none absolute -top-16 -right-16 -z-10 size-40 rounded-full bg-[oklch(0.8_0.08_85)]/20 blur-3xl" />
-      <header className="-mx-3 -mt-3 flex items-center justify-between gap-3 border-b-4 border-[oklch(0.8_0.08_85)] bg-[oklch(0.24_0.07_272)] px-3 py-3 text-white sm:-mx-4 sm:-mt-4 sm:px-4">
+      <header className="player-stats-header -mx-3 -mt-3 flex items-center justify-between gap-3 border-b-4 border-[oklch(0.8_0.08_85)] bg-[oklch(0.24_0.07_272)] px-3 py-3 text-white sm:-mx-4 sm:-mt-4 sm:px-4">
         <div className="flex items-center gap-3">
           <ClubCrest className="size-11 ring-2 ring-[oklch(0.8_0.08_85)]" />
           <div>
@@ -193,7 +193,7 @@ export function PlayerCard({
         </div>
       </header>
 
-      <div className="flex items-center gap-3 rounded-xl bg-secondary/60 p-3">
+      <div className="player-stats-identity flex items-center gap-3 rounded-xl bg-secondary/60 p-3">
         <div className="flex min-h-16 min-w-20 shrink-0 flex-col items-center justify-center rounded-xl border-2 border-[oklch(0.8_0.08_85)] bg-[oklch(0.24_0.07_272)] px-2.5 py-2 text-center text-white shadow-sm">
           <span className="text-sm font-black uppercase leading-tight text-[oklch(0.8_0.08_85)] sm:text-base">
             {player?.position ?? 'Joueur'}
@@ -207,7 +207,7 @@ export function PlayerCard({
         </div>
       </div>
 
-      <div role="status" className="flex items-center gap-3 rounded-xl border border-[oklch(0.8_0.08_85)]/70 bg-[oklch(0.24_0.07_272)] px-3 py-2.5 text-white shadow-sm">
+      <div role="status" className="player-stats-encouragement flex items-center gap-3 rounded-xl border border-[oklch(0.8_0.08_85)]/70 bg-[oklch(0.24_0.07_272)] px-3 py-2.5 text-white shadow-sm">
         <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[oklch(0.8_0.08_85)] text-sm font-black text-[oklch(0.24_0.07_272)]">★</span>
         <div>
           <p className="text-sm font-bold">{encouragement.title}</p>
@@ -215,7 +215,7 @@ export function PlayerCard({
         </div>
       </div>
 
-      <dl className="grid grid-cols-2 gap-2">
+      <dl className="player-stats-summary grid grid-cols-2 gap-2">
         {summaryTiles.map((tile) => (
           <div
             key={tile.label}
@@ -233,7 +233,7 @@ export function PlayerCard({
 
       {convocation && <SaturdaySection convocation={convocation} matchesPlayed={matchesPlayed} />}
 
-      <dl className="grid grid-cols-2 gap-2">
+      <dl className="player-match-stats grid grid-cols-2 gap-2">
         {tiles.map((t) => (
           <div key={t.label} className="flex min-h-14 flex-col justify-between gap-0.5 rounded-lg border border-accent/40 bg-secondary/40 p-2.5">
             <dt className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">{t.label}</dt>

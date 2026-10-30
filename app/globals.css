@@ -161,3 +161,95 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media (orientation: landscape) and (min-width: 640px) {
+  .roster-player-layout.has-selected-player {
+    grid-template-columns: minmax(0, 1fr) minmax(260px, 36%);
+  }
+
+  .roster-player-card {
+    position: sticky;
+    top: 0.5rem;
+    max-height: calc(100dvh - 8rem);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+
+  .player-stats-card {
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .player-stats-header {
+    margin: -0.5rem -0.5rem 0;
+    padding: 0.4rem 0.5rem;
+    border-bottom-width: 2px;
+  }
+
+  .player-stats-header [role='img'] {
+    width: 2rem;
+    height: 2rem;
+  }
+
+  .player-stats-identity {
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .player-stats-identity > div:first-child {
+    min-width: 4rem;
+    min-height: 2.5rem;
+    padding: 0.4rem;
+  }
+
+  .player-stats-identity h3 {
+    font-size: 0.95rem;
+  }
+
+  .player-stats-encouragement {
+    gap: 0.5rem;
+    padding: 0.4rem 0.5rem;
+  }
+
+  .player-stats-encouragement > span {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+
+  .player-stats-encouragement p + p {
+    display: none;
+  }
+
+  .player-stats-summary {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+
+  .player-stats-summary > div {
+    padding: 0.4rem 0.2rem;
+  }
+
+  .player-stats-summary dd {
+    margin-top: 0.2rem;
+    font-size: 1rem;
+  }
+
+  .player-saturday-section {
+    gap: 0.5rem;
+    padding-top: 0.5rem;
+  }
+
+  .player-match-stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+
+  .player-match-stats > div {
+    min-height: 0;
+    padding: 0.4rem;
+  }
+
+  .player-match-stats dd {
+    font-size: 1rem;
+  }
+}

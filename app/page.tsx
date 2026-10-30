@@ -8,6 +8,7 @@ import { getRoster, type Roster } from '@/lib/players'
 import { getStats, type StatsData } from '@/lib/stats'
 import { getConvocations, type ConvocationsData } from '@/lib/convocations'
 import { getMatchResults, type TeamMatchResults } from '@/lib/match-results'
+import { getCohesionDays, type CohesionDay } from '@/lib/cohesion'
 
 export const dynamic = 'force-dynamic'
 
@@ -38,8 +39,10 @@ const fallbackMatchResults: TeamMatchResults = {
   },
 }
 
+const fallbackCohesionDays: CohesionDay[] = []
+
 export default async function Page() {
-  const [roster, stats, convocationsResult, matchResultsResult] = await Promise.all([
+  const [roster, stats, convocationsResult, matchResultsResult, cohesionResult] = await Promise.all([
     getRoster().catch(() => fallbackRoster),
     getStats().catch((error) => {
       console.error('Impossible de charger les statistiques joueurs:', error)
@@ -53,12 +56,17 @@ export default async function Page() {
       console.error('Impossible de charger les résultats des matchs:', error)
       return { data: fallbackMatchResults, error: true }
     }),
+    getCohesionDays().then((data) => ({ data, error: false })).catch((error) => {
+      console.error('Impossible de charger les journées de cohésion:', error)
+      return { data: fallbackCohesionDays, error: true }
+    }),
   ])
   const convocations = convocationsResult.data
   const matchResults = matchResultsResult.data
   const matchDataErrors = [
     ...(convocationsResult.error ? ['convocations'] : []),
     ...(matchResultsResult.error ? ['scores'] : []),
+    ...(cohesionResult.error ? ['cohesion'] : []),
   ]
 
   const updatedAt = new Intl.DateTimeFormat('fr-FR', {
@@ -97,6 +105,7 @@ export default async function Page() {
           matchesPlayed={convocations.matchesPlayed}
           presentCounts={convocations.presentCounts}
           matchResults={matchResults}
+          cohesionDays={cohesionResult.data}
           matchDataErrors={matchDataErrors}
         />
         <DataQualityPanel players={roster.players} />

@@ -1,5 +1,6 @@
 import type { Convocation } from '@/lib/convocations'
 import type { MatchResult, TeamMatchResults } from '@/lib/match-results'
+import type { CohesionDay } from '@/lib/cohesion'
 import { ClubCrest } from '@/components/club-crest'
 
 const PRESENT_STATUSES = new Set(['present'])
@@ -58,15 +59,30 @@ function getMatchFormat(type: string | null) {
   return null
 }
 
+type MatchHistoryRow = {
+  date: string
+  key: string
+  kind: 'match' | 'cohesion' | 'combined-tournament'
+  values: { equipe1: number; equipe2: number; presents: number }
+  formats: {
+    E1: ReturnType<typeof getMatchFormat>
+    E2: ReturnType<typeof getMatchFormat>
+  }
+}
+
 export function MatchCallupBreakdown({
   convocations,
   presentCounts,
   matchResults,
+  cohesionDays,
+  invitedCount,
   dataErrors,
 }: {
   convocations: Convocation[]
   presentCounts: Record<string, number>
   matchResults: TeamMatchResults
+  cohesionDays: CohesionDay[]
+  invitedCount: number
   dataErrors: string[]
 }) {
   const byDate = new Map<string, { equipe1: number; equipe2: number; presents: number }>()
@@ -100,16 +116,33 @@ export function MatchCallupBreakdown({
     }
   }
 
-  const rows = [...byDate.entries()].map(([date, values]) => {
+  const rows: MatchHistoryRow[] = [...byDate.entries()].map(([date, values]) => {
+    const formats = {
+      E1: getMatchFormat(typeByTeamAndDate.E1.get(dateKey(date)) ?? null),
+      E2: getMatchFormat(typeByTeamAndDate.E2.get(dateKey(date)) ?? null),
+    }
     return {
       date,
+      key: `match-${date}`,
+      kind: formats.E1?.label === 'Tournoi' || formats.E2?.label === 'Tournoi'
+        ? 'combined-tournament' as const
+        : 'match' as const,
       values,
-      formats: {
-        E1: getMatchFormat(typeByTeamAndDate.E1.get(dateKey(date)) ?? null),
-        E2: getMatchFormat(typeByTeamAndDate.E2.get(dateKey(date)) ?? null),
-      },
+      formats,
     }
-  }).sort(({ date: a }, { date: b }) => {
+  })
+
+  for (const [index, day] of cohesionDays.entries()) {
+    rows.push({
+      date: day.date,
+      key: `cohesion-${day.date}-${index}`,
+      kind: 'cohesion',
+      values: { equipe1: 0, equipe2: 0, presents: day.presentCount },
+      formats: { E1: null, E2: null },
+    })
+  }
+
+  rows.sort(({ date: a }, { date: b }) => {
     const timeA = sortKey(a)
     const timeB = sortKey(b)
     return Number.isNaN(timeA) || Number.isNaN(timeB)
@@ -148,10 +181,14 @@ export function MatchCallupBreakdown({
     <div className="flex flex-col gap-5">
       {dataErrors.length > 0 && (
         <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-          Certaines données des matchs n’ont pas pu être chargées :
+          Certaines données n’ont pas pu être chargées :
           {' '}
-          {dataErrors.map((source) => source === 'convocations' ? 'convocations' : 'scores').join(' et ')}.
-          Vérifiez que le compte de service GCP peut lire les onglets correspondants du classeur.
+          {dataErrors.map((source) => source === 'convocations'
+            ? 'convocations'
+            : source === 'cohesion'
+              ? 'journées de cohésion'
+              : 'scores').join(' et ')}.
+          Vérifiez que le compte de service GCP peut lire les onglets concernés du classeur.
         </p>
       )}
       <section aria-label="Bilan des équipes" className="flex flex-col gap-4">
@@ -280,30 +317,30 @@ export function MatchCallupBreakdown({
         </div>
       </section>
 
-      <section aria-labelledby="match-callups-title" className="flex flex-col gap-4 rounded-xl border bg-card p-3 sm:p-5">
-        <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-2.5">
-            <ClubCrest className="size-9 ring-2 ring-accent/70 sm:size-11" />
+      <section aria-labelledby="match-callups-title" className="overflow-hidden rounded-xl border border-accent/70 bg-card shadow-sm">
+        <header className="flex flex-wrap items-center justify-between gap-3 bg-primary px-4 py-3 text-primary-foreground sm:px-5 sm:py-4">
+          <div className="flex items-center gap-3">
+            <ClubCrest className="size-10 ring-2 ring-accent sm:size-12" />
             <div>
-              <h2 id="match-callups-title" className="font-semibold">Historique des matchs</h2>
-              <p className="mt-1 text-xs text-muted-foreground">Présents par match.</p>
+              <h2 id="match-callups-title" className="font-bold">Matchs et journées de cohésion</h2>
+              <p className="mt-0.5 text-xs text-primary-foreground/75">Effectifs invités et présences.</p>
             </div>
           </div>
           {rows.length > 0 && (
-            <span className="inline-flex w-fit rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
-              {rows.length} match{rows.length > 1 ? 's' : ''}
+            <span className="inline-flex w-fit rounded-full bg-accent px-2.5 py-1 text-xs font-bold text-accent-foreground">
+              {rows.length} événement{rows.length > 1 ? 's' : ''}
             </span>
           )}
-        </div>
+        </header>
 
         {rows.length > 0 ? (
-          <div className="overflow-x-auto rounded-lg border border-accent/50">
+          <div className="overflow-x-auto">
             <table className="w-full table-fixed border-collapse text-center">
-              <caption className="sr-only">Nombre de joueurs par équipe et pourcentage de l’effectif théorique pour chaque match</caption>
+              <caption className="sr-only">Effectifs convoqués par équipe, journées de cohésion et présences</caption>
               <thead className="bg-primary text-primary-foreground">
                 <tr>
                   <th scope="col" className="w-[28%] px-1.5 py-2 text-left text-[9px] font-bold uppercase tracking-wide text-accent sm:px-3 sm:text-xs">
-                    Match
+                    Match / événement
                   </th>
                   <th scope="col" className="w-[24%] px-0.5 py-2 text-[9px] font-bold uppercase tracking-wide sm:px-2 sm:text-xs">
                     Éq. 1
@@ -312,30 +349,53 @@ export function MatchCallupBreakdown({
                     Éq. 2
                   </th>
                   <th scope="col" className="w-[24%] px-0.5 py-2 text-[8px] font-bold uppercase leading-tight tracking-wide sm:px-2 sm:text-xs">
-                    Présents<br className="sm:hidden" /> · TP
+                    Présents
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {rows.map(({ date, values, formats }, index) => (
-                  <tr key={date} className={`${index % 2 === 0 ? 'bg-card' : 'bg-secondary/25'} transition-colors hover:bg-accent/10`}>
+                {rows.map(({ date, key, kind, values, formats }, index) => (
+                  <tr key={key} className={`${index % 2 === 0 ? 'bg-card' : 'bg-secondary/25'} transition-colors hover:bg-accent/10`}>
                     <th scope="row" className="px-1.5 py-2 text-left sm:px-3">
                       <time className="block whitespace-nowrap font-mono text-[10px] font-bold text-primary sm:text-xs">{date}</time>
-                    </th>
-                    {([
-                      { key: 'E1', count: values.equipe1, format: formats.E1 },
-                      { key: 'E2', count: values.equipe2, format: formats.E2 },
-                    ] as const).map(({ key, count, format }) => (
-                      <td key={key} className="border-l border-border/70 px-0.5 py-1.5 sm:px-2">
-                        <span className="block font-mono text-sm font-black text-primary sm:text-base">{count}</span>
-                        <span className="block truncate text-[8px] font-semibold uppercase leading-tight text-muted-foreground sm:text-[10px]">
-                          {format?.label ?? 'Type n.c.'}
+                      {kind !== 'match' && (
+                        <span className="mt-0.5 block text-[8px] font-semibold uppercase leading-tight text-muted-foreground sm:text-[10px]">
+                          {kind === 'cohesion' ? 'Journée cohésion' : 'Tournoi · E1 + E2'}
                         </span>
-                        <span className="block whitespace-nowrap text-[8px] font-semibold leading-tight text-muted-foreground sm:text-[10px]">
-                          {format ? `${count}/${format.size} · ${Math.round(count / format.size * 100)}%` : 'format n.c.'}
+                      )}
+                    </th>
+                    {kind === 'cohesion' ? (
+                      <td colSpan={2} className="border-l border-border/70 px-0.5 py-1.5 sm:px-2">
+                        <span className="block font-mono text-sm font-black text-primary sm:text-base">{invitedCount}</span>
+                        <span className="block text-[8px] font-semibold uppercase leading-tight text-muted-foreground sm:text-[10px]">
+                          Invités · E1 + E2
                         </span>
                       </td>
-                    ))}
+                    ) : kind === 'combined-tournament' ? (
+                      <td colSpan={2} className="border-l border-border/70 px-0.5 py-1.5 sm:px-2">
+                        <span className="block font-mono text-sm font-black text-primary sm:text-base">
+                          {values.equipe1 + values.equipe2} / {invitedCount} joueurs
+                        </span>
+                        <span className="block text-[8px] font-semibold uppercase leading-tight text-muted-foreground sm:text-[10px]">
+                          Sélectionnés · E1 + E2
+                        </span>
+                      </td>
+                    ) : (
+                      ([
+                        { key: 'E1', count: values.equipe1, format: formats.E1 },
+                        { key: 'E2', count: values.equipe2, format: formats.E2 },
+                      ] as const).map(({ key: teamKey, count, format }) => (
+                        <td key={teamKey} className="border-l border-border/70 px-0.5 py-1.5 sm:px-2">
+                          <span className="block font-mono text-sm font-black text-primary sm:text-base">{count}</span>
+                          <span className="block truncate text-[8px] font-semibold uppercase leading-tight text-muted-foreground sm:text-[10px]">
+                            {format?.label ?? 'Type n.c.'}
+                          </span>
+                          <span className="block whitespace-nowrap text-[8px] font-semibold leading-tight text-muted-foreground sm:text-[10px]">
+                            {format ? `${count} / ${format.size} joueurs` : 'effectif n.c.'}
+                          </span>
+                        </td>
+                      ))
+                    )}
                     <td className="border-l border-emerald-200/70 bg-emerald-50/60 px-0.5 py-1.5 dark:border-emerald-900/50 dark:bg-emerald-950/20 sm:px-2">
                       <span className="font-mono text-sm font-black text-emerald-800 dark:text-emerald-200 sm:text-base">{values.presents}</span>
                     </td>

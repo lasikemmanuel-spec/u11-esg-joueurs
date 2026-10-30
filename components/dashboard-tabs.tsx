@@ -9,6 +9,7 @@ import { DashboardTitle } from '@/components/dashboard-title'
 import type { Convocation } from '@/lib/convocations'
 import type { Player } from '@/lib/players'
 import type { TeamMatchResults } from '@/lib/match-results'
+import type { CohesionDay } from '@/lib/cohesion'
 import type { PlayerStats as PlayerStat } from '@/lib/stats'
 
 type TabKey = 'roster' | 'educator' | 'players' | 'matches'
@@ -20,6 +21,7 @@ export function DashboardTabs({
   matchesPlayed,
   presentCounts,
   matchResults,
+  cohesionDays,
   matchDataErrors,
 }: {
   players: PlayerStat[]
@@ -28,6 +30,7 @@ export function DashboardTabs({
   matchesPlayed: number
   presentCounts: Record<string, number>
   matchResults: TeamMatchResults
+  cohesionDays: CohesionDay[]
   matchDataErrors: string[]
 }) {
   const [activeTab, setActiveTab] = useState<TabKey>('roster')
@@ -85,6 +88,8 @@ export function DashboardTabs({
             convocations={convocations}
             presentCounts={presentCounts}
             matchResults={matchResults}
+            cohesionDays={cohesionDays}
+            invitedCount={rosterPlayers.length}
             dataErrors={matchDataErrors}
           />
         )}

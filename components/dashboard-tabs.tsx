@@ -40,7 +40,7 @@ export function DashboardTabs({
   ]
   const activeTitle = {
     roster: { title: 'Effectifs', subtitle: 'Joueurs regroupés par poste.' },
-    players: { title: 'Classements joueurs', subtitle: 'Les performances de l’équipe, place au podium !' },
+    players: { title: 'Classement buteurs', subtitle: 'Top 5 buteurs, passeurs, entraînements et matchs joués.' },
     matches: { title: 'Stats Matchs', subtitle: 'Résultats, scores et convocations.' },
     educator: { title: 'Éducateurs', subtitle: 'Licences FFF et informations des joueurs.' },
   }[activeTab]

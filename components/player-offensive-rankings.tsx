@@ -12,6 +12,8 @@ type RankingProps = {
   players: PlayerStats[]
   getValue: (player: PlayerStats) => number | null
   formatValue: (value: number) => string
+  getSecondaryValue?: (player: PlayerStats) => number | null
+  formatSecondaryValue?: (value: number) => string
   barClass: string
   trackClass: string
   badgeClass: string
@@ -25,6 +27,8 @@ function Ranking({
   players,
   getValue,
   formatValue,
+  getSecondaryValue,
+  formatSecondaryValue,
   barClass,
   trackClass,
   badgeClass,
@@ -107,11 +111,21 @@ function Ranking({
                   />
                 </div>
               </div>
-              <span className={[
-                'shrink-0 rounded-lg px-2.5 py-1 font-mono text-xs font-extrabold sm:text-sm',
-                index === 0 ? 'bg-[#172554] text-[#f0cf68]' : badgeClass,
-              ].join(' ')}>
-                {formatValue(value)}
+              <span className="flex shrink-0 flex-col items-end gap-1">
+                <span className={[
+                  'rounded-lg px-2.5 py-1 font-mono text-xs font-extrabold sm:text-sm',
+                  index === 0 ? 'bg-[#172554] text-[#f0cf68]' : badgeClass,
+                ].join(' ')}>
+                  {formatValue(value)}
+                </span>
+                {getSecondaryValue && formatSecondaryValue && (() => {
+                  const secondaryValue = getSecondaryValue(player)
+                  return secondaryValue === null ? null : (
+                    <span className="font-mono text-[10px] font-semibold text-muted-foreground">
+                      {formatSecondaryValue(secondaryValue)}
+                    </span>
+                  )
+                })()}
               </span>
             </li>
           ))}
@@ -124,7 +138,7 @@ function Ranking({
 }
 
 export function PlayerOffensiveRankings({ players }: { players: PlayerStats[] }) {
-  const [selectedView, setSelectedView] = useState<'scorers' | 'assists' | 'performance'>('scorers')
+  const [selectedView, setSelectedView] = useState<'scorers' | 'assists' | 'training' | 'matches'>('scorers')
   const scorerRanking: RankingProps = {
     id: 'top-scorers-title',
     kicker: 'Top 5',
@@ -149,12 +163,35 @@ export function PlayerOffensiveRankings({ players }: { players: PlayerStats[] })
     badgeClass: 'bg-secondary text-primary',
     emptyMessage: 'Aucune passe décisive renseignée pour le moment.',
   }
-  const trainingLeaders = players
-    .filter((player) => player.trainingRate !== null)
-    .sort((a, b) =>
-      (b.trainingRate ?? 0) - (a.trainingRate ?? 0) || a.name.localeCompare(b.name, 'fr'),
-    )
-    .slice(0, 5)
+  const trainingRanking: RankingProps = {
+    id: 'top-training-title',
+    kicker: 'Top 5',
+    title: 'Présence entraînements',
+    players,
+    getValue: (player) => player.trainingRate,
+    formatValue: (value) => `${value}%`,
+    barClass: 'bg-accent',
+    trackClass: 'bg-accent/30',
+    badgeClass: 'bg-accent/30 text-accent-foreground',
+    emptyMessage: 'Aucun taux de présence renseigné.',
+  }
+  const matchRanking: RankingProps = {
+    id: 'top-matches-title',
+    kicker: 'Top 5',
+    title: 'Classement matchs joués',
+    players,
+    getValue: (player) =>
+      player.starts === null && player.subs === null
+        ? null
+        : (player.starts ?? 0) + (player.subs ?? 0),
+    formatValue: (value) => `${value} match${value === 1 ? '' : 's'}`,
+    getSecondaryValue: (player) => player.minutes,
+    formatSecondaryValue: (value) => `${value} min`,
+    barClass: 'bg-primary',
+    trackClass: 'bg-secondary',
+    badgeClass: 'bg-secondary text-primary',
+    emptyMessage: 'Aucun nombre de matchs joués renseigné.',
+  }
 
   return (
     <section aria-label="Classements des joueurs" className="flex flex-col gap-4">
@@ -164,7 +201,7 @@ export function PlayerOffensiveRankings({ players }: { players: PlayerStats[] })
           value={selectedView}
           onChange={(event) => {
             const value = event.target.value
-            if (value === 'scorers' || value === 'assists' || value === 'performance') {
+            if (value === 'scorers' || value === 'assists' || value === 'training' || value === 'matches') {
               setSelectedView(value)
             }
           }}
@@ -172,7 +209,8 @@ export function PlayerOffensiveRankings({ players }: { players: PlayerStats[] })
         >
           <option value="scorers">Classement buteurs — Top 5</option>
           <option value="assists">Classement passeurs — Top 5</option>
-          <option value="performance">Entraînements &amp; matchs — Top 5</option>
+          <option value="training">Présence entraînements — Top 5</option>
+          <option value="matches">Matchs joués — Top 5</option>
         </select>
       </label>
 
@@ -183,64 +221,12 @@ export function PlayerOffensiveRankings({ players }: { players: PlayerStats[] })
         <div className={selectedView === 'assists' ? 'block xl:block' : 'hidden xl:block'}>
           <Ranking {...passerRanking} />
         </div>
-        <section
-          aria-labelledby="player-performance-title"
-          className={`${selectedView === 'performance' ? 'block' : 'hidden'} overflow-hidden rounded-2xl border border-[#d4af37]/60 bg-card shadow-[0_8px_24px_rgba(23,37,84,0.10)] xl:col-span-2 xl:block`}
-        >
-          <header className="relative overflow-hidden border-b border-[#d4af37]/60 bg-gradient-to-r from-[#172554] via-[#1e3a70] to-[#172554] px-5 py-4">
-            <Sparkles aria-hidden="true" className="absolute -right-1 -top-2 size-16 rotate-12 text-[#d4af37]/20" />
-            <div className="relative flex items-center gap-3">
-              <ClubCrest className="size-10 ring-2 ring-[#d4af37]" />
-              <div className="min-w-0">
-                <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#f0cf68]">Top 5 · Assiduité</p>
-                <h2 id="player-performance-title" className="mt-0.5 text-base font-extrabold leading-tight text-white sm:text-lg">
-                  Entraînements &amp; matchs
-                </h2>
-                <p className="mt-1 text-xs text-white/75">Classés par présence aux entraînements</p>
-              </div>
-            </div>
-          </header>
-          {trainingLeaders.length > 0 ? (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[34rem] border-collapse text-left text-xs">
-                <thead className="bg-secondary/60 text-[10px] uppercase tracking-wide text-primary/75">
-                  <tr>
-                    <th scope="col" className="px-3 py-2 font-bold">Joueur</th>
-                    <th scope="col" className="px-2 py-2 text-right font-bold">Entraînements</th>
-                    <th scope="col" className="px-2 py-2 text-right font-bold">Matchs</th>
-                    <th scope="col" className="px-2 py-2 text-right font-bold">Minutes</th>
-                    <th scope="col" className="px-2 py-2 text-right font-bold">Buts</th>
-                    <th scope="col" className="px-3 py-2 text-right font-bold">Passes</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {trainingLeaders.map((player, index) => {
-                    const appearances = player.starts === null && player.subs === null
-                      ? null
-                      : (player.starts ?? 0) + (player.subs ?? 0)
-                    return (
-                      <tr key={player.number} className={index === 0 ? 'bg-[#d4af37]/10' : 'border-t border-border/70'}>
-                        <th scope="row" className="whitespace-nowrap px-3 py-2.5 font-bold text-primary">
-                          <span className="mr-1.5 font-mono text-muted-foreground">{index + 1}.</span>
-                          {player.name}
-                        </th>
-                        <td className="px-2 py-2.5 text-right font-mono font-bold text-primary">
-                          {player.trainingRate}%
-                        </td>
-                        <td className="px-2 py-2.5 text-right font-mono">{appearances ?? '—'}</td>
-                        <td className="px-2 py-2.5 text-right font-mono">{player.minutes ?? '—'}</td>
-                        <td className="px-2 py-2.5 text-right font-mono">{player.goals ?? '—'}</td>
-                        <td className="px-3 py-2.5 text-right font-mono">{player.assists ?? '—'}</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="px-5 py-6 text-sm text-muted-foreground">Aucun taux de présence renseigné.</p>
-          )}
-        </section>
+        <div className={selectedView === 'training' ? 'block xl:block' : 'hidden xl:block'}>
+          <Ranking {...trainingRanking} />
+        </div>
+        <div className={selectedView === 'matches' ? 'block xl:block' : 'hidden xl:block'}>
+          <Ranking {...matchRanking} />
+        </div>
       </div>
     </section>
   )

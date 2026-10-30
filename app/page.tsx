@@ -35,12 +35,24 @@ const fallbackMatchResults: TeamMatchResults = {
 }
 
 export default async function Page() {
-  const [roster, stats, convocations, matchResults] = await Promise.all([
+  const [roster, stats, convocationsResult, matchResultsResult] = await Promise.all([
     getRoster().catch(() => fallbackRoster),
     getStats().catch(() => fallbackStats),
-    getConvocations().catch(() => fallbackConvocations),
-    getMatchResults().catch(() => fallbackMatchResults),
+    getConvocations().then((data) => ({ data, error: false })).catch((error) => {
+      console.error('Impossible de charger les convocations:', error)
+      return { data: fallbackConvocations, error: true }
+    }),
+    getMatchResults().then((data) => ({ data, error: false })).catch((error) => {
+      console.error('Impossible de charger les résultats des matchs:', error)
+      return { data: fallbackMatchResults, error: true }
+    }),
   ])
+  const convocations = convocationsResult.data
+  const matchResults = matchResultsResult.data
+  const matchDataErrors = [
+    ...(convocationsResult.error ? ['convocations'] : []),
+    ...(matchResultsResult.error ? ['scores'] : []),
+  ]
 
   const updatedAt = new Intl.DateTimeFormat('fr-FR', {
     dateStyle: 'medium',
@@ -78,6 +90,7 @@ export default async function Page() {
           matchesPlayed={convocations.matchesPlayed}
           presentCounts={convocations.presentCounts}
           matchResults={matchResults}
+          matchDataErrors={matchDataErrors}
         />
         <DataQualityPanel players={roster.players} />
       </main>

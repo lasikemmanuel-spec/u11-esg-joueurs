@@ -19,6 +19,7 @@ export function DashboardTabs({
   matchesPlayed,
   presentCounts,
   matchResults,
+  matchDataErrors,
 }: {
   players: PlayerStat[]
   rosterPlayers: Player[]
@@ -26,6 +27,7 @@ export function DashboardTabs({
   matchesPlayed: number
   presentCounts: Record<string, number>
   matchResults: TeamMatchResults
+  matchDataErrors: string[]
 }) {
   const [activeTab, setActiveTab] = useState<TabKey>('roster')
 
@@ -73,6 +75,7 @@ export function DashboardTabs({
             convocations={convocations}
             presentCounts={presentCounts}
             matchResults={matchResults}
+            dataErrors={matchDataErrors}
           />
         )}
         {activeTab === 'roster' && (

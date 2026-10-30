@@ -5,17 +5,31 @@ const CALLED_STATUSES = new Set(['called', 'calledAbsent', 'present'])
 const PRESENT_STATUSES = new Set(['present'])
 
 function sortKey(date: string) {
-  return date.localeCompare(date, 'fr', { numeric: true, sensitivity: 'base' })
+  const dayFirst = date.match(/^(\d{1,2})[/. -](\d{1,2})[/. -](\d{4})$/)
+  if (dayFirst) {
+    const [, day, month, year] = dayFirst.map(Number)
+    return new Date(year, month - 1, day).getTime()
+  }
+
+  const yearFirst = date.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+  if (yearFirst) {
+    const [, year, month, day] = yearFirst.map(Number)
+    return new Date(year, month - 1, day).getTime()
+  }
+
+  return Number.NaN
 }
 
 export function MatchCallupBreakdown({
   convocations,
   presentCounts,
   matchResults,
+  dataErrors,
 }: {
   convocations: Convocation[]
   presentCounts: Record<string, number>
   matchResults: TeamMatchResults
+  dataErrors: string[]
 }) {
   const byDate = new Map<string, { equipe1: number; equipe2: number; presents: number; convoques: number }>()
 
@@ -39,7 +53,13 @@ export function MatchCallupBreakdown({
     if (current) current.presents = count
   }
 
-  const rows = [...byDate.entries()].sort(([a], [b]) => sortKey(a) - sortKey(b))
+  const rows = [...byDate.entries()].sort(([a], [b]) => {
+    const timeA = sortKey(a)
+    const timeB = sortKey(b)
+    return Number.isNaN(timeA) || Number.isNaN(timeB)
+      ? a.localeCompare(b, 'fr', { numeric: true, sensitivity: 'base' })
+      : timeA - timeB
+  })
 
   const resultTeams: { key: keyof TeamMatchResults; label: string }[] = [
     { key: 'E1', label: 'Équipe 1' },
@@ -70,6 +90,14 @@ export function MatchCallupBreakdown({
 
   return (
     <div className="flex flex-col gap-5">
+      {dataErrors.length > 0 && (
+        <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          Certaines données des matchs n’ont pas pu être chargées :
+          {' '}
+          {dataErrors.map((source) => source === 'convocations' ? 'convocations' : 'scores').join(' et ')}.
+          Vérifiez que le compte de service GCP peut lire les onglets correspondants du classeur.
+        </p>
+      )}
       <section aria-labelledby="team-results-title" className="flex flex-col gap-4">
         <div>
           <h2 id="team-results-title" className="font-semibold">Bilan des équipes</h2>

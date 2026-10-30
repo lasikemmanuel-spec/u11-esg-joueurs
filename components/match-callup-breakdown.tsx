@@ -20,6 +20,40 @@ function sortKey(date: string) {
   return Number.NaN
 }
 
+function dateKey(date: string) {
+  const dayFirst = date.match(/^(\d{1,2})[/. -](\d{1,2})[/. -](\d{4})$/)
+  if (dayFirst) {
+    const [, day, month, year] = dayFirst
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+  }
+
+  const yearFirst = date.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+  if (yearFirst) {
+    const [, year, month, day] = yearFirst
+    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+  }
+
+  return date.trim().toLocaleLowerCase('fr-FR')
+}
+
+function getMatchFormat(type: string | null) {
+  const normalizedType = type
+    ?.normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('fr-FR') ?? ''
+
+  if (/tournoi|plateau|festival/.test(normalizedType)) {
+    return { label: 'Tournoi', size: 12 }
+  }
+  if (/championnat|district/.test(normalizedType)) {
+    return { label: 'Championnat', size: 11 }
+  }
+  if (/amical/.test(normalizedType)) {
+    return { label: 'Amical', size: 12 }
+  }
+  return null
+}
+
 export function MatchCallupBreakdown({
   convocations,
   presentCounts,
@@ -54,23 +88,17 @@ export function MatchCallupBreakdown({
 
   const competitionByDate = new Map<string, string>()
   for (const match of [...matchResults.E1, ...matchResults.E2]) {
-    if (match.competition && !competitionByDate.has(match.date)) {
-      competitionByDate.set(match.date, match.competition)
+    const key = dateKey(match.date)
+    if (match.competition && !competitionByDate.has(key)) {
+      competitionByDate.set(key, match.competition)
     }
   }
 
   const rows = [...byDate.entries()].map(([date, values]) => {
-    const competition = competitionByDate.get(date)?.toLocaleLowerCase('fr-FR') ?? ''
-    const isTournament = /tournoi|plateau|festival/.test(competition)
-    const isChampionship = /championnat|district/.test(competition)
     return {
       date,
       values,
-      format: isTournament
-        ? { label: 'Tournoi', size: 12 }
-        : isChampionship
-          ? { label: 'Championnat', size: 11 }
-          : null,
+      format: getMatchFormat(competitionByDate.get(dateKey(date)) ?? null),
     }
   }).sort(({ date: a }, { date: b }) => {
     const timeA = sortKey(a)
@@ -243,11 +271,14 @@ export function MatchCallupBreakdown({
         </div>
       </section>
 
-      <section aria-labelledby="match-callups-title" className="flex flex-col gap-4 rounded-xl border bg-card p-5">
+      <section aria-labelledby="match-callups-title" className="flex flex-col gap-4 rounded-xl border bg-card p-3 sm:p-5">
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h2 id="match-callups-title" className="font-semibold">Historique des matchs</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Présents par match.</p>
+          <div className="flex items-center gap-2.5">
+            <ClubCrest className="size-9 ring-2 ring-accent/70 sm:size-11" />
+            <div>
+              <h2 id="match-callups-title" className="font-semibold">Historique des matchs</h2>
+              <p className="mt-1 text-xs text-muted-foreground">Présents par match.</p>
+            </div>
           </div>
           {rows.length > 0 && (
             <span className="inline-flex w-fit rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
@@ -257,39 +288,50 @@ export function MatchCallupBreakdown({
         </div>
 
         {rows.length > 0 ? (
-          <ol className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 xl:grid-cols-3">
-              {rows.map(({ date, values, format }) => (
-                <li key={date} className="flex min-w-0 items-stretch overflow-hidden rounded-lg border border-accent/50 bg-gradient-to-r from-secondary/40 via-card to-card shadow-sm transition-shadow hover:shadow-md">
-                  <div className="flex w-[5.25rem] shrink-0 flex-col items-center justify-center gap-1 border-r border-accent/40 bg-primary px-1.5 py-2 text-center">
-                    <span aria-hidden="true"><ClubCrest className="size-5 ring-1 ring-accent/70" /></span>
-                    <time className="font-mono text-[11px] font-bold text-accent">{date}</time>
-                    <span className="text-[7px] font-semibold uppercase leading-tight text-primary-foreground/75">
-                      {format?.label ?? 'Format ?'}
-                    </span>
-                  </div>
-                  <dl className="grid min-w-0 flex-1 grid-cols-3 divide-x divide-accent/30">
-                    <div className="flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 py-1.5">
-                      <dt className="text-[9px] font-bold uppercase leading-tight text-muted-foreground">Éq. 1</dt>
-                      <dd className="font-mono text-sm font-black text-primary">{values.equipe1}</dd>
-                      <dd className="text-center text-[8px] font-semibold leading-tight text-muted-foreground">
-                        {format ? `${values.equipe1}/${format.size} · ${Math.round(values.equipe1 / format.size * 100)}%` : 'format n.c.'}
-                      </dd>
-                    </div>
-                    <div className="flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 py-1.5">
-                      <dt className="text-[9px] font-bold uppercase leading-tight text-muted-foreground">Éq. 2</dt>
-                      <dd className="font-mono text-sm font-black text-primary">{values.equipe2}</dd>
-                      <dd className="text-center text-[8px] font-semibold leading-tight text-muted-foreground">
-                        {format ? `${values.equipe2}/${format.size} · ${Math.round(values.equipe2 / format.size * 100)}%` : 'format n.c.'}
-                      </dd>
-                    </div>
-                    <div className="flex min-w-0 flex-col items-center justify-center gap-0.5 bg-emerald-50/70 px-1 py-1.5 dark:bg-emerald-950/20">
-                      <dt className="text-center text-[8px] font-bold uppercase leading-tight text-emerald-800 dark:text-emerald-200">Présents · TP</dt>
-                      <dd className="font-mono text-sm font-black text-emerald-800 dark:text-emerald-200">{values.presents}</dd>
-                    </div>
-                  </dl>
-                </li>
-              ))}
-          </ol>
+          <div className="overflow-x-auto rounded-lg border border-accent/50">
+            <table className="w-full table-fixed border-collapse text-center">
+              <caption className="sr-only">Nombre de joueurs par équipe et pourcentage de l’effectif théorique pour chaque match</caption>
+              <thead className="bg-primary text-primary-foreground">
+                <tr>
+                  <th scope="col" className="w-[28%] px-1.5 py-2 text-left text-[9px] font-bold uppercase tracking-wide text-accent sm:px-3 sm:text-xs">
+                    Match
+                  </th>
+                  <th scope="col" className="w-[24%] px-0.5 py-2 text-[9px] font-bold uppercase tracking-wide sm:px-2 sm:text-xs">
+                    Éq. 1
+                  </th>
+                  <th scope="col" className="w-[24%] px-0.5 py-2 text-[9px] font-bold uppercase tracking-wide sm:px-2 sm:text-xs">
+                    Éq. 2
+                  </th>
+                  <th scope="col" className="w-[24%] px-0.5 py-2 text-[8px] font-bold uppercase leading-tight tracking-wide sm:px-2 sm:text-xs">
+                    Présents<br className="sm:hidden" /> · TP
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {rows.map(({ date, values, format }, index) => (
+                  <tr key={date} className={`${index % 2 === 0 ? 'bg-card' : 'bg-secondary/25'} transition-colors hover:bg-accent/10`}>
+                    <th scope="row" className="px-1.5 py-2 text-left sm:px-3">
+                      <time className="block whitespace-nowrap font-mono text-[10px] font-bold text-primary sm:text-xs">{date}</time>
+                      <span className="mt-0.5 block truncate text-[8px] font-semibold uppercase leading-tight text-muted-foreground sm:text-[10px]">
+                        {format?.label ?? 'Type n.c.'}
+                      </span>
+                    </th>
+                    {[values.equipe1, values.equipe2].map((count, teamIndex) => (
+                      <td key={teamIndex} className="border-l border-border/70 px-0.5 py-1.5 sm:px-2">
+                        <span className="block font-mono text-sm font-black text-primary sm:text-base">{count}</span>
+                        <span className="block whitespace-nowrap text-[8px] font-semibold leading-tight text-muted-foreground sm:text-[10px]">
+                          {format ? `${count}/${format.size} · ${Math.round(count / format.size * 100)}%` : 'format n.c.'}
+                        </span>
+                      </td>
+                    ))}
+                    <td className="border-l border-emerald-200/70 bg-emerald-50/60 px-0.5 py-1.5 dark:border-emerald-900/50 dark:bg-emerald-950/20 sm:px-2">
+                      <span className="font-mono text-sm font-black text-emerald-800 dark:text-emerald-200 sm:text-base">{values.presents}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         ) : (
           <p className="text-sm text-muted-foreground">Aucune donnée de convocation disponible.</p>
         )}

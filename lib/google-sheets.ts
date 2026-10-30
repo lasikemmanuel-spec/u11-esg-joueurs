@@ -339,6 +339,52 @@ export async function ensureAuthenticatedSheetTab(title: string) {
   }
 }
 
+export async function ensureAuthenticatedSheetColumnCount(sheetTitle: string, minimumColumns: number) {
+  const accessToken = await getGoogleAccessToken()
+  if (!accessToken) throw new Error('Authentification Google indisponible pour modifier les coordonnées.')
+
+  const metadataResponse = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets(properties(sheetId,title,gridProperties))`,
+    {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: 'no-store',
+    },
+  )
+  if (!metadataResponse.ok) {
+    throw new Error(`Impossible de vérifier les colonnes Google Sheets (${metadataResponse.status}).`)
+  }
+
+  const metadata = (await metadataResponse.json()) as {
+    sheets?: Array<{ properties?: { sheetId?: number; title?: string; gridProperties?: { columnCount?: number } } }>
+  }
+  const sheet = metadata.sheets?.find((item) => item.properties?.title === sheetTitle)?.properties
+  if (!sheet || sheet.sheetId === undefined) throw new Error(`Onglet « ${sheetTitle} » introuvable.`)
+  const currentColumns = sheet.gridProperties?.columnCount ?? 0
+  if (currentColumns >= minimumColumns) return
+
+  const response = await fetch(
+    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}:batchUpdate`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        requests: [{
+          appendDimension: {
+            sheetId: sheet.sheetId,
+            dimension: 'COLUMNS',
+            length: minimumColumns - currentColumns,
+          },
+        }],
+      }),
+      cache: 'no-store',
+    },
+  )
+  if (!response.ok) throw new Error(`Impossible d’ajouter des colonnes à « ${sheetTitle} » (${response.status}).`)
+}
+
 export async function updateAuthenticatedSheetValues(
   updates: Array<{ range: string; values: string[][] }>,
 ) {

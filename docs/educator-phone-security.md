@@ -23,7 +23,8 @@ Le classeur actuel est conservé. Lors de l’initialisation, l’application cr
 1. Configurer `GOOGLE_SHEET_ID` avec l’identifiant du classeur actuel.
 2. Vérifier que le compte de service GCP déjà configuré dans `.env` a les droits de modification sur le classeur.
 3. Configurer les comptes éducateurs, `EDUCATOR_SESSION_SECRET` et `EDUCATOR_PHONE_ENCRYPTION_KEY`, puis se connecter avec le compte `admin`.
-4. Dans l’espace Éducateurs, choisir **Créer l’onglet et chiffrer les numéros** (première création) ou **Chiffrer et synchroniser** si l’onglet existe déjà. L’action chiffre les cellules des deux onglets et peut être relancée sans chiffrer une valeur deux fois.
-5. Les téléphones sont déchiffrés côté serveur pour les éducateurs connectés. Les futures modifications de Manu sont enregistrées chiffrées dans les deux onglets.
+4. Dans l’espace Éducateurs, choisir **Créer l’onglet et chiffrer les numéros** lors de la première création ou migration du téléphone historique.
+5. Pour un numéro de parent, l’administrateur choisit Papa ou Maman dans la fiche du joueur, puis saisit ou modifie le numéro. La validation chiffre et synchronise immédiatement le numéro dans les colonnes correspondantes de l’onglet Joueurs et dans l’onglet Téléphones éducateurs.
+6. Les téléphones sont déchiffrés côté serveur pour les éducateurs connectés. Dans la fiche, le numéro reste caché jusqu’à ce que l’éducateur ouvre le contact correspondant. Les numéros absents n’affichent aucun bouton d’appel.
 
 Les cellules contiennent le texte chiffré, pas le numéro lisible ; les personnes ayant seulement accès au classeur ne peuvent pas le déchiffrer sans la clé Vercel. Google Sheets peut toutefois conserver des valeurs en clair dans l’historique des versions antérieures. Le chiffrement applicatif ne remplace pas les contrôles d’accès au classeur. Les appels utilisent HTTPS et les réponses de l’API de coordonnées ne sont pas mises en cache. Les tentatives de connexion doivent aussi être limitées au niveau de l’hébergement, car le compteur local ne couvre pas plusieurs instances.

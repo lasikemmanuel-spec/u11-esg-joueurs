@@ -32,6 +32,10 @@ const fallbackConvocations: ConvocationsData = {
 const fallbackMatchResults: TeamMatchResults = {
   E1: [],
   E2: [],
+  matchTypes: {
+    E1: [],
+    E2: [],
+  },
 }
 
 export default async function Page() {

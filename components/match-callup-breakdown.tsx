@@ -86,11 +86,13 @@ export function MatchCallupBreakdown({
     if (current) current.presents = count
   }
 
-  const competitionByDate = new Map<string, string>()
-  for (const match of [...matchResults.E1, ...matchResults.E2]) {
-    const key = dateKey(match.date)
-    if (match.competition && !competitionByDate.has(key)) {
-      competitionByDate.set(key, match.competition)
+  const typeByTeamAndDate = {
+    E1: new Map<string, string>(),
+    E2: new Map<string, string>(),
+  }
+  for (const team of ['E1', 'E2'] as const) {
+    for (const match of matchResults.matchTypes[team]) {
+      typeByTeamAndDate[team].set(dateKey(match.date), match.type)
     }
   }
 
@@ -98,7 +100,10 @@ export function MatchCallupBreakdown({
     return {
       date,
       values,
-      format: getMatchFormat(competitionByDate.get(dateKey(date)) ?? null),
+      formats: {
+        E1: getMatchFormat(typeByTeamAndDate.E1.get(dateKey(date)) ?? null),
+        E2: getMatchFormat(typeByTeamAndDate.E2.get(dateKey(date)) ?? null),
+      },
     }
   }).sort(({ date: a }, { date: b }) => {
     const timeA = sortKey(a)
@@ -108,7 +113,7 @@ export function MatchCallupBreakdown({
       : timeA - timeB
   })
 
-  const resultTeams: { key: keyof TeamMatchResults; label: string }[] = [
+  const resultTeams: { key: 'E1' | 'E2'; label: string }[] = [
     { key: 'E1', label: 'Équipe 1' },
     { key: 'E2', label: 'Équipe 2' },
   ]
@@ -308,17 +313,20 @@ export function MatchCallupBreakdown({
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {rows.map(({ date, values, format }, index) => (
+                {rows.map(({ date, values, formats }, index) => (
                   <tr key={date} className={`${index % 2 === 0 ? 'bg-card' : 'bg-secondary/25'} transition-colors hover:bg-accent/10`}>
                     <th scope="row" className="px-1.5 py-2 text-left sm:px-3">
                       <time className="block whitespace-nowrap font-mono text-[10px] font-bold text-primary sm:text-xs">{date}</time>
-                      <span className="mt-0.5 block truncate text-[8px] font-semibold uppercase leading-tight text-muted-foreground sm:text-[10px]">
-                        {format?.label ?? 'Type n.c.'}
-                      </span>
                     </th>
-                    {[values.equipe1, values.equipe2].map((count, teamIndex) => (
-                      <td key={teamIndex} className="border-l border-border/70 px-0.5 py-1.5 sm:px-2">
+                    {([
+                      { key: 'E1', count: values.equipe1, format: formats.E1 },
+                      { key: 'E2', count: values.equipe2, format: formats.E2 },
+                    ] as const).map(({ key, count, format }) => (
+                      <td key={key} className="border-l border-border/70 px-0.5 py-1.5 sm:px-2">
                         <span className="block font-mono text-sm font-black text-primary sm:text-base">{count}</span>
+                        <span className="block truncate text-[8px] font-semibold uppercase leading-tight text-muted-foreground sm:text-[10px]">
+                          {format?.label ?? 'Type n.c.'}
+                        </span>
                         <span className="block whitespace-nowrap text-[8px] font-semibold leading-tight text-muted-foreground sm:text-[10px]">
                           {format ? `${count}/${format.size} · ${Math.round(count / format.size * 100)}%` : 'format n.c.'}
                         </span>

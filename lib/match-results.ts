@@ -15,9 +15,18 @@ export type MatchResult = {
   outcome: 'win' | 'draw' | 'loss'
 }
 
+export type MatchType = {
+  date: string
+  type: string
+}
+
 export type TeamMatchResults = {
   E1: MatchResult[]
   E2: MatchResult[]
+  matchTypes: {
+    E1: MatchType[]
+    E2: MatchType[]
+  }
 }
 
 function cell(row: string[] | undefined, index: number) {
@@ -34,7 +43,7 @@ function isMatchDate(value: string) {
   return /^\d{1,2}[/. -]\d{1,2}[/. -]\d{4}$/.test(value) || /^\d{4}-\d{1,2}-\d{1,2}$/.test(value)
 }
 
-async function getTeamResults(tab: string): Promise<MatchResult[]> {
+async function getTeamResults(tab: string): Promise<{ results: MatchResult[]; matchTypes: MatchType[] }> {
   const rows = await getSheetRows(tab)
   const dateRowIndex = rows.findIndex((row) =>
     row.some((value, column) => column >= 2 && isMatchDate(value.trim())),
@@ -51,13 +60,27 @@ async function getTeamResults(tab: string): Promise<MatchResult[]> {
   const goalsForRow = rows[dateRowIndex + 4]
   const goalsAgainstRow = rows[dateRowIndex + 5]
   const matches: MatchResult[] = []
+  const matchTypes: MatchType[] = []
 
-  for (let column = 2; column < Math.max(dates?.length ?? 0, goalsForRow?.length ?? 0); column += 4) {
+  for (
+    let column = 2;
+    column < Math.max(dates?.length ?? 0, competitions?.length ?? 0, goalsForRow?.length ?? 0);
+    column += 4
+  ) {
     const date = cell(dates, column)
     const competition = cell(competitions, column)
     const resultLabel = cell(resultLabels, column).toLocaleLowerCase('fr-FR')
     const goalsFor = toScore(cell(goalsForRow, column))
     const goalsAgainst = toScore(cell(goalsAgainstRow, column))
+
+    if (
+      date &&
+      competition &&
+      !resultLabel.includes('annul') &&
+      !competition.toLocaleLowerCase('fr-FR').includes('entrainement')
+    ) {
+      matchTypes.push({ date, type: competition })
+    }
 
     if (
       !date ||
@@ -80,11 +103,12 @@ async function getTeamResults(tab: string): Promise<MatchResult[]> {
     })
   }
 
-  return matches.sort((a, b) => {
+  const sortedMatches = matches.sort((a, b) => {
     const [dayA, monthA, yearA] = a.date.split('/').map(Number)
     const [dayB, monthB, yearB] = b.date.split('/').map(Number)
     return new Date(yearA, monthA - 1, dayA).getTime() - new Date(yearB, monthB - 1, dayB).getTime()
   })
+  return { results: sortedMatches, matchTypes }
 }
 
 export async function getMatchResults(): Promise<TeamMatchResults> {
@@ -92,5 +116,12 @@ export async function getMatchResults(): Promise<TeamMatchResults> {
     getTeamResults(MATCH_TABS.E1),
     getTeamResults(MATCH_TABS.E2),
   ])
-  return { E1, E2 }
+  return {
+    E1: E1.results,
+    E2: E2.results,
+    matchTypes: {
+      E1: E1.matchTypes,
+      E2: E2.matchTypes,
+    },
+  }
 }

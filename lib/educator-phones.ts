@@ -123,12 +123,6 @@ export async function migrateEducatorPhones() {
       throw new Error(`Le numéro de joueur ${number} apparaît plusieurs fois dans l’onglet protégé.`)
     }
     destinationByNumber.set(number, { rowIndex: offset + 1, phone, storedPhone })
-    if (storedPhone && !isEncryptedPhone(storedPhone)) {
-      updates.push({
-        range: phoneCellRange(destination.sheetTitle, offset + 1, 1),
-        values: [[encryptPhone(phone)]],
-      })
-    }
   })
 
   let migratedCount = 0
@@ -158,12 +152,15 @@ export async function migrateEducatorPhones() {
     }
     if (destinationRowIndex === undefined) throw new Error('Ligne du téléphone protégé introuvable.')
 
-    const storedDestinationPhone = existing?.storedPhone ?? ''
-    if (!isEncryptedPhone(storedDestinationPhone) || storedDestinationPhone === '') {
+    const destinationRecord = destinationByNumber.get(number)
+    if (!destinationRecord) throw new Error('Ligne du téléphone protégé introuvable.')
+    if (!isEncryptedPhone(destinationRecord.storedPhone)) {
+      const encryptedDestinationPhone = encryptPhone(phone)
       updates.push({
         range: phoneCellRange(destination.sheetTitle, destinationRowIndex, 1),
-        values: [[encryptPhone(phone)]],
+        values: [[encryptedDestinationPhone]],
       })
+      destinationRecord.storedPhone = encryptedDestinationPhone
     }
     if (!isEncryptedPhone(storedSourcePhone) || sourcePhone !== phone) {
       updates.push({
@@ -172,6 +169,16 @@ export async function migrateEducatorPhones() {
       })
     }
   })
+
+  for (const record of destinationByNumber.values()) {
+    if (!record.phone || isEncryptedPhone(record.storedPhone)) continue
+    const encryptedPhone = encryptPhone(record.phone)
+    updates.push({
+      range: phoneCellRange(destination.sheetTitle, record.rowIndex, 1),
+      values: [[encryptedPhone]],
+    })
+    record.storedPhone = encryptedPhone
+  }
 
   if (updates.length > 0) await updateAuthenticatedSheetValues(updates)
   return migratedCount
@@ -195,15 +202,17 @@ export async function updateEducatorPhone(number: number, phone: string) {
   )
   if (sourceRowIndex < 0) throw new Error(`Joueur ${number} introuvable dans l’onglet Joueurs.`)
 
-  const value = encryptPhone(phone.trim())
+  const normalizedPhone = phone.trim()
+  const destinationValue = encryptPhone(normalizedPhone)
+  const sourceValue = encryptPhone(normalizedPhone)
   await updateAuthenticatedSheetValues([
     {
       range: phoneRowRange(sheetTitle, destinationRowIndex),
-      values: [[String(number), value]],
+      values: [[String(number), destinationValue]],
     },
     {
       range: phoneCellRange(source.sheetTitle, sourceRowIndex, phoneIndex),
-      values: [[value]],
+      values: [[sourceValue]],
     },
   ])
 }

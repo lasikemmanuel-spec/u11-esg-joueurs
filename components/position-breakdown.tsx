@@ -106,20 +106,6 @@ export function PositionBreakdown({
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          <label className="relative block min-w-0 flex-1">
-            <span className="sr-only">Rechercher par nom ou prénom</span>
-            <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="search"
-              value={query}
-              onChange={(event) => {
-                setQuery(event.target.value)
-                setSelectedNumber(null)
-              }}
-              placeholder="Rechercher par nom ou prénom…"
-              className="h-9 w-full rounded-lg border border-accent/40 bg-background pr-3 pl-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
-          </label>
           {sorted.length > 0 && (
             <button
               type="button"
@@ -139,6 +125,20 @@ export function PositionBreakdown({
               <span>{allGroupsExpanded ? 'Tout −' : 'Tout +'}</span>
             </button>
           )}
+          <label className="relative block min-w-0 flex-1">
+            <span className="sr-only">Rechercher par nom ou prénom</span>
+            <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value)
+                setSelectedNumber(null)
+              }}
+              placeholder="Rechercher par nom ou prénom…"
+              className="h-9 w-full rounded-lg border border-accent/40 bg-background pr-3 pl-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </label>
         </div>
 
         <div className={`grid items-start gap-4 ${selectedPlayer ? 'xl:grid-cols-[minmax(0,1fr)_320px]' : ''}`}>
@@ -155,18 +155,28 @@ export function PositionBreakdown({
               const isExpanded = expandedPositions.has(position) || isSelectedGroup
               const groupId = `roster-position-${groupIndex}`
               return (
-              <article key={position} className="mb-3 flex break-inside-avoid flex-col overflow-hidden rounded-lg border border-accent/50 bg-card shadow-sm">
+              <article key={position} className="mb-3 flex scroll-mt-4 break-inside-avoid flex-col overflow-hidden rounded-lg border border-accent/50 bg-card shadow-sm">
                 <h3>
                   <button
                     type="button"
                     aria-expanded={isExpanded}
                     aria-controls={isExpanded ? groupId : undefined}
-                    onClick={() => setExpandedPositions((current) => {
-                      const next = new Set(current)
-                      if (next.has(position)) next.delete(position)
-                      else next.add(position)
-                      return next
-                    })}
+                    onClick={(event) => {
+                      const opening = !isExpanded
+                      setExpandedPositions((current) => {
+                        const next = new Set(current)
+                        if (next.has(position)) next.delete(position)
+                        else next.add(position)
+                        return next
+                      })
+                      if (opening && window.matchMedia('(max-width: 639px)').matches) {
+                        const target = event.currentTarget.closest('article')
+                        window.requestAnimationFrame(() => target?.scrollIntoView({
+                          behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+                          block: 'start',
+                        }))
+                      }
+                    }}
                     className="flex w-full items-center justify-between gap-2 bg-primary px-3 py-2 text-left text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                   >
                     <span className="flex min-w-0 items-center gap-2">

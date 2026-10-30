@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo } from 'react'
-import { Search, Copy, Check, ShieldCheck, Users, Award, ChevronDown } from 'lucide-react'
+import { Search, Copy, Check, ShieldCheck, Users, Award, ChevronDown, ChevronUp } from 'lucide-react'
 import type { Player } from '@/lib/players'
 
 const normalize = (value: string) =>
@@ -68,10 +68,10 @@ export function EducatorRoster({ players }: { players: Player[] }) {
           </div>
           <div>
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-accent-foreground/80">
-              <span>Consultation Éducateurs · ES Genech U11</span>
+              <span>Éducateurs · ES Genech U11</span>
             </div>
             <h2 id="educator-roster-title" className="mt-0.5 text-xl font-black text-primary">
-              Effectif &amp; Licences FFF
+              Licences FFF
             </h2>
           </div>
         </div>
@@ -92,8 +92,20 @@ export function EducatorRoster({ players }: { players: Player[] }) {
         </div>
       </div>
 
-      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <div className="relative max-w-xl flex-1">
+      <div className="flex items-center gap-2">
+        {groups.length > 0 && (
+          <button
+            type="button"
+            onClick={() => setExpandedPositions(allGroupsExpanded ? new Set() : new Set(groups.map(([position]) => position)))}
+            aria-label={allGroupsExpanded ? 'Tout replier' : 'Tout déplier'}
+            title={allGroupsExpanded ? 'Tout replier' : 'Tout déplier'}
+            className="inline-flex h-8 shrink-0 items-center gap-1 self-start rounded-lg border border-accent/40 bg-card px-2 text-xs font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:self-auto"
+          >
+            {allGroupsExpanded ? <ChevronUp aria-hidden="true" className="size-3.5" /> : <ChevronDown aria-hidden="true" className="size-3.5" />}
+            <span>{allGroupsExpanded ? 'Tout −' : 'Tout +'}</span>
+          </button>
+        )}
+        <div className="relative min-w-0 max-w-xl flex-1">
           <label htmlFor="educator-search" className="sr-only">
             Rechercher par nom ou prénom
           </label>
@@ -107,15 +119,6 @@ export function EducatorRoster({ players }: { players: Player[] }) {
             className="h-10 w-full rounded-xl border border-accent/40 bg-background pr-3 pl-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
-        {groups.length > 0 && (
-          <button
-            type="button"
-            onClick={() => setExpandedPositions(allGroupsExpanded ? new Set() : new Set(groups.map(([position]) => position)))}
-            className="h-10 shrink-0 rounded-lg border border-accent/40 bg-card px-3 text-sm font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            {allGroupsExpanded ? 'Tout replier' : 'Tout déplier'}
-          </button>
-        )}
       </div>
 
       {groups.length === 0 ? (
@@ -128,18 +131,28 @@ export function EducatorRoster({ players }: { players: Player[] }) {
             const isExpanded = expandedPositions.has(position)
             const groupId = `educator-position-${groupIndex}`
             return (
-            <section key={position} aria-label={`Poste : ${position}`} className="mb-3 break-inside-avoid overflow-hidden rounded-xl border border-accent/50 bg-card shadow-sm">
+            <section key={position} aria-label={`Poste : ${position}`} className="mb-3 scroll-mt-4 break-inside-avoid overflow-hidden rounded-xl border border-accent/50 bg-card shadow-sm">
               <h3>
                 <button
                   type="button"
                   aria-expanded={isExpanded}
                   aria-controls={isExpanded ? groupId : undefined}
-                  onClick={() => setExpandedPositions((current) => {
-                    const next = new Set(current)
-                    if (next.has(position)) next.delete(position)
-                    else next.add(position)
-                    return next
-                  })}
+                  onClick={(event) => {
+                    const opening = !isExpanded
+                    setExpandedPositions((current) => {
+                      const next = new Set(current)
+                      if (next.has(position)) next.delete(position)
+                      else next.add(position)
+                      return next
+                    })
+                    if (opening && window.matchMedia('(max-width: 639px)').matches) {
+                      const target = event.currentTarget.closest('section')
+                      window.requestAnimationFrame(() => target?.scrollIntoView({
+                        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+                        block: 'start',
+                      }))
+                    }
+                  }}
                   className="flex w-full items-center justify-between gap-2 bg-primary px-3 py-2.5 text-left text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                 >
                   <span className="flex min-w-0 items-center gap-2">

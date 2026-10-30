@@ -30,15 +30,32 @@ function toScore(value: string): number | null {
   return Number.isInteger(score) && score >= 0 ? score : null
 }
 
+function isMatchDate(value: string) {
+  return /^\d{1,2}[/. -]\d{1,2}[/. -]\d{4}$/.test(value) || /^\d{4}-\d{1,2}-\d{1,2}$/.test(value)
+}
+
 async function getTeamResults(tab: string): Promise<MatchResult[]> {
   const rows = await getSheetRows(tab)
-  const [headers, dates, competitions, homeAway, , goalsForRow, goalsAgainstRow] = rows
+  const dateRowIndex = rows.findIndex((row) =>
+    row.some((value, column) => column >= 2 && isMatchDate(value.trim())),
+  )
+  if (dateRowIndex < 1) {
+    throw new Error(`Ligne des dates introuvable dans l’onglet « ${tab} ».`)
+  }
+
+  const headers = rows[dateRowIndex - 1]
+  const dates = rows[dateRowIndex]
+  const competitions = rows[dateRowIndex + 1]
+  const homeAway = rows[dateRowIndex + 2]
+  const resultLabels = rows[dateRowIndex + 3]
+  const goalsForRow = rows[dateRowIndex + 4]
+  const goalsAgainstRow = rows[dateRowIndex + 5]
   const matches: MatchResult[] = []
 
   for (let column = 2; column < Math.max(dates?.length ?? 0, goalsForRow?.length ?? 0); column += 4) {
     const date = cell(dates, column)
     const competition = cell(competitions, column)
-    const resultLabel = cell(rows[4], column).toLocaleLowerCase('fr-FR')
+    const resultLabel = cell(resultLabels, column).toLocaleLowerCase('fr-FR')
     const goalsFor = toScore(cell(goalsForRow, column))
     const goalsAgainst = toScore(cell(goalsAgainstRow, column))
 

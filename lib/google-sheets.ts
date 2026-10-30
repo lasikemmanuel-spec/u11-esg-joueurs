@@ -150,7 +150,7 @@ export async function getGoogleAccessToken(): Promise<string | null> {
 /**
  * Récupère les lignes d'un onglet de la feuille Google Sheet sous forme de tableau 2D (string[][]).
  * 1. Tente d'utiliser l'API officielle Google Sheets v4 avec le token d'accès authentifié.
- * 2. Si aucun token n'est disponible ou en cas d'erreur, bascule sur l'export public CSV.
+ * 2. Sans token, essaie l'export CSV public. Une erreur API authentifiée est remontée telle quelle.
  */
 export async function getSheetRows(tabName?: string): Promise<string[][]> {
   const accessToken = await getGoogleAccessToken()
@@ -169,14 +169,15 @@ export async function getSheetRows(tabName?: string): Promise<string[][]> {
             next: { revalidate: 300, tags: ['google-sheet'] },
           }
         )
-        if (metaRes.ok) {
-          const meta = (await metaRes.json()) as {
-            sheets?: Array<{ properties?: { title?: string } }>
-          }
-          const firstTitle = meta.sheets?.[0]?.properties?.title
-          if (firstTitle) {
-            range = `'${firstTitle.replace(/'/g, "''")}'`
-          }
+        if (!metaRes.ok) {
+          throw new Error(`Google Sheets a refusé l’accès au classeur (${metaRes.status}).`)
+        }
+        const meta = (await metaRes.json()) as {
+          sheets?: Array<{ properties?: { title?: string } }>
+        }
+        const firstTitle = meta.sheets?.[0]?.properties?.title
+        if (firstTitle) {
+          range = `'${firstTitle.replace(/'/g, "''")}'`
         }
       }
 
@@ -209,11 +210,11 @@ export async function getSheetRows(tabName?: string): Promise<string[][]> {
           })
         }
       } else {
-        const errText = await res.text()
-        console.warn(`Google Sheets API a retourné ${res.status}: ${errText}. Bascule sur la méthode CSV...`)
+        throw new Error(`Google Sheets a refusé la lecture de ${tabName ? `l’onglet « ${tabName} »` : 'la feuille'} (${res.status}).`)
       }
     } catch (err) {
-      console.warn('Erreur lors de l appel Google Sheets API, bascule sur la méthode CSV:', err)
+      if (err instanceof Error) throw err
+      throw new Error(`Impossible de lire ${tabName ? `l’onglet « ${tabName} »` : 'le Google Sheet'} via l’API Google Sheets.`)
     }
   }
 
@@ -235,6 +236,11 @@ export async function getSheetRows(tabName?: string): Promise<string[][]> {
   })
 
   if (!res.ok) {
+    if (res.status === 401 || res.status === 403) {
+      throw new Error(
+        `Google Sheets refuse l’accès à ${tabName ? `l’onglet « ${tabName} »` : 'la feuille'} (${res.status}). Vérifiez que GOOGLE_SERVICE_ACCOUNT_EMAIL et GOOGLE_PRIVATE_KEY sont configurés dans l’environnement de déploiement et que le classeur est partagé avec ce compte de service.`,
+      )
+    }
     throw new Error(
       `Impossible de lire ${tabName ? `l'onglet "${tabName}"` : 'le Google Sheet'} (${res.status})`
     )

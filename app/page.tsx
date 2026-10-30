@@ -37,7 +37,10 @@ const fallbackMatchResults: TeamMatchResults = {
 export default async function Page() {
   const [roster, stats, convocationsResult, matchResultsResult] = await Promise.all([
     getRoster().catch(() => fallbackRoster),
-    getStats().catch(() => fallbackStats),
+    getStats().catch((error) => {
+      console.error('Impossible de charger les statistiques joueurs:', error)
+      return fallbackStats
+    }),
     getConvocations().then((data) => ({ data, error: false })).catch((error) => {
       console.error('Impossible de charger les convocations:', error)
       return { data: fallbackConvocations, error: true }

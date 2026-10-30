@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { ChevronDown, Search, Users } from 'lucide-react'
+import { ChevronDown, ChevronUp, Search, Users } from 'lucide-react'
 import { PlayerCard } from '@/components/player-stats'
 import type { Convocation } from '@/lib/convocations'
 import type { Player } from '@/lib/players'
@@ -31,7 +31,6 @@ export function PositionBreakdown({
 }) {
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null)
   const [query, setQuery] = useState('')
-  const [selectedPosition, setSelectedPosition] = useState('all')
   const [expandedPositions, setExpandedPositions] = useState<Set<string>>(() => new Set())
   const playerCardRef = useRef<HTMLDivElement>(null)
   const searchTerm = normalizeName(query.trim())
@@ -40,16 +39,8 @@ export function PositionBreakdown({
         normalizeName(`${player.firstName} ${player.lastName}`).includes(searchTerm),
       )
     : players
-  const filteredPlayers = selectedPosition === 'all'
-    ? matchingPlayers
-    : matchingPlayers.filter((player) => (player.position ?? 'Non renseigné') === selectedPosition)
-  const positions = [...new Set(players.map((player) => player.position ?? 'Non renseigné'))].sort((a, b) => {
-    if (a === 'Non renseigné') return 1
-    if (b === 'Non renseigné') return -1
-    return positionRank(a) - positionRank(b) || a.localeCompare(b, 'fr')
-  })
   const groups = new Map<string, Player[]>()
-  for (const player of filteredPlayers) {
+  for (const player of matchingPlayers) {
     const key = player.position ?? 'Non renseigné'
     groups.set(key, [...(groups.get(key) ?? []), player])
   }
@@ -105,7 +96,7 @@ export function PositionBreakdown({
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-card px-2.5 py-1 text-xs font-semibold text-muted-foreground">
             <Users aria-hidden="true" className="size-3.5 text-primary" />
-            {filteredPlayers.length} joueur{filteredPlayers.length !== 1 ? 's' : ''}
+            {matchingPlayers.length} joueur{matchingPlayers.length !== 1 ? 's' : ''}
           </span>
           <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
             {sorted.length} poste{sorted.length !== 1 ? 's' : ''}
@@ -113,9 +104,9 @@ export function PositionBreakdown({
         </div>
       </div>
 
-      <div className="flex flex-col gap-3">
-        <div className="grid gap-2 md:max-w-5xl md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] md:items-center">
-          <label className="relative block">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <label className="relative block min-w-0 flex-1">
             <span className="sr-only">Rechercher par nom ou prénom</span>
             <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
             <input
@@ -126,25 +117,8 @@ export function PositionBreakdown({
                 setSelectedNumber(null)
               }}
               placeholder="Rechercher par nom ou prénom…"
-              className="h-10 w-full rounded-lg border border-accent/40 bg-background pr-3 pl-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              className="h-9 w-full rounded-lg border border-accent/40 bg-background pr-3 pl-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
             />
-          </label>
-          <label className="flex flex-col gap-1 text-sm font-medium">
-            <span className="sr-only">Filtrer par poste</span>
-            <select
-              value={selectedPosition}
-              onChange={(event) => {
-                setSelectedPosition(event.target.value)
-                setSelectedNumber(null)
-              }}
-              aria-label="Filtrer par poste"
-              className="h-10 w-full rounded-lg border border-accent/40 bg-background px-3 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <option value="all">Tous les postes</option>
-              {positions.map((position) => (
-                <option key={position} value={position}>{position}</option>
-              ))}
-            </select>
           </label>
           {sorted.length > 0 && (
             <button
@@ -157,22 +131,23 @@ export function PositionBreakdown({
                   setExpandedPositions(new Set(sorted.map(([position]) => position)))
                 }
               }}
-              className="h-10 rounded-lg border border-accent/40 bg-card px-3 text-sm font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              aria-label={allGroupsExpanded ? 'Tout replier' : 'Tout déplier'}
+              title={allGroupsExpanded ? 'Tout replier' : 'Tout déplier'}
+              className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border border-accent/40 bg-card px-2 text-xs font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
-              {allGroupsExpanded ? 'Tout replier' : 'Tout déplier'}
+              {allGroupsExpanded ? <ChevronUp aria-hidden="true" className="size-3.5" /> : <ChevronDown aria-hidden="true" className="size-3.5" />}
+              <span>{allGroupsExpanded ? 'Tout −' : 'Tout +'}</span>
             </button>
           )}
         </div>
 
         <div className={`grid items-start gap-4 ${selectedPlayer ? 'xl:grid-cols-[minmax(0,1fr)_320px]' : ''}`}>
           <div className={`columns-1 gap-3 sm:columns-2 ${selectedPlayer ? '2xl:columns-2' : 'xl:columns-3'}`}>
-            {filteredPlayers.length === 0 && (
+            {matchingPlayers.length === 0 && (
               <p className="break-inside-avoid rounded-lg border border-accent/40 bg-card p-3 text-sm text-muted-foreground">
                 {searchTerm
                   ? `Aucun joueur ne correspond à « ${query} ».`
-                  : selectedPosition !== 'all'
-                    ? `Aucun joueur avec le poste « ${selectedPosition} ».`
-                    : 'Aucun joueur dans l’effectif.'}
+                  : 'Aucun joueur dans l’effectif.'}
               </p>
             )}
             {sorted.map(([position, list], groupIndex) => {

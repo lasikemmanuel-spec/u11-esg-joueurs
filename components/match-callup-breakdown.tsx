@@ -1,5 +1,6 @@
 import type { Convocation } from '@/lib/convocations'
 import type { MatchResult, TeamMatchResults } from '@/lib/match-results'
+import { ClubCrest } from '@/components/club-crest'
 
 const PRESENT_STATUSES = new Set(['present'])
 
@@ -51,7 +52,27 @@ export function MatchCallupBreakdown({
     if (current) current.presents = count
   }
 
-  const rows = [...byDate.entries()].sort(([a], [b]) => {
+  const competitionByDate = new Map<string, string>()
+  for (const match of [...matchResults.E1, ...matchResults.E2]) {
+    if (match.competition && !competitionByDate.has(match.date)) {
+      competitionByDate.set(match.date, match.competition)
+    }
+  }
+
+  const rows = [...byDate.entries()].map(([date, values]) => {
+    const competition = competitionByDate.get(date)?.toLocaleLowerCase('fr-FR') ?? ''
+    const isTournament = /tournoi|plateau|festival/.test(competition)
+    const isChampionship = /championnat|district/.test(competition)
+    return {
+      date,
+      values,
+      format: isTournament
+        ? { label: 'Tournoi', size: 12 }
+        : isChampionship
+          ? { label: 'Championnat', size: 11 }
+          : null,
+    }
+  }).sort(({ date: a }, { date: b }) => {
     const timeA = sortKey(a)
     const timeB = sortKey(b)
     return Number.isNaN(timeA) || Number.isNaN(timeB)
@@ -237,17 +258,29 @@ export function MatchCallupBreakdown({
 
         {rows.length > 0 ? (
           <ol className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 xl:grid-cols-3">
-              {rows.map(([date, values]) => (
+              {rows.map(({ date, values, format }) => (
                 <li key={date} className="flex min-w-0 items-stretch overflow-hidden rounded-lg border border-accent/50 bg-gradient-to-r from-secondary/40 via-card to-card shadow-sm transition-shadow hover:shadow-md">
-                  <time className="flex w-[5.25rem] shrink-0 items-center justify-center border-r border-accent/40 bg-primary px-1.5 py-2 text-center font-mono text-[11px] font-bold text-accent">{date}</time>
+                  <div className="flex w-[5.25rem] shrink-0 flex-col items-center justify-center gap-1 border-r border-accent/40 bg-primary px-1.5 py-2 text-center">
+                    <span aria-hidden="true"><ClubCrest className="size-5 ring-1 ring-accent/70" /></span>
+                    <time className="font-mono text-[11px] font-bold text-accent">{date}</time>
+                    <span className="text-[7px] font-semibold uppercase leading-tight text-primary-foreground/75">
+                      {format?.label ?? 'Format ?'}
+                    </span>
+                  </div>
                   <dl className="grid min-w-0 flex-1 grid-cols-3 divide-x divide-accent/30">
                     <div className="flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 py-1.5">
                       <dt className="text-[9px] font-bold uppercase leading-tight text-muted-foreground">Éq. 1</dt>
                       <dd className="font-mono text-sm font-black text-primary">{values.equipe1}</dd>
+                      <dd className="text-center text-[8px] font-semibold leading-tight text-muted-foreground">
+                        {format ? `${values.equipe1}/${format.size} · ${Math.round(values.equipe1 / format.size * 100)}%` : 'format n.c.'}
+                      </dd>
                     </div>
                     <div className="flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 py-1.5">
                       <dt className="text-[9px] font-bold uppercase leading-tight text-muted-foreground">Éq. 2</dt>
                       <dd className="font-mono text-sm font-black text-primary">{values.equipe2}</dd>
+                      <dd className="text-center text-[8px] font-semibold leading-tight text-muted-foreground">
+                        {format ? `${values.equipe2}/${format.size} · ${Math.round(values.equipe2 / format.size * 100)}%` : 'format n.c.'}
+                      </dd>
                     </div>
                     <div className="flex min-w-0 flex-col items-center justify-center gap-0.5 bg-emerald-50/70 px-1 py-1.5 dark:bg-emerald-950/20">
                       <dt className="text-center text-[8px] font-bold uppercase leading-tight text-emerald-800 dark:text-emerald-200">Présents · TP</dt>

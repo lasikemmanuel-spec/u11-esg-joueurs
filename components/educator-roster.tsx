@@ -517,11 +517,11 @@ export function EducatorRoster({ players }: { players: Player[] }) {
                               onClick={() => openPhoneEditor(player)}
                               disabled={requestPending}
                               aria-label={`Ajouter ou modifier un téléphone parent pour ${player.firstName} ${player.lastName}`}
-                              title="Ajouter ou modifier un téléphone parent"
-                              className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-accent/50 bg-card px-3 text-xs font-bold text-primary hover:bg-primary/5 disabled:opacity-50"
+                              title="Gérer les téléphones des parents"
+                              className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-accent/50 bg-card px-2 text-[11px] font-bold text-primary hover:bg-primary/5 disabled:opacity-50"
                             >
-                              <Pencil aria-hidden="true" className="size-3.5" />
-                              <span>Ajouter / modifier</span>
+                              <Pencil aria-hidden="true" className="size-3" />
+                              <span>Gérer</span>
                             </button>
                           )}
                         </div>

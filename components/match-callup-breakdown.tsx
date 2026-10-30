@@ -98,11 +98,7 @@ export function MatchCallupBreakdown({
           Vérifiez que le compte de service GCP peut lire les onglets correspondants du classeur.
         </p>
       )}
-      <section aria-labelledby="team-results-title" className="flex flex-col gap-4">
-        <div>
-          <h2 id="team-results-title" className="font-semibold">Bilan des équipes</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Résultats et scores enregistrés dans les feuilles de match.</p>
-        </div>
+      <section aria-label="Bilan des équipes" className="flex flex-col gap-4">
         <article aria-labelledby="group-results-title" className="overflow-hidden rounded-xl border border-accent/70 bg-gradient-to-br from-secondary via-card to-accent/10 shadow-sm">
           <header className="flex flex-wrap items-center justify-between gap-3 bg-primary px-5 py-4 text-primary-foreground">
             <div>

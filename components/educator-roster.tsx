@@ -119,7 +119,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
       const response = await fetch('/api/educators/contacts/migrate', { method: 'POST' })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error ?? 'Migration impossible.')
-      setNotice(`${result.migratedCount} numéro${result.migratedCount !== 1 ? 's' : ''} copié${result.migratedCount !== 1 ? 's' : ''} dans l’onglet éducateurs.`)
+      setNotice(`Téléphones chiffrés et synchronisés dans les deux onglets. ${result.migratedCount} nouveau(x) numéro(s) importé(s).`)
       await loadPhoneContacts()
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Migration impossible.')
@@ -242,7 +242,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
         <div>
           <h2 id="phone-migration-title" className="text-lg font-black text-primary">Création de l’onglet téléphones</h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Un onglet « Téléphones éducateurs » sera ajouté au classeur actuel et les numéros y seront copiés. L’onglet « Joueurs » restera inchangé.
+            L’onglet « Téléphones éducateurs » sera créé si nécessaire. Les numéros seront chiffrés dans « Joueurs » et « Téléphones éducateurs » ; l’application les déchiffrera uniquement côté serveur pour les éducateurs connectés. L’historique de Google Sheets peut conserver les anciennes valeurs en clair.
           </p>
         </div>
         {educator.role === 'admin' ? (
@@ -252,7 +252,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
             disabled={requestPending}
             className="min-h-10 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60"
           >
-            {requestPending ? 'Création et copie…' : 'Créer l’onglet et copier les numéros'}
+            {requestPending ? 'Chiffrement en cours…' : 'Créer l’onglet et chiffrer les numéros'}
           </button>
         ) : (
           <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
@@ -332,6 +332,22 @@ export function EducatorRoster({ players }: { players: Player[] }) {
           />
         </div>
       </div>
+
+      {educator.role === 'admin' && (
+        <section className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-accent/40 bg-card p-3">
+          <p className="text-sm text-muted-foreground">
+            Chiffrez et synchronisez les téléphones dans les onglets « Joueurs » et « Téléphones éducateurs ».
+          </p>
+          <button
+            type="button"
+            onClick={handlePhoneMigration}
+            disabled={requestPending}
+            className="min-h-10 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60"
+          >
+            {requestPending ? 'Chiffrement en cours…' : 'Chiffrer et synchroniser'}
+          </button>
+        </section>
+      )}
 
       {groups.length === 0 ? (
         <p className="rounded-xl border border-accent/40 bg-card p-5 text-center text-sm text-muted-foreground">

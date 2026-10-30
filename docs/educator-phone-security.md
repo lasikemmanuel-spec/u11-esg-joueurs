@@ -18,7 +18,7 @@ Limiter aussi le débit des tentatives de connexion au niveau du fournisseur d�
 
 ## Créer l’onglet dédié dans le classeur actuel
 
-Le classeur actuel est conservé. Lors de l’initialisation, l’application crée uniquement un nouvel onglet `Téléphones éducateurs` dans ce même classeur. L’onglet `Joueurs` n’est ni modifié ni supprimé.
+Le classeur actuel est conservé. Lors de l’initialisation, l’application crée l’onglet `Téléphones éducateurs` s’il n’existe pas. La structure des onglets reste en place, mais les cellules téléphoniques en clair des onglets `Joueurs` et `Téléphones éducateurs` sont remplacées par leurs valeurs chiffrées.
 
 1. Configurer `GOOGLE_SHEET_ID` avec l’identifiant du classeur actuel.
 2. Vérifier que le compte de service GCP déjà configuré dans `.env` a les droits de modification sur le classeur.

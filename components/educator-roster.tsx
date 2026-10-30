@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback, type FormEvent } from 'react'
-import { Search, Copy, Check, Users, Award, LockKeyhole, LogOut, Phone, Save, ChevronDown, ChevronUp, Pencil, Plus, X } from 'lucide-react'
+import { Search, Copy, Check, Users, Award, LockKeyhole, LogOut, Phone, Save, ChevronDown, ChevronUp, Pencil, X } from 'lucide-react'
 import type { Player } from '@/lib/players'
 import { ParentAvatar } from '@/components/parent-avatar'
 
@@ -32,6 +32,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
   const [password, setPassword] = useState('')
   const [phones, setPhones] = useState<Record<number, PlayerPhones>>({})
   const [visiblePhones, setVisiblePhones] = useState<Record<string, boolean>>({})
+  const [isPhoneDevice, setIsPhoneDevice] = useState(false)
   const [phoneEditor, setPhoneEditor] = useState<PhoneEditor | null>(null)
   const [migrationRequired, setMigrationRequired] = useState(false)
   const [sessionChecked, setSessionChecked] = useState(false)
@@ -78,6 +79,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
 
   useEffect(() => {
     void loadPhoneContacts()
+    setIsPhoneDevice(/iPhone|iPod|Android.*Mobile|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(navigator.userAgent))
   }, [loadPhoneContacts])
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
@@ -433,14 +435,20 @@ export function EducatorRoster({ players }: { players: Player[] }) {
                           <span>{label}</span>
                         </button>
                         {visiblePhones[key] && (
-                        <a
-                          href={'tel:' + value.replace(/[^\d+]/g, '')}
-                          aria-label={`Appeler ${label} pour ${player.firstName} ${player.lastName}`}
-                          title={`Appeler ${label}`}
-                          className="text-sm font-semibold text-primary underline underline-offset-2"
-                        >
-                          {value}
-                        </a>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm font-semibold text-primary">{value}</span>
+                            {isPhoneDevice && (
+                              <a
+                                href={'tel:' + value.replace(/[^\d+]/g, '')}
+                                aria-label={`Appeler ${label} pour ${player.firstName} ${player.lastName}`}
+                                title={`Appeler ${label}`}
+                                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground"
+                              >
+                                <Phone aria-hidden="true" className="size-3.5" />
+                                Appeler
+                              </a>
+                            )}
+                          </div>
                         )}
                       </div>
                     )
@@ -453,9 +461,24 @@ export function EducatorRoster({ players }: { players: Player[] }) {
                           {player.firstName} <span className="font-black uppercase tracking-wide text-primary">{player.lastName}</span>
                         </p>
                         <p className="mt-1 text-xs font-semibold text-muted-foreground">Licence FFF</p>
-                        <p className="truncate font-mono text-xs text-muted-foreground">
-                          N° de licence : {licenseNumber ?? 'non renseigné'}
-                        </p>
+                        <div className="mt-0.5 flex min-w-0 items-center gap-1 font-mono text-xs text-muted-foreground">
+                          <span className="truncate">N° de licence : {licenseNumber ?? 'non renseigné'}</span>
+                          {licenseNumber && (
+                            <button
+                              type="button"
+                              onClick={() => handleCopy(licenseNumber)}
+                              className={`inline-flex size-6 shrink-0 items-center justify-center rounded-md transition ${
+                                isCopied
+                                  ? 'bg-emerald-600 text-white'
+                                  : 'text-muted-foreground hover:bg-accent/40 hover:text-foreground'
+                              }`}
+                              title="Copier le numéro de licence"
+                              aria-label={`Copier le numéro de licence de ${player.firstName} ${player.lastName}`}
+                            >
+                              {isCopied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                            </button>
+                          )}
+                        </div>
                         <div className="mt-2 flex flex-wrap items-center gap-2">
                           {parentContact('father', phone?.fatherPhone ?? '')}
                           {parentContact('mother', phone?.motherPhone ?? '')}
@@ -472,9 +495,19 @@ export function EducatorRoster({ players }: { players: Player[] }) {
                                 Autre contact
                               </button>
                               {visiblePhones[player.number + '-legacy'] && (
-                                <a href={'tel:' + phone.legacyPhone.replace(/[^\d+]/g, '')} className="text-sm font-semibold text-primary underline">
-                                  {phone.legacyPhone}
-                                </a>
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="text-sm font-semibold text-primary">{phone.legacyPhone}</span>
+                                  {isPhoneDevice && (
+                                    <a
+                                      href={'tel:' + phone.legacyPhone.replace(/[^\d+]/g, '')}
+                                      aria-label="Appeler l’autre contact"
+                                      className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground"
+                                    >
+                                      <Phone aria-hidden="true" className="size-3.5" />
+                                      Appeler
+                                    </a>
+                                  )}
+                                </div>
                               )}
                             </div>
                           )}
@@ -485,35 +518,13 @@ export function EducatorRoster({ players }: { players: Player[] }) {
                               disabled={requestPending}
                               aria-label={`Ajouter ou modifier un téléphone parent pour ${player.firstName} ${player.lastName}`}
                               title="Ajouter ou modifier un téléphone parent"
-                              className="inline-flex size-10 items-center justify-center rounded-xl border border-accent/50 bg-card text-primary hover:bg-primary/5 disabled:opacity-50"
+                              className="inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-accent/50 bg-card px-3 text-xs font-bold text-primary hover:bg-primary/5 disabled:opacity-50"
                             >
-                              {phone?.fatherPhone || phone?.motherPhone ? <Pencil aria-hidden="true" className="size-4" /> : <Plus aria-hidden="true" className="size-4" />}
+                              <Pencil aria-hidden="true" className="size-3.5" />
+                              <span>Ajouter / modifier</span>
                             </button>
                           )}
                         </div>
-                      </div>
-                      <div className="shrink-0">
-                        {licenseNumber ? (
-                          <button
-                            type="button"
-                            onClick={() => handleCopy(licenseNumber)}
-                            className={`inline-flex size-8 items-center justify-center rounded-lg transition ${
-                              isCopied
-                                ? 'bg-emerald-600 text-white'
-                                : 'bg-muted text-muted-foreground hover:bg-accent/40 hover:text-foreground'
-                            }`}
-                            title="Copier le numéro de licence"
-                            aria-label={`Copier la licence de ${player.firstName} ${player.lastName}`}
-                          >
-                            {isCopied ? (
-                              <Check className="size-4" />
-                            ) : (
-                              <Copy className="size-4" />
-                            )}
-                          </button>
-                        ) : (
-                          <span className="sr-only">Aucune licence à copier</span>
-                        )}
                       </div>
                     </li>
                   )

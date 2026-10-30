@@ -252,7 +252,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
             disabled={requestPending}
             className="min-h-10 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60"
           >
-            {requestPending ? 'Création et copie…' : 'Créer l’onglet et chiffrer les numéros'}
+            {requestPending ? 'Chiffrement en cours…' : 'Créer l’onglet et chiffrer les numéros'}
           </button>
         ) : (
           <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">

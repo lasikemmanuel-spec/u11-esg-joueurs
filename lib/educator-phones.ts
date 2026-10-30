@@ -4,6 +4,7 @@ import {
   getAuthenticatedSheetRows,
   updateAuthenticatedSheetValues,
 } from '@/lib/google-sheets'
+import { decryptPhone, encryptPhone, isEncryptedPhone } from '@/lib/phone-crypto'
 
 const PHONE_TAB = 'Téléphones éducateurs'
 const PHONE_TAB_HEADERS = ['Numéro joueur', 'Téléphone']
@@ -38,6 +39,16 @@ function phoneRowRange(sheetTitle: string, rowIndex: number) {
   return `'${escapedTitle}'!A${sheetRow}:B${sheetRow}`
 }
 
+function phoneCellRange(sheetTitle: string, rowIndex: number, columnIndex: number) {
+  const escapedTitle = sheetTitle.replace(/'/g, "''")
+  const sheetRow = rowIndex + 1
+  let column = ''
+  for (let value = columnIndex + 1; value > 0; value = Math.floor((value - 1) / 26)) {
+    column = String.fromCharCode(65 + ((value - 1) % 26)) + column
+  }
+  return `'${escapedTitle}'!${column}${sheetRow}`
+}
+
 async function getPhoneTabRows() {
   try {
     const sheet = await getAuthenticatedSheetRows(PHONE_TAB)
@@ -63,7 +74,7 @@ export async function getEducatorPhones() {
 
   for (const row of rows.slice(1)) {
     const number = Number.parseInt(row[0] ?? '', 10)
-    const phone = row[1]?.trim()
+    const phone = decryptPhone(row[1]?.trim() ?? '').trim()
     if (Number.isNaN(number) || !phone) continue
     phones.push({ number, phone })
   }
@@ -72,7 +83,8 @@ export async function getEducatorPhones() {
 }
 
 export async function migrateEducatorPhones() {
-  const { rows: sourceRows } = await getAuthenticatedSheetRows('Joueurs')
+  const source = await getAuthenticatedSheetRows('Joueurs')
+  const { rows: sourceRows, sheetTitle: sourceSheetTitle } = source
   const { headerIndex, phoneIndex, numberIndex } = getPhoneSheetLayout(sourceRows)
   let destination: Awaited<ReturnType<typeof getAuthenticatedSheetRows>>
   try {
@@ -92,40 +104,73 @@ export async function migrateEducatorPhones() {
   }
 
   const destinationRows = destination.rows
-  const destinationByNumber = new Map<number, { rowIndex: number; phone: string }>()
+  const destinationByNumber = new Map<number, { rowIndex: number; phone: string; storedPhone: string }>()
   let nextRowIndex = Math.max(destinationRows.length, 1)
   destinationRows.slice(1).forEach((row, offset) => {
     const number = Number.parseInt(row[0] ?? '', 10)
-    const phone = row[1]?.trim()
-    if (!Number.isNaN(number) && phone) {
-      if (destinationByNumber.has(number)) {
-        throw new Error(`Le numéro de joueur ${number} apparaît plusieurs fois dans l’onglet protégé.`)
+    const storedPhone = row[1]?.trim() ?? ''
+    const phone = decryptPhone(storedPhone).trim()
+    if (Number.isNaN(number)) {
+      if (storedPhone && !isEncryptedPhone(storedPhone)) {
+        updates.push({
+          range: phoneCellRange(destination.sheetTitle, offset + 1, 1),
+          values: [[encryptPhone(phone)]],
+        })
       }
-      destinationByNumber.set(number, { rowIndex: offset + 1, phone })
+      return
+    }
+    if (destinationByNumber.has(number)) {
+      throw new Error(`Le numéro de joueur ${number} apparaît plusieurs fois dans l’onglet protégé.`)
+    }
+    destinationByNumber.set(number, { rowIndex: offset + 1, phone, storedPhone })
+    if (storedPhone && !isEncryptedPhone(storedPhone)) {
+      updates.push({
+        range: phoneCellRange(destination.sheetTitle, offset + 1, 1),
+        values: [[encryptPhone(phone)]],
+      })
     }
   })
 
   let migratedCount = 0
+  const sourceNumbers = new Set<number>()
   sourceRows.slice(headerIndex + 1).forEach((row, offset) => {
     const number = Number.parseInt(row[numberIndex] ?? '', 10)
-    const phone = row[phoneIndex]?.trim()
-    if (Number.isNaN(number) || !phone) return
+    const storedSourcePhone = row[phoneIndex]?.trim() ?? ''
+    const sourcePhone = decryptPhone(storedSourcePhone).trim()
+    if (Number.isNaN(number) || !sourcePhone) return
+    if (sourceNumbers.has(number)) {
+      throw new Error(`Le numéro de joueur ${number} apparaît plusieurs fois dans l’effectif.`)
+    }
+    sourceNumbers.add(number)
 
     const existing = destinationByNumber.get(number)
-    let destinationPhone = existing?.phone
-    let targetRowIndex = existing?.rowIndex
-    if (!destinationPhone) {
-      destinationPhone = phone
-      targetRowIndex = nextRowIndex
+    const phone = existing?.phone || sourcePhone
+    let destinationRowIndex = existing?.rowIndex
+    if (!existing) {
+      destinationRowIndex = nextRowIndex
       nextRowIndex += 1
-      destinationByNumber.set(number, { rowIndex: targetRowIndex, phone: destinationPhone })
       migratedCount += 1
+      destinationByNumber.set(number, {
+        rowIndex: destinationRowIndex,
+        phone,
+        storedPhone: '',
+      })
     }
-    if (targetRowIndex === undefined) throw new Error('Ligne du téléphone protégé introuvable.')
-    updates.push({
-      range: phoneRowRange(destination.sheetTitle, targetRowIndex),
-      values: [[String(number), destinationPhone]],
-    })
+    if (destinationRowIndex === undefined) throw new Error('Ligne du téléphone protégé introuvable.')
+
+    const storedDestinationPhone = existing?.storedPhone ?? ''
+    if (!isEncryptedPhone(storedDestinationPhone) || storedDestinationPhone === '') {
+      updates.push({
+        range: phoneCellRange(destination.sheetTitle, destinationRowIndex, 1),
+        values: [[encryptPhone(phone)]],
+      })
+    }
+    if (!isEncryptedPhone(storedSourcePhone) || sourcePhone !== phone) {
+      updates.push({
+        range: phoneCellRange(sourceSheetTitle, headerIndex + offset + 1, phoneIndex),
+        values: [[encryptPhone(phone)]],
+      })
+    }
   })
 
   if (updates.length > 0) await updateAuthenticatedSheetValues(updates)
@@ -136,13 +181,29 @@ export async function updateEducatorPhone(number: number, phone: string) {
   if (!Number.isSafeInteger(number) || number < 0) throw new Error('Numéro de joueur invalide.')
   if (phone.length > 80) throw new Error('Le numéro de téléphone est trop long.')
 
-  const { sheetTitle, rows } = await getPhoneTabRows()
-  const rowIndex = rows.findIndex((row, index) => index > 0 && Number.parseInt(row[0] ?? '', 10) === number)
-  const destinationRow = rowIndex < 0 ? rows.length : rowIndex
+  const [{ sheetTitle, rows }, source] = await Promise.all([
+    getPhoneTabRows(),
+    getAuthenticatedSheetRows('Joueurs'),
+  ])
+  const destinationRow = rows.findIndex(
+    (row, index) => index > 0 && Number.parseInt(row[0] ?? '', 10) === number,
+  )
+  const destinationRowIndex = destinationRow < 0 ? rows.length : destinationRow
+  const { headerIndex, phoneIndex, numberIndex } = getPhoneSheetLayout(source.rows)
+  const sourceRowIndex = source.rows.findIndex(
+    (row, index) => index > headerIndex && Number.parseInt(row[numberIndex] ?? '', 10) === number,
+  )
+  if (sourceRowIndex < 0) throw new Error(`Joueur ${number} introuvable dans l’onglet Joueurs.`)
 
-  const value = phone.trim()
-  await updateAuthenticatedSheetValues([{
-    range: phoneRowRange(sheetTitle, destinationRow),
-    values: [[String(number), value]],
-  }])
+  const value = encryptPhone(phone.trim())
+  await updateAuthenticatedSheetValues([
+    {
+      range: phoneRowRange(sheetTitle, destinationRowIndex),
+      values: [[String(number), value]],
+    },
+    {
+      range: phoneCellRange(source.sheetTitle, sourceRowIndex, phoneIndex),
+      values: [[value]],
+    },
+  ])
 }

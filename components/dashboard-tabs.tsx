@@ -5,6 +5,7 @@ import { MatchCallupBreakdown } from '@/components/match-callup-breakdown'
 import { PlayerStats } from '@/components/player-stats'
 import { PositionBreakdown } from '@/components/position-breakdown'
 import { EducatorRoster } from '@/components/educator-roster'
+import { DashboardTitle } from '@/components/dashboard-title'
 import type { Convocation } from '@/lib/convocations'
 import type { Player } from '@/lib/players'
 import type { TeamMatchResults } from '@/lib/match-results'
@@ -37,6 +38,12 @@ export function DashboardTabs({
     { key: 'matches', label: 'Stats Matchs' },
     { key: 'educator', label: 'Éducateurs' },
   ]
+  const activeTitle = {
+    roster: { title: 'Effectifs', subtitle: 'Joueurs regroupés par poste.' },
+    players: { title: 'Classements joueurs', subtitle: 'Les performances de l’équipe, place au podium !' },
+    matches: { title: 'Stats Matchs', subtitle: 'Résultats, scores et convocations.' },
+    educator: { title: 'Éducateurs', subtitle: 'Licences FFF et informations des joueurs.' },
+  }[activeTab]
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm xl:grid xl:grid-cols-[220px_minmax(0,1fr)]">
@@ -67,6 +74,9 @@ export function DashboardTabs({
       </nav>
 
       <div className="min-w-0 p-4 md:p-5">
+        <div className="mb-4">
+          <DashboardTitle {...activeTitle} />
+        </div>
         {activeTab === 'players' && (
           <PlayerStats players={players} />
         )}

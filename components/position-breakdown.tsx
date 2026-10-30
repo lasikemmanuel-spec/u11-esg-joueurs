@@ -85,23 +85,17 @@ export function PositionBreakdown({
 
   return (
     <section
-      aria-labelledby="positions-title"
+      aria-label="Effectifs regroupés par poste"
       className="flex flex-col gap-3 rounded-xl border border-accent/60 bg-gradient-to-br from-secondary/30 via-card to-card p-4 shadow-sm"
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <h2 id="positions-title" className="font-semibold text-primary">Effectif par poste</h2>
-          <p className="text-xs text-muted-foreground">Touchez un joueur pour afficher sa fiche.</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-card px-2.5 py-1 text-xs font-semibold text-muted-foreground">
-            <Users aria-hidden="true" className="size-3.5 text-primary" />
-            {matchingPlayers.length} joueur{matchingPlayers.length !== 1 ? 's' : ''}
-          </span>
-          <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
-            {sorted.length} poste{sorted.length !== 1 ? 's' : ''}
-          </span>
-        </div>
+      <div className="flex items-center justify-end gap-2">
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-card px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+          <Users aria-hidden="true" className="size-3.5 text-primary" />
+          {matchingPlayers.length} joueur{matchingPlayers.length !== 1 ? 's' : ''}
+        </span>
+        <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary">
+          {sorted.length} poste{sorted.length !== 1 ? 's' : ''}
+        </span>
       </div>
 
       <div className="flex flex-col gap-2">
@@ -117,8 +111,8 @@ export function PositionBreakdown({
                   setExpandedPositions(new Set(sorted.map(([position]) => position)))
                 }
               }}
-              aria-label={allGroupsExpanded ? 'Tout replier' : 'Tout déplier'}
-              title={allGroupsExpanded ? 'Tout replier' : 'Tout déplier'}
+              aria-label={allGroupsExpanded ? 'Fermer tous les postes' : 'Ouvrir tous les postes'}
+              title={allGroupsExpanded ? 'Fermer tous les postes' : 'Ouvrir tous les postes'}
               className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border border-accent/40 bg-card px-2 text-xs font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
             >
               {allGroupsExpanded ? <ChevronUp aria-hidden="true" className="size-3.5" /> : <ChevronDown aria-hidden="true" className="size-3.5" />}

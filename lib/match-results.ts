@@ -73,14 +73,7 @@ async function getTeamResults(tab: string): Promise<{ results: MatchResult[]; ma
     const goalsFor = toScore(cell(goalsForRow, column))
     const goalsAgainst = toScore(cell(goalsAgainstRow, column))
 
-    if (
-      date &&
-      competition &&
-      !resultLabel.includes('annul') &&
-      !competition.toLocaleLowerCase('fr-FR').includes('entrainement')
-    ) {
-      matchTypes.push({ date, type: competition })
-    }
+    if (date && competition) matchTypes.push({ date, type: competition })
 
     if (
       !date ||

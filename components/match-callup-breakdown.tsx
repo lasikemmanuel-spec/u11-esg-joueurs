@@ -21,10 +21,11 @@ function sortKey(date: string) {
 }
 
 function dateKey(date: string) {
-  const dayFirst = date.match(/^(\d{1,2})[/. -](\d{1,2})[/. -](\d{4})$/)
+  const dayFirst = date.match(/^(\d{1,2})[/. -](\d{1,2})(?:[/. -](\d{4}))?$/)
   if (dayFirst) {
     const [, day, month, year] = dayFirst
-    return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+    const monthDay = `${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+    return year ? `${year}-${monthDay}` : monthDay
   }
 
   const yearFirst = date.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
@@ -50,6 +51,9 @@ function getMatchFormat(type: string | null) {
   }
   if (/amical/.test(normalizedType)) {
     return { label: 'Amical', size: 12 }
+  }
+  if (/entrainement/.test(normalizedType)) {
+    return { label: 'Entraînement', size: 12 }
   }
   return null
 }

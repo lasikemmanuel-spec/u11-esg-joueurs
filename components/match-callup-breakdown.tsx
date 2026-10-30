@@ -1,7 +1,6 @@
 import type { Convocation } from '@/lib/convocations'
 import type { MatchResult, TeamMatchResults } from '@/lib/match-results'
 
-const CALLED_STATUSES = new Set(['called', 'calledAbsent', 'present'])
 const PRESENT_STATUSES = new Set(['present'])
 
 function sortKey(date: string) {
@@ -31,17 +30,16 @@ export function MatchCallupBreakdown({
   matchResults: TeamMatchResults
   dataErrors: string[]
 }) {
-  const byDate = new Map<string, { equipe1: number; equipe2: number; presents: number; convoques: number }>()
+  const byDate = new Map<string, { equipe1: number; equipe2: number; presents: number }>()
 
   for (const player of convocations) {
     for (const match of player.matches) {
       if (!match.date) continue
 
-      const current = byDate.get(match.date) ?? { equipe1: 0, equipe2: 0, presents: 0, convoques: 0 }
+      const current = byDate.get(match.date) ?? { equipe1: 0, equipe2: 0, presents: 0 }
 
       if (match.team === 'E1') current.equipe1 += 1
       if (match.team === 'E2') current.equipe2 += 1
-      if (CALLED_STATUSES.has(match.status)) current.convoques += 1
       if (PRESENT_STATUSES.has(match.status)) current.presents += 1
 
       byDate.set(match.date, current)
@@ -228,7 +226,7 @@ export function MatchCallupBreakdown({
         <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
           <div>
             <h2 id="match-callups-title" className="font-semibold">Historique des matchs</h2>
-            <p className="mt-1 text-xs text-muted-foreground">Présents et convocations pour chaque match.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Présents par match.</p>
           </div>
           {rows.length > 0 && (
             <span className="inline-flex w-fit rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
@@ -238,25 +236,23 @@ export function MatchCallupBreakdown({
         </div>
 
         {rows.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[620px] text-sm">
+          <div>
+            <table className="w-full table-fixed text-xs sm:text-sm">
               <thead>
                 <tr className="border-b text-left text-muted-foreground">
-                  <th scope="col" className="py-2.5 pr-4 font-medium">Samedi</th>
-                  <th scope="col" className="py-2.5 pr-4 font-medium">Équipe 1</th>
-                  <th scope="col" className="py-2.5 pr-4 font-medium">Équipe 2</th>
-                  <th scope="col" className="py-2.5 pr-4 font-medium">Présents</th>
-                  <th scope="col" className="py-2.5 font-medium">Convoqués</th>
+                  <th scope="col" className="w-[30%] py-2.5 pr-1 font-medium">Samedi</th>
+                  <th scope="col" className="w-[20%] px-1 py-2.5 text-center font-medium">Équipe 1</th>
+                  <th scope="col" className="w-[20%] px-1 py-2.5 text-center font-medium">Équipe 2</th>
+                  <th scope="col" className="w-[30%] py-2.5 pl-1 text-right font-medium leading-tight">Présents<br className="sm:hidden" /><span className="hidden sm:inline"> (TeamPulse)</span></th>
                 </tr>
               </thead>
               <tbody>
                 {rows.map(([date, values]) => (
                   <tr key={date} className="border-b last:border-0">
-                    <td className="py-2.5 pr-4 font-medium">{date}</td>
-                    <td className="py-2.5 pr-4 font-mono tabular-nums">{values.equipe1}</td>
-                    <td className="py-2.5 pr-4 font-mono tabular-nums">{values.equipe2}</td>
-                    <td className="py-2.5 pr-4 font-mono tabular-nums text-emerald-700">{values.presents}</td>
-                    <td className="py-2.5 font-mono tabular-nums text-blue-700">{values.convoques}</td>
+                    <td className="whitespace-nowrap py-2.5 pr-1 font-medium">{date}</td>
+                    <td className="px-1 py-2.5 text-center font-mono tabular-nums">{values.equipe1}</td>
+                    <td className="px-1 py-2.5 text-center font-mono tabular-nums">{values.equipe2}</td>
+                    <td className="py-2.5 pl-1 text-right font-mono font-semibold tabular-nums text-emerald-700">{values.presents}</td>
                   </tr>
                 ))}
               </tbody>

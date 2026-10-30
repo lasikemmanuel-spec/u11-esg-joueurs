@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback, type FormEvent } from 'react'
-import { Search, Copy, Check, Users, Award, LockKeyhole, LogOut, Phone, Save, ChevronDown, ChevronUp, UserRound, Venus, Mars } from 'lucide-react'
+import { Search, Copy, Check, Users, Award, LockKeyhole, LogOut, Phone, Save, ChevronDown, ChevronUp } from 'lucide-react'
 import type { Player } from '@/lib/players'
+import { ParentAvatar } from '@/components/parent-avatar'
 
 type EducatorIdentity = { displayName: string; role: 'educator' | 'admin' }
 
@@ -29,7 +30,6 @@ export function EducatorRoster({ players }: { players: Player[] }) {
   const [password, setPassword] = useState('')
   const [phones, setPhones] = useState<Record<number, PlayerPhones>>({})
   const [phoneDrafts, setPhoneDrafts] = useState<Record<number, PlayerPhones>>({})
-  const [visiblePhones, setVisiblePhones] = useState<Record<string, boolean>>({})
   const [migrationRequired, setMigrationRequired] = useState(false)
   const [sessionChecked, setSessionChecked] = useState(false)
   const [requestPending, setRequestPending] = useState(false)
@@ -62,7 +62,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
       ) as Record<number, PlayerPhones>
       setEducator(result.educator)
       setPhones(nextPhones)
-      setPhoneDrafts(nextPhones)
+      setPhoneDrafts({})
       setMigrationRequired(false)
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Impossible de charger les coordonnées.')
@@ -406,33 +406,33 @@ export function EducatorRoster({ players }: { players: Player[] }) {
                   const phone = phones[player.number]
                   const phoneDraft = phoneDrafts[player.number] ?? { legacyPhone: '', fatherPhone: '', motherPhone: '' }
                   const parentContact = (parent: 'father' | 'mother', value: string) => {
-                    const key = player.number + '-' + parent
                     const label = parent === 'father' ? 'Papa' : 'Maman'
-                    const GenderIcon = parent === 'father' ? Mars : Venus
+                    const contactClass = `inline-flex min-h-11 items-center gap-2 rounded-xl border border-accent/50 bg-card px-3 text-sm font-bold text-primary shadow-sm transition hover:-translate-y-0.5 hover:shadow-md ${value ? 'hover:bg-primary/5' : 'cursor-not-allowed opacity-55'}`
                     return (
-                      <div key={parent} className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => setVisiblePhones((current) => ({ ...current, [key]: !current[key] }))}
-                          aria-expanded={Boolean(visiblePhones[key])}
-                          aria-label={`${visiblePhones[key] ? 'Masquer' : 'Afficher'} le téléphone de ${label} pour ${player.firstName} ${player.lastName}`}
-                          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-accent/40 bg-background px-2.5 text-xs font-semibold text-primary hover:bg-primary/10"
+                      value ? (
+                        <a
+                          key={parent}
+                          href={'tel:' + value.replace(/[^\d+]/g, '')}
+                          aria-label={`Appeler ${label} pour ${player.firstName} ${player.lastName}`}
+                          title={`Appeler ${label}`}
+                          className={contactClass}
                         >
-                          <UserRound aria-hidden="true" className="size-4" />
-                          <GenderIcon aria-hidden="true" className="size-3" />
-                          <Phone aria-hidden="true" className="size-3.5" />
+                          <ParentAvatar parent={parent} />
+                          <Phone aria-hidden="true" className="size-4" />
                           <span>{label}</span>
-                        </button>
-                        {visiblePhones[key] && (
-                          value ? (
-                            <a href={'tel:' + value.replace(/[^\d+]/g, '')} className="text-xs font-semibold text-primary underline">
-                              {value}
-                            </a>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">Non renseigné</span>
-                          )
-                        )}
-                      </div>
+                        </a>
+                      ) : (
+                        <span
+                          key={parent}
+                          aria-label={`Téléphone de ${label} non renseigné pour ${player.firstName} ${player.lastName}`}
+                          title="Numéro non renseigné"
+                          className={contactClass}
+                        >
+                          <ParentAvatar parent={parent} />
+                          <Phone aria-hidden="true" className="size-4" />
+                          <span>{label}</span>
+                        </span>
+                      )
                     )
                   }
 
@@ -449,33 +449,33 @@ export function EducatorRoster({ players }: { players: Player[] }) {
                         {educator.role === 'admin' ? (
                           <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
                             <label className="flex min-w-0 items-center gap-1.5 text-xs font-semibold">
-                              <Mars aria-hidden="true" className="size-3.5 shrink-0 text-primary" />
                               <span className="sr-only">Téléphone de Papa</span>
                               <input
-                                type="tel"
-                                autoComplete="off"
+                                type="password"
+                                inputMode="tel"
+                                autoComplete="new-password"
                                 value={phoneDraft.fatherPhone}
                                 onChange={(event) => setPhoneDrafts((current) => ({
                                   ...current,
                                   [player.number]: { ...phoneDraft, fatherPhone: event.target.value },
                                 }))}
-                                placeholder="Téléphone papa"
+                                placeholder="Nouveau numéro Papa"
                                 maxLength={80}
                                 className="h-8 min-w-0 w-full rounded-md border border-accent/40 bg-background px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
                               />
                             </label>
                             <label className="flex min-w-0 items-center gap-1.5 text-xs font-semibold">
-                              <Venus aria-hidden="true" className="size-3.5 shrink-0 text-primary" />
                               <span className="sr-only">Téléphone de Maman</span>
                               <input
-                                type="tel"
-                                autoComplete="off"
+                                type="password"
+                                inputMode="tel"
+                                autoComplete="new-password"
                                 value={phoneDraft.motherPhone}
                                 onChange={(event) => setPhoneDrafts((current) => ({
                                   ...current,
                                   [player.number]: { ...phoneDraft, motherPhone: event.target.value },
                                 }))}
-                                placeholder="Téléphone maman"
+                                placeholder="Nouveau numéro Maman"
                                 maxLength={80}
                                 className="h-8 min-w-0 w-full rounded-md border border-accent/40 bg-background px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
                               />
@@ -483,7 +483,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
                             <button
                               type="button"
                               onClick={() => handleSavePhone(player.number)}
-                              disabled={requestPending || (phoneDraft.fatherPhone === (phone?.fatherPhone ?? '') && phoneDraft.motherPhone === (phone?.motherPhone ?? ''))}
+                              disabled={requestPending || (!phoneDraft.fatherPhone.trim() && !phoneDraft.motherPhone.trim())}
                               aria-label={`Enregistrer les téléphones des parents de ${player.firstName} ${player.lastName}`}
                               title="Enregistrer les téléphones des parents"
                               className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md bg-primary px-2 text-xs font-semibold text-primary-foreground disabled:opacity-40 sm:col-span-2"
@@ -491,6 +491,9 @@ export function EducatorRoster({ players }: { players: Player[] }) {
                               <Save className="size-3.5" />
                               Enregistrer
                             </button>
+                            <p className="text-xs text-muted-foreground sm:col-span-2">
+                              La saisie est masquée. Laisse un champ vide pour conserver le numéro déjà enregistré.
+                            </p>
                             <div className="flex flex-wrap gap-2 sm:col-span-2">
                               {parentContact('father', phone?.fatherPhone ?? '')}
                               {parentContact('mother', phone?.motherPhone ?? '')}
@@ -499,7 +502,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
                               <div className="flex items-center gap-1 text-xs text-muted-foreground sm:col-span-2">
                                 <Phone aria-hidden="true" className="size-3.5" />
                                 <a href={'tel:' + phone.legacyPhone.replace(/[^\d+]/g, '')} className="underline">
-                                  Téléphone déjà enregistré (parent à identifier) : {phone.legacyPhone}
+                                  Autre contact déjà enregistré (parent à identifier)
                                 </a>
                               </div>
                             )}
@@ -512,7 +515,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
                               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                                 <Phone aria-hidden="true" className="size-3.5" />
                                 <a href={'tel:' + phone.legacyPhone.replace(/[^\d+]/g, '')} className="underline">
-                                  Téléphone déjà enregistré : {phone.legacyPhone}
+                                  Autre contact
                                 </a>
                               </div>
                             )}

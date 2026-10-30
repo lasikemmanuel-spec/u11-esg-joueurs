@@ -131,7 +131,16 @@ export async function migrateEducatorPhones() {
     const number = Number.parseInt(row[numberIndex] ?? '', 10)
     const storedSourcePhone = row[phoneIndex]?.trim() ?? ''
     const sourcePhone = decryptPhone(storedSourcePhone).trim()
-    if (Number.isNaN(number) || !sourcePhone) return
+    if (!sourcePhone) return
+    if (Number.isNaN(number)) {
+      if (!isEncryptedPhone(storedSourcePhone)) {
+        updates.push({
+          range: phoneCellRange(sourceSheetTitle, headerIndex + offset + 1, phoneIndex),
+          values: [[encryptPhone(sourcePhone)]],
+        })
+      }
+      return
+    }
     if (sourceNumbers.has(number)) {
       throw new Error(`Le numéro de joueur ${number} apparaît plusieurs fois dans l’effectif.`)
     }

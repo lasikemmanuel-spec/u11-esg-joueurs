@@ -236,10 +236,9 @@ export function MatchCallupBreakdown({
         </div>
 
         {rows.length > 0 ? (
-          <>
-            <ol className="flex flex-col gap-1.5 sm:hidden">
+          <ol className="grid grid-cols-1 gap-1.5 sm:grid-cols-2 xl:grid-cols-3">
               {rows.map(([date, values]) => (
-                <li key={date} className="flex items-stretch overflow-hidden rounded-lg border border-accent/50 bg-gradient-to-r from-secondary/40 via-card to-card shadow-sm">
+                <li key={date} className="flex min-w-0 items-stretch overflow-hidden rounded-lg border border-accent/50 bg-gradient-to-r from-secondary/40 via-card to-card shadow-sm transition-shadow hover:shadow-md">
                   <time className="flex w-[5.25rem] shrink-0 items-center justify-center border-r border-accent/40 bg-primary px-1.5 py-2 text-center font-mono text-[11px] font-bold text-accent">{date}</time>
                   <dl className="grid min-w-0 flex-1 grid-cols-3 divide-x divide-accent/30">
                     <div className="flex min-w-0 flex-col items-center justify-center gap-0.5 px-1 py-1.5">
@@ -257,30 +256,7 @@ export function MatchCallupBreakdown({
                   </dl>
                 </li>
               ))}
-            </ol>
-            <div className="hidden overflow-hidden rounded-xl border border-accent/50 shadow-sm sm:block">
-            <table className="w-full table-fixed text-xs">
-              <thead>
-                <tr className="bg-primary text-left text-primary-foreground">
-                  <th scope="col" className="w-[30%] px-3 py-2 font-semibold">Date</th>
-                  <th scope="col" className="w-[20%] px-2 py-2 text-center font-semibold">Éq. 1</th>
-                  <th scope="col" className="w-[20%] px-2 py-2 text-center font-semibold">Éq. 2</th>
-                  <th scope="col" className="w-[30%] px-3 py-2 text-right font-semibold text-accent">Présents · TeamPulse</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-accent/30">
-                {rows.map(([date, values]) => (
-                  <tr key={date} className="bg-card transition-colors odd:bg-secondary/20 hover:bg-accent/15">
-                    <th scope="row" className="whitespace-nowrap px-3 py-2 text-left font-semibold text-primary">{date}</th>
-                    <td className="px-2 py-2 text-center font-mono tabular-nums">{values.equipe1}</td>
-                    <td className="px-2 py-2 text-center font-mono tabular-nums">{values.equipe2}</td>
-                    <td className="px-3 py-2 text-right font-mono font-bold tabular-nums text-emerald-700 dark:text-emerald-300">{values.presents}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            </div>
-          </>
+          </ol>
         ) : (
           <p className="text-sm text-muted-foreground">Aucune donnée de convocation disponible.</p>
         )}

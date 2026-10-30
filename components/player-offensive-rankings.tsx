@@ -20,6 +20,8 @@ type RankingProps = {
   emptyMessage: string
 }
 
+type RankingKey = 'scorers' | 'assists' | 'training' | 'matches'
+
 function Ranking({
   id,
   kicker,
@@ -138,7 +140,7 @@ function Ranking({
 }
 
 export function PlayerOffensiveRankings({ players }: { players: PlayerStats[] }) {
-  const [selectedView, setSelectedView] = useState<'scorers' | 'assists' | 'training' | 'matches'>('scorers')
+  const [selectedViews, setSelectedViews] = useState<Set<RankingKey>>(() => new Set(['scorers']))
   const scorerRanking: RankingProps = {
     id: 'top-scorers-title',
     kicker: 'Top 5',
@@ -192,41 +194,74 @@ export function PlayerOffensiveRankings({ players }: { players: PlayerStats[] })
     badgeClass: 'bg-secondary text-primary',
     emptyMessage: 'Aucun nombre de matchs joués renseigné.',
   }
+  const rankingOptions: { key: RankingKey; label: string }[] = [
+    { key: 'scorers', label: 'Buteurs' },
+    { key: 'assists', label: 'Passeurs' },
+    { key: 'training', label: 'Entraînements' },
+    { key: 'matches', label: 'Matchs' },
+  ]
+  const allRankingsSelected = selectedViews.size === rankingOptions.length
 
   return (
     <section aria-label="Classements des joueurs" className="flex flex-col gap-4">
-      <label className="flex flex-col gap-1.5 text-sm font-semibold text-primary xl:hidden">
-        Choisir les statistiques joueurs
-        <select
-          value={selectedView}
-          onChange={(event) => {
-            const value = event.target.value
-            if (value === 'scorers' || value === 'assists' || value === 'training' || value === 'matches') {
-              setSelectedView(value)
-            }
-          }}
-          className="h-10 rounded-xl border border-accent/50 bg-card px-3 text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <option value="scorers">Classement buteurs — Top 5</option>
-          <option value="assists">Classement passeurs — Top 5</option>
-          <option value="training">Présence entraînements — Top 5</option>
-          <option value="matches">Matchs joués — Top 5</option>
-        </select>
-      </label>
+      <div className="sticky top-2 z-20 flex flex-col gap-2 rounded-xl border border-accent/50 bg-card/95 p-2 shadow-md backdrop-blur xl:hidden">
+        <div className="flex items-center justify-between gap-2">
+          <p id="player-ranking-picker" className="text-xs font-bold text-primary">Classements à afficher</p>
+          <button
+            type="button"
+            onClick={() => setSelectedViews(allRankingsSelected
+              ? new Set()
+              : new Set(rankingOptions.map((option) => option.key)))}
+            className="shrink-0 rounded-lg bg-primary px-2.5 py-1.5 text-xs font-bold text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {allRankingsSelected ? 'Tout effacer' : 'Tout sélectionner'}
+          </button>
+        </div>
+        <div role="group" aria-labelledby="player-ranking-picker" className="flex flex-wrap gap-1.5">
+          {rankingOptions.map(({ key, label }) => {
+            const isSelected = selectedViews.has(key)
+            return (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={isSelected}
+                onClick={() => setSelectedViews((current) => {
+                  const next = new Set(current)
+                  if (next.has(key)) next.delete(key)
+                  else next.add(key)
+                  return next
+                })}
+                className={`min-h-9 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                  isSelected
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-accent/50 bg-background text-muted-foreground hover:bg-secondary'
+                }`}
+              >
+                {label}
+              </button>
+            )
+          })}
+        </div>
+      </div>
 
       <div className="grid items-start gap-4 xl:grid-cols-2">
-        <div className={selectedView === 'scorers' ? 'block xl:block' : 'hidden xl:block'}>
+        <div className={selectedViews.has('scorers') ? 'block xl:block' : 'hidden xl:block'}>
           <Ranking {...scorerRanking} />
         </div>
-        <div className={selectedView === 'assists' ? 'block xl:block' : 'hidden xl:block'}>
+        <div className={selectedViews.has('assists') ? 'block xl:block' : 'hidden xl:block'}>
           <Ranking {...passerRanking} />
         </div>
-        <div className={selectedView === 'training' ? 'block xl:block' : 'hidden xl:block'}>
+        <div className={selectedViews.has('training') ? 'block xl:block' : 'hidden xl:block'}>
           <Ranking {...trainingRanking} />
         </div>
-        <div className={selectedView === 'matches' ? 'block xl:block' : 'hidden xl:block'}>
+        <div className={selectedViews.has('matches') ? 'block xl:block' : 'hidden xl:block'}>
           <Ranking {...matchRanking} />
         </div>
+        {selectedViews.size === 0 && (
+          <p className="rounded-xl border border-dashed border-accent/60 bg-card p-4 text-center text-sm text-muted-foreground xl:hidden">
+            Sélectionnez au moins un classement ci-dessus.
+          </p>
+        )}
       </div>
     </section>
   )

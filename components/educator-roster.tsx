@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback, type FormEvent } from 'react'
-import { Search, Copy, Check, Users, Award, LockKeyhole, LogOut, Phone, Save, ChevronDown, ChevronUp } from 'lucide-react'
+import { Search, Copy, Check, Users, Award, LockKeyhole, LogOut, Phone, Save, ChevronDown, ChevronUp, UserRound, Venus, Mars } from 'lucide-react'
 import type { Player } from '@/lib/players'
 
 type EducatorIdentity = { displayName: string; role: 'educator' | 'admin' }
@@ -18,6 +18,8 @@ const positionRank = (position: string | null) => {
   return index === -1 ? POSITION_ORDER.length : index
 }
 
+type PlayerPhones = { legacyPhone: string; fatherPhone: string; motherPhone: string }
+
 export function EducatorRoster({ players }: { players: Player[] }) {
   const [query, setQuery] = useState('')
   const [expandedPositions, setExpandedPositions] = useState<Set<string>>(() => new Set())
@@ -25,8 +27,9 @@ export function EducatorRoster({ players }: { players: Player[] }) {
   const [educator, setEducator] = useState<EducatorIdentity | null>(null)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
-  const [phones, setPhones] = useState<Record<number, string>>({})
-  const [phoneDrafts, setPhoneDrafts] = useState<Record<number, string>>({})
+  const [phones, setPhones] = useState<Record<number, PlayerPhones>>({})
+  const [phoneDrafts, setPhoneDrafts] = useState<Record<number, PlayerPhones>>({})
+  const [visiblePhones, setVisiblePhones] = useState<Record<string, boolean>>({})
   const [migrationRequired, setMigrationRequired] = useState(false)
   const [sessionChecked, setSessionChecked] = useState(false)
   const [requestPending, setRequestPending] = useState(false)
@@ -55,8 +58,8 @@ export function EducatorRoster({ players }: { players: Player[] }) {
       if (!response.ok) throw new Error(result.error ?? 'Impossible de charger les coordonnées.')
 
       const nextPhones = Object.fromEntries(
-        (result.phones as Array<{ number: number; phone: string }>).map(({ number, phone }) => [number, phone]),
-      )
+        (result.phones as Array<{ number: number } & PlayerPhones>).map(({ number, ...contacts }) => [number, contacts]),
+      ) as Record<number, PlayerPhones>
       setEducator(result.educator)
       setPhones(nextPhones)
       setPhoneDrafts(nextPhones)
@@ -136,12 +139,16 @@ export function EducatorRoster({ players }: { players: Player[] }) {
       const response = await fetch('/api/educators/contacts', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ number, phone: phoneDrafts[number] ?? '' }),
+        body: JSON.stringify({
+          number,
+          fatherPhone: phoneDrafts[number]?.fatherPhone ?? '',
+          motherPhone: phoneDrafts[number]?.motherPhone ?? '',
+        }),
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error ?? 'Enregistrement impossible.')
       await loadPhoneContacts()
-      setNotice('Téléphone enregistré.')
+      setNotice('Téléphones des parents enregistrés.')
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Enregistrement impossible.')
     } finally {
@@ -397,6 +404,37 @@ export function EducatorRoster({ players }: { players: Player[] }) {
                   const licenseNumber = player.licenseNumber
                   const isCopied = licenseNumber && copiedId === licenseNumber
                   const phone = phones[player.number]
+                  const phoneDraft = phoneDrafts[player.number] ?? { legacyPhone: '', fatherPhone: '', motherPhone: '' }
+                  const parentContact = (parent: 'father' | 'mother', value: string) => {
+                    const key = player.number + '-' + parent
+                    const label = parent === 'father' ? 'Papa' : 'Maman'
+                    const GenderIcon = parent === 'father' ? Mars : Venus
+                    return (
+                      <div key={parent} className="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => setVisiblePhones((current) => ({ ...current, [key]: !current[key] }))}
+                          aria-expanded={Boolean(visiblePhones[key])}
+                          aria-label={`${visiblePhones[key] ? 'Masquer' : 'Afficher'} le téléphone de ${label} pour ${player.firstName} ${player.lastName}`}
+                          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-accent/40 bg-background px-2.5 text-xs font-semibold text-primary hover:bg-primary/10"
+                        >
+                          <UserRound aria-hidden="true" className="size-4" />
+                          <GenderIcon aria-hidden="true" className="size-3" />
+                          <Phone aria-hidden="true" className="size-3.5" />
+                          <span>{label}</span>
+                        </button>
+                        {visiblePhones[key] && (
+                          value ? (
+                            <a href={'tel:' + value.replace(/[^\d+]/g, '')} className="text-xs font-semibold text-primary underline">
+                              {value}
+                            </a>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Non renseigné</span>
+                          )
+                        )}
+                      </div>
+                    )
+                  }
 
                   return (
                     <li key={player.number} className="flex min-w-0 items-center justify-between gap-2 px-3 py-2.5 transition-colors hover:bg-muted/40">
@@ -404,48 +442,81 @@ export function EducatorRoster({ players }: { players: Player[] }) {
                         <p className="truncate font-semibold text-foreground">
                           {player.firstName} <span className="font-black uppercase tracking-wide text-primary">{player.lastName}</span>
                         </p>
-                        <p className="mt-0.5 truncate font-mono text-xs text-muted-foreground">
-                          {licenseNumber ?? 'Licence non renseignée'}
+                        <p className="mt-1 text-xs font-semibold text-muted-foreground">Licence FFF</p>
+                        <p className="truncate font-mono text-xs text-muted-foreground">
+                          N° de licence : {licenseNumber ?? 'non renseigné'}
                         </p>
                         {educator.role === 'admin' ? (
-                          <div className="mt-1.5 flex max-w-sm items-center gap-1.5">
-                            <label htmlFor={`phone-${player.number}`} className="sr-only">
-                              Téléphone de {player.firstName} {player.lastName}
+                          <div className="mt-2 grid gap-1.5 sm:grid-cols-2">
+                            <label className="flex min-w-0 items-center gap-1.5 text-xs font-semibold">
+                              <Mars aria-hidden="true" className="size-3.5 shrink-0 text-primary" />
+                              <span className="sr-only">Téléphone de Papa</span>
+                              <input
+                                type="tel"
+                                autoComplete="off"
+                                value={phoneDraft.fatherPhone}
+                                onChange={(event) => setPhoneDrafts((current) => ({
+                                  ...current,
+                                  [player.number]: { ...phoneDraft, fatherPhone: event.target.value },
+                                }))}
+                                placeholder="Téléphone papa"
+                                maxLength={80}
+                                className="h-8 min-w-0 w-full rounded-md border border-accent/40 bg-background px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              />
                             </label>
-                            <input
-                              id={`phone-${player.number}`}
-                              type="tel"
-                              autoComplete="off"
-                              value={phoneDrafts[player.number] ?? ''}
-                              onChange={(event) => setPhoneDrafts((current) => ({
-                                ...current,
-                                [player.number]: event.target.value,
-                              }))}
-                              placeholder="Téléphone"
-                              maxLength={80}
-                              className="h-8 min-w-0 flex-1 rounded-md border border-accent/40 bg-background px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                            />
+                            <label className="flex min-w-0 items-center gap-1.5 text-xs font-semibold">
+                              <Venus aria-hidden="true" className="size-3.5 shrink-0 text-primary" />
+                              <span className="sr-only">Téléphone de Maman</span>
+                              <input
+                                type="tel"
+                                autoComplete="off"
+                                value={phoneDraft.motherPhone}
+                                onChange={(event) => setPhoneDrafts((current) => ({
+                                  ...current,
+                                  [player.number]: { ...phoneDraft, motherPhone: event.target.value },
+                                }))}
+                                placeholder="Téléphone maman"
+                                maxLength={80}
+                                className="h-8 min-w-0 w-full rounded-md border border-accent/40 bg-background px-2 text-xs outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              />
+                            </label>
                             <button
                               type="button"
                               onClick={() => handleSavePhone(player.number)}
-                              disabled={requestPending || (phoneDrafts[player.number] ?? '') === (phone ?? '')}
-                              aria-label={`Enregistrer le téléphone de ${player.firstName} ${player.lastName}`}
-                              title="Enregistrer le téléphone"
-                              className="inline-flex size-8 shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground disabled:opacity-40"
+                              disabled={requestPending || (phoneDraft.fatherPhone === (phone?.fatherPhone ?? '') && phoneDraft.motherPhone === (phone?.motherPhone ?? ''))}
+                              aria-label={`Enregistrer les téléphones des parents de ${player.firstName} ${player.lastName}`}
+                              title="Enregistrer les téléphones des parents"
+                              className="inline-flex h-8 items-center justify-center gap-1.5 rounded-md bg-primary px-2 text-xs font-semibold text-primary-foreground disabled:opacity-40 sm:col-span-2"
                             >
                               <Save className="size-3.5" />
+                              Enregistrer
                             </button>
+                            <div className="flex flex-wrap gap-2 sm:col-span-2">
+                              {parentContact('father', phone?.fatherPhone ?? '')}
+                              {parentContact('mother', phone?.motherPhone ?? '')}
+                            </div>
+                            {phone?.legacyPhone && (
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground sm:col-span-2">
+                                <Phone aria-hidden="true" className="size-3.5" />
+                                <a href={'tel:' + phone.legacyPhone.replace(/[^\d+]/g, '')} className="underline">
+                                  Téléphone déjà enregistré (parent à identifier) : {phone.legacyPhone}
+                                </a>
+                              </div>
+                            )}
                           </div>
-                        ) : phone ? (
-                          <a
-                            href={`tel:${phone.replace(/[^\d+]/g, '')}`}
-                            className="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-                          >
-                            <Phone aria-hidden="true" className="size-3" />
-                            {phone}
-                          </a>
                         ) : (
-                          <p className="mt-1 text-xs text-muted-foreground">Téléphone non renseigné</p>
+                          <div className="mt-2 flex flex-wrap gap-2">
+                            {parentContact('father', phone?.fatherPhone ?? '')}
+                            {parentContact('mother', phone?.motherPhone ?? '')}
+                            {phone?.legacyPhone && (
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Phone aria-hidden="true" className="size-3.5" />
+                                <a href={'tel:' + phone.legacyPhone.replace(/[^\d+]/g, '')} className="underline">
+                                  Téléphone déjà enregistré : {phone.legacyPhone}
+                                </a>
+                              </div>
+                            )}
+                          </div>
                         )}
                       </div>
                       <div className="shrink-0">

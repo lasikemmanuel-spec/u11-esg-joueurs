@@ -236,28 +236,54 @@ export function MatchCallupBreakdown({
         </div>
 
         {rows.length > 0 ? (
-          <div>
+          <>
+            <ol className="flex flex-col gap-2 sm:hidden">
+              {rows.map(([date, values], index) => (
+                <li key={date} className="overflow-hidden rounded-xl border border-accent/50 bg-gradient-to-br from-secondary/40 via-card to-card shadow-sm">
+                  <div className="flex items-center justify-between gap-2 border-b border-accent/40 bg-primary px-3 py-2 text-primary-foreground">
+                    <span className="text-xs font-bold uppercase tracking-wide text-accent">Match {index + 1}</span>
+                    <time className="rounded-full bg-accent px-2.5 py-0.5 font-mono text-xs font-bold text-accent-foreground">{date}</time>
+                  </div>
+                  <dl className="grid grid-cols-3 gap-1.5 p-2">
+                    <div className="min-w-0 rounded-lg border border-accent/30 bg-background/80 px-1.5 py-2 text-center">
+                      <dt className="text-[9px] font-bold uppercase leading-tight tracking-wide text-muted-foreground">Équipe 1</dt>
+                      <dd className="mt-1 font-mono text-lg font-black text-primary">{values.equipe1}</dd>
+                    </div>
+                    <div className="min-w-0 rounded-lg border border-accent/30 bg-background/80 px-1.5 py-2 text-center">
+                      <dt className="text-[9px] font-bold uppercase leading-tight tracking-wide text-muted-foreground">Équipe 2</dt>
+                      <dd className="mt-1 font-mono text-lg font-black text-primary">{values.equipe2}</dd>
+                    </div>
+                    <div className="min-w-0 rounded-lg border border-emerald-700/20 bg-emerald-50 px-1.5 py-2 text-center dark:bg-emerald-950/30">
+                      <dt className="text-[9px] font-bold uppercase leading-tight tracking-wide text-emerald-800 dark:text-emerald-200">Présents · TeamPulse</dt>
+                      <dd className="mt-1 font-mono text-lg font-black text-emerald-800 dark:text-emerald-200">{values.presents}</dd>
+                    </div>
+                  </dl>
+                </li>
+              ))}
+            </ol>
+            <div className="hidden overflow-hidden rounded-xl border border-accent/50 shadow-sm sm:block">
             <table className="w-full table-fixed text-xs sm:text-sm">
               <thead>
-                <tr className="border-b text-left text-muted-foreground">
-                  <th scope="col" className="w-[30%] py-2.5 pr-1 font-medium">Samedi</th>
-                  <th scope="col" className="w-[20%] px-1 py-2.5 text-center font-medium">Équipe 1</th>
-                  <th scope="col" className="w-[20%] px-1 py-2.5 text-center font-medium">Équipe 2</th>
-                  <th scope="col" className="w-[30%] py-2.5 pl-1 text-right font-medium leading-tight">Présents<br className="sm:hidden" /><span className="hidden sm:inline"> (TeamPulse)</span></th>
+                <tr className="bg-primary text-left text-primary-foreground">
+                  <th scope="col" className="w-[30%] px-3 py-3 font-semibold">Date du match</th>
+                  <th scope="col" className="w-[20%] px-2 py-3 text-center font-semibold">Équipe 1</th>
+                  <th scope="col" className="w-[20%] px-2 py-3 text-center font-semibold">Équipe 2</th>
+                  <th scope="col" className="w-[30%] px-3 py-3 text-right font-semibold text-accent">Présents <span className="text-[10px] font-medium text-primary-foreground/70">(TeamPulse)</span></th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="divide-y divide-accent/30">
                 {rows.map(([date, values]) => (
-                  <tr key={date} className="border-b last:border-0">
-                    <td className="whitespace-nowrap py-2.5 pr-1 font-medium">{date}</td>
-                    <td className="px-1 py-2.5 text-center font-mono tabular-nums">{values.equipe1}</td>
-                    <td className="px-1 py-2.5 text-center font-mono tabular-nums">{values.equipe2}</td>
-                    <td className="py-2.5 pl-1 text-right font-mono font-semibold tabular-nums text-emerald-700">{values.presents}</td>
+                  <tr key={date} className="bg-card transition-colors odd:bg-secondary/20 hover:bg-accent/15">
+                    <th scope="row" className="whitespace-nowrap px-3 py-3 text-left font-semibold text-primary">{date}</th>
+                    <td className="px-2 py-3 text-center font-mono tabular-nums">{values.equipe1}</td>
+                    <td className="px-2 py-3 text-center font-mono tabular-nums">{values.equipe2}</td>
+                    <td className="px-3 py-3 text-right font-mono font-bold tabular-nums text-emerald-700 dark:text-emerald-300">{values.presents}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
+            </div>
+          </>
         ) : (
           <p className="text-sm text-muted-foreground">Aucune donnée de convocation disponible.</p>
         )}

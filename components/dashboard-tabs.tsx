@@ -106,8 +106,8 @@ export function DashboardTabs({
         </div>
       </nav>
 
-      <div className="min-w-0 p-4 md:p-5">
-        <div className="mb-4">
+      <div className={`min-w-0 p-4 md:p-5 ${activeTab === 'players' || activeTab === 'matches' ? 'pt-2 sm:pt-4 md:pt-5' : ''}`}>
+        <div className={`mb-4 ${activeTab === 'players' || activeTab === 'matches' ? 'hidden sm:block' : ''}`}>
           <DashboardTitle
             {...activeTitle}
             eyebrow={activeTab === 'educator' ? 'ESG Genech · Éducateurs' : undefined}

@@ -6,7 +6,7 @@ import { Award, CalendarDays, Check, Mail, MapPin, Pencil, Phone, Plus, Save, Sh
 type Section = 'educateurs' | 'joueurs' | 'matchs'
 type Educator = { id: number; name: string; role: string; license: string; phone: string; email: string }
 type Player = { id: number; firstName: string; lastName: string; position: string; license: string }
-type Match = { id: number; date: string; team: string; opponent: string; venue: string; kind: string; for: number; against: number }
+type Match = { id: number; date: string; team: string; opponent: string; venue: string; kind: string; for: number | null; against: number | null }
 
 const sampleEducators: Educator[] = [
   { id: 1, name: 'Camille Exemple', role: 'Éducateur U11', license: '', phone: '', email: 'exemple@club.test' },
@@ -17,8 +17,8 @@ const samplePlayers: Player[] = [
   { id: 2, firstName: 'Alex', lastName: 'Exemple', position: 'Gardien', license: '', },
 ]
 const sampleMatches: Match[] = [
-  { id: 1, date: '2026-10-18', team: 'Équipe 1', opponent: 'Club Exemple', venue: 'Domicile', kind: 'Championnat', for: 2, against: 1 },
-  { id: 2, date: '2026-10-25', team: 'Équipe 2', opponent: 'Club Démo', venue: 'Extérieur', kind: 'Amical', for: 1, against: 3 },
+  { id: 1, date: '2026-11-08', team: 'Équipe 1', opponent: 'Club Exemple', venue: 'Domicile', kind: 'Championnat', for: null, against: null },
+  { id: 2, date: '2026-11-15', team: 'Équipe 2', opponent: 'Club Démo', venue: 'Extérieur', kind: 'Amical', for: 1, against: 3 },
 ]
 
 function Field({ label, value, onChange, type = 'text', required = false }: {
@@ -54,6 +54,9 @@ export function SaisiePreview() {
   const [educatorForm, setEducatorForm] = useState<Educator | null>(null)
   const [playerForm, setPlayerForm] = useState<Player | null>(null)
   const [matchFormOpen, setMatchFormOpen] = useState(false)
+  const [editingMatchId, setEditingMatchId] = useState<number | null>(null)
+  const [matchError, setMatchError] = useState('')
+  const [monthFilter, setMonthFilter] = useState(new Date().toISOString().slice(0, 7))
   const [notice, setNotice] = useState('')
 
   const startEducator = (value?: Educator) => {
@@ -93,17 +96,61 @@ export function SaisiePreview() {
     for: '',
     against: '',
   })
+  const startNewMatch = () => {
+    setEditingMatchId(null)
+    setMatchError('')
+    setNotice('')
+    setMatchDraft({
+      date: new Date().toISOString().slice(0, 10),
+      team: 'Équipe 1',
+      opponent: '',
+      venue: 'Domicile',
+      kind: 'Championnat',
+      for: '',
+      against: '',
+    })
+    setMatchFormOpen(true)
+  }
+  const startEditMatch = (match: Match) => {
+    setEditingMatchId(match.id)
+    setMatchError('')
+    setNotice('')
+    setMatchDraft({
+      date: match.date,
+      team: match.team,
+      opponent: match.opponent,
+      venue: match.venue,
+      kind: match.kind,
+      for: match.for === null ? '' : String(match.for),
+      against: match.against === null ? '' : String(match.against),
+    })
+    setMatchFormOpen(true)
+  }
   const saveMatch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setMatches((current) => [{
-      id: Date.now(),
-      ...matchDraft,
-      for: Number(matchDraft.for),
-      against: Number(matchDraft.against),
-    }, ...current])
+    const oneScoreMissing = Boolean(matchDraft.for) !== Boolean(matchDraft.against)
+    if (oneScoreMissing) {
+      setMatchError('Saisis les deux scores ou laisse les deux champs vides pour planifier le match.')
+      return
+    }
+    const saved: Match = {
+      id: editingMatchId ?? Date.now(),
+      date: matchDraft.date,
+      team: matchDraft.team,
+      opponent: matchDraft.opponent,
+      venue: matchDraft.venue,
+      kind: matchDraft.kind,
+      for: matchDraft.for ? Number(matchDraft.for) : null,
+      against: matchDraft.against ? Number(matchDraft.against) : null,
+    }
+    setMatches((current) => editingMatchId === null
+      ? [saved, ...current]
+      : current.map((match) => match.id === editingMatchId ? saved : match))
+    setMonthFilter(matchDraft.date.slice(0, 7))
     setMatchFormOpen(false)
-    setMatchDraft((current) => ({ ...current, opponent: '', for: '', against: '' }))
-    setNotice('Résultat ajouté dans cet aperçu uniquement.')
+    setEditingMatchId(null)
+    setMatchError('')
+    setNotice('Modification conservée dans cet aperçu uniquement.')
   }
 
   const sectionLabels: Record<Section, string> = {
@@ -234,20 +281,26 @@ export function SaisiePreview() {
           <section className="flex flex-col gap-4" aria-labelledby="matches-title">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
-                <h2 id="matches-title" className="text-xl font-black text-primary">Résultats des matchs</h2>
-                <p className="mt-1 text-sm text-muted-foreground">Dans la vraie version, ce formulaire alimentera « ⚽ Feuille de Match Equipe 1 » ou « ⚽ Feuille de Match Equipe 2 » selon l’équipe choisie.</p>
+                <h2 id="matches-title" className="text-xl font-black text-primary">Calendrier des matchs</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Planifie un mois, puis modifie date, adversaire ou score sur la même fiche.</p>
               </div>
-              {!matchFormOpen && <button className={primaryButton} onClick={() => { setMatchFormOpen(true); setNotice('') }}><Plus className="size-4" /> Saisir un résultat</button>}
+              <div className="flex flex-wrap items-end gap-2">
+                <label className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
+                  Mois
+                  <input type="month" value={monthFilter} onChange={(event) => setMonthFilter(event.target.value)} className="h-10 rounded-lg border border-accent/50 bg-background px-2 text-sm font-normal text-foreground" />
+                </label>
+                {!matchFormOpen && <button type="button" className={primaryButton} onClick={startNewMatch}><Plus className="size-4" /> Ajouter un match</button>}
+              </div>
             </div>
             {matchFormOpen && (
               <form onSubmit={saveMatch} className={inputCard + ' grid gap-3 sm:grid-cols-2'}>
-                <h3 className="text-lg font-bold text-primary sm:col-span-2">Nouveau résultat</h3>
-                <Field label="Date du match" type="date" value={matchDraft.date} onChange={(date) => setMatchDraft({ ...matchDraft, date })} required />
+                <h3 className="text-lg font-bold text-primary sm:col-span-2">{editingMatchId === null ? 'Planifier un match' : 'Modifier ce match'}</h3>
                 <label className="flex flex-col gap-1.5 text-sm font-semibold">Équipe
-                  <select value={matchDraft.team} onChange={(event) => setMatchDraft({ ...matchDraft, team: event.target.value })} className="h-11 rounded-xl border border-accent/50 bg-background px-3 font-normal">
+                  <select disabled={editingMatchId !== null} value={matchDraft.team} onChange={(event) => setMatchDraft({ ...matchDraft, team: event.target.value })} className="h-11 rounded-xl border border-accent/50 bg-background px-3 font-normal">
                     <option>Équipe 1</option><option>Équipe 2</option>
                   </select>
                 </label>
+                <Field label="Date" type="date" value={matchDraft.date} onChange={(date) => setMatchDraft({ ...matchDraft, date })} required />
                 <Field label="Adversaire" value={matchDraft.opponent} onChange={(opponent) => setMatchDraft({ ...matchDraft, opponent })} required />
                 <label className="flex flex-col gap-1.5 text-sm font-semibold">Lieu
                   <select value={matchDraft.venue} onChange={(event) => setMatchDraft({ ...matchDraft, venue: event.target.value })} className="h-11 rounded-xl border border-accent/50 bg-background px-3 font-normal">
@@ -260,23 +313,30 @@ export function SaisiePreview() {
                   </select>
                 </label>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Buts ESG" type="number" value={matchDraft.for} onChange={(value) => setMatchDraft({ ...matchDraft, for: value })} required />
-                  <Field label="Buts adversaire" type="number" value={matchDraft.against} onChange={(value) => setMatchDraft({ ...matchDraft, against: value })} required />
+                  <Field label="Buts ESG" type="number" value={matchDraft.for} onChange={(value) => setMatchDraft({ ...matchDraft, for: value })} />
+                  <Field label="Buts adversaire" type="number" value={matchDraft.against} onChange={(value) => setMatchDraft({ ...matchDraft, against: value })} />
                 </div>
+                <p className="text-xs text-muted-foreground sm:col-span-2">Laisse les deux scores vides pour planifier un futur match. La vraie version écrit dans la feuille E1 ou E2 selon l’équipe.</p>
+                {matchError && <p role="alert" className="text-sm font-semibold text-destructive sm:col-span-2">{matchError}</p>}
                 <div className="flex gap-2 sm:col-span-2">
-                  <button className={primaryButton} type="submit"><Save className="size-4" /> Enregistrer le résultat</button>
-                  <button className={secondaryButton} type="button" onClick={() => setMatchFormOpen(false)}>Annuler</button>
+                  <button className={primaryButton} type="submit"><Save className="size-4" /> {editingMatchId === null ? 'Ajouter au calendrier' : 'Enregistrer les modifications'}</button>
+                  <button className={secondaryButton} type="button" onClick={() => { setMatchFormOpen(false); setEditingMatchId(null) }}>Annuler</button>
                 </div>
               </form>
             )}
             <div className="grid gap-2">
-              {matches.map((item) => (
+              {matches.filter((match) => match.date.slice(0, 7) === monthFilter).length === 0 ? (
+                <p className={inputCard + ' text-center text-sm text-muted-foreground'}>Aucun match prévu pour ce mois.</p>
+              ) : matches.filter((match) => match.date.slice(0, 7) === monthFilter).map((item) => (
                 <article key={item.id} className={inputCard + ' flex flex-wrap items-center justify-between gap-3'}>
                   <div>
                     <p className="flex items-center gap-2 text-xs font-semibold text-muted-foreground"><CalendarDays className="size-4" /> {new Intl.DateTimeFormat('fr-FR').format(new Date(item.date + 'T12:00:00'))} · {item.team} · {item.kind}</p>
                     <h3 className="mt-1 flex items-center gap-2 font-bold"><MapPin className="size-4 text-primary" /> {item.opponent} ({item.venue.toLowerCase()})</h3>
                   </div>
-                  <p className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 font-mono text-lg font-black text-primary"><Trophy className="size-4" /> {item.for} – {item.against}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="rounded-lg bg-muted px-3 py-2 font-mono text-sm font-black text-primary">{item.for === null || item.against === null ? 'À jouer' : item.for + ' – ' + item.against}</p>
+                    <button type="button" className={secondaryButton} onClick={() => startEditMatch(item)} aria-label={'Modifier le match contre ' + item.opponent}><Pencil className="size-4" /><span className="hidden sm:inline">Modifier</span></button>
+                  </div>
                 </article>
               ))}
             </div>

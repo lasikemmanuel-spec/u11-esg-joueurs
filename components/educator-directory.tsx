@@ -1,11 +1,10 @@
 'use client'
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { Camera, Pencil, Phone, Plus, Save, Trash2, X } from 'lucide-react'
-import { EducatorAvatar } from '@/components/educator-avatar'
+import { Pencil, Phone, Plus, Save, X } from 'lucide-react'
+import { EducatorProfilePhotoEditor } from '@/components/educator-profile-photo-editor'
 import type { DirectoryEducator } from '@/lib/educator-directory'
 import { matchesSearch } from '@/lib/search'
-import { prepareEducatorPhoto } from '@/lib/prepare-educator-photo'
 
 type Draft = { id?: string; name: string; licenseNumber: string; phone: string }
 const blank: Draft = { name: '', licenseNumber: '', phone: '' }
@@ -33,22 +32,13 @@ export function EducatorDirectory({
   const [draft, setDraft] = useState<Draft>(blank)
   const [open, setOpen] = useState(false)
   const [pending, setPending] = useState(false)
-  const [photoPending, setPhotoPending] = useState(false)
-  const [photoError, setPhotoError] = useState('')
-  const [photoNotice, setPhotoNotice] = useState('')
+  const [photoDialogOpen, setPhotoDialogOpen] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const isSearching = Boolean(searchQuery?.trim())
   const filteredEducators = educators.filter((educator) =>
     matchesSearch(searchQuery ?? '', [educator.name, educator.licenseNumber, educator.phone]),
   )
-  const normalizeName = (name: string) =>
-    name.normalize('NFD').replace(/\p{Diacritic}/gu, '').trim().replace(/\s+/g, ' ').toLocaleLowerCase('fr-FR')
-  const matchingEducators = currentEducator
-    ? educators.filter((educator) => normalizeName(educator.name) === normalizeName(currentEducator.displayName))
-    : []
-  const ownEducatorId = matchingEducators.length === 1 ? matchingEducators[0].id : null
-
   const load = useCallback(async () => {
     const response = await fetch('/api/educators/directory', { cache: 'no-store' })
     const data = await response.json()
@@ -95,46 +85,6 @@ export function EducatorDirectory({
     } finally { setPending(false) }
   }
 
-  const updateOwnPhoto = async (file?: File) => {
-    if (!file) return
-    setPhotoPending(true)
-    setPhotoError('')
-    setPhotoNotice('')
-    try {
-      const photo = await prepareEducatorPhoto(file)
-      const response = await fetch('/api/educators/profile-photo', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ photo }),
-      })
-      const result = await response.json()
-      if (!response.ok) throw new Error(result.error ?? 'Impossible d’enregistrer la photo.')
-      onPhotoChange?.()
-      setPhotoNotice('Photo enregistrée dans votre fiche éducateur.')
-    } catch (reason) {
-      setPhotoError(reason instanceof Error ? reason.message : 'Impossible d’enregistrer la photo.')
-    } finally {
-      setPhotoPending(false)
-    }
-  }
-
-  const removeOwnPhoto = async () => {
-    setPhotoPending(true)
-    setPhotoError('')
-    setPhotoNotice('')
-    try {
-      const response = await fetch('/api/educators/profile-photo', { method: 'DELETE' })
-      const result = await response.json()
-      if (!response.ok) throw new Error(result.error ?? 'Impossible de supprimer la photo.')
-      onPhotoChange?.()
-      setPhotoNotice('Photo retirée de votre fiche éducateur.')
-    } catch (reason) {
-      setPhotoError(reason instanceof Error ? reason.message : 'Impossible de supprimer la photo.')
-    } finally {
-      setPhotoPending(false)
-    }
-  }
-
   return (
     <section
       aria-labelledby={isSearching ? undefined : 'educator-directory-title'}
@@ -146,7 +96,14 @@ export function EducatorDirectory({
           <h2 id="educator-directory-title" className="font-bold text-primary">Annuaire des éducateurs</h2>
           <p className="mt-1 text-xs text-muted-foreground">Coordonnées séparées des fiches joueurs.</p>
         </div>
-        {canEdit && showAddButton && <button type="button" onClick={() => { setDraft(blank); setError(''); setOpen(true) }} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground"><Plus className="size-4" /> Ajouter un éducateur</button>}
+        <div className="flex flex-wrap gap-2">
+          {currentEducator && (
+            <button type="button" onClick={() => setPhotoDialogOpen(true)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-accent/50 px-3 text-sm font-semibold text-primary">
+              Photo de profil
+            </button>
+          )}
+          {canEdit && showAddButton && <button type="button" onClick={() => { setDraft(blank); setError(''); setOpen(true) }} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground"><Plus className="size-4" /> Ajouter un éducateur</button>}
+        </div>
       </div>
       )}
       {notice && <p role="status" className="mt-3 text-sm font-medium text-emerald-700">{notice}</p>}
@@ -162,49 +119,9 @@ export function EducatorDirectory({
       ) : (
         <>
           {isSearching && searchTitle && <h2 className="font-bold text-primary">{searchTitle}</h2>}
-          {currentEducator && !ownEducatorId && !isSearching && (
-            <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
-              Pour afficher votre photo sur cette fiche et à la connexion, le nom de votre compte doit correspondre à une fiche unique de l’annuaire.
-            </p>
-          )}
           <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
             {filteredEducators.map((educator) => (
             <li key={educator.id} className="rounded-xl border border-border bg-background p-3">
-              {educator.id === ownEducatorId && currentEducator && (
-                <div className="mb-3 flex items-center gap-3 rounded-lg bg-muted/50 p-2">
-                  <EducatorAvatar username={currentEducator.username} revision={photoRevision} size="size-12" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs font-bold text-primary">Ma fiche éducateur</p>
-                    <p className="text-[11px] text-muted-foreground">Cette photo remplacera le blason sur l’écran de connexion.</p>
-                  </div>
-                  <div className="flex shrink-0 gap-1.5">
-                    <label className="inline-flex min-h-9 cursor-pointer items-center justify-center rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground" aria-label="Ajouter ou modifier ma photo">
-                      <Camera aria-hidden="true" className="size-4" />
-                      <span className="sr-only">Choisir une photo</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        disabled={photoPending}
-                        onChange={(event) => {
-                          void updateOwnPhoto(event.currentTarget.files?.[0])
-                          event.currentTarget.value = ''
-                        }}
-                        className="sr-only"
-                      />
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => void removeOwnPhoto()}
-                      disabled={photoPending}
-                      aria-label="Retirer ma photo"
-                      title="Retirer ma photo"
-                      className="inline-flex min-h-9 items-center justify-center rounded-lg border border-accent/50 px-2.5 text-primary disabled:opacity-50"
-                    >
-                      <Trash2 aria-hidden="true" className="size-4" />
-                    </button>
-                  </div>
-                </div>
-              )}
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                     <h3 className="truncate font-bold text-foreground">{educator.name}</h3>
@@ -245,8 +162,6 @@ export function EducatorDirectory({
             </li>
             ))}
           </ul>
-          {photoError && <p role="alert" className="mt-2 text-sm text-destructive">{photoError}</p>}
-          {photoNotice && <p role="status" className="mt-2 text-sm text-emerald-700">{photoNotice}</p>}
         </>
       )}
       {!canEdit && <p className="mt-3 text-xs text-muted-foreground">La modification des fiches est réservée à l’administrateur. Chaque éducateur peut gérer sa photo sur sa fiche.</p>}
@@ -258,6 +173,13 @@ export function EducatorDirectory({
               <button type="button" onClick={() => setOpen(false)} aria-label="Fermer" className="inline-flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground"><X className="size-4" /></button>
             </div>
             <div className="mt-4 grid gap-3">
+              {currentEducator && (
+                <EducatorProfilePhotoEditor
+                  username={currentEducator.username}
+                  revision={photoRevision}
+                  onPhotoChange={() => onPhotoChange?.()}
+                />
+              )}
               <label className="grid gap-1 text-sm font-semibold">Nom et prénom<input required minLength={2} maxLength={80} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
               <label className="grid gap-1 text-sm font-semibold">N° de licence FFF<input maxLength={40} value={draft.licenseNumber} onChange={(event) => setDraft({ ...draft, licenseNumber: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
               <label className="grid gap-1 text-sm font-semibold">Téléphone<input type="tel" inputMode="tel" maxLength={80} value={draft.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
@@ -266,6 +188,24 @@ export function EducatorDirectory({
               <div className="flex justify-end gap-2"><button type="button" onClick={() => setOpen(false)} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-muted-foreground">Annuler</button><button type="submit" disabled={pending} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"><Save className="size-4" />{pending ? 'Enregistrement…' : 'Enregistrer'}</button></div>
             </div>
           </form>
+        </div>
+      )}
+      {photoDialogOpen && currentEducator && (
+        <div role="dialog" aria-modal="true" aria-labelledby="own-photo-title" className="fixed inset-0 z-[60] grid place-items-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl border border-accent/60 bg-card p-5 shadow-2xl">
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Fiche éducateur</p>
+                <h3 id="own-photo-title" className="mt-1 text-lg font-black text-primary">Ma photo de profil</h3>
+              </div>
+              <button type="button" onClick={() => setPhotoDialogOpen(false)} aria-label="Fermer" className="inline-flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground"><X className="size-4" /></button>
+            </div>
+            <EducatorProfilePhotoEditor
+              username={currentEducator.username}
+              revision={photoRevision}
+              onPhotoChange={() => onPhotoChange?.()}
+            />
+          </div>
         </div>
       )}
     </section>

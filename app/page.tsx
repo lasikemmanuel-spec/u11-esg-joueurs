@@ -110,8 +110,8 @@ export default async function Page() {
         </div>
       </header>
 
-      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-30 flex items-center justify-center">
-        <ClubCrest className="size-[min(82vw,32rem)] opacity-[0.72] sm:opacity-[0.68]" />
+      <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-0 flex items-center justify-center">
+        <ClubCrest className="size-[min(82vw,32rem)] opacity-[0.08]" />
       </div>
 
       <main className="relative z-20 mx-auto flex max-w-7xl flex-col gap-4 px-4 pt-6 pb-24 md:gap-6 md:px-6 md:pt-8 md:pb-24 xl:pb-8">

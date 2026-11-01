@@ -29,7 +29,7 @@ export async function GET(request: Request) {
   })
 }
 
-export async function POST(request: Request) {
+async function save(request: Request, editing: boolean) {
   if (process.env.VERCEL_ENV !== 'production') {
     return jsonResponse({ error: 'La saisie réelle est désactivée dans cette prévisualisation.' }, 403)
   }
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
   try {
     input = await request.json()
   } catch {
-    return jsonResponse({ error: 'Résultat invalide.' }, 400)
+    return jsonResponse({ error: 'Match invalide.' }, 400)
   }
 
   const team = input.team
@@ -55,6 +55,18 @@ export async function POST(request: Request) {
   const homeAway = input.homeAway
   const goalsFor = input.goalsFor
   const goalsAgainst = input.goalsAgainst
+  const slotColumn = input.slotColumn
+  const hasNoScore = goalsFor === null && goalsAgainst === null
+  const hasValidScore =
+    typeof goalsFor === 'number' &&
+    Number.isSafeInteger(goalsFor) &&
+    goalsFor >= 0 &&
+    goalsFor <= 50 &&
+    typeof goalsAgainst === 'number' &&
+    Number.isSafeInteger(goalsAgainst) &&
+    goalsAgainst >= 0 &&
+    goalsAgainst <= 50
+
   if (
     (team !== 'E1' && team !== 'E2') ||
     typeof date !== 'string' ||
@@ -65,14 +77,9 @@ export async function POST(request: Request) {
     opponent.length > 80 ||
     !['Championnat', 'Amical', 'Tournoi', 'Plateau'].includes(String(competition)) ||
     !['Domicile', 'Extérieur', 'Terrain neutre'].includes(String(homeAway)) ||
-    typeof goalsFor !== 'number' ||
-    !Number.isSafeInteger(goalsFor) ||
-    goalsFor < 0 ||
-    goalsFor > 50 ||
-    typeof goalsAgainst !== 'number' ||
-    !Number.isSafeInteger(goalsAgainst) ||
-    goalsAgainst < 0 ||
-    goalsAgainst > 50
+    (!hasNoScore && !hasValidScore) ||
+    (editing && (typeof slotColumn !== 'number' || !Number.isSafeInteger(slotColumn))) ||
+    (!editing && slotColumn !== undefined)
   ) {
     return jsonResponse({ error: 'Vérifie la date, l’équipe, l’adversaire et les scores.' }, 400)
   }
@@ -80,17 +87,28 @@ export async function POST(request: Request) {
   try {
     const saved = await writeMatchResult({
       team,
+      slotColumn: editing ? slotColumn as number : undefined,
       date,
       opponent,
       competition: String(competition),
       homeAway: String(homeAway),
-      goalsFor,
-      goalsAgainst,
+      goalsFor: hasNoScore ? null : goalsFor as number,
+      goalsAgainst: hasNoScore ? null : goalsAgainst as number,
     })
     revalidateTag('google-sheet', 'max')
     return jsonResponse({ ok: true, ...saved })
   } catch (error) {
-    console.error('Erreur lors de l’enregistrement du résultat de match:', error)
-    return jsonResponse({ error: 'Impossible d’enregistrer le résultat dans la feuille de match.' }, 500)
+    console.error('Erreur lors de l’enregistrement du match:', error)
+    const message = error instanceof Error ? error.message : 'Impossible d’enregistrer le match.'
+    const status = message.includes('existe déjà') ? 409 : message.includes('n’existe plus') ? 404 : 500
+    return jsonResponse({ error: status === 500 ? 'Impossible d’enregistrer le match dans la feuille.' : message }, status)
   }
+}
+
+export async function POST(request: Request) {
+  return save(request, false)
+}
+
+export async function PUT(request: Request) {
+  return save(request, true)
 }

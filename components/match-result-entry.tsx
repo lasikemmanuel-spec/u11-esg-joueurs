@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { useRouter } from 'next/navigation'
 import { CalendarDays, Pencil, Plus, Save } from 'lucide-react'
 import type { MatchSheetEntry } from '@/lib/match-results'
+import { MATCH_RESULT_STATUSES } from '@/lib/match-result-options'
 
 type MatchEntryStatus = {
   enabled: boolean
@@ -17,6 +18,7 @@ type Draft = {
   opponent: string
   competition: string
   homeAway: string
+  resultLabel: string
   goalsFor: string
   goalsAgainst: string
 }
@@ -42,9 +44,18 @@ function createDraft(): Draft {
     opponent: '',
     competition: 'Championnat',
     homeAway: 'Domicile',
+    resultLabel: '',
     goalsFor: '',
     goalsAgainst: '',
   }
+}
+
+function getEditableResult(entry: MatchSheetEntry) {
+  if (MATCH_RESULT_STATUSES.includes(entry.resultLabel as (typeof MATCH_RESULT_STATUSES)[number])) return entry.resultLabel
+  if (entry.goalsFor === null || entry.goalsAgainst === null) return ''
+  if (entry.goalsFor > entry.goalsAgainst) return 'Gagné'
+  if (entry.goalsFor < entry.goalsAgainst) return 'Perdu'
+  return 'Nul'
 }
 
 const inputClass = 'h-10 w-full rounded-lg border border-accent/50 bg-background px-3 text-sm font-normal outline-none focus-visible:ring-2 focus-visible:ring-ring'
@@ -103,6 +114,7 @@ export function MatchResultEntry({
       opponent: entry.opponent,
       competition: entry.competition || 'Championnat',
       homeAway: entry.homeAway || 'Domicile',
+      resultLabel: getEditableResult(entry),
       goalsFor: entry.goalsFor === null ? '' : String(entry.goalsFor),
       goalsAgainst: entry.goalsAgainst === null ? '' : String(entry.goalsAgainst),
     })
@@ -116,6 +128,15 @@ export function MatchResultEntry({
     const oneScoreMissing = Boolean(draft.goalsFor) !== Boolean(draft.goalsAgainst)
     if (oneScoreMissing) {
       setError('Saisis les deux scores ou laisse les deux champs vides pour planifier le match.')
+      return
+    }
+    const hasScore = Boolean(draft.goalsFor && draft.goalsAgainst)
+    if (hasScore && !draft.resultLabel) {
+      setError('Choisis le résultat à inscrire dans le Sheet : Gagné, Nul ou Perdu.')
+      return
+    }
+    if (!hasScore && draft.resultLabel && draft.resultLabel !== 'Annulé') {
+      setError('Un résultat Gagné, Nul ou Perdu nécessite les deux scores.')
       return
     }
 
@@ -236,8 +257,15 @@ export function MatchResultEntry({
               <input type="number" min="0" max="50" step="1" value={draft.goalsAgainst} onChange={(event) => setDraft({ ...draft, goalsAgainst: event.target.value })} className={inputClass} />
             </label>
           </div>
+          <label className="flex flex-col gap-1 text-sm font-semibold">
+            Résultat à inscrire dans le Sheet
+            <select value={draft.resultLabel} onChange={(event) => setDraft({ ...draft, resultLabel: event.target.value })} className={inputClass}>
+              <option value="">À jouer / aucun résultat</option>
+              {MATCH_RESULT_STATUSES.map((label) => <option key={label} value={label}>{label}</option>)}
+            </select>
+          </label>
           <p className="text-xs text-muted-foreground sm:col-span-2">
-            Laisse les deux scores vides pour planifier un match. Tu pourras les ajouter après la rencontre.
+            Saisis les deux scores et choisis Gagné, Nul ou Perdu. Pour un match à venir, laisse score et résultat vides.
           </p>
           <div className="flex flex-wrap gap-2 sm:col-span-2">
             <button type="submit" disabled={pending} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-60">
@@ -265,9 +293,11 @@ export function MatchResultEntry({
             </div>
             <div className="flex items-center gap-2">
               <span className="rounded-lg bg-muted px-3 py-2 font-mono text-sm font-bold text-primary">
-                {entry.goalsFor === null || entry.goalsAgainst === null
-                  ? 'À jouer'
-                  : entry.goalsFor + ' – ' + entry.goalsAgainst}
+                {entry.resultLabel === 'Annulé'
+                  ? 'Annulé'
+                  : entry.goalsFor === null || entry.goalsAgainst === null
+                    ? 'À jouer'
+                    : (getEditableResult(entry) ? getEditableResult(entry) + ' · ' : '') + entry.goalsFor + ' – ' + entry.goalsAgainst}
               </span>
               {canManage && (
                 <button

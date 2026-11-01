@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { getEducatorSession, isSameOriginRequest } from '@/lib/educator-auth'
 import { writeMatchResult } from '@/lib/match-results'
+import { MATCH_RESULT_STATUSES } from '@/lib/match-result-options'
 
 export const runtime = 'nodejs'
 
@@ -52,6 +53,7 @@ async function save(request: Request, editing: boolean) {
   const opponent = typeof input.opponent === 'string' ? input.opponent.trim() : ''
   const competition = input.competition
   const homeAway = input.homeAway
+  const resultLabel = input.resultLabel
   const goalsFor = input.goalsFor
   const goalsAgainst = input.goalsAgainst
   const slotColumn = input.slotColumn
@@ -65,6 +67,11 @@ async function save(request: Request, editing: boolean) {
     Number.isSafeInteger(goalsAgainst) &&
     goalsAgainst >= 0 &&
     goalsAgainst <= 50
+  const validResultLabel = resultLabel === '' || MATCH_RESULT_STATUSES.includes(resultLabel as typeof MATCH_RESULT_STATUSES[number])
+  const hasResultForScore = typeof resultLabel === 'string' && resultLabel !== ''
+  const validResultAndScore =
+    validResultLabel &&
+    (hasValidScore ? hasResultForScore : (resultLabel === '' || resultLabel === 'Annulé'))
 
   if (
     (team !== 'E1' && team !== 'E2') ||
@@ -77,6 +84,7 @@ async function save(request: Request, editing: boolean) {
     !['Championnat', 'Amical', 'Tournoi', 'Plateau'].includes(String(competition)) ||
     !['Domicile', 'Extérieur', 'Terrain neutre'].includes(String(homeAway)) ||
     (!hasNoScore && !hasValidScore) ||
+    !validResultAndScore ||
     (editing && (typeof slotColumn !== 'number' || !Number.isSafeInteger(slotColumn))) ||
     (!editing && slotColumn !== undefined)
   ) {
@@ -91,6 +99,7 @@ async function save(request: Request, editing: boolean) {
       opponent,
       competition: String(competition),
       homeAway: String(homeAway),
+      resultLabel: resultLabel as '' | typeof MATCH_RESULT_STATUSES[number],
       goalsFor: hasNoScore ? null : goalsFor as number,
       goalsAgainst: hasNoScore ? null : goalsAgainst as number,
     })

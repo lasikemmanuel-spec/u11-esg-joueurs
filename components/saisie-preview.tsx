@@ -6,7 +6,7 @@ import { Award, CalendarDays, Check, Mail, MapPin, Pencil, Phone, Plus, Save, Sh
 type Section = 'educateurs' | 'joueurs' | 'matchs'
 type Educator = { id: number; name: string; role: string; license: string; phone: string; email: string }
 type Player = { id: number; firstName: string; lastName: string; position: string; license: string }
-type Match = { id: number; date: string; team: string; opponent: string; venue: string; kind: string; for: number | null; against: number | null }
+type Match = { id: number; date: string; team: string; opponent: string; venue: string; kind: string; result: string; for: number | null; against: number | null }
 
 const sampleEducators: Educator[] = [
   { id: 1, name: 'Camille Exemple', role: 'Éducateur U11', license: '', phone: '', email: 'exemple@club.test' },
@@ -17,8 +17,8 @@ const samplePlayers: Player[] = [
   { id: 2, firstName: 'Alex', lastName: 'Exemple', position: 'Gardien', license: '', },
 ]
 const sampleMatches: Match[] = [
-  { id: 1, date: '2026-11-08', team: 'Équipe 1', opponent: 'Club Exemple', venue: 'Domicile', kind: 'Championnat', for: null, against: null },
-  { id: 2, date: '2026-11-15', team: 'Équipe 2', opponent: 'Club Démo', venue: 'Extérieur', kind: 'Amical', for: 1, against: 3 },
+  { id: 1, date: '2026-11-08', team: 'Équipe 1', opponent: 'Club Exemple', venue: 'Domicile', kind: 'Championnat', result: '', for: null, against: null },
+  { id: 2, date: '2026-11-15', team: 'Équipe 2', opponent: 'Club Démo', venue: 'Extérieur', kind: 'Amical', result: 'Perdu', for: 1, against: 3 },
 ]
 
 function Field({ label, value, onChange, type = 'text', required = false }: {
@@ -93,6 +93,7 @@ export function SaisiePreview() {
     opponent: '',
     venue: 'Domicile',
     kind: 'Championnat',
+    result: '',
     for: '',
     against: '',
   })
@@ -106,6 +107,7 @@ export function SaisiePreview() {
       opponent: '',
       venue: 'Domicile',
       kind: 'Championnat',
+      result: '',
       for: '',
       against: '',
     })
@@ -121,6 +123,7 @@ export function SaisiePreview() {
       opponent: match.opponent,
       venue: match.venue,
       kind: match.kind,
+      result: match.result || (match.for === null || match.against === null ? '' : match.for > match.against ? 'Gagné' : match.for < match.against ? 'Perdu' : 'Nul'),
       for: match.for === null ? '' : String(match.for),
       against: match.against === null ? '' : String(match.against),
     })
@@ -133,6 +136,15 @@ export function SaisiePreview() {
       setMatchError('Saisis les deux scores ou laisse les deux champs vides pour planifier le match.')
       return
     }
+    const hasScore = Boolean(matchDraft.for && matchDraft.against)
+    if (hasScore && !matchDraft.result) {
+      setMatchError('Choisis le résultat à inscrire dans le Sheet : Gagné, Nul ou Perdu.')
+      return
+    }
+    if (!hasScore && matchDraft.result && matchDraft.result !== 'Annulé') {
+      setMatchError('Un résultat Gagné, Nul ou Perdu nécessite les deux scores.')
+      return
+    }
     const saved: Match = {
       id: editingMatchId ?? Date.now(),
       date: matchDraft.date,
@@ -140,6 +152,7 @@ export function SaisiePreview() {
       opponent: matchDraft.opponent,
       venue: matchDraft.venue,
       kind: matchDraft.kind,
+      result: matchDraft.result,
       for: matchDraft.for ? Number(matchDraft.for) : null,
       against: matchDraft.against ? Number(matchDraft.against) : null,
     }
@@ -316,7 +329,12 @@ export function SaisiePreview() {
                   <Field label="Buts ESG" type="number" value={matchDraft.for} onChange={(value) => setMatchDraft({ ...matchDraft, for: value })} />
                   <Field label="Buts adversaire" type="number" value={matchDraft.against} onChange={(value) => setMatchDraft({ ...matchDraft, against: value })} />
                 </div>
-                <p className="text-xs text-muted-foreground sm:col-span-2">Laisse les deux scores vides pour planifier un futur match. La vraie version écrit dans la feuille E1 ou E2 selon l’équipe.</p>
+                <label className="flex flex-col gap-1.5 text-sm font-semibold">Résultat à inscrire dans le Sheet
+                  <select value={matchDraft.result} onChange={(event) => setMatchDraft({ ...matchDraft, result: event.target.value })} className="h-11 rounded-xl border border-accent/50 bg-background px-3 font-normal">
+                    <option value="">À jouer / aucun résultat</option><option>Gagné</option><option>Nul</option><option>Perdu</option><option>Annulé</option>
+                  </select>
+                </label>
+                <p className="text-xs text-muted-foreground sm:col-span-2">Saisis les deux scores et choisis Gagné, Nul ou Perdu. Laisse score et résultat vides pour planifier un match. Dans le vrai site, le choix écrit dans la feuille E1 ou E2.</p>
                 {matchError && <p role="alert" className="text-sm font-semibold text-destructive sm:col-span-2">{matchError}</p>}
                 <div className="flex gap-2 sm:col-span-2">
                   <button className={primaryButton} type="submit"><Save className="size-4" /> {editingMatchId === null ? 'Ajouter au calendrier' : 'Enregistrer les modifications'}</button>
@@ -334,7 +352,7 @@ export function SaisiePreview() {
                     <h3 className="mt-1 flex items-center gap-2 font-bold"><MapPin className="size-4 text-primary" /> {item.opponent} ({item.venue.toLowerCase()})</h3>
                   </div>
                   <div className="flex items-center gap-2">
-                    <p className="rounded-lg bg-muted px-3 py-2 font-mono text-sm font-black text-primary">{item.for === null || item.against === null ? 'À jouer' : item.for + ' – ' + item.against}</p>
+                    <p className="rounded-lg bg-muted px-3 py-2 font-mono text-sm font-black text-primary">{item.result === 'Annulé' ? 'Annulé' : item.for === null || item.against === null ? 'À jouer' : item.result + ' · ' + item.for + ' – ' + item.against}</p>
                     <button type="button" className={secondaryButton} onClick={() => startEditMatch(item)} aria-label={'Modifier le match contre ' + item.opponent}><Pencil className="size-4" /><span className="hidden sm:inline">Modifier</span></button>
                   </div>
                 </article>

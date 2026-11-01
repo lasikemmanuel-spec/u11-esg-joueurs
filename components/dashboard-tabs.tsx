@@ -63,16 +63,24 @@ export function DashboardTabs({
       .then(async (response) => {
         const result = await response.json()
         if (response.status === 401) {
-          if (active) setApplicationSession('unauthenticated')
+          if (active) {
+            setEducatorAccess('unauthenticated')
+            setApplicationSession('unauthenticated')
+          }
           return
         }
         if (!response.ok) throw new Error(result.error ?? 'Impossible de vérifier la connexion.')
         if (!active) return
-        setEducatorIdentity(result.educator as EducatorIdentity)
+        const identity = result.educator as EducatorIdentity
+        setEducatorIdentity(identity)
+        setEducatorAccess(identity.role === 'reader' ? 'unauthenticated' : 'authenticated')
         setApplicationSession('authenticated')
       })
       .catch(() => {
-        if (active) setApplicationSession('unavailable')
+        if (active) {
+          setEducatorAccess('unavailable')
+          setApplicationSession('unavailable')
+        }
       })
     return () => { active = false }
   }, [])
@@ -91,6 +99,7 @@ export function DashboardTabs({
       if (!response.ok) throw new Error(result.error ?? 'Connexion impossible.')
       const identity = result.educator as EducatorIdentity
       setEducatorIdentity(identity)
+      setEducatorAccess(identity.role === 'reader' ? 'unauthenticated' : 'authenticated')
       setApplicationSession('authenticated')
       setLoginPassword('')
       if (identity.role === 'reader' && activeTab === 'educator') setActiveTab('roster')

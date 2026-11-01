@@ -5,6 +5,7 @@ import { MatchCallupBreakdown } from '@/components/match-callup-breakdown'
 import { PlayerStats } from '@/components/player-stats'
 import { PositionBreakdown } from '@/components/position-breakdown'
 import { EducatorRoster } from '@/components/educator-roster'
+import { MatchResultEntry } from '@/components/match-result-entry'
 import { DashboardTitle } from '@/components/dashboard-title'
 import type { Convocation } from '@/lib/convocations'
 import type { Player } from '@/lib/players'
@@ -45,7 +46,7 @@ export function DashboardTabs({
     roster: { title: 'Effectifs', subtitle: 'Joueurs regroupés par poste.' },
     players: { title: 'Classement buteurs', subtitle: 'Top 5 buteurs, passeurs, entraînements et matchs joués.' },
     matches: { title: 'Stats Matchs', subtitle: 'Résultats, scores et convocations.' },
-    educator: { title: 'Éducateurs', subtitle: 'Licences FFF et informations des joueurs.' },
+    educator: { title: 'Éducateurs', subtitle: 'Annuaire, calendrier et informations du groupe.' },
   }[activeTab]
 
   return (
@@ -91,7 +92,6 @@ export function DashboardTabs({
             cohesionDays={cohesionDays}
             invitedCount={rosterPlayers.length}
             dataErrors={matchDataErrors}
-            onOpenEducators={() => setActiveTab('educator')}
           />
         )}
         {activeTab === 'roster' && (
@@ -103,7 +103,10 @@ export function DashboardTabs({
           />
         )}
         {activeTab === 'educator' && (
-          <EducatorRoster players={rosterPlayers} />
+          <div className="flex flex-col gap-5">
+            <MatchResultEntry entries={matchResults.entries} />
+            <EducatorRoster players={rosterPlayers} />
+          </div>
         )}
       </div>
 

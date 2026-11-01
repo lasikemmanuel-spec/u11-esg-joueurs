@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { CalendarDays, Pencil, Plus, Save } from 'lucide-react'
 import type { MatchSheetEntry } from '@/lib/match-results'
@@ -51,10 +51,8 @@ const inputClass = 'h-10 w-full rounded-lg border border-accent/50 bg-background
 
 export function MatchResultEntry({
   entries,
-  onOpenEducators,
 }: {
   entries: MatchSheetEntry[]
-  onOpenEducators: () => void
 }) {
   const router = useRouter()
   const [status, setStatus] = useState<MatchEntryStatus | null>(null)
@@ -66,24 +64,28 @@ export function MatchResultEntry({
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
 
-  useEffect(() => {
-    let active = true
+  const refreshStatus = useCallback(() => {
     fetch('/api/match-results', { cache: 'no-store' })
       .then(async (response) => {
         const result = await response.json()
         if (!response.ok) throw new Error(result.error ?? 'Impossible de vérifier les droits.')
-        if (active) setStatus(result as MatchEntryStatus)
+        setStatus(result as MatchEntryStatus)
       })
-      .catch(() => {
-        if (active) setStatus({ enabled: false, role: null, displayName: null })
-      })
-    return () => { active = false }
+      .catch(() => setStatus({ enabled: false, role: null, displayName: null }))
   }, [])
+
+  useEffect(() => {
+    refreshStatus()
+    const onSessionChange = () => refreshStatus()
+    window.addEventListener('educator-session-changed', onSessionChange)
+    return () => window.removeEventListener('educator-session-changed', onSessionChange)
+  }, [refreshStatus])
 
   const monthEntries = useMemo(
     () => entries.filter((entry) => dateInputValue(entry.date).slice(0, 7) === month),
     [entries, month],
   )
+  const canManage = Boolean(status?.enabled && status.role)
 
   const startNew = () => {
     setEditingSlot(null)
@@ -166,7 +168,7 @@ export function MatchResultEntry({
               className="h-10 rounded-lg border border-accent/50 bg-background px-2 text-sm font-normal text-foreground"
             />
           </label>
-          {status.enabled && status.role === 'admin' && (
+          {canManage && (
             <button
               type="button"
               onClick={startNew}
@@ -181,25 +183,18 @@ export function MatchResultEntry({
 
       {!status.enabled ? (
         <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
-          L’aperçu ne modifie pas le Sheet. Utilise la page de démonstration pour visualiser l’ajout et la modification.
+          La saisie est désactivée dans cet aperçu. Elle sera disponible sur le site officiel après connexion.
         </p>
       ) : status.role === null ? (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted px-3 py-2">
-          <p className="text-sm text-muted-foreground">Connecte-toi comme administrateur pour gérer le calendrier.</p>
-          <button type="button" onClick={onOpenEducators} className="text-sm font-semibold text-primary underline">
-            Ouvrir Éducateurs
-          </button>
+          <p className="text-sm text-muted-foreground">Connecte-toi dans l’espace éducateurs ci-dessous pour ajouter ou modifier les matchs.</p>
         </div>
-      ) : status.role !== 'admin' ? (
-        <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
-          La gestion du calendrier est réservée à l’administrateur.
-        </p>
       ) : null}
 
       {notice && <p role="status" className="mt-3 text-sm font-semibold text-emerald-700 dark:text-emerald-300">{notice}</p>}
       {error && <p role="alert" className="mt-3 text-sm font-semibold text-destructive">{error}</p>}
 
-      {open && status.enabled && status.role === 'admin' && (
+      {open && canManage && (
         <form onSubmit={save} className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
           <h3 className="text-base font-bold text-primary sm:col-span-2">
             {editingSlot === null ? 'Planifier un match' : 'Modifier ce match'}
@@ -274,7 +269,7 @@ export function MatchResultEntry({
                   ? 'À jouer'
                   : entry.goalsFor + ' – ' + entry.goalsAgainst}
               </span>
-              {status.enabled && status.role === 'admin' && (
+              {canManage && (
                 <button
                   type="button"
                   onClick={() => startEdit(entry)}

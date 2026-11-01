@@ -1,7 +1,6 @@
 import type { Convocation } from '@/lib/convocations'
 import type { MatchResult, TeamMatchResults } from '@/lib/match-results'
 import type { CohesionDay } from '@/lib/cohesion'
-import { MatchResultEntry } from '@/components/match-result-entry'
 import { ClubCrest } from '@/components/club-crest'
 
 const PRESENT_STATUSES = new Set(['present'])
@@ -78,7 +77,6 @@ export function MatchCallupBreakdown({
   cohesionDays,
   invitedCount,
   dataErrors,
-  onOpenEducators,
 }: {
   convocations: Convocation[]
   presentCounts: Record<string, number>
@@ -86,7 +84,6 @@ export function MatchCallupBreakdown({
   cohesionDays: CohesionDay[]
   invitedCount: number
   dataErrors: string[]
-  onOpenEducators: () => void
 }) {
   const byDate = new Map<string, { equipe1: number; equipe2: number; presents: number }>()
 
@@ -182,7 +179,6 @@ export function MatchCallupBreakdown({
 
   return (
     <div className="flex flex-col gap-5">
-      <MatchResultEntry entries={matchResults.entries} onOpenEducators={onOpenEducators} />
       {dataErrors.length > 0 && (
         <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           Certaines données n’ont pas pu être chargées :

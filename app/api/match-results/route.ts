@@ -35,8 +35,7 @@ async function save(request: Request, editing: boolean) {
   }
   if (!isSameOriginRequest(request)) return jsonResponse({ error: 'Requête non autorisée.' }, 403)
   const educator = getSession(request)
-  if (!educator) return jsonResponse({ error: 'Connexion administrateur requise.' }, 401)
-  if (educator.role !== 'admin') return jsonResponse({ error: 'Droits insuffisants.' }, 403)
+  if (!educator) return jsonResponse({ error: 'Connexion éducateur requise.' }, 401)
   if (Number(request.headers.get('content-length') ?? 0) > 4096) {
     return jsonResponse({ error: 'Requête trop volumineuse.' }, 413)
   }

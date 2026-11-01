@@ -12,6 +12,8 @@ const ACCOUNT_HEADER = 'Comptes chiffrés v1'
 export type EducatorAccount = {
   username: string
   displayName: string
+  firstName?: string
+  lastName?: string
   passwordHash: string
   role: 'educator' | 'admin'
 }
@@ -89,6 +91,8 @@ function validateAccounts(value: unknown[]): EducatorAccount[] {
     if (
       typeof account.username !== 'string' ||
       typeof account.displayName !== 'string' ||
+      (account.firstName !== undefined && typeof account.firstName !== 'string') ||
+      (account.lastName !== undefined && typeof account.lastName !== 'string') ||
       typeof account.passwordHash !== 'string' ||
       !isAccountRole(account.role) ||
       !/^scrypt\$[A-Za-z0-9_-]{22}\$[A-Za-z0-9_-]{86}$/.test(account.passwordHash)
@@ -104,6 +108,8 @@ function validateAccounts(value: unknown[]): EducatorAccount[] {
     return {
       username: account.username.trim(),
       displayName: account.displayName.trim(),
+      ...(typeof account.firstName === 'string' ? { firstName: account.firstName.trim() } : {}),
+      ...(typeof account.lastName === 'string' ? { lastName: account.lastName.trim() } : {}),
       passwordHash: account.passwordHash,
       role: account.role,
     }

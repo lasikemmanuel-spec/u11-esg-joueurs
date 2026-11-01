@@ -1,27 +1,31 @@
 'use client'
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { KeyRound, Plus, Shield, ShieldOff, Trash2, UserRound, X } from 'lucide-react'
+import { KeyRound, Pencil, Plus, Shield, ShieldOff, Trash2, UserRound, X } from 'lucide-react'
 
 type Account = {
   username: string
   displayName: string
+  firstName: string
+  lastName: string
   role: 'educator' | 'admin'
 }
 
 type AccountDraft = {
   username: string
-  displayName: string
+  firstName: string
+  lastName: string
   password: string
 }
 
-const emptyDraft: AccountDraft = { username: '', displayName: '', password: '' }
+const emptyDraft: AccountDraft = { username: '', firstName: '', lastName: '', password: '' }
 
 export function EducatorAccountManagement({ currentUsername }: { currentUsername: string }) {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [draft, setDraft] = useState<AccountDraft>(emptyDraft)
   const [passwordDraft, setPasswordDraft] = useState('')
   const [passwordTarget, setPasswordTarget] = useState<Account | null>(null)
+  const [editTarget, setEditTarget] = useState<Account | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
   const [pendingUsername, setPendingUsername] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -60,6 +64,39 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
       setNotice('Compte éducateur créé.')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Impossible de créer le compte.')
+    } finally {
+      setPendingUsername(null)
+    }
+  }
+
+  const saveProfile = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    if (!editTarget) return
+    setPendingUsername(editTarget.username)
+    setError('')
+    setNotice('')
+    try {
+      const response = await fetch('/api/educators/accounts', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: editTarget.username,
+          email: draft.username,
+          firstName: draft.firstName,
+          lastName: draft.lastName,
+        }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error ?? 'Impossible de modifier les informations du compte.')
+      if (editTarget.username.toLocaleLowerCase('fr-FR') === currentUsername.toLocaleLowerCase('fr-FR')) {
+        window.location.reload()
+        return
+      }
+      await load()
+      setEditTarget(null)
+      setNotice(`Informations mises à jour pour ${draft.firstName} ${draft.lastName}.`)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Impossible de modifier les informations du compte.')
     } finally {
       setPendingUsername(null)
     }
@@ -144,7 +181,7 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
         </div>
         <button
           type="button"
-          onClick={() => { setError(''); setCreateOpen(true) }}
+          onClick={() => { setError(''); setDraft(emptyDraft); setCreateOpen(true) }}
           className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground"
         >
           <Plus aria-hidden="true" className="size-4" />
@@ -174,6 +211,24 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
                     </span>
                   </div>
                   <div className="flex shrink-0 flex-col gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDraft({
+                          username: account.username,
+                          firstName: account.firstName,
+                          lastName: account.lastName,
+                          password: '',
+                        })
+                        setEditTarget(account)
+                        setError('')
+                      }}
+                      disabled={pendingUsername !== null}
+                      className="inline-flex min-h-8 items-center justify-center gap-1 rounded-lg border border-accent/50 px-2 text-xs font-semibold text-primary disabled:opacity-50"
+                    >
+                      <Pencil aria-hidden="true" className="size-3.5" />
+                      Identité
+                    </button>
                     <button
                       type="button"
                       onClick={() => void updateRole(account)}
@@ -209,22 +264,26 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
         </ul>
       )}
 
-      {(createOpen || passwordTarget) && (
+      {(createOpen || passwordTarget || editTarget) && (
         <div role="dialog" aria-modal="true" className="fixed inset-0 z-[60] grid place-items-center bg-black/50 p-4">
           <form
-            onSubmit={createOpen ? saveAccount : resetPassword}
+            onSubmit={createOpen ? saveAccount : editTarget ? saveProfile : resetPassword}
             className="w-full max-w-md rounded-2xl border border-accent/60 bg-card p-5 shadow-2xl"
           >
             <header className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Administration</p>
                 <h3 className="mt-1 text-lg font-black text-primary">
-                  {createOpen ? 'Ajouter un compte éducateur' : `Modifier le mot de passe de ${passwordTarget?.displayName}`}
+                  {createOpen
+                    ? 'Ajouter un compte éducateur'
+                    : editTarget
+                      ? `Modifier le compte de ${editTarget.displayName}`
+                      : `Modifier le mot de passe de ${passwordTarget?.displayName}`}
                 </h3>
               </div>
               <button
                 type="button"
-                onClick={() => { setCreateOpen(false); setPasswordTarget(null); setError('') }}
+                onClick={() => { setCreateOpen(false); setPasswordTarget(null); setEditTarget(null); setError('') }}
                 aria-label="Fermer"
                 className="inline-flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground"
               >
@@ -233,10 +292,19 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
             </header>
             {createOpen && (
               <div className="mt-4 grid gap-3">
-                <label className="grid gap-1 text-sm font-semibold">Identifiant<input required maxLength={120} autoComplete="username" value={draft.username} onChange={(event) => setDraft({ ...draft, username: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
-                <label className="grid gap-1 text-sm font-semibold">Nom affiché<input required minLength={2} maxLength={80} value={draft.displayName} onChange={(event) => setDraft({ ...draft, displayName: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
+                <label className="grid gap-1 text-sm font-semibold">Adresse e-mail / identifiant<input required type="email" maxLength={120} autoComplete="username" value={draft.username} onChange={(event) => setDraft({ ...draft, username: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
+                <label className="grid gap-1 text-sm font-semibold">Prénom<input required maxLength={80} autoComplete="given-name" value={draft.firstName} onChange={(event) => setDraft({ ...draft, firstName: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
+                <label className="grid gap-1 text-sm font-semibold">Nom<input required maxLength={80} autoComplete="family-name" value={draft.lastName} onChange={(event) => setDraft({ ...draft, lastName: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
               </div>
             )}
+            {editTarget && (
+              <div className="mt-4 grid gap-3">
+                <label className="grid gap-1 text-sm font-semibold">Adresse e-mail / identifiant<input required type="email" maxLength={120} autoComplete="email" value={draft.username} onChange={(event) => setDraft({ ...draft, username: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
+                <label className="grid gap-1 text-sm font-semibold">Prénom<input required maxLength={80} autoComplete="given-name" value={draft.firstName} onChange={(event) => setDraft({ ...draft, firstName: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
+                <label className="grid gap-1 text-sm font-semibold">Nom<input required maxLength={80} autoComplete="family-name" value={draft.lastName} onChange={(event) => setDraft({ ...draft, lastName: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
+              </div>
+            )}
+            {!editTarget && (createOpen || passwordTarget) && (
             <label className="mt-4 grid gap-1 text-sm font-semibold">
               {createOpen ? 'Mot de passe initial' : 'Nouveau mot de passe'}
               <input
@@ -252,10 +320,11 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
                 className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal"
               />
             </label>
-            <p className="mt-2 text-xs text-muted-foreground">12 caractères minimum. Le mot de passe n’est jamais affiché ni enregistré en clair.</p>
+            )}
+            {(createOpen || !editTarget) && <p className="mt-2 text-xs text-muted-foreground">12 caractères minimum. Le mot de passe n’est jamais affiché ni enregistré en clair.</p>}
             {error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
             <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => { setCreateOpen(false); setPasswordTarget(null) }} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-muted-foreground">Annuler</button>
+              <button type="button" onClick={() => { setCreateOpen(false); setPasswordTarget(null); setEditTarget(null) }} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-muted-foreground">Annuler</button>
               <button type="submit" disabled={pendingUsername !== null} className="min-h-10 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50">
                 {pendingUsername !== null ? 'Enregistrement…' : 'Enregistrer'}
               </button>

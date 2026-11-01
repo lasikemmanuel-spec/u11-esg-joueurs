@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server'
 import {
+  createEducatorSession,
+  educatorSessionCookieName,
   getEducatorSession,
   hashEducatorPassword,
   isSameOriginRequest,
 } from '@/lib/educator-auth'
 import { getEducatorAccounts, saveEducatorAccounts } from '@/lib/educator-account-store'
+import { renameEducatorProfilePhoto } from '@/lib/educator-profile-photo'
 
 export const runtime = 'nodejs'
 
@@ -28,8 +31,20 @@ function validRole(role: unknown): role is AccountRole {
   return role === 'educator' || role === 'admin'
 }
 
+function validEmail(value: unknown): value is string {
+  return typeof value === 'string' &&
+    value.length <= 120 &&
+    /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim())
+}
+
 function publicAccounts(accounts: Awaited<ReturnType<typeof getEducatorAccounts>>) {
-  return accounts.map(({ username, displayName, role }) => ({ username, displayName, role }))
+  return accounts.map(({ username, displayName, firstName, lastName, role }) => ({
+    username,
+    displayName,
+    firstName: firstName ?? '',
+    lastName: lastName ?? displayName,
+    role,
+  }))
 }
 
 export async function GET(request: Request) {
@@ -79,19 +94,21 @@ export async function POST(request: Request) {
   const parsed = await readInput(request)
   if (parsed.error) return parsed.error
 
-  const { username, displayName, password, role = 'educator' } = parsed.input
+  const { username, firstName, lastName, password, role = 'educator' } = parsed.input
   if (
-    typeof username !== 'string' ||
-    !/^[\p{L}\p{N}._@+-]{1,120}$/u.test(username.trim()) ||
-    typeof displayName !== 'string' ||
-    displayName.trim().length < 2 ||
-    displayName.trim().length > 80 ||
+    !validEmail(username) ||
+    typeof firstName !== 'string' ||
+    firstName.trim().length < 1 ||
+    firstName.trim().length > 80 ||
+    typeof lastName !== 'string' ||
+    lastName.trim().length < 1 ||
+    lastName.trim().length > 80 ||
     typeof password !== 'string' ||
     password.length < 12 ||
     password.length > 256 ||
     !validRole(role)
   ) {
-    return response({ error: 'Vérifiez l’identifiant, le nom, le rôle et le mot de passe (12 à 256 caractères).' }, 400)
+    return response({ error: 'Vérifiez l’adresse e-mail, le prénom, le nom, le rôle et le mot de passe (12 à 256 caractères).' }, 400)
   }
 
   try {
@@ -102,7 +119,9 @@ export async function POST(request: Request) {
     }
     const account = {
       username: username.trim(),
-      displayName: displayName.trim(),
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      displayName: `${firstName.trim()} ${lastName.trim()}`,
       passwordHash: hashEducatorPassword(password),
       role,
     }
@@ -120,13 +139,24 @@ export async function PATCH(request: Request) {
   const parsed = await readInput(request)
   if (parsed.error) return parsed.error
 
-  const { username, role, password } = parsed.input
+  const { username, role, password, email, firstName, lastName } = parsed.input
+  const isProfileUpdate = email !== undefined || firstName !== undefined || lastName !== undefined
+  const profileEmail = validEmail(email) ? email.trim() : ''
+  const profileFirstName = typeof firstName === 'string' ? firstName.trim() : ''
+  const profileLastName = typeof lastName === 'string' ? lastName.trim() : ''
   if (
     typeof username !== 'string' ||
     username.trim().length === 0 ||
     (role !== undefined && !validRole(role)) ||
     (password !== undefined && (typeof password !== 'string' || password.length < 12 || password.length > 256)) ||
-    (role === undefined && password === undefined)
+    (role === undefined && password === undefined && !isProfileUpdate) ||
+    (isProfileUpdate && (
+      !profileEmail ||
+      profileFirstName.length < 1 ||
+      profileFirstName.length > 80 ||
+      profileLastName.length < 1 ||
+      profileLastName.length > 80
+    ))
   ) {
     return response({ error: 'Modification du compte invalide.' }, 400)
   }
@@ -141,6 +171,16 @@ export async function PATCH(request: Request) {
     if (targetIndex < 0) return response({ error: 'Ce compte éducateur n’existe plus.' }, 404)
 
     const target = accounts[targetIndex]
+    const nextUsername = isProfileUpdate ? profileEmail : target.username
+    if (
+      isProfileUpdate &&
+      accounts.some((account, index) =>
+        index !== targetIndex &&
+        account.username.toLocaleLowerCase('fr-FR') === nextUsername.toLocaleLowerCase('fr-FR'),
+      )
+    ) {
+      return response({ error: 'Cette adresse e-mail est déjà utilisée par un autre compte.' }, 409)
+    }
     if (
       role === 'educator' &&
       target.role === 'admin' &&
@@ -154,13 +194,47 @@ export async function PATCH(request: Request) {
 
     const updated = {
       ...target,
+      ...(isProfileUpdate ? {
+        username: nextUsername,
+        firstName: profileFirstName,
+        lastName: profileLastName,
+        displayName: `${profileFirstName} ${profileLastName}`,
+      } : {}),
       ...(role === undefined ? {} : { role }),
       ...(password === undefined ? {} : { passwordHash: hashEducatorPassword(password) }),
     }
     const nextAccounts = [...accounts]
     nextAccounts[targetIndex] = updated
-    await saveEducatorAccounts(nextAccounts)
-    return response({ ok: true, account: { username: updated.username, displayName: updated.displayName, role: updated.role } })
+    if (target.username !== updated.username) {
+      await renameEducatorProfilePhoto(target.username, updated.username)
+    }
+    try {
+      await saveEducatorAccounts(nextAccounts)
+    } catch (error) {
+      if (target.username !== updated.username) {
+        try {
+          await renameEducatorProfilePhoto(updated.username, target.username)
+        } catch (rollbackError) {
+          console.error('Impossible de restaurer la photo après l’échec de la modification du compte:', rollbackError)
+        }
+      }
+      throw error
+    }
+    const result = response({
+      ok: true,
+      account: { username: updated.username, displayName: updated.displayName, firstName: updated.firstName ?? '', lastName: updated.lastName ?? updated.displayName, role: updated.role },
+    })
+    if (target.username.toLocaleLowerCase('fr-FR') === access.educator.username.toLocaleLowerCase('fr-FR') && target.username !== updated.username) {
+      const session = createEducatorSession(updated)
+      result.cookies.set(educatorSessionCookieName(), session.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/',
+        maxAge: session.maxAge,
+      })
+    }
+    return result
   } catch (error) {
     console.error('Erreur de modification d’un compte éducateur:', error)
     return response({ error: 'Impossible de modifier ce compte éducateur.' }, 500)

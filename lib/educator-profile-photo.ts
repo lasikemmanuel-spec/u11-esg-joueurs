@@ -80,3 +80,36 @@ export async function saveEducatorProfilePhoto(username: string, photoDataUrl: s
     values: [[username.trim(), photo]],
   }])
 }
+
+export async function renameEducatorProfilePhoto(previousUsername: string, nextUsername: string) {
+  let sheet: Awaited<ReturnType<typeof readSheet>>
+  try {
+    sheet = await readSheet()
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Aucun onglet Google Sheets trouvé.') return
+    throw error
+  }
+  const previous = normalizeUsername(previousUsername)
+  const next = normalizeUsername(nextUsername)
+  if (previous === next) return
+
+  const oldIndex = sheet.rows.findIndex(
+    (entry, index) => index > 0 && normalizeUsername(entry[0] ?? '') === previous,
+  )
+  if (oldIndex < 1) return
+  const newIndex = sheet.rows.findIndex(
+    (entry, index) => index > 0 && normalizeUsername(entry[0] ?? '') === next,
+  )
+  const rowNumber = newIndex > 0 ? newIndex + 1 : oldIndex + 1
+  const photo = sheet.rows[oldIndex][1]?.trim() ?? ''
+  await updateAuthenticatedSheetValues([{
+    range: `'${TAB.replace(/'/g, "''")}'!A${rowNumber}:B${rowNumber}`,
+    values: [[nextUsername.trim(), photo]],
+  }])
+  if (newIndex > 0 && newIndex !== oldIndex) {
+    await updateAuthenticatedSheetValues([{
+      range: `'${TAB.replace(/'/g, "''")}'!A${oldIndex + 1}:B${oldIndex + 1}`,
+      values: [['', '']],
+    }])
+  }
+}

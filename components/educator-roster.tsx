@@ -215,6 +215,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
 
   const missingLicenseCount = players.filter((player) => !player.licenseNumber?.trim()).length
   const allGroupsExpanded = groups.length > 0 && groups.every(([position]) => expandedPositions.has(position))
+  const hasExpandedVisibleGroup = groups.some(([position]) => expandedPositions.has(position))
 
   if (!sessionChecked) {
     return (
@@ -524,22 +525,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
                   )
                 })}
               </ul>}
-              {isExpanded && (
-                <button
-                  type="button"
-                  onClick={() => setExpandedPositions((current) => {
-                    const next = new Set(current)
-                    next.delete(position)
-                    return next
-                  })}
-                  aria-label={`Replier le poste ${position}`}
-                  title={`Replier le poste ${position}`}
-                  className="inline-flex min-h-10 w-full items-center justify-center gap-1.5 border-t border-accent/30 bg-muted/30 text-xs font-semibold text-primary hover:bg-primary/5 sm:hidden"
-                >
-                  <ChevronUp aria-hidden="true" className="size-4" />
-                  Replier {position}
-                </button>
-              )}
+
             </section>
           )})}
         </div>
@@ -636,6 +622,20 @@ export function EducatorRoster({ players }: { players: Player[] }) {
               </>
             )}
           </section>
+        </div>
+      )}
+      {hasExpandedVisibleGroup && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center sm:hidden">
+          <button
+            type="button"
+            onClick={() => setExpandedPositions(new Set())}
+            aria-label="Replier tous les postes ouverts"
+            title="Replier tous les postes ouverts"
+            className="pointer-events-auto inline-flex min-h-10 items-center gap-1.5 rounded-full border border-accent bg-primary px-4 text-xs font-bold text-primary-foreground shadow-lg"
+          >
+            <ChevronUp aria-hidden="true" className="size-4" />
+            Tout replier
+          </button>
         </div>
       )}
     </section>

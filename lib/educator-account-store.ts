@@ -8,6 +8,10 @@ import {
 
 const ACCOUNT_TAB = 'Comptes éducateurs'
 const ACCOUNT_HEADER = 'Comptes chiffrés v1'
+const ACCOUNT_CACHE_MS = 10_000
+
+let cachedAccounts: { accounts: EducatorAccount[]; expiresAt: number } | null = null
+let pendingAccountRead: Promise<EducatorAccount[]> | null = null
 
 export type EducatorAccount = {
   username: string
@@ -154,6 +158,27 @@ async function getAccountSheetRows() {
 
 export async function getEducatorAccounts(): Promise<EducatorAccount[]> {
   getEncryptionKey()
+  if (cachedAccounts && Date.now() < cachedAccounts.expiresAt) {
+    return cachedAccounts.accounts.map((account) => ({ ...account }))
+  }
+  if (pendingAccountRead) {
+    return (await pendingAccountRead).map((account) => ({ ...account }))
+  }
+
+  const accountRead = readEducatorAccounts()
+  pendingAccountRead = accountRead
+  try {
+    const accounts = await accountRead
+    if (pendingAccountRead === accountRead) {
+      cachedAccounts = { accounts, expiresAt: Date.now() + ACCOUNT_CACHE_MS }
+    }
+    return accounts.map((account) => ({ ...account }))
+  } finally {
+    if (pendingAccountRead === accountRead) pendingAccountRead = null
+  }
+}
+
+async function readEducatorAccounts(): Promise<EducatorAccount[]> {
   const sheet = await getAccountSheetRows()
 
   if (sheet.rows.length === 0) {
@@ -190,4 +215,6 @@ export async function saveEducatorAccounts(accounts: EducatorAccount[]) {
   await updateAuthenticatedSheetValues([
     { range: `'${sheet.sheetTitle.replace(/'/g, "''")}'!A2`, values: [[encryptAccounts(validatedAccounts)]] },
   ])
+  cachedAccounts = null
+  pendingAccountRead = null
 }

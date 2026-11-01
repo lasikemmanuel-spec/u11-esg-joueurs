@@ -9,6 +9,10 @@ const SESSION_DURATION_SECONDS = 8 * 60 * 60
 
 export type EducatorSession = Pick<EducatorAccount, 'username' | 'displayName' | 'role'>
 
+export function hasEducatorAccess(educator: EducatorSession) {
+  return educator.role === 'educator' || educator.role === 'admin'
+}
+
 export function isSameOriginRequest(request: Request) {
   const origin = request.headers.get('origin')
   if (!origin) return false

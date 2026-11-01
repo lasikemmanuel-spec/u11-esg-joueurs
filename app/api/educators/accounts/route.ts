@@ -11,7 +11,7 @@ import { renameEducatorProfilePhoto } from '@/lib/educator-profile-photo'
 
 export const runtime = 'nodejs'
 
-type AccountRole = 'educator' | 'admin'
+type AccountRole = 'educator' | 'admin' | 'reader'
 
 function response(body: object, status = 200) {
   return NextResponse.json(body, {
@@ -28,7 +28,7 @@ async function requireAdmin(request: Request) {
 }
 
 function validRole(role: unknown): role is AccountRole {
-  return role === 'educator' || role === 'admin'
+  return role === 'educator' || role === 'admin' || role === 'reader'
 }
 
 function validEmail(value: unknown): value is string {
@@ -182,13 +182,14 @@ export async function PATCH(request: Request) {
       return response({ error: 'Cette adresse e-mail est déjà utilisée par un autre compte.' }, 409)
     }
     if (
-      role === 'educator' &&
+      role !== undefined &&
+      role !== 'admin' &&
       target.role === 'admin' &&
       accounts.filter((account) => account.role === 'admin').length <= 1
     ) {
       return response({ error: 'Impossible de retirer le dernier administrateur.' }, 409)
     }
-    if (target.username.toLocaleLowerCase('fr-FR') === access.educator.username.toLocaleLowerCase('fr-FR') && role === 'educator') {
+    if (target.username.toLocaleLowerCase('fr-FR') === access.educator.username.toLocaleLowerCase('fr-FR') && role !== undefined && role !== 'admin') {
       return response({ error: 'Vous ne pouvez pas retirer vos propres droits administrateur.' }, 409)
     }
 

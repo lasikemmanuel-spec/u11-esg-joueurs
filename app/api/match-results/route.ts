@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
-import { getEducatorSession, isSameOriginRequest } from '@/lib/educator-auth'
+import { getEducatorSession, hasEducatorAccess, isSameOriginRequest } from '@/lib/educator-auth'
 import { writeMatchResult } from '@/lib/match-results'
 import { MATCH_RESULT_STATUSES } from '@/lib/match-result-options'
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
@@ -42,6 +42,7 @@ async function save(request: Request, editing: boolean) {
     return jsonResponse({ error: 'La connexion éducateur n’est pas disponible.' }, 503)
   }
   if (!educator) return jsonResponse({ error: 'Connexion éducateur requise.' }, 401)
+  if (!hasEducatorAccess(educator)) return jsonResponse({ error: 'Accès réservé aux éducateurs.' }, 403)
   if (Number(request.headers.get('content-length') ?? 0) > 4096) {
     return jsonResponse({ error: 'Requête trop volumineuse.' }, 413)
   }

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
-import { getEducatorSession, isSameOriginRequest } from '@/lib/educator-auth'
+import { getEducatorSession, hasEducatorAccess, isSameOriginRequest } from '@/lib/educator-auth'
 import { getEducatorDirectory, saveEducatorDirectoryEntry } from '@/lib/educator-directory'
 
 export const runtime = 'nodejs'
@@ -21,6 +21,7 @@ export async function GET(request: Request) {
     return response({ error: 'La connexion éducateur n’est pas disponible.' }, 503)
   }
   if (!educator) return response({ error: 'Connexion requise.' }, 401)
+  if (!hasEducatorAccess(educator)) return response({ error: 'Accès réservé aux éducateurs.' }, 403)
   try {
     return response({ educators: await getEducatorDirectory() })
   } catch (error) {

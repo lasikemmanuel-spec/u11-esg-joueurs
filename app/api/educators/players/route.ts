@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getEducatorSession } from '@/lib/educator-auth'
+import { getEducatorSession, hasEducatorAccess } from '@/lib/educator-auth'
 import { getRoster } from '@/lib/players'
 
 export const runtime = 'nodejs'
@@ -19,6 +19,12 @@ export async function GET(request: Request) {
     return NextResponse.json(
       { error: 'Connexion éducateur requise.' },
       { status: 401, headers: { 'Cache-Control': 'no-store, private', Vary: 'Cookie' } },
+    )
+  }
+  if (!hasEducatorAccess(educator)) {
+    return NextResponse.json(
+      { error: 'Accès réservé aux éducateurs.' },
+      { status: 403, headers: { 'Cache-Control': 'no-store, private', Vary: 'Cookie' } },
     )
   }
 

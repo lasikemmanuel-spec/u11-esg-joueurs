@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { CalendarDays, ContactRound, LogOut } from 'lucide-react'
 import { MatchCallupBreakdown } from '@/components/match-callup-breakdown'
 import { PlayerStats } from '@/components/player-stats'
@@ -17,7 +17,9 @@ import type { PlayerStats as PlayerStat } from '@/lib/stats'
 type TabKey = 'roster' | 'educator' | 'players' | 'matches'
 type EducatorSection = 'matches' | 'directory'
 type EducatorAccess = 'checking' | 'unauthenticated' | 'authenticated' | 'unavailable'
-type EducatorIdentity = { username: string; displayName: string; role: 'educator' | 'admin' }
+type AccountRole = 'educator' | 'admin' | 'reader'
+type EducatorIdentity = { username: string; displayName: string; role: AccountRole }
+type ApplicationSession = 'checking' | 'unauthenticated' | 'authenticated' | 'unavailable'
 
 export function DashboardTabs({
   players,
@@ -43,8 +45,58 @@ export function DashboardTabs({
   const [returnToMatchesAfterLogin, setReturnToMatchesAfterLogin] = useState(false)
   const [educatorAccess, setEducatorAccess] = useState<EducatorAccess>('checking')
   const [educatorIdentity, setEducatorIdentity] = useState<EducatorIdentity | null>(null)
+  const [applicationSession, setApplicationSession] = useState<ApplicationSession>('checking')
+  const [loginUsername, setLoginUsername] = useState('')
+  const [loginPassword, setLoginPassword] = useState('')
+  const [loginError, setLoginError] = useState('')
+  const [loginPending, setLoginPending] = useState(false)
   const [logoutPending, setLogoutPending] = useState(false)
   const [logoutError, setLogoutError] = useState('')
+
+  useEffect(() => {
+    let active = true
+    fetch('/api/educators/session', { cache: 'no-store' })
+      .then(async (response) => {
+        const result = await response.json()
+        if (response.status === 401) {
+          if (active) setApplicationSession('unauthenticated')
+          return
+        }
+        if (!response.ok) throw new Error(result.error ?? 'Impossible de vérifier la connexion.')
+        if (!active) return
+        setEducatorIdentity(result.educator as EducatorIdentity)
+        setApplicationSession('authenticated')
+      })
+      .catch(() => {
+        if (active) setApplicationSession('unavailable')
+      })
+    return () => { active = false }
+  }, [])
+
+  const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setLoginPending(true)
+    setLoginError('')
+    try {
+      const response = await fetch('/api/educators/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: loginUsername, password: loginPassword }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error ?? 'Connexion impossible.')
+      const identity = result.educator as EducatorIdentity
+      setEducatorIdentity(identity)
+      setApplicationSession('authenticated')
+      setLoginPassword('')
+      if (identity.role === 'reader' && activeTab === 'educator') setActiveTab('roster')
+      window.dispatchEvent(new Event('educator-session-changed'))
+    } catch (error) {
+      setLoginError(error instanceof Error ? error.message : 'Connexion impossible.')
+    } finally {
+      setLoginPending(false)
+    }
+  }
 
   const handleEducatorLogout = async () => {
     setLogoutPending(true)
@@ -54,6 +106,7 @@ export function DashboardTabs({
       const result = await response.json()
       if (!response.ok) throw new Error(result.error ?? 'Déconnexion impossible.')
       setEducatorIdentity(null)
+      setApplicationSession('unauthenticated')
       setEducatorAccess('unauthenticated')
       setReturnToMatchesAfterLogin(false)
       setEducatorSection('matches')
@@ -65,11 +118,23 @@ export function DashboardTabs({
     }
   }
 
+  const handleEducatorChange = (identity: EducatorIdentity | null) => {
+    setEducatorIdentity(identity)
+    if (!identity) setApplicationSession('unauthenticated')
+  }
+
+  const handleEducatorAccessChange = (status: EducatorAccess) => {
+    setEducatorAccess(status)
+    if (status === 'unauthenticated') setApplicationSession('unauthenticated')
+  }
+
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'roster', label: 'Effectifs' },
     { key: 'players', label: 'Stats Joueurs' },
     { key: 'matches', label: 'Stats Matchs' },
-    { key: 'educator', label: 'Éducateurs' },
+    ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
+      ? [{ key: 'educator' as const, label: 'Éducateurs' }]
+      : []),
   ]
   const activeTitle = {
     roster: { title: 'Effectifs', subtitle: 'Joueurs regroupés par poste.' },
@@ -77,6 +142,56 @@ export function DashboardTabs({
     matches: { title: 'Stats Matchs', subtitle: 'Résultats, scores et convocations.' },
     educator: { title: 'Éducateurs', subtitle: 'Annuaire, calendrier et informations du groupe.' },
   }[activeTab]
+
+  if (applicationSession !== 'authenticated') {
+    return (
+      <section className="mx-auto w-full max-w-md rounded-2xl border border-accent/50 bg-card p-6 shadow-lg">
+        <h2 className="text-xl font-black text-primary">Connexion à l’application</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Connectez-vous pour accéder aux rubriques selon votre rôle. La session reste active 8 heures.
+        </p>
+        {applicationSession === 'checking' ? (
+          <p role="status" className="mt-5 text-sm text-muted-foreground">Vérification de la connexion…</p>
+        ) : applicationSession === 'unavailable' ? (
+          <p role="alert" className="mt-5 text-sm font-medium text-destructive">
+            La connexion n’est pas disponible actuellement. Réessayez dans quelques instants.
+          </p>
+        ) : (
+          <form onSubmit={handleLogin} className="mt-5 grid gap-3">
+            <label className="grid gap-1 text-sm font-semibold">
+              Identifiant ou adresse e-mail
+              <input
+                required
+                autoComplete="username"
+                value={loginUsername}
+                onChange={(event) => setLoginUsername(event.target.value)}
+                className="h-11 rounded-lg border border-accent/50 bg-background px-3 font-normal"
+              />
+            </label>
+            <label className="grid gap-1 text-sm font-semibold">
+              Mot de passe
+              <input
+                required
+                type="password"
+                autoComplete="current-password"
+                value={loginPassword}
+                onChange={(event) => setLoginPassword(event.target.value)}
+                className="h-11 rounded-lg border border-accent/50 bg-background px-3 font-normal"
+              />
+            </label>
+            {loginError && <p role="alert" className="text-sm font-medium text-destructive">{loginError}</p>}
+            <button
+              type="submit"
+              disabled={loginPending}
+              className="mt-1 min-h-11 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
+            >
+              {loginPending ? 'Connexion…' : 'Se connecter'}
+            </button>
+          </form>
+        )}
+      </section>
+    )
+  }
 
   return (
     <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm xl:grid xl:grid-cols-[220px_minmax(0,1fr)]">
@@ -111,10 +226,13 @@ export function DashboardTabs({
           <DashboardTitle
             {...activeTitle}
             eyebrow={activeTab === 'educator' ? 'ESG Genech · Éducateurs' : undefined}
-            action={activeTab === 'educator' && educatorIdentity && (
+            action={educatorIdentity && (
               <div className="flex shrink-0 items-center gap-2">
                 <span className="text-right text-xs font-semibold text-white">
-                  {educatorIdentity.displayName.trim().split(/\s+/)[0]} : connecté
+                  {educatorIdentity.displayName.trim().split(/\s+/)[0]} · {
+                    educatorIdentity.role === 'admin' ? 'Admin' :
+                      educatorIdentity.role === 'educator' ? 'Éducateur' : 'Lecteur'
+                  }
                 </span>
                 <button
                   type="button"
@@ -195,15 +313,15 @@ export function DashboardTabs({
                   />
                 ) : (
                   <EducatorRoster
-                    onSessionStatusChange={setEducatorAccess}
-                    onEducatorChange={setEducatorIdentity}
+                    onSessionStatusChange={handleEducatorAccessChange}
+                    onEducatorChange={handleEducatorChange}
                   />
                 )}
               </>
             ) : (
               <EducatorRoster
-                onSessionStatusChange={setEducatorAccess}
-                onEducatorChange={setEducatorIdentity}
+                onSessionStatusChange={handleEducatorAccessChange}
+                onEducatorChange={handleEducatorChange}
                 onLoginSuccess={() => {
                   if (!returnToMatchesAfterLogin) return
                   setReturnToMatchesAfterLogin(false)

@@ -1,14 +1,16 @@
 'use client'
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { KeyRound, Pencil, Plus, Shield, ShieldOff, Trash2, UserRound, X } from 'lucide-react'
+import { KeyRound, Pencil, Plus, Shield, Trash2, UserRound, X } from 'lucide-react'
+
+type AccountRole = 'educator' | 'admin' | 'reader'
 
 type Account = {
   username: string
   displayName: string
   firstName: string
   lastName: string
-  role: 'educator' | 'admin'
+  role: AccountRole
 }
 
 type AccountDraft = {
@@ -16,9 +18,10 @@ type AccountDraft = {
   firstName: string
   lastName: string
   password: string
+  role: AccountRole
 }
 
-const emptyDraft: AccountDraft = { username: '', firstName: '', lastName: '', password: '' }
+const emptyDraft: AccountDraft = { username: '', firstName: '', lastName: '', password: '', role: 'educator' }
 
 export function EducatorAccountManagement({ currentUsername }: { currentUsername: string }) {
   const [accounts, setAccounts] = useState<Account[]>([])
@@ -102,7 +105,7 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
     }
   }
 
-  const updateRole = async (account: Account) => {
+  const updateRole = async (account: Account, role: AccountRole) => {
     setPendingUsername(account.username)
     setError('')
     setNotice('')
@@ -112,7 +115,7 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: account.username,
-          role: account.role === 'admin' ? 'educator' : 'admin',
+          role,
         }),
       })
       const result = await response.json()
@@ -177,7 +180,7 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
       <header className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 id="educator-accounts-title" className="font-bold text-primary">Comptes éducateurs</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Gérer les accès, les mots de passe et les droits administrateur.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Gérer les accès, les mots de passe et les rôles administrateur, éducateur ou lecteur.</p>
         </div>
         <button
           type="button"
@@ -207,7 +210,7 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
                     <p className="mt-1 truncate text-sm text-muted-foreground">{account.username}</p>
                     <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs font-semibold">
                       {account.role === 'admin' ? <Shield aria-hidden="true" className="size-3.5" /> : <UserRound aria-hidden="true" className="size-3.5" />}
-                      {account.role === 'admin' ? 'Administrateur' : 'Éducateur'}
+                      {account.role === 'admin' ? 'Administrateur' : account.role === 'reader' ? 'Lecteur' : 'Éducateur'}
                     </span>
                   </div>
                   <div className="flex shrink-0 flex-col gap-1.5">
@@ -219,6 +222,7 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
                           firstName: account.firstName,
                           lastName: account.lastName,
                           password: '',
+                          role: account.role,
                         })
                         setEditTarget(account)
                         setError('')
@@ -229,15 +233,20 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
                       <Pencil aria-hidden="true" className="size-3.5" />
                       Identité
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => void updateRole(account)}
-                      disabled={pendingUsername !== null || (isSelf && account.role === 'admin')}
-                      className="inline-flex min-h-8 items-center justify-center gap-1 rounded-lg border border-accent/50 px-2 text-xs font-semibold text-primary disabled:opacity-50"
-                    >
-                      {account.role === 'admin' ? <ShieldOff aria-hidden="true" className="size-3.5" /> : <Shield aria-hidden="true" className="size-3.5" />}
-                      {account.role === 'admin' ? 'Retirer admin' : 'Rendre admin'}
-                    </button>
+                    <label className="grid gap-1 text-[11px] font-semibold text-muted-foreground">
+                      Rôle
+                      <select
+                        value={account.role}
+                        onChange={(event) => void updateRole(account, event.target.value as AccountRole)}
+                        disabled={pendingUsername !== null || (isSelf && account.role === 'admin')}
+                        aria-label={`Rôle de ${account.displayName}`}
+                        className="h-8 rounded-lg border border-accent/50 bg-background px-2 text-xs font-semibold text-primary disabled:opacity-50"
+                      >
+                        <option value="admin">Administrateur</option>
+                        <option value="educator">Éducateur</option>
+                        <option value="reader">Lecteur</option>
+                      </select>
+                    </label>
                     <button
                       type="button"
                       onClick={() => { setPasswordDraft(''); setPasswordTarget(account); setError('') }}
@@ -295,6 +304,13 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
                 <label className="grid gap-1 text-sm font-semibold">Adresse e-mail / identifiant<input required type="email" maxLength={120} autoComplete="username" value={draft.username} onChange={(event) => setDraft({ ...draft, username: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
                 <label className="grid gap-1 text-sm font-semibold">Prénom<input required maxLength={80} autoComplete="given-name" value={draft.firstName} onChange={(event) => setDraft({ ...draft, firstName: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
                 <label className="grid gap-1 text-sm font-semibold">Nom<input required maxLength={80} autoComplete="family-name" value={draft.lastName} onChange={(event) => setDraft({ ...draft, lastName: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
+                <label className="grid gap-1 text-sm font-semibold">Rôle
+                  <select value={draft.role} onChange={(event) => setDraft({ ...draft, role: event.target.value as AccountRole })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal">
+                    <option value="admin">Administrateur</option>
+                    <option value="educator">Éducateur</option>
+                    <option value="reader">Lecteur</option>
+                  </select>
+                </label>
               </div>
             )}
             {editTarget && (

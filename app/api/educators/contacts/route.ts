@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getEducatorSession, isSameOriginRequest } from '@/lib/educator-auth'
+import { getEducatorSession, hasEducatorAccess, isSameOriginRequest } from '@/lib/educator-auth'
 import {
   getEducatorPhones,
   PhoneMigrationRequiredError,
@@ -24,6 +24,7 @@ export async function GET(request: Request) {
     return jsonResponse({ error: 'La connexion éducateur n’est pas disponible.' }, 503)
   }
   if (!educator) return jsonResponse({ error: 'Connexion requise.' }, 401)
+  if (!hasEducatorAccess(educator)) return jsonResponse({ error: 'Accès réservé aux éducateurs.' }, 403)
 
   try {
     const phones = await getEducatorPhones()
@@ -54,6 +55,7 @@ export async function PUT(request: Request) {
     return jsonResponse({ error: 'La connexion éducateur n’est pas disponible.' }, 503)
   }
   if (!educator) return jsonResponse({ error: 'Connexion requise.' }, 401)
+  if (!hasEducatorAccess(educator)) return jsonResponse({ error: 'Accès réservé aux éducateurs.' }, 403)
   if (educator.role !== 'admin') return jsonResponse({ error: 'Droits insuffisants.' }, 403)
   if (Number(request.headers.get('content-length') ?? 0) > 2048) {
     return jsonResponse({ error: 'Requête trop volumineuse.' }, 413)

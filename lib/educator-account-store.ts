@@ -19,11 +19,11 @@ export type EducatorAccount = {
   firstName?: string
   lastName?: string
   passwordHash: string
-  role: 'educator' | 'admin'
+  role: 'educator' | 'admin' | 'reader'
 }
 
 function isAccountRole(role: unknown): role is EducatorAccount['role'] {
-  return role === 'educator' || role === 'admin'
+  return role === 'educator' || role === 'admin' || role === 'reader'
 }
 
 function getEncryptionKey() {

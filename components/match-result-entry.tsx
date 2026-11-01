@@ -14,7 +14,7 @@ import {
 
 type MatchEntryStatus = {
   enabled: boolean
-  role: 'educator' | 'admin' | null
+  role: 'educator' | 'admin' | 'reader' | null
   displayName: string | null
 }
 
@@ -104,7 +104,7 @@ export function MatchResultEntry({
     () => entries.filter((entry) => dateInputValue(entry.date).slice(0, 7) === month),
     [entries, month],
   )
-  const canManage = Boolean(status?.enabled && status.role)
+  const canManage = Boolean(status?.enabled && (status.role === 'educator' || status.role === 'admin'))
 
   const startNew = () => {
     setEditingSlot(null)

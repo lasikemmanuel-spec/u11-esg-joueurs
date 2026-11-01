@@ -49,6 +49,7 @@ export function EducatorDirectory({
   const visibleEducators = !isSearching && ownDirectoryEntry
     ? filteredEducators.filter((educator) => educator.id !== ownDirectoryEntry.id)
     : filteredEducators
+  const ownPhoneKey = 'own-educator-profile'
   const load = useCallback(async () => {
     const response = await fetch('/api/educators/directory', { cache: 'no-store' })
     const data = await response.json()
@@ -144,9 +145,38 @@ export function EducatorDirectory({
             <span className="mt-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
               {currentEducator.role === 'admin' ? 'Administrateur' : currentEducator.role === 'educator' ? 'Éducateur' : 'Lecteur'}
             </span>
-            <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted-foreground">
+            <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
               <span>Licence FFF : <strong className="text-primary">{ownDirectoryEntry?.licenseNumber || 'non renseignée'}</strong></span>
-              <span>Téléphone : <strong className="text-primary">{ownDirectoryEntry?.phone || 'non renseigné'}</strong></span>
+              {ownDirectoryEntry?.phone && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setVisiblePhones((current) => ({ ...current, [ownPhoneKey]: !current[ownPhoneKey] }))}
+                    aria-expanded={Boolean(visiblePhones[ownPhoneKey])}
+                    aria-label={`${visiblePhones[ownPhoneKey] ? 'Masquer' : 'Afficher'} votre téléphone`}
+                    className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-accent/50 bg-card px-2.5 text-sm font-bold text-primary shadow-sm transition hover:bg-primary/5 hover:shadow-md"
+                  >
+                    <Phone aria-hidden="true" className="size-4" />
+                    <span>Téléphone</span>
+                  </button>
+                  {visiblePhones[ownPhoneKey] && (
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-semibold text-primary">{ownDirectoryEntry.phone}</span>
+                      {isPhoneDevice && (
+                        <a
+                          href={`tel:${ownDirectoryEntry.phone.replace(/[^+\d]/g, '')}`}
+                          aria-label={`Appeler ${ownDirectoryEntry.name}`}
+                          title={`Appeler ${ownDirectoryEntry.name}`}
+                          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground"
+                        >
+                          <Phone aria-hidden="true" className="size-3.5" />
+                          Appeler
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           <button

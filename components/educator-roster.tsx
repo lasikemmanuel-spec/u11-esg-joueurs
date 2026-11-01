@@ -306,7 +306,7 @@ export function EducatorRoster({ loginRequest = 0 }: { loginRequest?: number }) 
               />
             </label>
             <button type="submit" disabled={requestPending} className="h-10 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-60">
-              {requestPending ? 'Connexion…' : 'Se connecter'}
+              {requestPending ? 'Connexion…' : 'Connexion'}
             </button>
           </form>
         ) : (
@@ -359,7 +359,9 @@ export function EducatorRoster({ loginRequest = 0 }: { loginRequest?: number }) 
   return (
     <section aria-label="Liste des éducateurs" className="flex flex-col gap-4">
       <div className="flex items-center justify-end gap-2">
-        <span className="text-xs text-muted-foreground">{educator.displayName}</span>
+        <span className="text-xs text-muted-foreground">
+          {educator.displayName.trim().split(/\s+/)[0]} : connecté
+        </span>
         <button
           type="button"
           onClick={handleLogout}

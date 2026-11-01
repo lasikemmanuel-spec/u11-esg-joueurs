@@ -216,10 +216,14 @@ export function MatchResultEntry({
             onClick={onConnect}
             className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground"
           >
-            Se connecter
+            Connexion
           </button>
         </div>
-      ) : null}
+      ) : (
+        <p role="status" className="mt-3 rounded-lg bg-muted px-3 py-2 text-sm font-medium text-muted-foreground">
+          {status.displayName?.trim().split(/\s+/)[0] ?? 'Éducateur'} : connecté
+        </p>
+      )}
 
       {notice && <p role="status" className="mt-3 text-sm font-semibold text-emerald-700 dark:text-emerald-300">{notice}</p>}
       {error && <p role="alert" className="mt-3 text-sm font-semibold text-destructive">{error}</p>}

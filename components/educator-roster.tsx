@@ -233,13 +233,9 @@ export function EducatorRoster() {
       ] as const)
   }, [players, query])
 
-  useEffect(() => {
-    if (!query.trim()) return
-    setExpandedPositions(new Set(groups.map(([position]) => position)))
-  }, [groups, query])
-
   const matchingPlayerCount = groups.reduce((count, [, list]) => count + list.length, 0)
   const missingLicenseCount = players.filter((player) => !player.licenseNumber?.trim()).length
+  const matchingPlayers = groups.flatMap(([, list]) => list)
   const allGroupsExpanded = groups.length > 0 && groups.every(([position]) => expandedPositions.has(position))
   const hasExpandedVisibleGroup = groups.some(([position]) => expandedPositions.has(position))
 
@@ -427,6 +423,115 @@ export function EducatorRoster() {
               Résultats joueurs <span className="font-normal text-muted-foreground">({matchingPlayerCount})</span>
             </h2>
           )}
+          {query.trim() ? (
+            matchingPlayers.length === 0 ? (
+              <p className="rounded-xl border border-accent/40 bg-card p-5 text-center text-sm text-muted-foreground">
+                Aucun joueur ne correspond à votre recherche.
+              </p>
+            ) : (
+              <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {matchingPlayers.map((player) => {
+                  const phone = phones[player.number]
+                  const licenseNumber = player.licenseNumber
+                  const parentContact = (parent: ParentKey, value: string) => {
+                    if (!value) return null
+                    const label = parent === 'father' ? 'Papa' : 'Maman'
+                    const key = `${player.number}-${parent}`
+                    return (
+                      <div key={parent} className="flex flex-wrap items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setVisiblePhones((current) => ({ ...current, [key]: !current[key] }))}
+                          aria-expanded={Boolean(visiblePhones[key])}
+                          aria-label={`${visiblePhones[key] ? 'Masquer' : 'Afficher'} le téléphone de ${label} pour ${player.firstName} ${player.lastName}`}
+                          className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-accent/50 bg-card px-2.5 text-sm font-bold text-primary shadow-sm transition hover:bg-primary/5 hover:shadow-md"
+                        >
+                          <ParentAvatar parent={parent} />
+                          <Phone aria-hidden="true" className="size-4" />
+                          <span>{label}</span>
+                        </button>
+                        {visiblePhones[key] && (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm font-semibold text-primary">{value}</span>
+                            {isPhoneDevice && (
+                              <a
+                                href={`tel:${value.replace(/[^\d+]/g, '')}`}
+                                aria-label={`Appeler ${label} pour ${player.firstName} ${player.lastName}`}
+                                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground"
+                              >
+                                <Phone aria-hidden="true" className="size-3.5" />
+                                Appeler
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <li key={player.number} className="rounded-xl border border-accent/50 bg-card p-3 shadow-sm">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-foreground">
+                            {player.firstName} <span className="font-black uppercase tracking-wide text-primary">{player.lastName}</span>
+                          </p>
+                          <p className="mt-1 text-xs text-muted-foreground">{player.position ?? 'Poste non renseigné'}</p>
+                          <p className="mt-1 text-sm text-muted-foreground">
+                            Licence FFF : <span className="font-mono">{licenseNumber ?? 'non renseignée'}</span>
+                          </p>
+                        </div>
+                        {educator.role === 'admin' && (
+                          <button
+                            type="button"
+                            onClick={() => openPhoneEditor(player)}
+                            disabled={requestPending}
+                            aria-label={`Gérer les téléphones des parents pour ${player.firstName} ${player.lastName}`}
+                            className="inline-flex min-h-8 shrink-0 items-center gap-1 rounded-lg border border-accent/50 bg-background px-2 text-[11px] font-bold text-primary disabled:opacity-50"
+                          >
+                            <Pencil aria-hidden="true" className="size-3" />
+                            Gérer
+                          </button>
+                        )}
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        {parentContact('father', phone?.fatherPhone ?? '')}
+                        {parentContact('mother', phone?.motherPhone ?? '')}
+                        {phone?.legacyPhone && (
+                          <button
+                            type="button"
+                            onClick={() => setVisiblePhones((current) => ({ ...current, [`${player.number}-legacy`]: !current[`${player.number}-legacy`] }))}
+                            aria-expanded={Boolean(visiblePhones[`${player.number}-legacy`])}
+                            aria-label={`Afficher ou masquer l’autre téléphone de ${player.firstName} ${player.lastName}`}
+                            className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-accent/50 bg-card px-2.5 text-sm font-bold text-primary"
+                          >
+                            <Phone aria-hidden="true" className="size-4" />
+                            Autre contact
+                          </button>
+                        )}
+                        {phone?.legacyPhone && visiblePhones[`${player.number}-legacy`] && (
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm font-semibold text-primary">{phone.legacyPhone}</span>
+                            {isPhoneDevice && (
+                              <a
+                                href={`tel:${phone.legacyPhone.replace(/[^\d+]/g, '')}`}
+                                aria-label={`Appeler l’autre contact de ${player.firstName} ${player.lastName}`}
+                                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground"
+                              >
+                                <Phone aria-hidden="true" className="size-3.5" />
+                                Appeler
+                              </a>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            )
+          ) : (
+            <>
           <div className="flex justify-end">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-card px-3 py-1.5 text-xs font-semibold">
               <Award className="size-3.5 text-amber-600 dark:text-amber-400" />
@@ -614,6 +719,8 @@ export function EducatorRoster() {
           )})}
         </div>
       )}
+            </>
+          )}
         </div>
       )}
 
@@ -710,7 +817,7 @@ export function EducatorRoster() {
           </section>
         </div>
       )}
-      {(directoryView === 'players' || Boolean(query.trim())) && hasExpandedVisibleGroup && (
+      {(directoryView === 'players' || Boolean(query.trim())) && !query.trim() && hasExpandedVisibleGroup && (
         <div className="pointer-events-none fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center sm:hidden">
           <button
             type="button"

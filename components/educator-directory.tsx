@@ -17,6 +17,7 @@ export function EducatorDirectory({ canEdit, searchQuery }: { canEdit: boolean; 
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const isSearching = Boolean(searchQuery?.trim())
   const filteredEducators = educators.filter((educator) =>
     matchesSearch(searchQuery ?? '', [educator.name, educator.licenseNumber, educator.phone]),
   )
@@ -63,7 +64,11 @@ export function EducatorDirectory({ canEdit, searchQuery }: { canEdit: boolean; 
   }
 
   return (
-    <section aria-labelledby="educator-directory-title" className="rounded-2xl border border-accent/50 bg-card p-4 shadow-sm">
+    <section
+      aria-labelledby={isSearching ? undefined : 'educator-directory-title'}
+      className={isSearching ? '' : 'rounded-2xl border border-accent/50 bg-card p-4 shadow-sm'}
+    >
+      {!isSearching && (
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 id="educator-directory-title" className="font-bold text-primary">Annuaire des éducateurs</h2>
@@ -71,6 +76,12 @@ export function EducatorDirectory({ canEdit, searchQuery }: { canEdit: boolean; 
         </div>
         {canEdit && <button type="button" onClick={() => { setDraft(blank); setError(''); setOpen(true) }} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground"><Plus className="size-4" /> Ajouter un éducateur</button>}
       </div>
+      )}
+      {isSearching && canEdit && (
+        <div className="mb-2 flex justify-end">
+          <button type="button" onClick={() => { setDraft(blank); setError(''); setOpen(true) }} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground"><Plus className="size-4" /> Ajouter un éducateur</button>
+        </div>
+      )}
       {notice && <p role="status" className="mt-3 text-sm font-medium text-emerald-700">{notice}</p>}
       {error && !open && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
       {educators.length === 0 ? (

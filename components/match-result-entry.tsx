@@ -206,7 +206,7 @@ export function MatchResultEntry({
           </h3>
           <label className="flex flex-col gap-1 text-sm font-semibold">
             Équipe
-            <select value={draft.team} onChange={(event) => setDraft({ ...draft, team: event.target.value as Draft['team'] })} className={inputClass}>
+            <select disabled={editingSlot !== null} value={draft.team} onChange={(event) => setDraft({ ...draft, team: event.target.value as Draft['team'] })} className={inputClass}>
               <option value="E1">Équipe 1</option>
               <option value="E2">Équipe 2</option>
             </select>

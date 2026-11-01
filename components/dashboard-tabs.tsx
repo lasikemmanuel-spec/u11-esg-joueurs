@@ -1,13 +1,15 @@
 'use client'
 
 import { useEffect, useState, type FormEvent } from 'react'
-import { CalendarDays, ContactRound, LogOut } from 'lucide-react'
+import { CalendarDays, ContactRound, LogOut, X } from 'lucide-react'
 import { MatchCallupBreakdown } from '@/components/match-callup-breakdown'
 import { PlayerStats } from '@/components/player-stats'
 import { PositionBreakdown } from '@/components/position-breakdown'
 import { EducatorRoster } from '@/components/educator-roster'
 import { MatchResultEntry } from '@/components/match-result-entry'
 import { DashboardTitle } from '@/components/dashboard-title'
+import { EducatorAvatar } from '@/components/educator-avatar'
+import { EducatorProfilePhotoEditor } from '@/components/educator-profile-photo-editor'
 import type { Convocation } from '@/lib/convocations'
 import type { PublicPlayer } from '@/lib/players'
 import type { TeamMatchResults } from '@/lib/match-results'
@@ -52,6 +54,8 @@ export function DashboardTabs({
   const [loginPending, setLoginPending] = useState(false)
   const [logoutPending, setLogoutPending] = useState(false)
   const [logoutError, setLogoutError] = useState('')
+  const [profilePhotoOpen, setProfilePhotoOpen] = useState(false)
+  const [profilePhotoRevision, setProfilePhotoRevision] = useState(0)
 
   useEffect(() => {
     let active = true
@@ -236,6 +240,15 @@ export function DashboardTabs({
                 </span>
                 <button
                   type="button"
+                  onClick={() => setProfilePhotoOpen(true)}
+                  aria-label="Afficher ou changer ma photo de profil"
+                  title="Ma photo de profil"
+                  className="rounded-full ring-2 ring-accent/70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white"
+                >
+                  <EducatorAvatar username={educatorIdentity.username} revision={profilePhotoRevision} size="size-10" />
+                </button>
+                <button
+                  type="button"
                   onClick={() => void handleEducatorLogout()}
                   disabled={logoutPending}
                   aria-label="Se déconnecter"
@@ -361,6 +374,37 @@ export function DashboardTabs({
           })}
         </div>
       </nav>
+
+      {profilePhotoOpen && educatorIdentity && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="profile-photo-dialog-title"
+          className="fixed inset-0 z-[70] grid place-items-center bg-black/60 p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setProfilePhotoOpen(false)
+          }}
+        >
+          <section className="w-full max-w-md rounded-2xl border border-accent/60 bg-card p-5 shadow-2xl">
+            <header className="mb-4 flex items-center justify-between gap-3">
+              <h2 id="profile-photo-dialog-title" className="text-lg font-black text-primary">Ma photo de profil</h2>
+              <button
+                type="button"
+                onClick={() => setProfilePhotoOpen(false)}
+                aria-label="Fermer"
+                className="inline-flex size-9 items-center justify-center rounded-full bg-muted text-muted-foreground"
+              >
+                <X aria-hidden="true" className="size-4" />
+              </button>
+            </header>
+            <EducatorProfilePhotoEditor
+              username={educatorIdentity.username}
+              revision={profilePhotoRevision}
+              onPhotoChange={() => setProfilePhotoRevision((revision) => revision + 1)}
+            />
+          </section>
+        </div>
+      )}
     </section>
   )
 }

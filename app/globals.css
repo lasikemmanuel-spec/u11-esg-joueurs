@@ -47,9 +47,9 @@
 
 :root {
   color-scheme: light;
-  --background: oklch(1 0 0 / 88%);
+  --background: oklch(1 0 0 / 78%);
   --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0 / 84%);
+  --card: oklch(1 0 0 / 68%);
   --card-foreground: oklch(0.145 0 0);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.145 0 0);
@@ -83,9 +83,9 @@
 
 .dark {
   color-scheme: dark;
-  --background: oklch(0.18 0.045 272 / 94%);
+  --background: oklch(0.18 0.045 272 / 92%);
   --foreground: oklch(0.97 0.01 85);
-  --card: oklch(0.23 0.055 272 / 92%);
+  --card: oklch(0.23 0.055 272 / 88%);
   --card-foreground: oklch(0.985 0 0);
   --popover: oklch(0.23 0.055 272);
   --popover-foreground: oklch(0.985 0 0);
@@ -119,9 +119,9 @@
 @media (prefers-color-scheme: dark) {
   :root:not(.light) {
     color-scheme: dark;
-    --background: oklch(0.18 0.045 272 / 94%);
+    --background: oklch(0.18 0.045 272 / 92%);
     --foreground: oklch(0.97 0.01 85);
-    --card: oklch(0.23 0.055 272 / 92%);
+    --card: oklch(0.23 0.055 272 / 88%);
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.23 0.055 272);
     --popover-foreground: oklch(0.985 0 0);

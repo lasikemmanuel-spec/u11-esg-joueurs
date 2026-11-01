@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { findEducator, getEducatorSession, hasEducatorAccess, isSameOriginRequest } from '@/lib/educator-auth'
+import { findEducator, getEducatorSession, isSameOriginRequest } from '@/lib/educator-auth'
 import { getEducatorProfilePhoto, saveEducatorProfilePhoto } from '@/lib/educator-profile-photo'
 
 export const runtime = 'nodejs'
@@ -81,7 +81,6 @@ export async function PUT(request: Request) {
   if (!isSameOriginRequest(request)) return jsonResponse({ error: 'Requête non autorisée.' }, 403)
   const access = await requireEducator(request)
   if (access.error) return access.error
-  if (!hasEducatorAccess(access.educator)) return jsonResponse({ error: 'Accès réservé aux éducateurs.' }, 403)
   if (Number(request.headers.get('content-length') ?? 0) > MAX_BODY_BYTES) {
     return jsonResponse({ error: 'La photo dépasse la taille maximale autorisée.' }, 413)
   }
@@ -114,7 +113,6 @@ export async function DELETE(request: Request) {
   if (!isSameOriginRequest(request)) return jsonResponse({ error: 'Requête non autorisée.' }, 403)
   const access = await requireEducator(request)
   if (access.error) return access.error
-  if (!hasEducatorAccess(access.educator)) return jsonResponse({ error: 'Accès réservé aux éducateurs.' }, 403)
   try {
     await saveEducatorProfilePhoto(access.educator.username, null)
     return jsonResponse({ ok: true })

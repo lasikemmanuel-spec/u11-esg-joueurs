@@ -3,24 +3,23 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Pencil, Phone, Plus, Save, X } from 'lucide-react'
 import type { DirectoryEducator } from '@/lib/educator-directory'
+import { matchesSearch } from '@/lib/search'
 
 type Draft = { id?: string; name: string; licenseNumber: string; phone: string }
 const blank: Draft = { name: '', licenseNumber: '', phone: '' }
 
-const normalizeSearch = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr-FR')
-
 export function EducatorDirectory({ canEdit, searchQuery }: { canEdit: boolean; searchQuery?: string }) {
   const [educators, setEducators] = useState<DirectoryEducator[]>([])
+  const [visiblePhones, setVisiblePhones] = useState<Record<string, boolean>>({})
+  const [isPhoneDevice, setIsPhoneDevice] = useState(false)
   const [draft, setDraft] = useState<Draft>(blank)
   const [open, setOpen] = useState(false)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
-  const terms = normalizeSearch(searchQuery ?? '').trim().split(/\s+/).filter(Boolean)
-  const filteredEducators = educators.filter((educator) => {
-    const searchable = normalizeSearch([educator.name, educator.licenseNumber, educator.phone].join(' '))
-    return terms.every((term) => searchable.includes(term))
-  })
+  const filteredEducators = educators.filter((educator) =>
+    matchesSearch(searchQuery ?? '', [educator.name, educator.licenseNumber, educator.phone]),
+  )
 
   const load = useCallback(async () => {
     const response = await fetch('/api/educators/directory', { cache: 'no-store' })
@@ -30,6 +29,10 @@ export function EducatorDirectory({ canEdit, searchQuery }: { canEdit: boolean; 
   }, [])
 
   useEffect(() => { void load().catch((reason) => setError(reason instanceof Error ? reason.message : 'Impossible de charger l’annuaire.')) }, [load])
+
+  useEffect(() => {
+    setIsPhoneDevice(/iPhone|iPod|Android.*Mobile|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(navigator.userAgent))
+  }, [])
 
   const edit = (educator: DirectoryEducator) => {
     setDraft({ id: educator.id, name: educator.name, licenseNumber: educator.licenseNumber, phone: educator.phone })
@@ -84,7 +87,36 @@ export function EducatorDirectory({ canEdit, searchQuery }: { canEdit: boolean; 
                 <div className="min-w-0">
                   <h3 className="truncate font-bold text-foreground">{educator.name}</h3>
                   <p className="mt-1 text-sm text-muted-foreground">Licence FFF : {educator.licenseNumber || 'non renseignée'}</p>
-                  {educator.phone && <a href={`tel:${educator.phone.replace(/[^+\d]/g, '')}`} className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-primary"><Phone aria-hidden="true" className="size-4" />{educator.phone}</a>}
+                  {educator.phone && (
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setVisiblePhones((current) => ({ ...current, [educator.id]: !current[educator.id] }))}
+                        aria-expanded={Boolean(visiblePhones[educator.id])}
+                        aria-label={`${visiblePhones[educator.id] ? 'Masquer' : 'Afficher'} le téléphone de ${educator.name}`}
+                        className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-accent/50 bg-card px-2.5 text-sm font-bold text-primary shadow-sm transition hover:bg-primary/5 hover:shadow-md"
+                      >
+                        <Phone aria-hidden="true" className="size-4" />
+                        <span>Téléphone</span>
+                      </button>
+                      {visiblePhones[educator.id] && (
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-sm font-semibold text-primary">{educator.phone}</span>
+                          {isPhoneDevice && (
+                            <a
+                              href={`tel:${educator.phone.replace(/[^+\d]/g, '')}`}
+                              aria-label={`Appeler ${educator.name}`}
+                              title={`Appeler ${educator.name}`}
+                              className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground"
+                            >
+                              <Phone aria-hidden="true" className="size-3.5" />
+                              Appeler
+                            </a>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
                 {canEdit && <button type="button" onClick={() => edit(educator)} aria-label={`Modifier ${educator.name}`} className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-accent/50 px-2 text-xs font-semibold text-primary"><Pencil aria-hidden="true" className="size-3.5" /> Modifier</button>}
               </div>

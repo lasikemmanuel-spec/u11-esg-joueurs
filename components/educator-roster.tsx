@@ -3,13 +3,11 @@
 import { useState, useMemo, useEffect, useCallback, type FormEvent } from 'react'
 import { Search, Copy, Check, Award, LockKeyhole, LogOut, Phone, Save, ChevronDown, ChevronUp, Pencil, X, ContactRound, UsersRound } from 'lucide-react'
 import type { Player, PublicPlayer } from '@/lib/players'
+import { matchesSearch } from '@/lib/search'
 import { ParentAvatar } from '@/components/parent-avatar'
 import { EducatorDirectory } from '@/components/educator-directory'
 
 type EducatorIdentity = { displayName: string; role: 'educator' | 'admin' }
-
-const normalize = (value: string) =>
-  value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr-FR')
 
 const POSITION_ORDER = ['gard', 'déf', 'def', 'lat', 'cent', 'mil', 'ail', 'att', 'av']
 
@@ -214,13 +212,10 @@ export function EducatorRoster() {
   }
 
   const groups = useMemo(() => {
-    const searchTerms = normalize(query.trim()).split(/\s+/).filter(Boolean)
     const grouped = new Map<string, EducatorPlayer[]>()
 
     for (const player of players) {
-      const searchablePlayer = normalize([player.firstName, player.lastName, player.licenseNumber ?? ''].join(' '))
-      const matchesQuery = searchTerms.every((term) => searchablePlayer.includes(term))
-      if (!matchesQuery) continue
+      if (!matchesSearch(query, [player.firstName, player.lastName, player.licenseNumber ?? ''])) continue
 
       const position = player.position ?? 'Non renseigné'
       grouped.set(position, [...(grouped.get(position) ?? []), player])
@@ -238,6 +233,12 @@ export function EducatorRoster() {
       ] as const)
   }, [players, query])
 
+  useEffect(() => {
+    if (!query.trim()) return
+    setExpandedPositions(new Set(groups.map(([position]) => position)))
+  }, [groups, query])
+
+  const matchingPlayerCount = groups.reduce((count, [, list]) => count + list.length, 0)
   const missingLicenseCount = players.filter((player) => !player.licenseNumber?.trim()).length
   const allGroupsExpanded = groups.length > 0 && groups.every(([position]) => expandedPositions.has(position))
   const hasExpandedVisibleGroup = groups.some(([position]) => expandedPositions.has(position))
@@ -309,7 +310,7 @@ export function EducatorRoster() {
           </form>
         ) : (
           <p className="rounded-xl border border-accent/40 bg-card p-4 text-center text-sm text-muted-foreground">
-            Connectez-vous pour rechercher dans l’annuaire des joueurs et des éducateurs.
+            Connectez-vous pour afficher les résultats de recherche des joueurs et des éducateurs.
           </p>
         )}
       </section>
@@ -421,7 +422,11 @@ export function EducatorRoster() {
 
       {(directoryView === 'players' || Boolean(query.trim())) && (
         <div className="flex flex-col gap-4">
-          {query.trim() && <h2 className="font-bold text-primary">Résultats joueurs</h2>}
+          {query.trim() && (
+            <h2 className="font-bold text-primary">
+              Résultats joueurs <span className="font-normal text-muted-foreground">({matchingPlayerCount})</span>
+            </h2>
+          )}
           <div className="flex justify-end">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-card px-3 py-1.5 text-xs font-semibold">
               <Award className="size-3.5 text-amber-600 dark:text-amber-400" />

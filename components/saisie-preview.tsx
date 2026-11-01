@@ -235,7 +235,7 @@ export function SaisiePreview() {
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <h2 id="matches-title" className="text-xl font-black text-primary">Résultats des matchs</h2>
-                <p className="mt-1 text-sm text-muted-foreground">La saisie ici alimentera ensuite automatiquement les statistiques et le Sheet.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Dans la vraie version, ce formulaire alimentera « ⚽ Feuille de Match Equipe 1 » ou « ⚽ Feuille de Match Equipe 2 » selon l’équipe choisie.</p>
               </div>
               {!matchFormOpen && <button className={primaryButton} onClick={() => { setMatchFormOpen(true); setNotice('') }}><Plus className="size-4" /> Saisir un résultat</button>}
             </div>

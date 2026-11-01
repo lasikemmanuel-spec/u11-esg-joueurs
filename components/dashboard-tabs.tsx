@@ -40,7 +40,6 @@ export function DashboardTabs({
 }) {
   const [activeTab, setActiveTab] = useState<TabKey>('roster')
   const [educatorSection, setEducatorSection] = useState<EducatorSection>('matches')
-  const [loginRequest, setLoginRequest] = useState(0)
   const [returnToMatchesAfterLogin, setReturnToMatchesAfterLogin] = useState(false)
   const [educatorAccess, setEducatorAccess] = useState<EducatorAccess>('checking')
   const [educatorIdentity, setEducatorIdentity] = useState<EducatorIdentity | null>(null)
@@ -192,12 +191,10 @@ export function DashboardTabs({
                     onConnect={() => {
                       setReturnToMatchesAfterLogin(true)
                       setEducatorSection('directory')
-                      setLoginRequest((request) => request + 1)
                     }}
                   />
                 ) : (
                   <EducatorRoster
-                    loginRequest={loginRequest}
                     onSessionStatusChange={setEducatorAccess}
                     onEducatorChange={setEducatorIdentity}
                   />
@@ -205,7 +202,6 @@ export function DashboardTabs({
               </>
             ) : (
               <EducatorRoster
-                forceLogin={educatorAccess !== 'checking'}
                 onSessionStatusChange={setEducatorAccess}
                 onEducatorChange={setEducatorIdentity}
                 onLoginSuccess={() => {

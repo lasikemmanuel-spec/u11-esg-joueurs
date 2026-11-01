@@ -1,12 +1,13 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback, type FormEvent } from 'react'
-import { Search, Copy, Check, Award, LockKeyhole, Phone, Save, ChevronDown, ChevronUp, Pencil, X, ContactRound, UsersRound, KeyRound } from 'lucide-react'
+import { Search, Copy, Check, Award, Phone, Save, ChevronDown, ChevronUp, Pencil, X, ContactRound, UsersRound, KeyRound } from 'lucide-react'
 import type { Player, PublicPlayer } from '@/lib/players'
 import { matchesSearch } from '@/lib/search'
 import { ParentAvatar } from '@/components/parent-avatar'
 import { EducatorDirectory } from '@/components/educator-directory'
 import { EducatorAccountManagement } from '@/components/educator-account-management'
+import { ClubCrest } from '@/components/club-crest'
 
 type EducatorIdentity = { username: string; displayName: string; role: 'educator' | 'admin' }
 
@@ -27,14 +28,10 @@ type DirectoryView = 'educators' | 'players' | 'accounts'
 type EducatorSessionStatus = 'checking' | 'unauthenticated' | 'authenticated' | 'unavailable'
 
 export function EducatorRoster({
-  loginRequest = 0,
-  forceLogin = false,
   onSessionStatusChange,
   onEducatorChange,
   onLoginSuccess,
 }: {
-  loginRequest?: number
-  forceLogin?: boolean
   onSessionStatusChange?: (status: EducatorSessionStatus) => void
   onEducatorChange?: (educator: EducatorIdentity | null) => void
   onLoginSuccess?: () => void
@@ -45,7 +42,6 @@ export function EducatorRoster({
   const [expandedPositions, setExpandedPositions] = useState<Set<string>>(() => new Set())
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [educator, setEducator] = useState<EducatorIdentity | null>(null)
-  const [loginOpen, setLoginOpen] = useState(false)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [phones, setPhones] = useState<Record<number, PlayerPhones>>({})
@@ -127,14 +123,6 @@ export function EducatorRoster({
     setIsPhoneDevice(/iPhone|iPod|Android.*Mobile|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(navigator.userAgent))
   }, [loadPhoneContacts])
 
-  useEffect(() => {
-    if (loginRequest > 0) setLoginOpen(true)
-  }, [loginRequest])
-
-  useEffect(() => {
-    if (forceLogin) setLoginOpen(true)
-  }, [forceLogin])
-
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setRequestPending(true)
@@ -150,7 +138,6 @@ export function EducatorRoster({
       setEducator(result.educator)
       onEducatorChange?.(result.educator)
       setPassword('')
-      setLoginOpen(false)
       window.dispatchEvent(new Event('educator-session-changed'))
       await loadPhoneContacts()
       onLoginSuccess?.()
@@ -262,36 +249,15 @@ export function EducatorRoster({
 
   if (!educator) {
     return (
-      <section aria-label="Annuaire éducateurs et joueurs" className="flex flex-col gap-4">
-        <div className="flex flex-col gap-3 rounded-xl border border-accent/50 bg-card p-3 shadow-sm sm:flex-row sm:items-end">
-          <label htmlFor="directory-search-login" className="block min-w-0 flex-1 text-sm font-semibold text-primary">
-            Recherche joueur / éducateur
-            <span className="relative mt-1 block">
-              <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-              <input
-                id="directory-search-login"
-                type="search"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Nom, prénom ou n° de licence…"
-                className="h-11 w-full rounded-lg border border-accent/50 bg-background pr-3 pl-10 text-sm font-normal outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              />
-            </span>
-          </label>
-          <button
-            type="button"
-            onClick={() => { setLoginOpen((open) => !open); setAuthError('') }}
-            aria-expanded={loginOpen}
-            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground"
-          >
-            <LockKeyhole aria-hidden="true" className="size-4" />
-            {loginOpen ? 'Fermer' : 'Connexion'}
-          </button>
-        </div>
-        {authError && <p role="alert" className="text-sm font-medium text-destructive">{authError}</p>}
-        {loginOpen ? (
-          <form onSubmit={handleLogin} className="mx-auto flex w-full max-w-md flex-col gap-3 rounded-2xl border border-accent/60 bg-card p-5 shadow-sm">
-            <h2 id="educator-login-title" className="text-lg font-black text-primary">Connexion éducateur</h2>
+      <section aria-label="Connexion éducateur" className="flex flex-col items-center gap-4">
+        {authError && <p role="alert" className="w-full max-w-md text-sm font-medium text-destructive">{authError}</p>}
+        <form onSubmit={handleLogin} className="mx-auto flex w-full max-w-md flex-col gap-4 rounded-2xl border border-accent/60 bg-white p-6 shadow-sm">
+          <div className="flex justify-center">
+            <div className="flex size-36 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-accent/40">
+              <ClubCrest className="size-32 ring-4 ring-[#d4af37]" />
+            </div>
+          </div>
+          <h2 id="educator-login-title" className="text-center text-lg font-black text-primary">Connexion éducateur</h2>
             <label className="flex flex-col gap-1.5 text-sm font-medium">
               Identifiant
               <input
@@ -316,12 +282,7 @@ export function EducatorRoster({
             <button type="submit" disabled={requestPending} className="h-10 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-60">
               {requestPending ? 'Connexion…' : 'Connexion'}
             </button>
-          </form>
-        ) : (
-          <p className="rounded-xl border border-accent/40 bg-card p-4 text-center text-sm text-muted-foreground">
-            Connectez-vous pour afficher les résultats de recherche des joueurs et des éducateurs.
-          </p>
-        )}
+        </form>
       </section>
     )
   }

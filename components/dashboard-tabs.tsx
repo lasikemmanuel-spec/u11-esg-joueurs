@@ -241,8 +241,8 @@ export function DashboardTabs({
         </div>
       </nav>
 
-      <div className={`min-w-0 p-4 md:p-5 ${activeTab === 'players' || activeTab === 'matches' ? 'pt-2 sm:pt-4 md:pt-5' : ''}`}>
-        <div className={`mb-4 ${activeTab === 'players' || activeTab === 'matches' ? 'hidden sm:block' : ''}`}>
+      <div className="min-w-0 p-3 sm:p-4 md:p-5">
+        <div className="mb-3 sm:mb-4">
           <DashboardTitle
             {...activeTitle}
             eyebrow={activeTab === 'educator' ? 'ESG Genech · Éducateurs' : undefined}
@@ -400,7 +400,7 @@ export function DashboardTabs({
           role="dialog"
           aria-modal="true"
           aria-labelledby="profile-photo-dialog-title"
-          className="fixed inset-0 z-[70] grid place-items-center bg-black/60 p-4"
+          className="fixed inset-0 z-[70] grid place-items-center bg-[#172554]/60 p-4"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget) setProfilePhotoOpen(false)
           }}

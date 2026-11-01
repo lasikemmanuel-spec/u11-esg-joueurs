@@ -731,7 +731,7 @@ export function EducatorRoster({
           role="dialog"
           aria-modal="true"
           aria-labelledby="parent-phone-dialog-title"
-          className="fixed inset-0 z-50 grid place-items-center bg-black/50 p-4"
+          className="fixed inset-0 z-50 grid place-items-center bg-[#172554]/60 p-4"
         >
           <section className="w-full max-w-sm rounded-2xl border border-accent/60 bg-card p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-3">

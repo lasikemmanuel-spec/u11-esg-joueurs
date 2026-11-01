@@ -14,10 +14,10 @@ export function DashboardTitle({
   action?: ReactNode
 }) {
   return (
-    <header className="relative overflow-hidden rounded-2xl border border-[#d4af37]/50 bg-gradient-to-r from-[#172554] via-[#1e3a70] to-[#172554] px-4 py-4 shadow-[0_8px_24px_rgba(23,37,84,0.16)] sm:px-5">
+    <header className="relative overflow-hidden rounded-xl border border-[#d4af37]/50 bg-gradient-to-r from-[#172554] via-[#1e3a70] to-[#172554] px-3 py-2 shadow-[0_8px_24px_rgba(23,37,84,0.16)] sm:rounded-2xl sm:px-5 sm:py-4">
       <Sparkles aria-hidden="true" className="absolute -right-2 -top-4 size-24 rotate-12 text-[#d4af37]/15" />
-      <div className="relative flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+      <div className="relative flex items-center justify-between gap-2">
+        <div className="hidden min-w-0 items-center gap-2 sm:flex sm:gap-3">
           <span className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-[#d4af37]/50 bg-[#d4af37]/15 text-[#f0cf68] sm:size-12 sm:rounded-2xl">
             <Trophy aria-hidden="true" className="size-5 sm:size-6" />
           </span>
@@ -28,7 +28,8 @@ export function DashboardTitle({
             <p className="mt-1 text-xs font-medium text-white/75">{subtitle}</p>
           </div>
         </div>
-        {action && <div className="self-end sm:self-auto">{action}</div>}
+        <h2 className="sr-only sm:hidden">{title}</h2>
+        {action && <div className="ml-auto">{action}</div>}
       </div>
     </header>
   )

@@ -160,6 +160,11 @@
   body {
     @apply bg-background text-foreground;
   }
+  select,
+  option {
+    background-color: var(--popover);
+    color: var(--popover-foreground);
+  }
 }
 
 @media (orientation: landscape) and (min-width: 640px) {

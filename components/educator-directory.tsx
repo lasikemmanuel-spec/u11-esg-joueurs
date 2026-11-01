@@ -167,7 +167,7 @@ export function EducatorDirectory({
       )}
       {!canEdit && <p className="mt-3 text-xs text-muted-foreground">La modification des fiches est réservée à l’administrateur. Pour changer votre photo, utilisez votre avatar dans l’en-tête.</p>}
       {open && canEdit && (
-        <div role="dialog" aria-modal="true" aria-labelledby="directory-form-title" className="fixed inset-0 z-[60] grid place-items-center bg-black/50 p-4">
+        <div role="dialog" aria-modal="true" aria-labelledby="directory-form-title" className="fixed inset-0 z-[60] grid place-items-center bg-[#172554]/60 p-4">
           <form onSubmit={save} className="w-full max-w-md rounded-2xl border border-accent/60 bg-card p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-3">
               <div><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Annuaire éducateurs</p><h3 id="directory-form-title" className="mt-1 text-lg font-black text-primary">{draft.id ? 'Modifier une fiche' : 'Ajouter un éducateur'}</h3></div>

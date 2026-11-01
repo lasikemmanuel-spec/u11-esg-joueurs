@@ -274,7 +274,7 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
       )}
 
       {(createOpen || passwordTarget || editTarget) && (
-        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[60] grid place-items-center bg-black/50 p-4">
+        <div role="dialog" aria-modal="true" className="fixed inset-0 z-[60] grid place-items-center bg-[#172554]/60 p-4">
           <form
             onSubmit={createOpen ? saveAccount : editTarget ? saveProfile : resetPassword}
             className="w-full max-w-md rounded-2xl border border-accent/60 bg-card p-5 shadow-2xl"

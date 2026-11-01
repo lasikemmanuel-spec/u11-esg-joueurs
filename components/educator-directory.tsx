@@ -40,8 +40,18 @@ export function EducatorDirectory({
   const ownDirectoryEntry = currentEducator
     ? educators.find((educator) =>
         educator.name.trim().toLocaleLowerCase('fr-FR') === currentEducator.displayName.trim().toLocaleLowerCase('fr-FR'),
-      )
+      ) ?? (() => {
+        const suffixMatches = educators.filter((educator) =>
+          educator.name.trim().toLocaleLowerCase('fr-FR').endsWith(
+            ` ${currentEducator.displayName.trim().toLocaleLowerCase('fr-FR')}`,
+          ),
+        )
+        return suffixMatches.length === 1 ? suffixMatches[0] : undefined
+      })()
     : undefined
+  const visibleEducators = !isSearching && ownDirectoryEntry
+    ? filteredEducators.filter((educator) => educator.id !== ownDirectoryEntry.id)
+    : filteredEducators
   const load = useCallback(async () => {
     const response = await fetch('/api/educators/directory', { cache: 'no-store' })
     const data = await response.json()
@@ -168,13 +178,13 @@ export function EducatorDirectory({
             L’annuaire est vide. {canEdit ? 'Ajoute la première fiche pour créer son onglet dédié dans le Sheet.' : 'Un administrateur pourra ajouter les fiches.'}
           </p>
         )
-      ) : filteredEducators.length === 0 ? (
+      ) : visibleEducators.length === 0 ? (
         null
       ) : (
         <>
           {isSearching && searchTitle && <h2 className="font-bold text-primary">{searchTitle}</h2>}
           <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {filteredEducators.map((educator) => (
+            {visibleEducators.map((educator) => (
             <li key={educator.id} className="rounded-xl border border-border bg-background p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">

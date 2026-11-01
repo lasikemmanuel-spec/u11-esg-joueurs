@@ -182,7 +182,7 @@ export function MatchCallupBreakdown({
 
   return (
     <div className="flex flex-col gap-5">
-      <MatchResultEntry onOpenEducators={onOpenEducators} />
+      <MatchResultEntry entries={matchResults.entries} onOpenEducators={onOpenEducators} />
       {dataErrors.length > 0 && (
         <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 px-4 py-3 text-sm text-destructive">
           Certaines données n’ont pas pu être chargées :

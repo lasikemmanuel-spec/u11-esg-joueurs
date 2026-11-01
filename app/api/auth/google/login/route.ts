@@ -1,23 +1,35 @@
 import { NextResponse } from 'next/server'
+import {
+  createGoogleOAuthState,
+  getGoogleOAuthRedirectUri,
+  GOOGLE_OAUTH_STATE_MAX_AGE,
+  googleOAuthStateCookieName,
+} from '@/lib/google-oauth-state'
 
 export async function GET(request: Request) {
   const clientId = process.env.GOOGLE_CLIENT_ID
-  if (!clientId) {
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+  if (!clientId || !clientSecret) {
     return NextResponse.json(
       {
         error:
-          'GOOGLE_CLIENT_ID n est pas configuré dans les variables d environnement (sur Vercel ou dans .env.local).',
+          'La configuration OAuth Google est incomplète.',
       },
-      { status: 500 }
+      { status: 503, headers: { 'Cache-Control': 'no-store' } }
     )
   }
 
-  const url = new URL(request.url)
-  const forwardedHost = request.headers.get('x-forwarded-host')
-  const proto = request.headers.get('x-forwarded-proto') || 'https'
-  const origin = forwardedHost ? `${proto}://${forwardedHost}` : url.origin
-  const redirectUri = `${origin}/api/auth/google/callback`
+  let redirectUri: string
+  try {
+    redirectUri = getGoogleOAuthRedirectUri(request)
+  } catch {
+    return NextResponse.json(
+      { error: 'Impossible de déterminer l’adresse de retour OAuth Google.' },
+      { status: 400, headers: { 'Cache-Control': 'no-store' } },
+    )
+  }
 
+  const state = createGoogleOAuthState()
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
@@ -25,7 +37,17 @@ export async function GET(request: Request) {
     scope: 'https://www.googleapis.com/auth/spreadsheets',
     access_type: 'offline',
     prompt: 'consent',
+    state,
   })
 
-  return NextResponse.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`)
+  const response = NextResponse.redirect(`https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`)
+  response.cookies.set(googleOAuthStateCookieName(), state, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: GOOGLE_OAUTH_STATE_MAX_AGE,
+  })
+  response.headers.set('Cache-Control', 'no-store')
+  return response
 }

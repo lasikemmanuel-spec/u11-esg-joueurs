@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { ChevronDown, ChevronUp, Search } from 'lucide-react'
 import { PlayerCard } from '@/components/player-stats'
 import type { Convocation } from '@/lib/convocations'
-import type { Player } from '@/lib/players'
+import type { PublicPlayer } from '@/lib/players'
 import type { PlayerStats } from '@/lib/stats'
 
 const POSITION_ORDER = ['gard', 'déf', 'def', 'lat', 'cent', 'mil', 'ail', 'att', 'av']
@@ -24,7 +24,7 @@ export function PositionBreakdown({
   convocations,
   matchesPlayed,
 }: {
-  players: Player[]
+  players: PublicPlayer[]
   stats: PlayerStats[]
   convocations: Convocation[]
   matchesPlayed: number
@@ -39,7 +39,7 @@ export function PositionBreakdown({
         normalizeName(`${player.firstName} ${player.lastName}`).includes(searchTerm),
       )
     : players
-  const groups = new Map<string, Player[]>()
+  const groups = new Map<string, PublicPlayer[]>()
   for (const player of matchingPlayers) {
     const key = player.position ?? 'Non renseigné'
     groups.set(key, [...(groups.get(key) ?? []), player])

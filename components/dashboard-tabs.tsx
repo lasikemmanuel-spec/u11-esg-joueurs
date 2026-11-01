@@ -9,7 +9,7 @@ import { EducatorRoster } from '@/components/educator-roster'
 import { MatchResultEntry } from '@/components/match-result-entry'
 import { DashboardTitle } from '@/components/dashboard-title'
 import type { Convocation } from '@/lib/convocations'
-import type { Player } from '@/lib/players'
+import type { PublicPlayer } from '@/lib/players'
 import type { TeamMatchResults } from '@/lib/match-results'
 import type { CohesionDay } from '@/lib/cohesion'
 import type { PlayerStats as PlayerStat } from '@/lib/stats'
@@ -28,7 +28,7 @@ export function DashboardTabs({
   matchDataErrors,
 }: {
   players: PlayerStat[]
-  rosterPlayers: Player[]
+  rosterPlayers: PublicPlayer[]
   convocations: Convocation[]
   matchesPlayed: number
   presentCounts: Record<string, number>
@@ -136,7 +136,7 @@ export function DashboardTabs({
             {educatorSection === 'matches' ? (
               <MatchResultEntry entries={matchResults.entries} />
             ) : (
-              <EducatorRoster players={rosterPlayers} />
+              <EducatorRoster />
             )}
           </div>
         )}

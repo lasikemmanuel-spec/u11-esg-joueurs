@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useCallback, type FormEvent } from 'react'
 import { Search, Copy, Check, Award, LockKeyhole, LogOut, Phone, Save, ChevronDown, ChevronUp, Pencil, X, ContactRound, UsersRound } from 'lucide-react'
-import type { Player } from '@/lib/players'
+import type { Player, PublicPlayer } from '@/lib/players'
 import { ParentAvatar } from '@/components/parent-avatar'
 import { EducatorDirectory } from '@/components/educator-directory'
 
@@ -21,11 +21,13 @@ const positionRank = (position: string | null) => {
 }
 
 type PlayerPhones = { legacyPhone: string; fatherPhone: string; motherPhone: string }
+type EducatorPlayer = PublicPlayer & Pick<Player, 'licenseNumber'>
 type ParentKey = 'father' | 'mother'
 type PhoneEditor = { number: number; name: string; parent: ParentKey | null; value: string }
 type DirectoryView = 'educators' | 'players'
 
-export function EducatorRoster({ players }: { players: Player[] }) {
+export function EducatorRoster() {
+  const [players, setPlayers] = useState<EducatorPlayer[]>([])
   const [query, setQuery] = useState('')
   const [directoryView, setDirectoryView] = useState<DirectoryView>('educators')
   const [expandedPositions, setExpandedPositions] = useState<Set<string>>(() => new Set())
@@ -43,6 +45,21 @@ export function EducatorRoster({ players }: { players: Player[] }) {
   const [authError, setAuthError] = useState('')
   const [notice, setNotice] = useState('')
 
+  const loadPrivatePlayers = useCallback(async () => {
+    const response = await fetch('/api/educators/players', { cache: 'no-store' })
+    const result = await response.json()
+    if (response.status === 401) {
+      setEducator(null)
+      setPlayers([])
+      setPhones({})
+      setVisiblePhones({})
+      setPhoneEditor(null)
+      return
+    }
+    if (!response.ok) throw new Error(result.error ?? 'Impossible de charger les joueurs.')
+    setPlayers(result.players as EducatorPlayer[])
+  }, [])
+
   const loadPhoneContacts = useCallback(async () => {
     setRequestPending(true)
     setAuthError('')
@@ -54,6 +71,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
         setPhones({})
         setVisiblePhones({})
         setPhoneEditor(null)
+        setPlayers([])
         return
       }
       if (response.status === 409 && result.migrationRequired) {
@@ -62,6 +80,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
         setVisiblePhones({})
         setPhoneEditor(null)
         setMigrationRequired(true)
+        await loadPrivatePlayers()
         return
       }
       if (!response.ok) throw new Error(result.error ?? 'Impossible de charger les coordonnées.')
@@ -72,13 +91,14 @@ export function EducatorRoster({ players }: { players: Player[] }) {
       setEducator(result.educator)
       setPhones(nextPhones)
       setMigrationRequired(false)
+      await loadPrivatePlayers()
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Impossible de charger les coordonnées.')
     } finally {
       setRequestPending(false)
       setSessionChecked(true)
     }
-  }, [])
+  }, [loadPrivatePlayers])
 
   useEffect(() => {
     void loadPhoneContacts()
@@ -116,6 +136,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
       setEducator(null)
       window.dispatchEvent(new Event('educator-session-changed'))
       setPhones({})
+      setPlayers([])
       setVisiblePhones({})
       setPhoneEditor(null)
       setMigrationRequired(false)
@@ -143,7 +164,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
     }
   }
 
-  const openPhoneEditor = (player: Player) => {
+  const openPhoneEditor = (player: EducatorPlayer) => {
     setPhoneEditor({
       number: player.number,
       name: [player.firstName, player.lastName].filter(Boolean).join(' '),
@@ -192,7 +213,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
 
   const groups = useMemo(() => {
     const searchTerms = normalize(query.trim()).split(/\s+/).filter(Boolean)
-    const grouped = new Map<string, Player[]>()
+    const grouped = new Map<string, EducatorPlayer[]>()
 
     for (const player of players) {
       const searchablePlayer = normalize([player.firstName, player.lastName, player.licenseNumber ?? ''].join(' '))

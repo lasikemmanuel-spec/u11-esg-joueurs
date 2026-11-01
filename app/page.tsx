@@ -4,7 +4,7 @@ import { DataQualityPanel } from '@/components/data-quality-panel'
 import { RefreshSheetButton } from '@/components/refresh-sheet-button'
 import { ScrollToTopButton } from '@/components/scroll-to-top-button'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { getRoster, type Roster } from '@/lib/players'
+import { getRoster, type PublicPlayer, type Roster } from '@/lib/players'
 import { getStats, type StatsData } from '@/lib/stats'
 import { getConvocations, type ConvocationsData } from '@/lib/convocations'
 import { getMatchResults, type TeamMatchResults } from '@/lib/match-results'
@@ -37,13 +37,17 @@ const fallbackMatchResults: TeamMatchResults = {
     E1: [],
     E2: [],
   },
+  entries: [],
 }
 
 const fallbackCohesionDays: CohesionDay[] = []
 
 export default async function Page() {
   const [roster, stats, convocationsResult, matchResultsResult, cohesionResult] = await Promise.all([
-    getRoster().catch(() => fallbackRoster),
+    getRoster().catch((error) => {
+      console.error('Impossible de charger l’effectif:', error)
+      return fallbackRoster
+    }),
     getStats().catch((error) => {
       console.error('Impossible de charger les statistiques joueurs:', error)
       return fallbackStats
@@ -63,6 +67,15 @@ export default async function Page() {
   ])
   const convocations = convocationsResult.data
   const matchResults = matchResultsResult.data
+  const publicPlayers: PublicPlayer[] = roster.players.map(
+    ({ number, lastName, firstName, position, transferStatus }) => ({
+      number,
+      lastName,
+      firstName,
+      position,
+      transferStatus,
+    }),
+  )
   const matchDataErrors = [
     ...(convocationsResult.error ? ['convocations'] : []),
     ...(matchResultsResult.error ? ['scores'] : []),
@@ -100,7 +113,7 @@ export default async function Page() {
       <main className="mx-auto flex max-w-7xl flex-col gap-4 px-4 pt-6 pb-24 md:gap-6 md:px-6 md:pt-8 md:pb-24 xl:pb-8">
         <DashboardTabs
           players={stats.players}
-          rosterPlayers={roster.players}
+          rosterPlayers={publicPlayers}
           convocations={convocations.players}
           matchesPlayed={convocations.matchesPlayed}
           presentCounts={convocations.presentCounts}

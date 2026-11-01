@@ -15,11 +15,10 @@ export type EducatorSession = Pick<EducatorAccount, 'username' | 'displayName' |
 
 export function isSameOriginRequest(request: Request) {
   const origin = request.headers.get('origin')
-  const host = request.headers.get('x-forwarded-host') ?? request.headers.get('host')
-  if (!origin || !host) return false
+  if (!origin) return false
 
   try {
-    return new URL(origin).host === host
+    return new URL(origin).origin === new URL(request.url).origin
   } catch {
     return false
   }

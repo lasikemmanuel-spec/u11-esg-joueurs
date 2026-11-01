@@ -2,6 +2,8 @@
 
 L’onglet Éducateurs ne montre les téléphones qu’après une connexion individuelle. Les numéros sont chiffrés avec AES-256-GCM dans les onglets `Joueurs` et `Téléphones éducateurs`, puis déchiffrés côté serveur pour les éducateurs connectés. La clé `EDUCATOR_PHONE_ENCRYPTION_KEY` est conservée comme variable secrète dans Vercel, jamais dans le dépôt ni dans le classeur. Les mots de passe restent stockés sous forme de hachages scrypt.
 
+Les dates de naissance et numéros de licence des joueurs ne sont pas inclus dans le rendu public. Les licences nécessaires à l’annuaire des joueurs sont chargées depuis une API réservée aux éducateurs connectés. L’action d’actualisation du classeur est également réservée aux éducateurs.
+
 ## Configuration du serveur
 
 La connexion Google Sheets réutilise le compte de service GCP et les variables déjà configurées dans Vercel. Ne remplacez pas les identifiants GCP, la clé privée ni les autres variables Google. Le compte de service doit pouvoir modifier le classeur. Ajoutez `EDUCATOR_PHONE_ENCRYPTION_KEY` comme variable secrète de production dans Vercel. Générez une clé avec `node -p "require('node:crypto').randomBytes(32).toString('base64url')"`, puis collez-la dans Vercel sans la mettre dans le dépôt ou dans le Sheet. Conservez cette clé : la perdre ou la remplacer sans rechiffrer les cellules rendrait les téléphones illisibles.

@@ -4,7 +4,7 @@ import { ClubCrest } from '@/components/club-crest'
 import { PlayerOffensiveRankings } from '@/components/player-offensive-rankings'
 import { ireStatus, type IreStatus, type PlayerStats as Stats } from '@/lib/stats'
 import type { Convocation, MatchStatus } from '@/lib/convocations'
-import type { Player } from '@/lib/players'
+import type { PublicPlayer } from '@/lib/players'
 
 const MATCH_STYLES: Record<MatchStatus, { label: string; className: string }> = {
   called: { label: 'Convoqué', className: 'bg-emerald-600 text-white' },
@@ -127,7 +127,7 @@ export function PlayerCard({
 }: {
   stats: Stats
   convocation?: Convocation
-  player?: Player
+  player?: PublicPlayer
   matchesPlayed: number
 }) {
   const status = IRE_STYLES[ireStatus(stats)]
@@ -203,7 +203,6 @@ export function PlayerCard({
           <h3 className="break-words text-lg font-black uppercase leading-tight tracking-wide text-primary">
             {playerName}
           </h3>
-          <p className="mt-1 text-xs text-muted-foreground">{player?.birthDate ?? 'Date de naissance non renseignée'}</p>
         </div>
       </div>
 

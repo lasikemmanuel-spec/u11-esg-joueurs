@@ -14,6 +14,11 @@ export type Player = {
   licenseNumber: string | null
 }
 
+export type PublicPlayer = Pick<
+  Player,
+  'number' | 'lastName' | 'firstName' | 'position' | 'transferStatus'
+>
+
 export type Roster = {
   club: string
   title: string

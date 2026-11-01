@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useCallback, type FormEvent } from 'react
 import { Search, Copy, Check, Award, LockKeyhole, LogOut, Phone, Save, ChevronDown, ChevronUp, Pencil, X } from 'lucide-react'
 import type { Player } from '@/lib/players'
 import { ParentAvatar } from '@/components/parent-avatar'
+import { EducatorDirectory } from '@/components/educator-directory'
 
 type EducatorIdentity = { displayName: string; role: 'educator' | 'admin' }
 
@@ -96,6 +97,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
       if (!response.ok) throw new Error(result.error ?? 'Connexion impossible.')
       setEducator(result.educator)
       setPassword('')
+      window.dispatchEvent(new Event('educator-session-changed'))
       await loadPhoneContacts()
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Connexion impossible.')
@@ -110,6 +112,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
       const response = await fetch('/api/educators/session', { method: 'DELETE' })
       if (!response.ok) throw new Error('Déconnexion impossible.')
       setEducator(null)
+      window.dispatchEvent(new Event('educator-session-changed'))
       setPhones({})
       setVisiblePhones({})
       setPhoneEditor(null)
@@ -281,6 +284,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
             L’onglet « Téléphones éducateurs » sera créé si nécessaire. Les numéros seront chiffrés dans « Joueurs » et « Téléphones éducateurs » ; l’application les déchiffrera uniquement côté serveur pour les éducateurs connectés. L’historique de Google Sheets peut conserver les anciennes valeurs en clair.
           </p>
         </div>
+        <EducatorDirectory canEdit={educator.role === 'admin'} />
         {educator.role === 'admin' ? (
           <button
             type="button"
@@ -333,6 +337,8 @@ export function EducatorRoster({ players }: { players: Player[] }) {
 
       {authError && <p role="alert" className="text-sm font-medium text-destructive">{authError}</p>}
       {notice && <p role="status" className="text-sm font-medium text-emerald-700 dark:text-emerald-300">{notice}</p>}
+
+      <EducatorDirectory canEdit={educator.role === 'admin'} />
 
       <div className="flex flex-wrap items-end gap-2">
         {groups.length > 0 && (

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback, type FormEvent } from 'react'
-import { Search, Copy, Check, Award, LockKeyhole, LogOut, Phone, Save, ChevronDown, ChevronUp, Pencil, X, ContactRound, UsersRound, KeyRound } from 'lucide-react'
+import { Search, Copy, Check, Award, LockKeyhole, Phone, Save, ChevronDown, ChevronUp, Pencil, X, ContactRound, UsersRound, KeyRound } from 'lucide-react'
 import type { Player, PublicPlayer } from '@/lib/players'
 import { matchesSearch } from '@/lib/search'
 import { ParentAvatar } from '@/components/parent-avatar'
@@ -30,11 +30,13 @@ export function EducatorRoster({
   loginRequest = 0,
   forceLogin = false,
   onSessionStatusChange,
+  onEducatorChange,
   onLoginSuccess,
 }: {
   loginRequest?: number
   forceLogin?: boolean
   onSessionStatusChange?: (status: EducatorSessionStatus) => void
+  onEducatorChange?: (educator: EducatorIdentity | null) => void
   onLoginSuccess?: () => void
 }) {
   const [players, setPlayers] = useState<EducatorPlayer[]>([])
@@ -62,6 +64,7 @@ export function EducatorRoster({
     if (response.status === 401) {
       onSessionStatusChange?.('unauthenticated')
       setEducator(null)
+      onEducatorChange?.(null)
       setPlayers([])
       setPhones({})
       setVisiblePhones({})
@@ -70,7 +73,7 @@ export function EducatorRoster({
     }
     if (!response.ok) throw new Error(result.error ?? 'Impossible de charger les joueurs.')
     setPlayers(result.players as EducatorPlayer[])
-  }, [onSessionStatusChange])
+  }, [onEducatorChange, onSessionStatusChange])
 
   const loadPhoneContacts = useCallback(async () => {
     setRequestPending(true)
@@ -81,6 +84,7 @@ export function EducatorRoster({
       if (response.status === 401) {
         onSessionStatusChange?.('unauthenticated')
         setEducator(null)
+        onEducatorChange?.(null)
         setPhones({})
         setVisiblePhones({})
         setPhoneEditor(null)
@@ -90,6 +94,7 @@ export function EducatorRoster({
       if (response.status === 409 && result.migrationRequired) {
         onSessionStatusChange?.('authenticated')
         setEducator(result.educator)
+        onEducatorChange?.(result.educator)
         setPhones({})
         setVisiblePhones({})
         setPhoneEditor(null)
@@ -104,6 +109,7 @@ export function EducatorRoster({
       ) as Record<number, PlayerPhones>
       onSessionStatusChange?.('authenticated')
       setEducator(result.educator)
+      onEducatorChange?.(result.educator)
       setPhones(nextPhones)
       setMigrationRequired(false)
       await loadPrivatePlayers()
@@ -114,7 +120,7 @@ export function EducatorRoster({
       setRequestPending(false)
       setSessionChecked(true)
     }
-  }, [loadPrivatePlayers, onSessionStatusChange])
+  }, [loadPrivatePlayers, onEducatorChange, onSessionStatusChange])
 
   useEffect(() => {
     void loadPhoneContacts()
@@ -142,6 +148,7 @@ export function EducatorRoster({
       const result = await response.json()
       if (!response.ok) throw new Error(result.error ?? 'Connexion impossible.')
       setEducator(result.educator)
+      onEducatorChange?.(result.educator)
       setPassword('')
       setLoginOpen(false)
       window.dispatchEvent(new Event('educator-session-changed'))
@@ -149,27 +156,6 @@ export function EducatorRoster({
       onLoginSuccess?.()
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Connexion impossible.')
-    } finally {
-      setRequestPending(false)
-    }
-  }
-
-  const handleLogout = async () => {
-    setRequestPending(true)
-    try {
-      const response = await fetch('/api/educators/session', { method: 'DELETE' })
-      if (!response.ok) throw new Error('Déconnexion impossible.')
-      setEducator(null)
-      window.dispatchEvent(new Event('educator-session-changed'))
-      onSessionStatusChange?.('unauthenticated')
-      setPhones({})
-      setPlayers([])
-      setVisiblePhones({})
-      setPhoneEditor(null)
-      setMigrationRequired(false)
-      setAuthError('')
-    } catch (error) {
-      setAuthError(error instanceof Error ? error.message : 'Déconnexion impossible.')
     } finally {
       setRequestPending(false)
     }
@@ -365,9 +351,6 @@ export function EducatorRoster({
           </p>
         )}
         {authError && <p role="alert" className="text-sm font-medium text-destructive">{authError}</p>}
-        <button type="button" onClick={handleLogout} className="self-start text-sm font-semibold text-muted-foreground underline">
-          Se déconnecter
-        </button>
       </section>
     )
   }
@@ -380,22 +363,6 @@ export function EducatorRoster({
 
   return (
     <section aria-label="Liste des éducateurs" className="flex flex-col gap-4">
-      <div className="flex items-center justify-end gap-2">
-        <span className="text-xs text-muted-foreground">
-          {educator.displayName.trim().split(/\s+/)[0]} : connecté
-        </span>
-        <button
-          type="button"
-          onClick={handleLogout}
-          disabled={requestPending}
-          aria-label="Se déconnecter"
-          title="Se déconnecter"
-          className="inline-flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-accent/40"
-        >
-          <LogOut className="size-4" />
-        </button>
-      </div>
-
       {authError && <p role="alert" className="text-sm font-medium text-destructive">{authError}</p>}
       {notice && <p role="status" className="text-sm font-medium text-emerald-700 dark:text-emerald-300">{notice}</p>}
 

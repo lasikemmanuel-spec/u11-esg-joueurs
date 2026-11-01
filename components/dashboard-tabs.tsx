@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { CalendarDays, ContactRound } from 'lucide-react'
+import { CalendarDays, ContactRound, LogOut } from 'lucide-react'
 import { MatchCallupBreakdown } from '@/components/match-callup-breakdown'
 import { PlayerStats } from '@/components/player-stats'
 import { PositionBreakdown } from '@/components/position-breakdown'
@@ -17,6 +17,7 @@ import type { PlayerStats as PlayerStat } from '@/lib/stats'
 type TabKey = 'roster' | 'educator' | 'players' | 'matches'
 type EducatorSection = 'matches' | 'directory'
 type EducatorAccess = 'checking' | 'unauthenticated' | 'authenticated' | 'unavailable'
+type EducatorIdentity = { username: string; displayName: string; role: 'educator' | 'admin' }
 
 export function DashboardTabs({
   players,
@@ -42,6 +43,28 @@ export function DashboardTabs({
   const [loginRequest, setLoginRequest] = useState(0)
   const [returnToMatchesAfterLogin, setReturnToMatchesAfterLogin] = useState(false)
   const [educatorAccess, setEducatorAccess] = useState<EducatorAccess>('checking')
+  const [educatorIdentity, setEducatorIdentity] = useState<EducatorIdentity | null>(null)
+  const [logoutPending, setLogoutPending] = useState(false)
+  const [logoutError, setLogoutError] = useState('')
+
+  const handleEducatorLogout = async () => {
+    setLogoutPending(true)
+    setLogoutError('')
+    try {
+      const response = await fetch('/api/educators/session', { method: 'DELETE' })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error ?? 'Déconnexion impossible.')
+      setEducatorIdentity(null)
+      setEducatorAccess('unauthenticated')
+      setReturnToMatchesAfterLogin(false)
+      setEducatorSection('matches')
+      window.dispatchEvent(new Event('educator-session-changed'))
+    } catch (error) {
+      setLogoutError(error instanceof Error ? error.message : 'Déconnexion impossible.')
+    } finally {
+      setLogoutPending(false)
+    }
+  }
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'roster', label: 'Effectifs' },
@@ -89,6 +112,23 @@ export function DashboardTabs({
           <DashboardTitle
             {...activeTitle}
             eyebrow={activeTab === 'educator' ? 'ESG Genech · Éducateurs' : undefined}
+            action={activeTab === 'educator' && educatorIdentity && (
+              <div className="flex shrink-0 items-center gap-2">
+                <span className="text-right text-xs font-semibold text-white">
+                  {educatorIdentity.displayName.trim().split(/\s+/)[0]} : connecté
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void handleEducatorLogout()}
+                  disabled={logoutPending}
+                  aria-label="Se déconnecter"
+                  title="Se déconnecter"
+                  className="inline-flex size-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 disabled:opacity-50"
+                >
+                  <LogOut aria-hidden="true" className="size-4" />
+                </button>
+              </div>
+            )}
           />
         </div>
         {activeTab === 'players' && (
@@ -114,6 +154,7 @@ export function DashboardTabs({
         )}
         {activeTab === 'educator' && (
           <div className="flex flex-col gap-4">
+            {logoutError && <p role="alert" className="text-sm font-medium text-destructive">{logoutError}</p>}
             {educatorAccess === 'authenticated' ? (
               <>
                 <nav aria-label="Rubriques éducateurs" className="grid grid-cols-2 gap-2 rounded-xl border border-accent/50 bg-muted/50 p-1.5">
@@ -158,6 +199,7 @@ export function DashboardTabs({
                   <EducatorRoster
                     loginRequest={loginRequest}
                     onSessionStatusChange={setEducatorAccess}
+                    onEducatorChange={setEducatorIdentity}
                   />
                 )}
               </>
@@ -165,6 +207,7 @@ export function DashboardTabs({
               <EducatorRoster
                 forceLogin={educatorAccess !== 'checking'}
                 onSessionStatusChange={setEducatorAccess}
+                onEducatorChange={setEducatorIdentity}
                 onLoginSuccess={() => {
                   if (!returnToMatchesAfterLogin) return
                   setReturnToMatchesAfterLogin(false)

@@ -91,6 +91,7 @@ export function DashboardTabs({
             cohesionDays={cohesionDays}
             invitedCount={rosterPlayers.length}
             dataErrors={matchDataErrors}
+            onOpenEducators={() => setActiveTab('educator')}
           />
         )}
         {activeTab === 'roster' && (

@@ -234,27 +234,43 @@ export async function writeMatchResult(input: MatchResultInput) {
     if (!blockHasData && emptyColumn === null) emptyColumn = column
   }
 
-  if (targetColumn === null) {
+  let relocatedFromColumn: number | null = null
+  if (targetColumn !== null && emptyColumn !== null && emptyColumn < targetColumn) {
+    relocatedFromColumn = targetColumn
+    targetColumn = emptyColumn
+  } else if (targetColumn === null) {
     targetColumn = emptyColumn ?? (2 + Math.ceil(Math.max(0, width - 2) / 4) * 4)
   }
   await ensureAuthenticatedSheetColumnCount(sheetTitle, targetColumn + 1)
 
   const escapedTitle = sheetTitle.replace(/'/g, "''")
-  const cellRange = (rowIndex: number) =>
-    "'" + escapedTitle + "'!" + columnName(targetColumn) + (rowIndex + 1)
+  const cellRange = (column: number, rowIndex: number) =>
+    "'" + escapedTitle + "'!" + columnName(column) + (rowIndex + 1)
   const [year, month, day] = input.date.split('-')
   const displayDate = day + '/' + month + '/' + year
   const hasScore = input.goalsFor !== null && input.goalsAgainst !== null
 
-  await updateAuthenticatedSheetValues([
-    { range: cellRange(headerRowIndex), values: [[input.opponent]] },
-    { range: cellRange(dateRowIndex), values: [[displayDate]] },
-    { range: cellRange(competitionRowIndex), values: [[input.competition]] },
-    { range: cellRange(homeAwayRowIndex), values: [[input.homeAway]] },
-    { range: cellRange(resultRowIndex), values: [[hasScore ? 'Terminé' : '']] },
-    { range: cellRange(goalsForRowIndex), values: [[hasScore ? String(input.goalsFor) : '']] },
-    { range: cellRange(goalsAgainstRowIndex), values: [[hasScore ? String(input.goalsAgainst) : '']] },
-  ])
+  const updates = [
+    { range: cellRange(targetColumn, headerRowIndex), values: [[input.opponent]] },
+    { range: cellRange(targetColumn, dateRowIndex), values: [[displayDate]] },
+    { range: cellRange(targetColumn, competitionRowIndex), values: [[input.competition]] },
+    { range: cellRange(targetColumn, homeAwayRowIndex), values: [[input.homeAway]] },
+    { range: cellRange(targetColumn, resultRowIndex), values: [[hasScore ? 'Terminé' : '']] },
+    { range: cellRange(targetColumn, goalsForRowIndex), values: [[hasScore ? String(input.goalsFor) : '']] },
+    { range: cellRange(targetColumn, goalsAgainstRowIndex), values: [[hasScore ? String(input.goalsAgainst) : '']] },
+  ]
+  if (relocatedFromColumn !== null) {
+    updates.push(
+      { range: cellRange(relocatedFromColumn, headerRowIndex), values: [['Adversaire']] },
+      { range: cellRange(relocatedFromColumn, dateRowIndex), values: [['']] },
+      { range: cellRange(relocatedFromColumn, competitionRowIndex), values: [['']] },
+      { range: cellRange(relocatedFromColumn, homeAwayRowIndex), values: [['']] },
+      { range: cellRange(relocatedFromColumn, resultRowIndex), values: [['']] },
+      { range: cellRange(relocatedFromColumn, goalsForRowIndex), values: [['']] },
+      { range: cellRange(relocatedFromColumn, goalsAgainstRowIndex), values: [['']] },
+    )
+  }
+  await updateAuthenticatedSheetValues(updates)
 
   return { sheetTitle, slotColumn: targetColumn, updatedExistingMatch: input.slotColumn !== undefined }
 }

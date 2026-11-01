@@ -39,6 +39,7 @@ export function DashboardTabs({
   const [activeTab, setActiveTab] = useState<TabKey>('roster')
   const [educatorSection, setEducatorSection] = useState<EducatorSection>('matches')
   const [loginRequest, setLoginRequest] = useState(0)
+  const [returnToMatchesAfterLogin, setReturnToMatchesAfterLogin] = useState(false)
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'roster', label: 'Effectifs' },
@@ -122,7 +123,10 @@ export function DashboardTabs({
                     key={key}
                     type="button"
                     aria-pressed={isActive}
-                    onClick={() => setEducatorSection(key)}
+                    onClick={() => {
+                      setReturnToMatchesAfterLogin(false)
+                      setEducatorSection(key)
+                    }}
                     className={[
                       'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
                       'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
@@ -141,12 +145,20 @@ export function DashboardTabs({
               <MatchResultEntry
                 entries={matchResults.entries}
                 onConnect={() => {
+                  setReturnToMatchesAfterLogin(true)
                   setEducatorSection('directory')
                   setLoginRequest((request) => request + 1)
                 }}
               />
             ) : (
-              <EducatorRoster loginRequest={loginRequest} />
+              <EducatorRoster
+                loginRequest={loginRequest}
+                onLoginSuccess={() => {
+                  if (!returnToMatchesAfterLogin) return
+                  setReturnToMatchesAfterLogin(false)
+                  setEducatorSection('matches')
+                }}
+              />
             )}
           </div>
         )}

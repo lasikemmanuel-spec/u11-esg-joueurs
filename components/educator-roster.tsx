@@ -25,7 +25,13 @@ type ParentKey = 'father' | 'mother'
 type PhoneEditor = { number: number; name: string; parent: ParentKey | null; value: string }
 type DirectoryView = 'educators' | 'players' | 'accounts'
 
-export function EducatorRoster({ loginRequest = 0 }: { loginRequest?: number }) {
+export function EducatorRoster({
+  loginRequest = 0,
+  onLoginSuccess,
+}: {
+  loginRequest?: number
+  onLoginSuccess?: () => void
+}) {
   const [players, setPlayers] = useState<EducatorPlayer[]>([])
   const [query, setQuery] = useState('')
   const [directoryView, setDirectoryView] = useState<DirectoryView>('educators')
@@ -126,6 +132,7 @@ export function EducatorRoster({ loginRequest = 0 }: { loginRequest?: number }) 
       setLoginOpen(false)
       window.dispatchEvent(new Event('educator-session-changed'))
       await loadPhoneContacts()
+      onLoginSuccess?.()
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Connexion impossible.')
     } finally {

@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, type FormEvent } from 'react'
-import { Award, CalendarDays, Check, Mail, MapPin, Pencil, Phone, Plus, Save, ShieldCheck, Trophy, Users } from 'lucide-react'
+import { Award, CalendarDays, Check, Mail, MapPin, Pencil, Phone, Plus, Save, ShieldCheck, Trophy } from 'lucide-react'
 
 type Section = 'educateurs' | 'joueurs' | 'matchs'
 type Educator = { id: number; name: string; role: string; license: string; phone: string; email: string }

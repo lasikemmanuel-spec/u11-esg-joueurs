@@ -248,7 +248,7 @@ export function DashboardTabs({
             eyebrow={activeTab === 'educator' ? 'ESG Genech · Éducateurs' : undefined}
             action={educatorIdentity && (
               <div className="flex shrink-0 items-center gap-2">
-                <span className="text-right text-xs font-semibold text-white">
+                <span className="hidden text-right text-xs font-semibold text-white sm:block">
                   {educatorIdentity.displayName.trim().split(/\s+/)[0]} · {
                     educatorIdentity.role === 'admin' ? 'Admin' :
                       educatorIdentity.role === 'educator' ? 'Éducateur' : 'Lecteur'

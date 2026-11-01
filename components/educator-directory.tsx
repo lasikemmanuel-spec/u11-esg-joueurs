@@ -7,7 +7,7 @@ import type { DirectoryEducator } from '@/lib/educator-directory'
 type Draft = { id?: string; name: string; licenseNumber: string; phone: string }
 const blank: Draft = { name: '', licenseNumber: '', phone: '' }
 
-const normalizeSearch = (value: string) => value.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').toLocaleLowerCase('fr-FR')
+const normalizeSearch = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr-FR')
 
 export function EducatorDirectory({ canEdit, searchQuery }: { canEdit: boolean; searchQuery?: string }) {
   const [educators, setEducators] = useState<DirectoryEducator[]>([])
@@ -16,7 +16,7 @@ export function EducatorDirectory({ canEdit, searchQuery }: { canEdit: boolean; 
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
-  const terms = normalizeSearch(searchQuery ?? '').trim().split(/\\s+/).filter(Boolean)
+  const terms = normalizeSearch(searchQuery ?? '').trim().split(/\s+/).filter(Boolean)
   const filteredEducators = educators.filter((educator) => {
     const searchable = normalizeSearch([educator.name, educator.licenseNumber, educator.phone].join(' '))
     return terms.every((term) => searchable.includes(term))

@@ -323,7 +323,7 @@ export function EducatorRoster() {
             L’onglet « Téléphones éducateurs » sera créé si nécessaire. Les numéros seront chiffrés dans « Joueurs » et « Téléphones éducateurs » ; l’application les déchiffrera uniquement côté serveur pour les éducateurs connectés. L’historique de Google Sheets peut conserver les anciennes valeurs en clair.
           </p>
         </div>
-        <EducatorDirectory canEdit={educator.role === 'admin'} />
+        <EducatorDirectory canEdit={educator.role === 'admin'} showAddButton={false} />
         {educator.role === 'admin' ? (
           <button
             type="button"
@@ -416,7 +416,7 @@ export function EducatorRoster() {
       {(directoryView === 'educators' || Boolean(query.trim())) && (
         <div className="flex flex-col gap-2">
           {query.trim() && <h2 className="font-bold text-primary">Résultats éducateurs</h2>}
-          <EducatorDirectory canEdit={educator.role === 'admin'} searchQuery={query} />
+          <EducatorDirectory canEdit={educator.role === 'admin'} searchQuery={query} showAddButton={false} />
         </div>
       )}
 
@@ -442,7 +442,7 @@ export function EducatorRoster() {
                     const label = parent === 'father' ? 'Papa' : 'Maman'
                     const key = `${player.number}-${parent}`
                     return (
-                      <div key={parent} className="flex flex-wrap items-center gap-2">
+                      <div key={parent} className="flex flex-nowrap items-center gap-2">
                         <button
                           type="button"
                           onClick={() => setVisiblePhones((current) => ({ ...current, [key]: !current[key] }))}
@@ -455,7 +455,7 @@ export function EducatorRoster() {
                           <span>{label}</span>
                         </button>
                         {visiblePhones[key] && (
-                          <div className="flex flex-wrap items-center gap-2">
+                          <div className="inline-flex shrink-0 flex-nowrap items-center gap-2 whitespace-nowrap">
                             <span className="text-sm font-semibold text-primary">{value}</span>
                             {isPhoneDevice && (
                               <a
@@ -514,7 +514,7 @@ export function EducatorRoster() {
                           </button>
                         )}
                         {phone?.legacyPhone && visiblePhones[`${player.number}-legacy`] && (
-                          <div className="flex flex-wrap items-center gap-2">
+                          <div className="inline-flex shrink-0 flex-nowrap items-center gap-2 whitespace-nowrap">
                             <span className="text-sm font-semibold text-primary">{phone.legacyPhone}</span>
                             {isPhoneDevice && (
                               <a
@@ -536,20 +536,22 @@ export function EducatorRoster() {
             )
           ) : (
             <>
-          <div className="flex justify-end">
-            <div className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-card px-3 py-1.5 text-xs font-semibold">
-              <Award className="size-3.5 text-amber-600 dark:text-amber-400" />
-              <span><strong className="text-amber-700 dark:text-amber-300">{missingLicenseCount}</strong> sans n° de licence</span>
-            </div>
-          </div>
-      <div className="flex flex-wrap items-end gap-2">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-card px-3 py-1.5 text-xs font-semibold">
+          <Award className="size-3.5 text-amber-600 dark:text-amber-400" />
+          <span>
+            <strong className="text-amber-700 dark:text-amber-300">{missingLicenseCount}</strong>
+            {' '}
+            {missingLicenseCount === 1 ? 'joueur sans licence' : 'joueurs sans licence'}
+          </span>
+        </div>
         {groups.length > 0 && (
           <button
             type="button"
             onClick={() => setExpandedPositions(allGroupsExpanded ? new Set() : new Set(groups.map(([position]) => position)))}
             aria-label={allGroupsExpanded ? "Fermer tous les postes" : "Ouvrir tous les postes"}
             title={allGroupsExpanded ? "Fermer tous les postes" : "Ouvrir tous les postes"}
-            className="inline-flex h-10 shrink-0 items-center gap-1 self-end rounded-lg border border-accent/40 bg-card px-2 text-xs font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-10"
+            className="inline-flex h-10 shrink-0 items-center gap-1 rounded-lg border border-accent/40 bg-card px-2 text-xs font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             {allGroupsExpanded ? <ChevronUp aria-hidden="true" className="size-3.5" /> : <ChevronDown aria-hidden="true" className="size-3.5" />}
             <span>{allGroupsExpanded ? "Tout −" : "Tout +"}</span>
@@ -611,7 +613,7 @@ export function EducatorRoster() {
                     const label = parent === 'father' ? 'Papa' : 'Maman'
                     const key = player.number + '-' + parent
                     return (
-                      <div key={parent} className="flex flex-wrap items-center gap-2">
+                      <div key={parent} className="flex flex-nowrap items-center gap-2">
                         <button
                           type="button"
                           onClick={() => setVisiblePhones((current) => ({ ...current, [key]: !current[key] }))}
@@ -624,7 +626,7 @@ export function EducatorRoster() {
                           <span>{label}</span>
                         </button>
                         {visiblePhones[key] && (
-                          <div className="flex flex-wrap items-center gap-2">
+                          <div className="inline-flex shrink-0 flex-nowrap items-center gap-2 whitespace-nowrap">
                             <span className="text-sm font-semibold text-primary">{value}</span>
                             {isPhoneDevice && (
                               <a
@@ -683,7 +685,7 @@ export function EducatorRoster() {
                                 Autre contact
                               </button>
                               {visiblePhones[player.number + '-legacy'] && (
-                                <div className="flex flex-wrap items-center gap-2">
+                                <div className="inline-flex shrink-0 flex-nowrap items-center gap-2 whitespace-nowrap">
                                   <span className="text-sm font-semibold text-primary">{phone.legacyPhone}</span>
                                   {isPhoneDevice && (
                                     <a

@@ -8,7 +8,11 @@ import { matchesSearch } from '@/lib/search'
 type Draft = { id?: string; name: string; licenseNumber: string; phone: string }
 const blank: Draft = { name: '', licenseNumber: '', phone: '' }
 
-export function EducatorDirectory({ canEdit, searchQuery }: { canEdit: boolean; searchQuery?: string }) {
+export function EducatorDirectory({ canEdit, searchQuery, showAddButton = true }: {
+  canEdit: boolean
+  searchQuery?: string
+  showAddButton?: boolean
+}) {
   const [educators, setEducators] = useState<DirectoryEducator[]>([])
   const [visiblePhones, setVisiblePhones] = useState<Record<string, boolean>>({})
   const [isPhoneDevice, setIsPhoneDevice] = useState(false)
@@ -74,13 +78,8 @@ export function EducatorDirectory({ canEdit, searchQuery }: { canEdit: boolean; 
           <h2 id="educator-directory-title" className="font-bold text-primary">Annuaire des éducateurs</h2>
           <p className="mt-1 text-xs text-muted-foreground">Coordonnées séparées des fiches joueurs.</p>
         </div>
-        {canEdit && <button type="button" onClick={() => { setDraft(blank); setError(''); setOpen(true) }} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground"><Plus className="size-4" /> Ajouter un éducateur</button>}
+        {canEdit && showAddButton && <button type="button" onClick={() => { setDraft(blank); setError(''); setOpen(true) }} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground"><Plus className="size-4" /> Ajouter un éducateur</button>}
       </div>
-      )}
-      {isSearching && canEdit && (
-        <div className="mb-2 flex justify-end">
-          <button type="button" onClick={() => { setDraft(blank); setError(''); setOpen(true) }} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground"><Plus className="size-4" /> Ajouter un éducateur</button>
-        </div>
       )}
       {notice && <p role="status" className="mt-3 text-sm font-medium text-emerald-700">{notice}</p>}
       {error && !open && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}

@@ -5,6 +5,82 @@ export const SHEET_ID =
   process.env.GOOGLE_SHEET_ID || '1zDC6a-hTSKFV2E5JHvj382q6eW9-xURii-5r5O_L4n4'
 
 let cachedAccessToken: { token: string; expiresAt: number } | null = null
+const SHEET_METADATA_CACHE_MS = 60_000
+
+type SpreadsheetMetadata = {
+  sheets?: Array<{
+    properties?: {
+      sheetId?: number
+      title?: string
+      gridProperties?: { columnCount?: number }
+    }
+  }>
+}
+
+let cachedSpreadsheetMetadata: { metadata: SpreadsheetMetadata; expiresAt: number } | null = null
+let pendingSpreadsheetMetadata: Promise<SpreadsheetMetadata> | null = null
+
+type GoogleSheetsRequestInit = RequestInit & {
+  next?: { revalidate?: number | false; tags?: string[] }
+}
+
+async function fetchGoogleSheetsApi(url: string, init: GoogleSheetsRequestInit = {}) {
+  const canRetry = (init.method ?? 'GET').toUpperCase() === 'GET'
+
+  for (let attempt = 0; ; attempt += 1) {
+    const response = await fetch(url, init)
+    if (response.status !== 429 || !canRetry || attempt >= 2) return response
+    await response.body?.cancel()
+
+    const retryAfter = response.headers.get('retry-after')
+    const retryAfterSeconds = retryAfter ? Number(retryAfter) : Number.NaN
+    const retryAfterDate = retryAfter && Number.isNaN(retryAfterSeconds)
+      ? Date.parse(retryAfter)
+      : Number.NaN
+    const retryAfterMs = Number.isFinite(retryAfterSeconds)
+      ? retryAfterSeconds * 1000
+      : Number.isFinite(retryAfterDate)
+        ? retryAfterDate - Date.now()
+        : 0
+    const delayMs = Math.max(0, Math.min(retryAfterMs, 5000)) || 300 * 2 ** attempt
+    await new Promise((resolve) => setTimeout(resolve, delayMs))
+  }
+}
+
+async function getSpreadsheetMetadata(accessToken: string): Promise<SpreadsheetMetadata> {
+  if (cachedSpreadsheetMetadata && Date.now() < cachedSpreadsheetMetadata.expiresAt) {
+    return cachedSpreadsheetMetadata.metadata
+  }
+  if (pendingSpreadsheetMetadata) return pendingSpreadsheetMetadata
+
+  const metadataRequest = (async () => {
+    const response = await fetchGoogleSheetsApi(
+      `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets(properties(sheetId,title,gridProperties))`,
+      {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        cache: 'no-store',
+      },
+    )
+    if (!response.ok) {
+      throw new Error(`Impossible de lire les onglets Google Sheets (${response.status}).`)
+    }
+
+    const metadata = await response.json() as SpreadsheetMetadata
+    cachedSpreadsheetMetadata = { metadata, expiresAt: Date.now() + SHEET_METADATA_CACHE_MS }
+    return metadata
+  })()
+
+  pendingSpreadsheetMetadata = metadataRequest
+  try {
+    return await metadataRequest
+  } finally {
+    if (pendingSpreadsheetMetadata === metadataRequest) pendingSpreadsheetMetadata = null
+  }
+}
+
+function invalidateSpreadsheetMetadataCache() {
+  cachedSpreadsheetMetadata = null
+}
 
 /**
  * Nettoie et formate la clé privée PEM :
@@ -162,7 +238,7 @@ export async function getSheetRows(tabName?: string): Promise<string[][]> {
 
       // Si aucun onglet n'est spécifié (cas du roster), on recherche le premier onglet
       if (!range) {
-        const metaRes = await fetch(
+        const metaRes = await fetchGoogleSheetsApi(
           `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties.title`,
           {
             headers: { Authorization: `Bearer ${accessToken}` },
@@ -189,7 +265,7 @@ export async function getSheetRows(tabName?: string): Promise<string[][]> {
         range
       )}?valueRenderOption=FORMATTED_VALUE`
 
-      const res = await fetch(apiUrl, {
+      const res = await fetchGoogleSheetsApi(apiUrl, {
         headers: { Authorization: `Bearer ${accessToken}` },
         next: { revalidate: 300, tags: ['google-sheet'] },
       })
@@ -254,20 +330,7 @@ export async function getAuthenticatedSheetRows(tabName?: string) {
   const accessToken = await getGoogleAccessToken()
   if (!accessToken) throw new Error('Authentification Google indisponible pour les coordonnées éducateurs.')
 
-  const metadataResponse = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties.title`,
-    {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      cache: 'no-store',
-    },
-  )
-  if (!metadataResponse.ok) {
-    throw new Error(`Impossible de lire les onglets Google Sheets (${metadataResponse.status}).`)
-  }
-
-  const metadata = (await metadataResponse.json()) as {
-    sheets?: Array<{ properties?: { title?: string } }>
-  }
+  const metadata = await getSpreadsheetMetadata(accessToken)
   const normalizeTitle = (value: string) =>
     value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr-FR')
   const sheetTitle = tabName
@@ -278,7 +341,7 @@ export async function getAuthenticatedSheetRows(tabName?: string) {
   if (!sheetTitle) throw new Error('Aucun onglet Google Sheets trouvé.')
 
   const range = `'${sheetTitle.replace(/'/g, "''")}'`
-  const response = await fetch(
+  const response = await fetchGoogleSheetsApi(
     `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}?valueRenderOption=FORMATTED_VALUE`,
     {
       headers: { Authorization: `Bearer ${accessToken}` },
@@ -306,23 +369,10 @@ export async function ensureAuthenticatedSheetTab(title: string) {
   const accessToken = await getGoogleAccessToken()
   if (!accessToken) throw new Error('Authentification Google indisponible pour créer l’onglet protégé.')
 
-  const metadataResponse = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets.properties.title`,
-    {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      cache: 'no-store',
-    },
-  )
-  if (!metadataResponse.ok) {
-    throw new Error(`Impossible de vérifier les onglets Google Sheets (${metadataResponse.status}).`)
-  }
-
-  const metadata = (await metadataResponse.json()) as {
-    sheets?: Array<{ properties?: { title?: string } }>
-  }
+  const metadata = await getSpreadsheetMetadata(accessToken)
   if (metadata.sheets?.some((sheet) => sheet.properties?.title === title)) return
 
-  const response = await fetch(
+  const response = await fetchGoogleSheetsApi(
     `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}:batchUpdate`,
     {
       method: 'POST',
@@ -337,32 +387,20 @@ export async function ensureAuthenticatedSheetTab(title: string) {
   if (!response.ok) {
     throw new Error(`Impossible de créer l’onglet protégé (${response.status}).`)
   }
+  invalidateSpreadsheetMetadataCache()
 }
 
 export async function ensureAuthenticatedSheetColumnCount(sheetTitle: string, minimumColumns: number) {
   const accessToken = await getGoogleAccessToken()
   if (!accessToken) throw new Error('Authentification Google indisponible pour modifier les coordonnées.')
 
-  const metadataResponse = await fetch(
-    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}?fields=sheets(properties(sheetId,title,gridProperties))`,
-    {
-      headers: { Authorization: `Bearer ${accessToken}` },
-      cache: 'no-store',
-    },
-  )
-  if (!metadataResponse.ok) {
-    throw new Error(`Impossible de vérifier les colonnes Google Sheets (${metadataResponse.status}).`)
-  }
-
-  const metadata = (await metadataResponse.json()) as {
-    sheets?: Array<{ properties?: { sheetId?: number; title?: string; gridProperties?: { columnCount?: number } } }>
-  }
+  const metadata = await getSpreadsheetMetadata(accessToken)
   const sheet = metadata.sheets?.find((item) => item.properties?.title === sheetTitle)?.properties
   if (!sheet || sheet.sheetId === undefined) throw new Error(`Onglet « ${sheetTitle} » introuvable.`)
   const currentColumns = sheet.gridProperties?.columnCount ?? 0
   if (currentColumns >= minimumColumns) return
 
-  const response = await fetch(
+  const response = await fetchGoogleSheetsApi(
     `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}:batchUpdate`,
     {
       method: 'POST',
@@ -383,6 +421,7 @@ export async function ensureAuthenticatedSheetColumnCount(sheetTitle: string, mi
     },
   )
   if (!response.ok) throw new Error(`Impossible d’ajouter des colonnes à « ${sheetTitle} » (${response.status}).`)
+  invalidateSpreadsheetMetadataCache()
 }
 
 export async function updateAuthenticatedSheetValues(
@@ -391,7 +430,7 @@ export async function updateAuthenticatedSheetValues(
   const accessToken = await getGoogleAccessToken()
   if (!accessToken) throw new Error('Authentification Google indisponible pour modifier les coordonnées.')
 
-  const response = await fetch(
+  const response = await fetchGoogleSheetsApi(
     `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values:batchUpdate?valueInputOption=RAW`,
     {
       method: 'POST',

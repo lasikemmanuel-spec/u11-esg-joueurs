@@ -71,8 +71,18 @@ export async function POST(request: Request) {
     account = await findEducator(username)
     validPassword = verifyEducatorPassword(account, credentials.password)
   } catch (error) {
-    console.error('Configuration de connexion éducateur invalide:', error)
-    return jsonResponse({ error: 'La connexion éducateur n’est pas disponible ou configurée.' }, 503)
+    const rateLimited = error instanceof Error && /\(429\)/.test(error.message)
+    console.error(
+      rateLimited
+        ? 'Google Sheets limite temporairement les connexions éducateur:'
+        : 'Impossible de charger ou vérifier le compte éducateur:',
+      error,
+    )
+    return jsonResponse({
+      error: rateLimited
+        ? 'Le service de connexion est temporairement saturé. Réessayez dans quelques instants.'
+        : 'La connexion éducateur n’est pas disponible ou configurée.',
+    }, 503)
   }
   if (!account || !validPassword) {
     const current = failedAttempts.get(key)

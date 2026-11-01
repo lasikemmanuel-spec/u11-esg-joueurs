@@ -13,16 +13,14 @@ function jsonResponse(body: object, status = 200) {
   })
 }
 
-function getSession(request: Request) {
-  try {
-    return getEducatorSession(request)
-  } catch {
-    return null
-  }
-}
-
 export async function GET(request: Request) {
-  const educator = getSession(request)
+  let educator
+  try {
+    educator = await getEducatorSession(request)
+  } catch (error) {
+    console.error('Erreur de vérification de session éducateur:', error)
+    return jsonResponse({ error: 'La connexion éducateur n’est pas disponible.' }, 503)
+  }
   return jsonResponse({
     enabled: process.env.VERCEL_ENV === 'production',
     role: educator?.role ?? null,
@@ -35,7 +33,13 @@ async function save(request: Request, editing: boolean) {
     return jsonResponse({ error: 'La saisie réelle est désactivée dans cette prévisualisation.' }, 403)
   }
   if (!isSameOriginRequest(request)) return jsonResponse({ error: 'Requête non autorisée.' }, 403)
-  const educator = getSession(request)
+  let educator
+  try {
+    educator = await getEducatorSession(request)
+  } catch (error) {
+    console.error('Erreur de vérification de session éducateur:', error)
+    return jsonResponse({ error: 'La connexion éducateur n’est pas disponible.' }, 503)
+  }
   if (!educator) return jsonResponse({ error: 'Connexion éducateur requise.' }, 401)
   if (Number(request.headers.get('content-length') ?? 0) > 4096) {
     return jsonResponse({ error: 'Requête trop volumineuse.' }, 413)

@@ -1,15 +1,11 @@
 import 'server-only'
 import crypto from 'node:crypto'
+import { getEducatorAccounts, type EducatorAccount } from '@/lib/educator-account-store'
+
+export type { EducatorAccount } from '@/lib/educator-account-store'
 
 const SESSION_COOKIE = 'educator_session'
 const SESSION_DURATION_SECONDS = 8 * 60 * 60
-
-export type EducatorAccount = {
-  username: string
-  displayName: string
-  passwordHash: string
-  role: 'educator' | 'admin'
-}
 
 export type EducatorSession = Pick<EducatorAccount, 'username' | 'displayName' | 'role'>
 
@@ -22,42 +18,6 @@ export function isSameOriginRequest(request: Request) {
   } catch {
     return false
   }
-}
-
-function getAccounts(): EducatorAccount[] {
-  const raw = process.env.EDUCATOR_ACCOUNTS
-  if (!raw) throw new Error('EDUCATOR_ACCOUNTS n’est pas configuré.')
-
-  let parsed: unknown
-  try {
-    parsed = JSON.parse(raw)
-  } catch {
-    throw new Error('EDUCATOR_ACCOUNTS doit contenir un tableau JSON valide.')
-  }
-
-  if (!Array.isArray(parsed)) throw new Error('EDUCATOR_ACCOUNTS doit être un tableau.')
-
-  const accounts = parsed as EducatorAccount[]
-  const usernames = new Set<string>()
-  for (const account of accounts) {
-    if (
-      typeof account.username !== 'string' ||
-      typeof account.displayName !== 'string' ||
-      typeof account.passwordHash !== 'string' ||
-      !['educator', 'admin'].includes(account.role) ||
-      !/^scrypt\$[A-Za-z0-9_-]{16,}\$[A-Za-z0-9_-]{32,}$/.test(account.passwordHash)
-    ) {
-      throw new Error('Un compte dans EDUCATOR_ACCOUNTS est invalide.')
-    }
-
-    const username = account.username.trim().toLocaleLowerCase('fr-FR')
-    if (!username || usernames.has(username)) {
-      throw new Error('Les identifiants dans EDUCATOR_ACCOUNTS doivent être uniques.')
-    }
-    usernames.add(username)
-  }
-
-  return accounts
 }
 
 function getSessionSecret() {
@@ -74,15 +34,34 @@ function safeEqual(a: Buffer, b: Buffer) {
 
 export function verifyEducatorPassword(account: EducatorAccount | undefined, password: string) {
   const [scheme, saltText, hashText] = account?.passwordHash.split('$') ?? []
-  const salt = scheme === 'scrypt' ? Buffer.from(saltText, 'base64url') : Buffer.alloc(16, 1)
-  const expected = scheme === 'scrypt' ? Buffer.from(hashText, 'base64url') : Buffer.alloc(64)
+  let salt = Buffer.alloc(16, 1)
+  let expected = Buffer.alloc(64)
+  if (scheme === 'scrypt' && saltText && hashText) {
+    const parsedSalt = Buffer.from(saltText, 'base64url')
+    const parsedHash = Buffer.from(hashText, 'base64url')
+    if (
+      parsedSalt.length === 16 &&
+      parsedSalt.toString('base64url') === saltText &&
+      parsedHash.length === 64 &&
+      parsedHash.toString('base64url') === hashText
+    ) {
+      salt = parsedSalt
+      expected = parsedHash
+    }
+  }
   const actual = crypto.scryptSync(password, salt, expected.length)
   return Boolean(account) && safeEqual(actual, expected)
 }
 
-export function findEducator(username: string) {
+export async function findEducator(username: string) {
   const normalized = username.trim().toLocaleLowerCase('fr-FR')
-  return getAccounts().find((account) => account.username.toLocaleLowerCase('fr-FR') === normalized)
+  return (await getEducatorAccounts()).find((account) => account.username.toLocaleLowerCase('fr-FR') === normalized)
+}
+
+export function hashEducatorPassword(password: string) {
+  const salt = crypto.randomBytes(16)
+  const hash = crypto.scryptSync(password, salt, 64)
+  return `scrypt$${salt.toString('base64url')}$${hash.toString('base64url')}`
 }
 
 export function createEducatorSession(account: EducatorAccount) {
@@ -97,7 +76,7 @@ export function createEducatorSession(account: EducatorAccount) {
   return { token: `${payload}.${signature}`, maxAge: SESSION_DURATION_SECONDS }
 }
 
-export function getEducatorSession(request: Request): EducatorSession | null {
+export async function getEducatorSession(request: Request): Promise<EducatorSession | null> {
   const cookieName = educatorSessionCookieName()
   const cookie = request.headers.get('cookie')
     ?.split(';')
@@ -132,7 +111,7 @@ export function getEducatorSession(request: Request): EducatorSession | null {
     return null
   }
 
-  const account = findEducator(session.username)
+  const account = await findEducator(session.username)
   if (!account) return null
   const credentialVersion = crypto.createHash('sha256').update(account.passwordHash).digest('base64url')
   if (session.credentialVersion !== credentialVersion) return null

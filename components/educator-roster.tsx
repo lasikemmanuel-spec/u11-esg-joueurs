@@ -1,13 +1,14 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback, type FormEvent } from 'react'
-import { Search, Copy, Check, Award, LockKeyhole, LogOut, Phone, Save, ChevronDown, ChevronUp, Pencil, X, ContactRound, UsersRound } from 'lucide-react'
+import { Search, Copy, Check, Award, LockKeyhole, LogOut, Phone, Save, ChevronDown, ChevronUp, Pencil, X, ContactRound, UsersRound, KeyRound } from 'lucide-react'
 import type { Player, PublicPlayer } from '@/lib/players'
 import { matchesSearch } from '@/lib/search'
 import { ParentAvatar } from '@/components/parent-avatar'
 import { EducatorDirectory } from '@/components/educator-directory'
+import { EducatorAccountManagement } from '@/components/educator-account-management'
 
-type EducatorIdentity = { displayName: string; role: 'educator' | 'admin' }
+type EducatorIdentity = { username: string; displayName: string; role: 'educator' | 'admin' }
 
 const POSITION_ORDER = ['gard', 'déf', 'def', 'lat', 'cent', 'mil', 'ail', 'att', 'av']
 
@@ -22,7 +23,7 @@ type PlayerPhones = { legacyPhone: string; fatherPhone: string; motherPhone: str
 type EducatorPlayer = PublicPlayer & Pick<Player, 'licenseNumber'>
 type ParentKey = 'father' | 'mother'
 type PhoneEditor = { number: number; name: string; parent: ParentKey | null; value: string }
-type DirectoryView = 'educators' | 'players'
+type DirectoryView = 'educators' | 'players' | 'accounts'
 
 export function EducatorRoster() {
   const [players, setPlayers] = useState<EducatorPlayer[]>([])
@@ -383,10 +384,13 @@ export function EducatorRoster() {
             className="h-11 w-full rounded-lg border border-accent/50 bg-background pr-3 pl-10 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
-        {!query.trim() && <nav aria-label="Choisir un annuaire" className="grid grid-cols-2 gap-2 rounded-lg bg-muted/70 p-1">
+        {!query.trim() && <nav aria-label="Choisir un annuaire" className={`grid ${educator.role === 'admin' ? 'grid-cols-3' : 'grid-cols-2'} gap-2 rounded-lg bg-muted/70 p-1`}>
           {([
             { key: 'educators' as const, label: 'Éducateurs', Icon: ContactRound },
             { key: 'players' as const, label: 'Joueurs', Icon: UsersRound },
+            ...(educator.role === 'admin'
+              ? [{ key: 'accounts' as const, label: 'Comptes', Icon: KeyRound }]
+              : []),
           ]).map(({ key, label, Icon }) => {
             const isActive = directoryView === key
             return (
@@ -722,6 +726,10 @@ export function EducatorRoster() {
             </>
           )}
         </div>
+      )}
+
+      {directoryView === 'accounts' && educator.role === 'admin' && (
+        <EducatorAccountManagement currentUsername={educator.username} />
       )}
 
       {phoneEditor && educator.role === 'admin' && (

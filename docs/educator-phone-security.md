@@ -18,6 +18,18 @@ Le mot de passe est saisi sans être affiché. Ajouter chaque objet JSON produit
 
 Limiter aussi le débit des tentatives de connexion au niveau du fournisseur d’hébergement : la protection locale de l’application ne remplace pas une limite distribuée entre instances.
 
+### Gestion des comptes éducateurs
+
+La gestion des comptes nécessite aussi la variable secrète Vercel `EDUCATOR_ACCOUNT_ENCRYPTION_KEY`, distincte de la clé de chiffrement des téléphones. Générer une clé de 32 octets avec :
+
+```sh
+node -p "require('node:crypto').randomBytes(32).toString('base64url')"
+```
+
+La configurer en production avant le prochain accès éducateur. Au premier accès, si l’onglet `Comptes éducateurs` n’existe pas, l’application le crée puis initialise ses comptes à partir de `EDUCATOR_ACCOUNTS`. La première ligne contient l’en-tête et la suivante le contenu chiffré AES-256-GCM. Vérifier qu’un administrateur peut se connecter et que l’onglet est initialisé avant de retirer `EDUCATOR_ACCOUNTS`, qui ne sert alors plus qu’à une initialisation d’un onglet vide. Ne pas supprimer ni remplacer la clé de chiffrement après initialisation : sans elle, les comptes ne peuvent plus être lus.
+
+Dans **Éducateurs > Comptes**, un administrateur peut créer un compte avec un mot de passe d’au moins 12 caractères, réinitialiser un mot de passe, accorder ou retirer les droits administrateur et supprimer un autre compte. Ces modifications sont disponibles uniquement sur le déploiement de production. Les mots de passe sont hachés avec scrypt avant d’être inclus dans le contenu chiffré. Une modification de mot de passe invalide les sessions existantes du compte ; une suppression ou un changement de rôle s’applique à ses prochaines requêtes. Le dernier administrateur ne peut pas être supprimé ou rétrogradé, et un administrateur ne peut pas supprimer son propre compte ni retirer ses propres droits.
+
 ## Créer l’onglet dédié dans le classeur actuel
 
 Le classeur actuel est conservé. Lors de l’initialisation, l’application crée l’onglet `Téléphones éducateurs` s’il n’existe pas. La structure des onglets reste en place, mais les cellules téléphoniques en clair des onglets `Joueurs` et `Téléphones éducateurs` sont remplacées par leurs valeurs chiffrées.

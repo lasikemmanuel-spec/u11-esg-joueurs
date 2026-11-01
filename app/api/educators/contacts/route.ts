@@ -16,21 +16,27 @@ function jsonResponse(body: object, status = 200) {
 }
 
 export async function GET(request: Request) {
-  const educator = getEducatorSession(request)
+  let educator
+  try {
+    educator = await getEducatorSession(request)
+  } catch (error) {
+    console.error('Erreur de vérification de session éducateur:', error)
+    return jsonResponse({ error: 'La connexion éducateur n’est pas disponible.' }, 503)
+  }
   if (!educator) return jsonResponse({ error: 'Connexion requise.' }, 401)
 
   try {
     const phones = await getEducatorPhones()
     return jsonResponse({
       phones,
-      educator: { displayName: educator.displayName, role: educator.role },
+      educator: { username: educator.username, displayName: educator.displayName, role: educator.role },
     })
   } catch (error) {
     if (error instanceof PhoneMigrationRequiredError) {
       return jsonResponse({
         error: 'L’onglet des téléphones éducateurs doit être créé.',
         migrationRequired: true,
-        educator: { displayName: educator.displayName, role: educator.role },
+        educator: { username: educator.username, displayName: educator.displayName, role: educator.role },
       }, 409)
     }
     console.error('Erreur de lecture des téléphones éducateurs:', error)
@@ -40,7 +46,13 @@ export async function GET(request: Request) {
 
 export async function PUT(request: Request) {
   if (!isSameOriginRequest(request)) return jsonResponse({ error: 'Requête non autorisée.' }, 403)
-  const educator = getEducatorSession(request)
+  let educator
+  try {
+    educator = await getEducatorSession(request)
+  } catch (error) {
+    console.error('Erreur de vérification de session éducateur:', error)
+    return jsonResponse({ error: 'La connexion éducateur n’est pas disponible.' }, 503)
+  }
   if (!educator) return jsonResponse({ error: 'Connexion requise.' }, 401)
   if (educator.role !== 'admin') return jsonResponse({ error: 'Droits insuffisants.' }, 403)
   if (Number(request.headers.get('content-length') ?? 0) > 2048) {

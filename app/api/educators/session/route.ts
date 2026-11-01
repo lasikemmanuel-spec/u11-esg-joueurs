@@ -23,9 +23,14 @@ function jsonResponse(body: object, status = 200) {
 }
 
 export async function GET(request: Request) {
-  const educator = getEducatorSession(request)
-  if (!educator) return jsonResponse({ error: 'Connexion requise.' }, 401)
-  return jsonResponse({ educator: { displayName: educator.displayName, role: educator.role } })
+  try {
+    const educator = await getEducatorSession(request)
+    if (!educator) return jsonResponse({ error: 'Connexion requise.' }, 401)
+    return jsonResponse({ educator: { username: educator.username, displayName: educator.displayName, role: educator.role } })
+  } catch (error) {
+    console.error('Erreur de vérification de session éducateur:', error)
+    return jsonResponse({ error: 'La connexion éducateur n’est pas disponible.' }, 503)
+  }
 }
 
 export async function POST(request: Request) {
@@ -60,14 +65,14 @@ export async function POST(request: Request) {
   }
   if (attempts && attempts.resetAt <= now) failedAttempts.delete(key)
 
-  let account: ReturnType<typeof findEducator>
+  let account: Awaited<ReturnType<typeof findEducator>>
   let validPassword = false
   try {
-    account = findEducator(username)
+    account = await findEducator(username)
     validPassword = verifyEducatorPassword(account, credentials.password)
   } catch (error) {
     console.error('Configuration de connexion éducateur invalide:', error)
-    return jsonResponse({ error: 'La connexion éducateur n’est pas configurée.' }, 503)
+    return jsonResponse({ error: 'La connexion éducateur n’est pas disponible ou configurée.' }, 503)
   }
   if (!account || !validPassword) {
     const current = failedAttempts.get(key)
@@ -96,7 +101,7 @@ export async function POST(request: Request) {
     return jsonResponse({ error: 'La connexion éducateur n’est pas configurée.' }, 503)
   }
   const response = jsonResponse({
-    educator: { displayName: account.displayName, role: account.role },
+    educator: { username: account.username, displayName: account.displayName, role: account.role },
   })
   response.cookies.set(educatorSessionCookieName(), session.token, {
     httpOnly: true,

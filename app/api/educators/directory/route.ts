@@ -13,7 +13,13 @@ function response(body: object, status = 200) {
 }
 
 export async function GET(request: Request) {
-  const educator = getEducatorSession(request)
+  let educator
+  try {
+    educator = await getEducatorSession(request)
+  } catch (error) {
+    console.error('Erreur de vérification de session éducateur:', error)
+    return response({ error: 'La connexion éducateur n’est pas disponible.' }, 503)
+  }
   if (!educator) return response({ error: 'Connexion requise.' }, 401)
   try {
     return response({ educators: await getEducatorDirectory() })
@@ -26,7 +32,13 @@ export async function GET(request: Request) {
 async function save(request: Request, editing: boolean) {
   if (process.env.VERCEL_ENV !== 'production') return response({ error: 'La saisie est désactivée dans cet aperçu.' }, 403)
   if (!isSameOriginRequest(request)) return response({ error: 'Requête non autorisée.' }, 403)
-  const educator = getEducatorSession(request)
+  let educator
+  try {
+    educator = await getEducatorSession(request)
+  } catch (error) {
+    console.error('Erreur de vérification de session éducateur:', error)
+    return response({ error: 'La connexion éducateur n’est pas disponible.' }, 503)
+  }
   if (!educator) return response({ error: 'Connexion requise.' }, 401)
   if (educator.role !== 'admin') return response({ error: 'Seul l’administrateur peut modifier l’annuaire.' }, 403)
   if (Number(request.headers.get('content-length') ?? 0) > 4096) return response({ error: 'Requête trop volumineuse.' }, 413)

@@ -9,7 +9,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Requête non autorisée.' }, { status: 403 })
   }
 
-  const educator = getEducatorSession(request)
+  let educator
+  try {
+    educator = await getEducatorSession(request)
+  } catch (error) {
+    console.error('Erreur de vérification de session éducateur:', error)
+    return NextResponse.json({ error: 'La connexion éducateur n’est pas disponible.' }, { status: 503 })
+  }
   if (!educator) return NextResponse.json({ error: 'Connexion requise.' }, { status: 401 })
   if (educator.role !== 'admin') {
     return NextResponse.json({ error: 'Droits insuffisants.' }, { status: 403 })

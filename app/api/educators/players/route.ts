@@ -5,7 +5,17 @@ import { getRoster } from '@/lib/players'
 export const runtime = 'nodejs'
 
 export async function GET(request: Request) {
-  if (!getEducatorSession(request)) {
+  let educator
+  try {
+    educator = await getEducatorSession(request)
+  } catch (error) {
+    console.error('Erreur de vérification de session éducateur:', error)
+    return NextResponse.json(
+      { error: 'La connexion éducateur n’est pas disponible.' },
+      { status: 503, headers: { 'Cache-Control': 'no-store, private', Vary: 'Cookie' } },
+    )
+  }
+  if (!educator) {
     return NextResponse.json(
       { error: 'Connexion éducateur requise.' },
       { status: 401, headers: { 'Cache-Control': 'no-store, private', Vary: 'Cookie' } },

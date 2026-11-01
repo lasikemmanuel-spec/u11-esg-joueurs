@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback, type FormEvent } from 'react'
-import { Search, Copy, Check, Award, Phone, Save, ChevronDown, ChevronUp, Pencil, X, ContactRound, UsersRound, KeyRound } from 'lucide-react'
+import { Search, Copy, Check, Award, Phone, Save, ChevronDown, ChevronUp, Pencil, X, ContactRound, UsersRound, KeyRound, UserRound, Trash2, Camera } from 'lucide-react'
 import type { Player, PublicPlayer } from '@/lib/players'
 import { matchesSearch } from '@/lib/search'
 import { ParentAvatar } from '@/components/parent-avatar'
@@ -26,6 +26,76 @@ type ParentKey = 'father' | 'mother'
 type PhoneEditor = { number: number; name: string; parent: ParentKey | null; value: string }
 type DirectoryView = 'educators' | 'players' | 'accounts'
 type EducatorSessionStatus = 'checking' | 'unauthenticated' | 'authenticated' | 'unavailable'
+
+function EducatorAvatar({ username, revision = 0, size = 'size-16' }: {
+  username: string
+  revision?: number
+  size?: string
+}) {
+  const [loadedUsername, setLoadedUsername] = useState('')
+  const [previewUsername, setPreviewUsername] = useState('')
+  const normalizedUsername = username.trim()
+
+  useEffect(() => {
+    setLoadedUsername('')
+  }, [normalizedUsername, revision])
+
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => setPreviewUsername(normalizedUsername),
+      normalizedUsername ? 300 : 0,
+    )
+    return () => window.clearTimeout(timer)
+  }, [normalizedUsername])
+
+  return (
+    <div className={`relative shrink-0 overflow-hidden rounded-full border border-accent/50 bg-muted ${size}`}>
+      {previewUsername && (
+        <img
+          src={`/api/educators/profile-photo?username=${encodeURIComponent(previewUsername)}&v=${revision}`}
+          alt=""
+          aria-hidden="true"
+          onLoad={() => setLoadedUsername(previewUsername)}
+          onError={() => setLoadedUsername('')}
+          className={`absolute inset-0 size-full object-cover ${loadedUsername === normalizedUsername ? '' : 'hidden'}`}
+        />
+      )}
+      {(!normalizedUsername || loadedUsername !== normalizedUsername || previewUsername !== normalizedUsername) && (
+        <UserRound aria-hidden="true" className="absolute inset-0 m-auto size-1/2 text-muted-foreground" />
+      )}
+    </div>
+  )
+}
+
+async function prepareEducatorPhoto(file: File) {
+  if (!file.type.startsWith('image/')) throw new Error('Choisissez un fichier image.')
+  if (file.size > 12 * 1024 * 1024) throw new Error('La photo doit faire moins de 12 Mo avant compression.')
+  const image = await createImageBitmap(file)
+  try {
+    const scale = Math.min(1, 320 / Math.max(image.width, image.height))
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.max(1, Math.round(image.width * scale))
+    canvas.height = Math.max(1, Math.round(image.height * scale))
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('Impossible de préparer cette photo.')
+    context.drawImage(image, 0, 0, canvas.width, canvas.height)
+
+    for (const quality of [0.82, 0.68, 0.54, 0.4]) {
+      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality))
+      if (!blob) throw new Error('Impossible de préparer cette photo.')
+      if (blob.size > 30 * 1024) continue
+      return await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Impossible de lire cette photo.'))
+        reader.onerror = () => reject(new Error('Impossible de lire cette photo.'))
+        reader.readAsDataURL(blob)
+      })
+    }
+    throw new Error('Cette photo ne peut pas être compressée sous 30 Ko.')
+  } finally {
+    image.close()
+  }
+}
 
 export function EducatorRoster({
   onSessionStatusChange,
@@ -53,6 +123,10 @@ export function EducatorRoster({
   const [requestPending, setRequestPending] = useState(false)
   const [authError, setAuthError] = useState('')
   const [notice, setNotice] = useState('')
+  const [profilePhotoRevision, setProfilePhotoRevision] = useState(0)
+  const [profilePhotoPending, setProfilePhotoPending] = useState(false)
+  const [profilePhotoError, setProfilePhotoError] = useState('')
+  const [profilePhotoNotice, setProfilePhotoNotice] = useState('')
 
   const loadPrivatePlayers = useCallback(async () => {
     const response = await fetch('/api/educators/players', { cache: 'no-store' })
@@ -145,6 +219,46 @@ export function EducatorRoster({
       setAuthError(error instanceof Error ? error.message : 'Connexion impossible.')
     } finally {
       setRequestPending(false)
+    }
+  }
+
+  const saveProfilePhoto = async (file: File | undefined) => {
+    if (!file) return
+    setProfilePhotoPending(true)
+    setProfilePhotoError('')
+    setProfilePhotoNotice('')
+    try {
+      const photo = await prepareEducatorPhoto(file)
+      const response = await fetch('/api/educators/profile-photo', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photo }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error ?? 'Impossible d’enregistrer la photo.')
+      setProfilePhotoRevision((revision) => revision + 1)
+      setProfilePhotoNotice('Photo de profil mise à jour.')
+    } catch (error) {
+      setProfilePhotoError(error instanceof Error ? error.message : 'Impossible d’enregistrer la photo.')
+    } finally {
+      setProfilePhotoPending(false)
+    }
+  }
+
+  const removeProfilePhoto = async () => {
+    setProfilePhotoPending(true)
+    setProfilePhotoError('')
+    setProfilePhotoNotice('')
+    try {
+      const response = await fetch('/api/educators/profile-photo', { method: 'DELETE' })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error ?? 'Impossible de supprimer la photo.')
+      setProfilePhotoRevision((revision) => revision + 1)
+      setProfilePhotoNotice('Photo supprimée. Le logo de personne sera affiché.')
+    } catch (error) {
+      setProfilePhotoError(error instanceof Error ? error.message : 'Impossible de supprimer la photo.')
+    } finally {
+      setProfilePhotoPending(false)
     }
   }
 
@@ -258,6 +372,10 @@ export function EducatorRoster({
             </div>
           </div>
           <h2 id="educator-login-title" className="text-center text-lg font-black text-primary">Connexion éducateur</h2>
+            <div className="flex items-center justify-center gap-3">
+              <EducatorAvatar username={username} revision={profilePhotoRevision} size="size-14" />
+              <p className="max-w-48 text-xs text-muted-foreground">Votre photo de profil apparaît ici. Sans photo, le logo de personne s’affiche.</p>
+            </div>
             <label className="flex flex-col gap-1.5 text-sm font-medium">
               Identifiant
               <input
@@ -326,6 +444,42 @@ export function EducatorRoster({
     <section aria-label="Liste des éducateurs" className="flex flex-col gap-4">
       {authError && <p role="alert" className="text-sm font-medium text-destructive">{authError}</p>}
       {notice && <p role="status" className="text-sm font-medium text-emerald-700 dark:text-emerald-300">{notice}</p>}
+
+      <div className="flex flex-wrap items-center gap-4 rounded-xl border border-accent/50 bg-card p-3 shadow-sm">
+        <EducatorAvatar username={educator.username} revision={profilePhotoRevision} size="size-14" />
+        <div className="min-w-0 flex-1">
+          <p className="font-bold text-primary">Photo de profil</p>
+          <p className="text-xs text-muted-foreground">Elle apparaît à l’écran de connexion. Elle est visible publiquement pour l’identifiant du compte.</p>
+          {profilePhotoError && <p role="alert" className="mt-1 text-sm text-destructive">{profilePhotoError}</p>}
+          {profilePhotoNotice && <p role="status" className="mt-1 text-sm text-emerald-700">{profilePhotoNotice}</p>}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <label className="inline-flex min-h-10 cursor-pointer items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground">
+            <Camera aria-hidden="true" className="size-4" />
+            {profilePhotoPending ? 'Traitement…' : 'Choisir une photo'}
+            <input
+              type="file"
+              accept="image/*"
+              disabled={profilePhotoPending}
+              onChange={(event) => {
+                void saveProfilePhoto(event.currentTarget.files?.[0])
+                event.currentTarget.value = ''
+              }}
+              className="sr-only"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={() => void removeProfilePhoto()}
+            disabled={profilePhotoPending}
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-accent/50 px-3 text-sm font-semibold text-primary disabled:opacity-50"
+          >
+            <Trash2 aria-hidden="true" className="size-4" />
+            Retirer
+          </button>
+        </div>
+        <p className="basis-full text-xs text-muted-foreground">JPEG compressé automatiquement, 30 Ko maximum. Seul votre compte connecté peut modifier sa photo.</p>
+      </div>
 
       <div className="flex flex-col gap-3 rounded-xl border border-accent/50 bg-card p-3 shadow-sm">
         <label htmlFor="directory-search" className="block text-sm font-semibold text-primary">Recherche joueur / éducateur</label>

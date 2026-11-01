@@ -1,44 +1,12 @@
 'use client'
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { Pencil, Phone, Plus, Save, Trash2, UserRound, X } from 'lucide-react'
+import { Pencil, Phone, Plus, Save, X } from 'lucide-react'
 import type { DirectoryEducator } from '@/lib/educator-directory'
 import { matchesSearch } from '@/lib/search'
 
-type Draft = { id?: string; name: string; licenseNumber: string; phone: string; hasPhoto: boolean }
-type PhotoChange = { type: 'unchanged' } | { type: 'replace'; dataUrl: string } | { type: 'remove' }
-const blank: Draft = { name: '', licenseNumber: '', phone: '', hasPhoto: false }
-const MAX_PHOTO_BYTES = 30 * 1024
-
-async function preparePhoto(file: File) {
-  if (!file.type.startsWith('image/')) throw new Error('Choisissez un fichier image.')
-  if (file.size > 12 * 1024 * 1024) throw new Error('La photo doit faire moins de 12 Mo avant compression.')
-  const image = await createImageBitmap(file)
-  try {
-    const scale = Math.min(1, 320 / Math.max(image.width, image.height))
-    const canvas = document.createElement('canvas')
-    canvas.width = Math.max(1, Math.round(image.width * scale))
-    canvas.height = Math.max(1, Math.round(image.height * scale))
-    const context = canvas.getContext('2d')
-    if (!context) throw new Error('Impossible de préparer cette photo.')
-    context.drawImage(image, 0, 0, canvas.width, canvas.height)
-
-    for (const quality of [0.82, 0.68, 0.54, 0.4]) {
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', quality))
-      if (!blob) throw new Error('Impossible de préparer cette photo.')
-      if (blob.size > MAX_PHOTO_BYTES) continue
-      return await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader()
-        reader.onload = () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Impossible de lire cette photo.'))
-        reader.onerror = () => reject(new Error('Impossible de lire cette photo.'))
-        reader.readAsDataURL(blob)
-      })
-    }
-    throw new Error('Cette photo ne peut pas être compressée sous 30 Ko.')
-  } finally {
-    image.close()
-  }
-}
+type Draft = { id?: string; name: string; licenseNumber: string; phone: string }
+const blank: Draft = { name: '', licenseNumber: '', phone: '' }
 
 export function EducatorDirectory({ canEdit, searchQuery, searchTitle, showAddButton = true }: {
   canEdit: boolean
@@ -50,9 +18,6 @@ export function EducatorDirectory({ canEdit, searchQuery, searchTitle, showAddBu
   const [visiblePhones, setVisiblePhones] = useState<Record<string, boolean>>({})
   const [isPhoneDevice, setIsPhoneDevice] = useState(false)
   const [draft, setDraft] = useState<Draft>(blank)
-  const [photoChange, setPhotoChange] = useState<PhotoChange>({ type: 'unchanged' })
-  const [photoPreparing, setPhotoPreparing] = useState(false)
-  const [photoRevision, setPhotoRevision] = useState(0)
   const [open, setOpen] = useState(false)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
@@ -76,14 +41,7 @@ export function EducatorDirectory({ canEdit, searchQuery, searchTitle, showAddBu
   }, [])
 
   const edit = (educator: DirectoryEducator) => {
-    setDraft({
-      id: educator.id,
-      name: educator.name,
-      licenseNumber: educator.licenseNumber,
-      phone: educator.phone,
-      hasPhoto: educator.hasPhoto,
-    })
-    setPhotoChange({ type: 'unchanged' })
+    setDraft({ id: educator.id, name: educator.name, licenseNumber: educator.licenseNumber, phone: educator.phone })
     setError('')
     setOpen(true)
   }
@@ -106,45 +64,13 @@ export function EducatorDirectory({ canEdit, searchQuery, searchTitle, showAddBu
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error ?? 'Impossible d’enregistrer cette fiche.')
-      if (typeof result.id !== 'string') throw new Error('La fiche a été enregistrée sans identifiant valide.')
-      const educatorId = result.id as string
-      setDraft((current) => ({ ...current, id: educatorId }))
-      if (photoChange.type === 'replace') {
-        const photoResponse = await fetch(`/api/educators/directory/${educatorId}/photo`, {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ photo: photoChange.dataUrl }),
-        })
-        const photoResult = await photoResponse.json()
-        if (!photoResponse.ok) throw new Error(photoResult.error ?? 'Impossible d’enregistrer la photo.')
-      } else if (photoChange.type === 'remove' && draft.hasPhoto) {
-        const photoResponse = await fetch(`/api/educators/directory/${educatorId}/photo`, { method: 'DELETE' })
-        const photoResult = await photoResponse.json()
-        if (!photoResponse.ok) throw new Error(photoResult.error ?? 'Impossible de supprimer la photo.')
-      }
       await load()
       setOpen(false)
       setDraft(blank)
-      setPhotoChange({ type: 'unchanged' })
-      setPhotoRevision((revision) => revision + 1)
       setNotice('Annuaire des éducateurs mis à jour. Le téléphone est chiffré dans le Sheet.')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Impossible d’enregistrer cette fiche.')
     } finally { setPending(false) }
-  }
-
-  const handlePhotoChange = async (file: File | undefined) => {
-    if (!file) return
-    setPhotoPreparing(true)
-    setError('')
-    try {
-      const dataUrl = await preparePhoto(file)
-      setPhotoChange({ type: 'replace', dataUrl })
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Impossible de préparer cette photo.')
-    } finally {
-      setPhotoPreparing(false)
-    }
   }
 
   return (
@@ -158,7 +84,7 @@ export function EducatorDirectory({ canEdit, searchQuery, searchTitle, showAddBu
           <h2 id="educator-directory-title" className="font-bold text-primary">Annuaire des éducateurs</h2>
           <p className="mt-1 text-xs text-muted-foreground">Coordonnées séparées des fiches joueurs.</p>
         </div>
-        {canEdit && showAddButton && <button type="button" onClick={() => { setDraft(blank); setPhotoChange({ type: 'unchanged' }); setError(''); setOpen(true) }} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground"><Plus className="size-4" /> Ajouter un éducateur</button>}
+        {canEdit && showAddButton && <button type="button" onClick={() => { setDraft(blank); setError(''); setOpen(true) }} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground"><Plus className="size-4" /> Ajouter un éducateur</button>}
       </div>
       )}
       {notice && <p role="status" className="mt-3 text-sm font-medium text-emerald-700">{notice}</p>}
@@ -178,20 +104,7 @@ export function EducatorDirectory({ canEdit, searchQuery, searchTitle, showAddBu
             {filteredEducators.map((educator) => (
             <li key={educator.id} className="rounded-xl border border-border bg-background p-3">
               <div className="flex items-start justify-between gap-2">
-                <div className="flex min-w-0 items-start gap-3">
-                  <div className="size-12 shrink-0 overflow-hidden rounded-full border border-accent/50 bg-muted">
-                    {educator.hasPhoto ? (
-                      <img
-                        src={`/api/educators/directory/${educator.id}/photo?v=${photoRevision}`}
-                        alt=""
-                        aria-hidden="true"
-                        className="size-full object-cover"
-                      />
-                    ) : (
-                      <UserRound aria-hidden="true" className="m-2.5 size-7 text-muted-foreground" />
-                    )}
-                  </div>
-                  <div className="min-w-0">
+                <div className="min-w-0">
                     <h3 className="truncate font-bold text-foreground">{educator.name}</h3>
                     <p className="mt-1 text-sm text-muted-foreground">Licence FFF : {educator.licenseNumber || 'non renseignée'}</p>
                     {educator.phone && (
@@ -224,7 +137,6 @@ export function EducatorDirectory({ canEdit, searchQuery, searchTitle, showAddBu
                         )}
                       </div>
                     )}
-                  </div>
                 </div>
                 {canEdit && <button type="button" onClick={() => edit(educator)} aria-label={`Modifier ${educator.name}`} className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-accent/50 px-2 text-xs font-semibold text-primary"><Pencil aria-hidden="true" className="size-3.5" /> Modifier</button>}
               </div>
@@ -246,53 +158,8 @@ export function EducatorDirectory({ canEdit, searchQuery, searchTitle, showAddBu
               <label className="grid gap-1 text-sm font-semibold">N° de licence FFF<input maxLength={40} value={draft.licenseNumber} onChange={(event) => setDraft({ ...draft, licenseNumber: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
               <label className="grid gap-1 text-sm font-semibold">Téléphone<input type="tel" inputMode="tel" maxLength={80} value={draft.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
               <p className="text-xs text-muted-foreground">Le téléphone sera chiffré avant son enregistrement dans le Google Sheet.</p>
-              <div className="grid gap-2">
-                <span className="text-sm font-semibold">Photo de profil</span>
-                <div className="flex items-center gap-3">
-                  <div className="size-16 shrink-0 overflow-hidden rounded-full border border-accent/50 bg-muted">
-                    {photoChange.type === 'replace' ? (
-                      <img src={photoChange.dataUrl} alt="Aperçu de la photo" className="size-full object-cover" />
-                    ) : draft.id && draft.hasPhoto && photoChange.type === 'unchanged' ? (
-                      <img src={`/api/educators/directory/${draft.id}/photo?v=${photoRevision}`} alt="Photo actuelle" className="size-full object-cover" />
-                    ) : (
-                      <UserRound aria-hidden="true" className="m-4 size-8 text-muted-foreground" />
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <label className="inline-flex min-h-10 cursor-pointer items-center rounded-lg border border-accent/50 px-3 text-sm font-semibold text-primary">
-                      {photoPreparing ? 'Préparation…' : 'Choisir une photo'}
-                      <input
-                        type="file"
-                        accept="image/*"
-                        disabled={photoPreparing || pending}
-                        onChange={(event) => {
-                          void handlePhotoChange(event.currentTarget.files?.[0])
-                          event.currentTarget.value = ''
-                        }}
-                        className="sr-only"
-                      />
-                    </label>
-                    {(draft.hasPhoto || photoChange.type === 'replace') && photoChange.type !== 'remove' && (
-                      <button
-                        type="button"
-                        onClick={() => setPhotoChange({ type: 'remove' })}
-                        className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-destructive/40 px-3 text-sm font-semibold text-destructive"
-                      >
-                        <Trash2 aria-hidden="true" className="size-4" />
-                        Retirer
-                      </button>
-                    )}
-                    {photoChange.type === 'remove' && (
-                      <button type="button" onClick={() => setPhotoChange({ type: 'unchanged' })} className="min-h-10 rounded-lg px-2 text-sm font-semibold text-primary">
-                        Annuler le retrait
-                      </button>
-                    )}
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">Image compressée automatiquement (30 Ko maximum). Visible uniquement par les éducateurs connectés.</p>
-              </div>
               {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-              <div className="flex justify-end gap-2"><button type="button" onClick={() => setOpen(false)} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-muted-foreground">Annuler</button><button type="submit" disabled={pending || photoPreparing} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"><Save className="size-4" />{pending ? 'Enregistrement…' : 'Enregistrer'}</button></div>
+              <div className="flex justify-end gap-2"><button type="button" onClick={() => setOpen(false)} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-muted-foreground">Annuler</button><button type="submit" disabled={pending} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"><Save className="size-4" />{pending ? 'Enregistrement…' : 'Enregistrer'}</button></div>
             </div>
           </form>
         </div>

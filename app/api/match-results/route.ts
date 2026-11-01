@@ -3,6 +3,7 @@ import { revalidateTag } from 'next/cache'
 import { getEducatorSession, isSameOriginRequest } from '@/lib/educator-auth'
 import { writeMatchResult } from '@/lib/match-results'
 import { MATCH_RESULT_STATUSES } from '@/lib/match-result-options'
+import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
 
 export const runtime = 'nodejs'
 
@@ -76,6 +77,16 @@ async function save(request: Request, editing: boolean) {
   const validResultAndScore =
     validResultLabel &&
     (hasValidScore ? hasResultForScore : (resultLabel === '' || resultLabel === 'Annulé'))
+
+  if (
+    typeof date === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/.test(date) &&
+    (date < MATCH_SEASON_START || date > MATCH_SEASON_END)
+  ) {
+    return jsonResponse({
+      error: 'La date du match doit être comprise entre le 1er septembre 2026 et le 30 juin 2027.',
+    }, 400)
+  }
 
   if (
     (team !== 'E1' && team !== 'E2') ||

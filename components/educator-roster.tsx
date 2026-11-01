@@ -492,15 +492,7 @@ export function EducatorRoster({
             )
           ) : (
             <>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-card px-3 py-1.5 text-xs font-semibold">
-          <Award className="size-3.5 text-amber-600 dark:text-amber-400" />
-          <span>
-            <strong className="text-amber-700 dark:text-amber-300">{missingLicenseCount}</strong>
-            {' '}
-            {missingLicenseCount === 1 ? 'joueur sans licence' : 'joueurs sans licence'}
-          </span>
-        </div>
+      <div className="flex flex-wrap items-center justify-start gap-2">
         {groups.length > 0 && (
           <button
             type="button"
@@ -513,7 +505,14 @@ export function EducatorRoster({
             <span>{allGroupsExpanded ? "Tout −" : "Tout +"}</span>
           </button>
         )}
-
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-card px-3 py-1.5 text-xs font-semibold">
+          <Award className="size-3.5 text-amber-600 dark:text-amber-400" />
+          <span>
+            <strong className="text-amber-700 dark:text-amber-300">{missingLicenseCount}</strong>
+            {' '}
+            {missingLicenseCount === 1 ? 'joueur sans licence' : 'joueurs sans licence'}
+          </span>
+        </div>
       </div>
 
       {groups.length === 0 ? (

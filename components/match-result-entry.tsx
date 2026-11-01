@@ -5,6 +5,12 @@ import { useRouter } from 'next/navigation'
 import { CalendarDays, Pencil, Plus, Save } from 'lucide-react'
 import type { MatchSheetEntry } from '@/lib/match-results'
 import { MATCH_RESULT_STATUSES } from '@/lib/match-result-options'
+import {
+  clampToMatchSeason,
+  MATCH_SEASON_END,
+  MATCH_SEASON_MONTHS,
+  MATCH_SEASON_START,
+} from '@/lib/match-season'
 
 type MatchEntryStatus = {
   enabled: boolean
@@ -40,7 +46,7 @@ function dateInputValue(value: string) {
 function createDraft(): Draft {
   return {
     team: 'E1',
-    date: localToday(),
+    date: clampToMatchSeason(localToday()),
     opponent: '',
     competition: 'Championnat',
     homeAway: 'Domicile',
@@ -70,7 +76,7 @@ export function MatchResultEntry({
   const router = useRouter()
   const [status, setStatus] = useState<MatchEntryStatus | null>(null)
   const [draft, setDraft] = useState<Draft>(createDraft)
-  const [month, setMonth] = useState(localToday().slice(0, 7))
+  const [month, setMonth] = useState(clampToMatchSeason(localToday()).slice(0, 7))
   const [editingSlot, setEditingSlot] = useState<number | null>(null)
   const [open, setOpen] = useState(false)
   const [pending, setPending] = useState(false)
@@ -127,6 +133,11 @@ export function MatchResultEntry({
 
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (draft.date < MATCH_SEASON_START || draft.date > MATCH_SEASON_END) {
+      setError('La date du match doit être comprise entre le 1er septembre 2026 et le 30 juin 2027.')
+      return
+    }
+
     const oneScoreMissing = Boolean(draft.goalsFor) !== Boolean(draft.goalsAgainst)
     if (oneScoreMissing) {
       setError('Saisis les deux scores ou laisse les deux champs vides pour planifier le match.')
@@ -184,12 +195,15 @@ export function MatchResultEntry({
         <div className="flex shrink-0 items-end gap-2">
           <label className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
             Mois
-            <input
-              type="month"
+            <select
               value={month}
               onChange={(event) => setMonth(event.target.value)}
-              className="h-10 w-32 rounded-lg border border-accent/50 bg-background px-2 text-sm font-normal text-foreground sm:w-40"
-            />
+              className="h-10 min-w-36 rounded-lg border border-accent/50 bg-background px-2 text-sm font-normal text-foreground sm:min-w-40"
+            >
+              {MATCH_SEASON_MONTHS.map(({ value, label }) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
           </label>
           {canManage && (
             <button
@@ -238,7 +252,15 @@ export function MatchResultEntry({
           </label>
           <label className="flex flex-col gap-1 text-sm font-semibold">
             Date
-            <input type="date" required value={draft.date} onChange={(event) => setDraft({ ...draft, date: event.target.value })} className={inputClass} />
+            <input
+              type="date"
+              required
+              min={MATCH_SEASON_START}
+              max={MATCH_SEASON_END}
+              value={draft.date}
+              onChange={(event) => setDraft({ ...draft, date: event.target.value })}
+              className={inputClass}
+            />
           </label>
           <label className="flex flex-col gap-1 text-sm font-semibold">
             Adversaire

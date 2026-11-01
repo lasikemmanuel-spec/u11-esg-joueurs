@@ -88,3 +88,36 @@ export async function saveEducatorDirectoryEntry(input: {
   }])
   return { id }
 }
+
+export async function saveOwnEducatorDirectoryEntry(input: {
+  name: string
+  licenseNumber: string
+  phone: string
+}) {
+  const name = input.name.trim()
+  const licenseNumber = input.licenseNumber.trim()
+  const phone = input.phone.trim()
+  if (name.length < 2 || name.length > 80) throw new Error('Le nom du compte est invalide.')
+  if (licenseNumber.length > 40) throw new Error('Le numéro de licence est trop long.')
+  if (phone.length > 80) throw new Error('Le numéro de téléphone est trop long.')
+
+  const sheet = await readSheet(true)
+  const normalizedName = name.toLocaleLowerCase('fr-FR')
+  const matches = sheet.rows.flatMap((row, index) =>
+    index > 0 && row[1]?.trim().toLocaleLowerCase('fr-FR') === normalizedName ? [index] : [],
+  )
+  if (matches.length > 1) {
+    throw new Error('Plusieurs fiches portent votre nom. Contactez un administrateur pour les rapprocher.')
+  }
+
+  const existingIndex = matches[0] ?? -1
+  const id = existingIndex < 1 ? randomUUID() : sheet.rows[existingIndex][0]?.trim()
+  if (!id) throw new Error('La fiche éducateur ne possède pas d’identifiant valide.')
+  const row = existingIndex < 1 ? sheet.rows.length + 1 : existingIndex + 1
+  const savedName = existingIndex < 1 ? name : sheet.rows[existingIndex][1].trim()
+  await updateAuthenticatedSheetValues([{
+    range: cellRange(sheet.sheetTitle, row),
+    values: [[id, savedName, licenseNumber, encryptPhone(phone)]],
+  }])
+  return { id }
+}

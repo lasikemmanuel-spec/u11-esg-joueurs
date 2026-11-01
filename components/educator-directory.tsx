@@ -21,7 +21,7 @@ export function EducatorDirectory({
   searchQuery?: string
   searchTitle?: string
   showAddButton?: boolean
-  currentEducator?: { username: string; displayName: string }
+  currentEducator?: { username: string; displayName: string; role: 'educator' | 'admin' | 'reader' }
   photoRevision?: number
 }) {
   const [educators, setEducators] = useState<DirectoryEducator[]>([])
@@ -29,6 +29,7 @@ export function EducatorDirectory({
   const [isPhoneDevice, setIsPhoneDevice] = useState(false)
   const [draft, setDraft] = useState<Draft>(blank)
   const [open, setOpen] = useState(false)
+  const [editingOwn, setEditingOwn] = useState(false)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
@@ -36,6 +37,11 @@ export function EducatorDirectory({
   const filteredEducators = educators.filter((educator) =>
     matchesSearch(searchQuery ?? '', [educator.name, educator.licenseNumber, educator.phone]),
   )
+  const ownDirectoryEntry = currentEducator
+    ? educators.find((educator) =>
+        educator.name.trim().toLocaleLowerCase('fr-FR') === currentEducator.displayName.trim().toLocaleLowerCase('fr-FR'),
+      )
+    : undefined
   const load = useCallback(async () => {
     const response = await fetch('/api/educators/directory', { cache: 'no-store' })
     const data = await response.json()
@@ -51,6 +57,7 @@ export function EducatorDirectory({
 
   const edit = (educator: DirectoryEducator) => {
     setDraft({ id: educator.id, name: educator.name, licenseNumber: educator.licenseNumber, phone: educator.phone })
+    setEditingOwn(false)
     setError('')
     setOpen(true)
   }
@@ -82,6 +89,29 @@ export function EducatorDirectory({
     } finally { setPending(false) }
   }
 
+  const saveOwnProfile = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    setPending(true)
+    setError('')
+    setNotice('')
+    try {
+      const response = await fetch('/api/educators/directory/me', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ licenseNumber: draft.licenseNumber, phone: draft.phone }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error ?? 'Impossible d’enregistrer votre fiche.')
+      await load()
+      setOpen(false)
+      setEditingOwn(false)
+      setDraft(blank)
+      setNotice('Votre fiche éducateur a été mise à jour.')
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Impossible d’enregistrer votre fiche.')
+    } finally { setPending(false) }
+  }
+
   return (
     <section
       aria-labelledby={isSearching ? undefined : 'educator-directory-title'}
@@ -94,17 +124,40 @@ export function EducatorDirectory({
           <p className="mt-1 text-xs text-muted-foreground">Coordonnées séparées des fiches joueurs.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {canEdit && showAddButton && <button type="button" onClick={() => { setDraft(blank); setError(''); setOpen(true) }} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground"><Plus className="size-4" /> Ajouter un éducateur</button>}
+          {canEdit && showAddButton && <button type="button" onClick={() => { setDraft(blank); setEditingOwn(false); setError(''); setOpen(true) }} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground"><Plus className="size-4" /> Ajouter un éducateur</button>}
         </div>
       </div>
       )}
       {!isSearching && currentEducator && (
-        <div className="mt-4 flex items-center gap-3 rounded-xl border border-accent/50 bg-background p-3">
+        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-accent/50 bg-background p-3">
           <EducatorAvatar username={currentEducator.username} revision={photoRevision} size="size-16" />
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ma fiche éducateur</p>
-            <p className="truncate font-bold text-foreground">{currentEducator.displayName}</p>
+            <p className="truncate font-bold text-foreground">{currentEducator.displayName.trim().split(/\s+/)[0]}</p>
+            <span className="mt-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
+              {currentEducator.role === 'admin' ? 'Administrateur' : currentEducator.role === 'educator' ? 'Éducateur' : 'Lecteur'}
+            </span>
+            <div className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-sm text-muted-foreground">
+              <span>Licence FFF : <strong className="text-primary">{ownDirectoryEntry?.licenseNumber || 'non renseignée'}</strong></span>
+              <span>Téléphone : <strong className="text-primary">{ownDirectoryEntry?.phone || 'non renseigné'}</strong></span>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={() => {
+              setDraft({
+                name: currentEducator.displayName,
+                licenseNumber: ownDirectoryEntry?.licenseNumber ?? '',
+                phone: ownDirectoryEntry?.phone ?? '',
+              })
+              setEditingOwn(true)
+              setError('')
+              setOpen(true)
+            }}
+            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-accent/50 bg-card px-3 text-sm font-bold text-primary"
+          >
+            <Pencil aria-hidden="true" className="size-4" /> Modifier ma fiche
+          </button>
         </div>
       )}
       {notice && <p role="status" className="mt-3 text-sm font-medium text-emerald-700">{notice}</p>}
@@ -165,21 +218,21 @@ export function EducatorDirectory({
           </ul>
         </>
       )}
-      {!canEdit && <p className="mt-3 text-xs text-muted-foreground">La modification des fiches est réservée à l’administrateur. Pour changer votre photo, utilisez votre avatar dans l’en-tête.</p>}
-      {open && canEdit && (
+      {!canEdit && !currentEducator && <p className="mt-3 text-xs text-muted-foreground">La modification des fiches est réservée à l’administrateur.</p>}
+      {open && (canEdit || editingOwn) && (
         <div role="dialog" aria-modal="true" aria-labelledby="directory-form-title" className="fixed inset-0 z-[60] grid place-items-center bg-[#172554]/60 p-4">
-          <form onSubmit={save} className="w-full max-w-md rounded-2xl border border-accent/60 bg-card p-5 shadow-2xl">
+          <form onSubmit={editingOwn ? saveOwnProfile : save} className="w-full max-w-md rounded-2xl border border-accent/60 bg-card p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-3">
-              <div><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Annuaire éducateurs</p><h3 id="directory-form-title" className="mt-1 text-lg font-black text-primary">{draft.id ? 'Modifier une fiche' : 'Ajouter un éducateur'}</h3></div>
-              <button type="button" onClick={() => setOpen(false)} aria-label="Fermer" className="inline-flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground"><X className="size-4" /></button>
+              <div><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Annuaire éducateurs</p><h3 id="directory-form-title" className="mt-1 text-lg font-black text-primary">{editingOwn ? 'Modifier ma fiche' : draft.id ? 'Modifier une fiche' : 'Ajouter un éducateur'}</h3></div>
+              <button type="button" onClick={() => { setOpen(false); setEditingOwn(false) }} aria-label="Fermer" className="inline-flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground"><X className="size-4" /></button>
             </div>
             <div className="mt-4 grid gap-3">
-              <label className="grid gap-1 text-sm font-semibold">Nom et prénom<input required minLength={2} maxLength={80} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
+              {!editingOwn && <label className="grid gap-1 text-sm font-semibold">Nom et prénom<input required minLength={2} maxLength={80} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>}
               <label className="grid gap-1 text-sm font-semibold">N° de licence FFF<input maxLength={40} value={draft.licenseNumber} onChange={(event) => setDraft({ ...draft, licenseNumber: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
               <label className="grid gap-1 text-sm font-semibold">Téléphone<input type="tel" inputMode="tel" maxLength={80} value={draft.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
               <p className="text-xs text-muted-foreground">Le téléphone sera chiffré avant son enregistrement dans le Google Sheet.</p>
               {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-              <div className="flex justify-end gap-2"><button type="button" onClick={() => setOpen(false)} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-muted-foreground">Annuler</button><button type="submit" disabled={pending} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"><Save className="size-4" />{pending ? 'Enregistrement…' : 'Enregistrer'}</button></div>
+              <div className="flex justify-end gap-2"><button type="button" onClick={() => { setOpen(false); setEditingOwn(false) }} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-muted-foreground">Annuler</button><button type="submit" disabled={pending} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"><Save className="size-4" />{pending ? 'Enregistrement…' : 'Enregistrer'}</button></div>
             </div>
           </form>
         </div>

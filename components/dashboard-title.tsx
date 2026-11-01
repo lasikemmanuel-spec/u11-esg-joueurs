@@ -4,9 +4,11 @@ import { Sparkles, Trophy } from 'lucide-react'
 export function DashboardTitle({
   title,
   subtitle,
+  eyebrow = 'ES Genech · Les stats du groupe',
 }: {
   title: string
   subtitle: string
+  eyebrow?: string
 }) {
   return (
     <header className="relative overflow-hidden rounded-2xl border border-[#d4af37]/50 bg-gradient-to-r from-[#172554] via-[#1e3a70] to-[#172554] px-5 py-4 shadow-[0_8px_24px_rgba(23,37,84,0.16)]">
@@ -17,7 +19,7 @@ export function DashboardTitle({
         </span>
         <ClubCrest className="size-11 shrink-0 ring-2 ring-[#d4af37]" />
         <div className="min-w-0">
-          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#f0cf68]">ES Genech · Les stats du groupe</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#f0cf68]">{eyebrow}</p>
           <h2 className="mt-0.5 text-xl font-black tracking-tight text-white sm:text-2xl">{title}</h2>
           <p className="mt-1 text-xs font-medium text-white/75">{subtitle}</p>
         </div>

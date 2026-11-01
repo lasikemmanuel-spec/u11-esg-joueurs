@@ -33,6 +33,7 @@ export function EducatorRoster() {
   const [expandedPositions, setExpandedPositions] = useState<Set<string>>(() => new Set())
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [educator, setEducator] = useState<EducatorIdentity | null>(null)
+  const [loginOpen, setLoginOpen] = useState(false)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [phones, setPhones] = useState<Record<number, PlayerPhones>>({})
@@ -119,6 +120,7 @@ export function EducatorRoster() {
       if (!response.ok) throw new Error(result.error ?? 'Connexion impossible.')
       setEducator(result.educator)
       setPassword('')
+      setLoginOpen(false)
       window.dispatchEvent(new Event('educator-session-changed'))
       await loadPhoneContacts()
     } catch (error) {
@@ -250,47 +252,66 @@ export function EducatorRoster() {
 
   if (!educator) {
     return (
-      <section aria-labelledby="educator-login-title" className="mx-auto flex w-full max-w-md flex-col gap-4 rounded-2xl border border-accent/60 bg-gradient-to-br from-secondary/40 via-card to-card p-5 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="flex size-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <LockKeyhole className="size-5" />
-          </div>
-          <div>
-            <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">ES Genech · U11</p>
-            <h2 id="educator-login-title" className="text-xl font-black text-primary">Espace éducateurs</h2>
-          </div>
-        </div>
-        <form onSubmit={handleLogin} className="flex flex-col gap-3">
-          <label className="flex flex-col gap-1.5 text-sm font-medium">
-            Identifiant
-            <input
-              autoComplete="username"
-              value={username}
-              onChange={(event) => setUsername(event.target.value)}
-              required
-              className="h-10 rounded-xl border border-accent/40 bg-background px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
+      <section aria-label="Annuaire éducateurs et joueurs" className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3 rounded-xl border border-accent/50 bg-card p-3 shadow-sm sm:flex-row sm:items-end">
+          <label htmlFor="directory-search-login" className="block min-w-0 flex-1 text-sm font-semibold text-primary">
+            Recherche joueur / éducateur
+            <span className="relative mt-1 block">
+              <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+              <input
+                id="directory-search-login"
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Nom, prénom ou n° de licence…"
+                className="h-11 w-full rounded-lg border border-accent/50 bg-background pr-3 pl-10 text-sm font-normal outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            </span>
           </label>
-          <label className="flex flex-col gap-1.5 text-sm font-medium">
-            Mot de passe
-            <input
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              className="h-10 rounded-xl border border-accent/40 bg-background px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
-          </label>
-          {authError && <p role="alert" className="text-sm font-medium text-destructive">{authError}</p>}
           <button
-            type="submit"
-            disabled={requestPending}
-            className="h-10 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-60"
+            type="button"
+            onClick={() => { setLoginOpen((open) => !open); setAuthError('') }}
+            aria-expanded={loginOpen}
+            className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground"
           >
-            {requestPending ? 'Connexion…' : 'Se connecter'}
+            <LockKeyhole aria-hidden="true" className="size-4" />
+            {loginOpen ? 'Fermer' : 'Connexion'}
           </button>
-        </form>
+        </div>
+        {authError && <p role="alert" className="text-sm font-medium text-destructive">{authError}</p>}
+        {loginOpen ? (
+          <form onSubmit={handleLogin} className="mx-auto flex w-full max-w-md flex-col gap-3 rounded-2xl border border-accent/60 bg-card p-5 shadow-sm">
+            <h2 id="educator-login-title" className="text-lg font-black text-primary">Connexion éducateur</h2>
+            <label className="flex flex-col gap-1.5 text-sm font-medium">
+              Identifiant
+              <input
+                autoComplete="username"
+                value={username}
+                onChange={(event) => setUsername(event.target.value)}
+                required
+                className="h-10 rounded-xl border border-accent/40 bg-background px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm font-medium">
+              Mot de passe
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                required
+                className="h-10 rounded-xl border border-accent/40 bg-background px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            </label>
+            <button type="submit" disabled={requestPending} className="h-10 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-60">
+              {requestPending ? 'Connexion…' : 'Se connecter'}
+            </button>
+          </form>
+        ) : (
+          <p className="rounded-xl border border-accent/40 bg-card p-4 text-center text-sm text-muted-foreground">
+            Connectez-vous pour rechercher dans l’annuaire des joueurs et des éducateurs.
+          </p>
+        )}
       </section>
     )
   }
@@ -365,7 +386,7 @@ export function EducatorRoster() {
             className="h-11 w-full rounded-lg border border-accent/50 bg-background pr-3 pl-10 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
-        <nav aria-label="Choisir un annuaire" className="grid grid-cols-2 gap-2 rounded-lg bg-muted/70 p-1">
+        {!query.trim() && <nav aria-label="Choisir un annuaire" className="grid grid-cols-2 gap-2 rounded-lg bg-muted/70 p-1">
           {([
             { key: 'educators' as const, label: 'Éducateurs', Icon: ContactRound },
             { key: 'players' as const, label: 'Joueurs', Icon: UsersRound },
@@ -388,13 +409,19 @@ export function EducatorRoster() {
               </button>
             )
           })}
-        </nav>
+        </nav>}
       </div>
 
-      {directoryView === 'educators' && <EducatorDirectory canEdit={educator.role === 'admin'} searchQuery={query} />}
+      {(directoryView === 'educators' || Boolean(query.trim())) && (
+        <div className="flex flex-col gap-2">
+          {query.trim() && <h2 className="font-bold text-primary">Résultats éducateurs</h2>}
+          <EducatorDirectory canEdit={educator.role === 'admin'} searchQuery={query} />
+        </div>
+      )}
 
-      {directoryView === 'players' && (
+      {(directoryView === 'players' || Boolean(query.trim())) && (
         <div className="flex flex-col gap-4">
+          {query.trim() && <h2 className="font-bold text-primary">Résultats joueurs</h2>}
           <div className="flex justify-end">
             <div className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-card px-3 py-1.5 text-xs font-semibold">
               <Award className="size-3.5 text-amber-600 dark:text-amber-400" />
@@ -678,7 +705,7 @@ export function EducatorRoster() {
           </section>
         </div>
       )}
-      {directoryView === 'players' && hasExpandedVisibleGroup && (
+      {(directoryView === 'players' || Boolean(query.trim())) && hasExpandedVisibleGroup && (
         <div className="pointer-events-none fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center sm:hidden">
           <button
             type="button"

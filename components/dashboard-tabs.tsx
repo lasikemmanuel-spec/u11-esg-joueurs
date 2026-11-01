@@ -82,7 +82,10 @@ export function DashboardTabs({
 
       <div className="min-w-0 p-4 md:p-5">
         <div className="mb-4">
-          <DashboardTitle {...activeTitle} />
+          <DashboardTitle
+            {...activeTitle}
+            eyebrow={activeTab === 'educator' ? 'ESG Genech · Éducateurs' : undefined}
+          />
         </div>
         {activeTab === 'players' && (
           <PlayerStats players={players} />

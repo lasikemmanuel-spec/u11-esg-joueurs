@@ -174,26 +174,26 @@ export function MatchResultEntry({
 
   return (
     <section aria-labelledby="match-entry-title" className="rounded-xl border border-accent/50 bg-card p-4 shadow-sm">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 id="match-entry-title" className="font-bold text-primary">Calendrier et résultats des matchs</h2>
           <p className="mt-1 text-xs text-muted-foreground">Choisis un mois pour voir les rencontres E1 et E2.</p>
         </div>
-        <div className="flex flex-wrap items-end gap-2">
+        <div className="flex shrink-0 items-end gap-2">
           <label className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
             Mois
             <input
               type="month"
               value={month}
               onChange={(event) => setMonth(event.target.value)}
-              className="h-10 rounded-lg border border-accent/50 bg-background px-2 text-sm font-normal text-foreground"
+              className="h-10 w-32 rounded-lg border border-accent/50 bg-background px-2 text-sm font-normal text-foreground sm:w-40"
             />
           </label>
           {canManage && (
             <button
               type="button"
               onClick={startNew}
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground"
+              className="inline-flex min-h-10 shrink-0 items-center gap-1 whitespace-nowrap rounded-xl bg-primary px-2 text-xs font-bold text-primary-foreground sm:gap-1.5 sm:px-3 sm:text-sm"
             >
               <Plus aria-hidden="true" className="size-4" />
               Ajouter un match

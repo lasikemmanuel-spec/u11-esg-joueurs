@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback, type FormEvent } from 'react'
-import { Search, Copy, Check, Users, Award, LockKeyhole, LogOut, Phone, Save, ChevronDown, ChevronUp, Pencil, X } from 'lucide-react'
+import { Search, Copy, Check, Award, LockKeyhole, LogOut, Phone, Save, ChevronDown, ChevronUp, Pencil, X } from 'lucide-react'
 import type { Player } from '@/lib/players'
 import { ParentAvatar } from '@/components/parent-avatar'
 
@@ -213,8 +213,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
       ] as const)
   }, [players, query])
 
-  const licensedCount = players.filter((p) => Boolean(p.licenseNumber)).length
-  const filteredCount = groups.reduce((count, [, list]) => count + list.length, 0)
+  const missingLicenseCount = players.filter((player) => !player.licenseNumber?.trim()).length
   const allGroupsExpanded = groups.length > 0 && groups.every(([position]) => expandedPositions.has(position))
 
   if (!sessionChecked) {
@@ -311,17 +310,11 @@ export function EducatorRoster({ players }: { players: Player[] }) {
 
   return (
     <section aria-label="Liste des éducateurs" className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-end gap-2 rounded-xl border border-accent/40 bg-card p-3">
-        <div className="flex items-center gap-1.5 rounded-full border border-accent/40 bg-card px-3 py-1.5 text-xs font-semibold">
-          <Users className="size-3.5 text-primary" />
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <div className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-card px-3 py-1.5 text-xs font-semibold">
+          <Award className="size-3.5 text-amber-600 dark:text-amber-400" />
           <span>
-            <strong className="text-primary">{filteredCount}</strong> joueur{filteredCount !== 1 ? 's' : ''}
-          </span>
-        </div>
-        <div className="flex items-center gap-1.5 rounded-full border border-accent/40 bg-card px-3 py-1.5 text-xs font-semibold">
-          <Award className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-          <span>
-            <strong className="text-emerald-600 dark:text-emerald-400">{licensedCount}</strong> licences
+            <strong className="text-amber-700 dark:text-amber-300">{missingLicenseCount}</strong> sans n° de licence
           </span>
         </div>
         <span className="text-xs text-muted-foreground">{educator.displayName}</span>
@@ -340,32 +333,34 @@ export function EducatorRoster({ players }: { players: Player[] }) {
       {authError && <p role="alert" className="text-sm font-medium text-destructive">{authError}</p>}
       {notice && <p role="status" className="text-sm font-medium text-emerald-700 dark:text-emerald-300">{notice}</p>}
 
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-end gap-2">
         {groups.length > 0 && (
           <button
             type="button"
             onClick={() => setExpandedPositions(allGroupsExpanded ? new Set() : new Set(groups.map(([position]) => position)))}
-            aria-label={allGroupsExpanded ? 'Fermer tous les postes' : 'Ouvrir tous les postes'}
-            title={allGroupsExpanded ? 'Fermer tous les postes' : 'Ouvrir tous les postes'}
-            className="inline-flex h-8 shrink-0 items-center gap-1 self-start rounded-lg border border-accent/40 bg-card px-2 text-xs font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:self-auto"
+            aria-label={allGroupsExpanded ? "Fermer tous les postes" : "Ouvrir tous les postes"}
+            title={allGroupsExpanded ? "Fermer tous les postes" : "Ouvrir tous les postes"}
+            className="inline-flex h-10 shrink-0 items-center gap-1 self-end rounded-lg border border-accent/40 bg-card px-2 text-xs font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-10"
           >
             {allGroupsExpanded ? <ChevronUp aria-hidden="true" className="size-3.5" /> : <ChevronDown aria-hidden="true" className="size-3.5" />}
-            <span>{allGroupsExpanded ? 'Tout −' : 'Tout +'}</span>
+            <span>{allGroupsExpanded ? "Tout −" : "Tout +"}</span>
           </button>
         )}
-        <div className="relative min-w-0 max-w-xl flex-1">
-          <label htmlFor="educator-search" className="sr-only">
-            Rechercher par nom ou prénom
+        <div className="min-w-0 max-w-xl flex-1">
+          <label htmlFor="educator-search" className="mb-1 block text-xs font-semibold text-muted-foreground">
+            Recherche joueurs
           </label>
-          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            id="educator-search"
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Rechercher par nom, prénom ou les deux…"
-            className="h-10 w-full rounded-xl border border-accent/40 bg-background pr-3 pl-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          />
+          <div className="relative">
+            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              id="educator-search"
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Par nom, prénom ou les deux…"
+              className="h-10 w-full rounded-xl border border-accent/40 bg-background pr-3 pl-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </div>
         </div>
       </div>
 
@@ -460,9 +455,8 @@ export function EducatorRoster({ players }: { players: Player[] }) {
                         <p className="truncate font-semibold text-foreground">
                           {player.firstName} <span className="font-black uppercase tracking-wide text-primary">{player.lastName}</span>
                         </p>
-                        <p className="mt-1 text-xs font-semibold text-muted-foreground">Licence FFF</p>
-                        <div className="mt-0.5 flex min-w-0 items-center gap-1 font-mono text-xs text-muted-foreground">
-                          <span className="truncate">N° de licence : {licenseNumber ?? 'non renseigné'}</span>
+                        <div className="mt-1 flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
+                          <span className="truncate">Licence FFF : <span className="font-mono">{licenseNumber ?? 'non renseigné'}</span></span>
                           {licenseNumber && (
                             <button
                               type="button"
@@ -530,6 +524,22 @@ export function EducatorRoster({ players }: { players: Player[] }) {
                   )
                 })}
               </ul>}
+              {isExpanded && (
+                <button
+                  type="button"
+                  onClick={() => setExpandedPositions((current) => {
+                    const next = new Set(current)
+                    next.delete(position)
+                    return next
+                  })}
+                  aria-label={`Replier le poste ${position}`}
+                  title={`Replier le poste ${position}`}
+                  className="inline-flex min-h-10 w-full items-center justify-center gap-1.5 border-t border-accent/30 bg-muted/30 text-xs font-semibold text-primary hover:bg-primary/5 sm:hidden"
+                >
+                  <ChevronUp aria-hidden="true" className="size-4" />
+                  Replier {position}
+                </button>
+              )}
             </section>
           )})}
         </div>

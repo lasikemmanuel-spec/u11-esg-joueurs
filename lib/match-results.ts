@@ -1,5 +1,6 @@
 import 'server-only'
 import { ensureAuthenticatedSheetColumnCount, getAuthenticatedSheetRows, updateAuthenticatedSheetValues } from '@/lib/google-sheets'
+import type { MatchResultStatus } from '@/lib/match-result-options'
 
 export const MATCH_TABS = {
   E1: '⚽ Feuille de Match Equipe 1',
@@ -28,6 +29,7 @@ export type MatchSheetEntry = {
   opponent: string
   competition: string
   homeAway: string
+  resultLabel: string
   goalsFor: number | null
   goalsAgainst: number | null
 }
@@ -105,13 +107,14 @@ async function getTeamResults(tab: string, team: 'E1' | 'E2'): Promise<{
     const opponent = matchOpponent(headers, column)
     const competition = cell(competitions, column)
     const venue = cell(homeAway, column)
-    const resultLabel = cell(resultLabels, column).toLocaleLowerCase('fr-FR')
+    const resultLabelValue = cell(resultLabels, column)
+    const resultLabel = resultLabelValue.toLocaleLowerCase('fr-FR')
     const goalsFor = toScore(cell(goalsForRow, column))
     const goalsAgainst = toScore(cell(goalsAgainstRow, column))
     const hasEntry = Boolean(date || opponent || competition || venue || goalsFor !== null || goalsAgainst !== null)
 
     if (date && competition) matchTypes.push({ date, type: competition })
-    if (hasEntry && !resultLabel.includes('annul')) {
+    if (hasEntry) {
       entries.push({
         team,
         slotColumn: column,
@@ -119,6 +122,7 @@ async function getTeamResults(tab: string, team: 'E1' | 'E2'): Promise<{
         opponent,
         competition,
         homeAway: venue,
+        resultLabel: resultLabelValue,
         goalsFor,
         goalsAgainst,
       })
@@ -157,6 +161,7 @@ export type MatchResultInput = {
   opponent: string
   competition: string
   homeAway: string
+  resultLabel: MatchResultStatus | ''
   goalsFor: number | null
   goalsAgainst: number | null
 }
@@ -255,7 +260,7 @@ export async function writeMatchResult(input: MatchResultInput) {
     { range: cellRange(targetColumn, dateRowIndex), values: [[displayDate]] },
     { range: cellRange(targetColumn, competitionRowIndex), values: [[input.competition]] },
     { range: cellRange(targetColumn, homeAwayRowIndex), values: [[input.homeAway]] },
-    { range: cellRange(targetColumn, resultRowIndex), values: [[hasScore ? 'Terminé' : '']] },
+    { range: cellRange(targetColumn, resultRowIndex), values: [[input.resultLabel]] },
     { range: cellRange(targetColumn, goalsForRowIndex), values: [[hasScore ? String(input.goalsFor) : '']] },
     { range: cellRange(targetColumn, goalsAgainstRowIndex), values: [[hasScore ? String(input.goalsAgainst) : '']] },
   ]

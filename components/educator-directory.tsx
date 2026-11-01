@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Pencil, Phone, Plus, Save, X } from 'lucide-react'
-import { EducatorProfilePhotoEditor } from '@/components/educator-profile-photo-editor'
+import { EducatorAvatar } from '@/components/educator-avatar'
 import type { DirectoryEducator } from '@/lib/educator-directory'
 import { matchesSearch } from '@/lib/search'
 
@@ -16,7 +16,6 @@ export function EducatorDirectory({
   showAddButton = true,
   currentEducator,
   photoRevision = 0,
-  onPhotoChange,
 }: {
   canEdit: boolean
   searchQuery?: string
@@ -24,7 +23,6 @@ export function EducatorDirectory({
   showAddButton?: boolean
   currentEducator?: { username: string; displayName: string }
   photoRevision?: number
-  onPhotoChange?: () => void
 }) {
   const [educators, setEducators] = useState<DirectoryEducator[]>([])
   const [visiblePhones, setVisiblePhones] = useState<Record<string, boolean>>({})
@@ -32,7 +30,6 @@ export function EducatorDirectory({
   const [draft, setDraft] = useState<Draft>(blank)
   const [open, setOpen] = useState(false)
   const [pending, setPending] = useState(false)
-  const [photoDialogOpen, setPhotoDialogOpen] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const isSearching = Boolean(searchQuery?.trim())
@@ -97,14 +94,18 @@ export function EducatorDirectory({
           <p className="mt-1 text-xs text-muted-foreground">Coordonnées séparées des fiches joueurs.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {currentEducator && (
-            <button type="button" onClick={() => setPhotoDialogOpen(true)} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-accent/50 px-3 text-sm font-semibold text-primary">
-              Photo de profil
-            </button>
-          )}
           {canEdit && showAddButton && <button type="button" onClick={() => { setDraft(blank); setError(''); setOpen(true) }} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground"><Plus className="size-4" /> Ajouter un éducateur</button>}
         </div>
       </div>
+      )}
+      {!isSearching && currentEducator && (
+        <div className="mt-4 flex items-center gap-3 rounded-xl border border-accent/50 bg-background p-3">
+          <EducatorAvatar username={currentEducator.username} revision={photoRevision} size="size-16" />
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ma fiche éducateur</p>
+            <p className="truncate font-bold text-foreground">{currentEducator.displayName}</p>
+          </div>
+        </div>
       )}
       {notice && <p role="status" className="mt-3 text-sm font-medium text-emerald-700">{notice}</p>}
       {error && !open && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
@@ -164,7 +165,7 @@ export function EducatorDirectory({
           </ul>
         </>
       )}
-      {!canEdit && <p className="mt-3 text-xs text-muted-foreground">La modification des fiches est réservée à l’administrateur. Chaque éducateur peut gérer sa photo sur sa fiche.</p>}
+      {!canEdit && <p className="mt-3 text-xs text-muted-foreground">La modification des fiches est réservée à l’administrateur. Pour changer votre photo, utilisez votre avatar dans l’en-tête.</p>}
       {open && canEdit && (
         <div role="dialog" aria-modal="true" aria-labelledby="directory-form-title" className="fixed inset-0 z-[60] grid place-items-center bg-black/50 p-4">
           <form onSubmit={save} className="w-full max-w-md rounded-2xl border border-accent/60 bg-card p-5 shadow-2xl">
@@ -173,13 +174,6 @@ export function EducatorDirectory({
               <button type="button" onClick={() => setOpen(false)} aria-label="Fermer" className="inline-flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground"><X className="size-4" /></button>
             </div>
             <div className="mt-4 grid gap-3">
-              {currentEducator && (
-                <EducatorProfilePhotoEditor
-                  username={currentEducator.username}
-                  revision={photoRevision}
-                  onPhotoChange={() => onPhotoChange?.()}
-                />
-              )}
               <label className="grid gap-1 text-sm font-semibold">Nom et prénom<input required minLength={2} maxLength={80} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
               <label className="grid gap-1 text-sm font-semibold">N° de licence FFF<input maxLength={40} value={draft.licenseNumber} onChange={(event) => setDraft({ ...draft, licenseNumber: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
               <label className="grid gap-1 text-sm font-semibold">Téléphone<input type="tel" inputMode="tel" maxLength={80} value={draft.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
@@ -188,24 +182,6 @@ export function EducatorDirectory({
               <div className="flex justify-end gap-2"><button type="button" onClick={() => setOpen(false)} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-muted-foreground">Annuler</button><button type="submit" disabled={pending} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"><Save className="size-4" />{pending ? 'Enregistrement…' : 'Enregistrer'}</button></div>
             </div>
           </form>
-        </div>
-      )}
-      {photoDialogOpen && currentEducator && (
-        <div role="dialog" aria-modal="true" aria-labelledby="own-photo-title" className="fixed inset-0 z-[60] grid place-items-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-2xl border border-accent/60 bg-card p-5 shadow-2xl">
-            <div className="mb-4 flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Fiche éducateur</p>
-                <h3 id="own-photo-title" className="mt-1 text-lg font-black text-primary">Ma photo de profil</h3>
-              </div>
-              <button type="button" onClick={() => setPhotoDialogOpen(false)} aria-label="Fermer" className="inline-flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground"><X className="size-4" /></button>
-            </div>
-            <EducatorProfilePhotoEditor
-              username={currentEducator.username}
-              revision={photoRevision}
-              onPhotoChange={() => onPhotoChange?.()}
-            />
-          </div>
         </div>
       )}
     </section>

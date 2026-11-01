@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { CalendarDays, ContactRound, LogOut, X } from 'lucide-react'
 import { MatchCallupBreakdown } from '@/components/match-callup-breakdown'
 import { PlayerStats } from '@/components/player-stats'
@@ -122,15 +122,22 @@ export function DashboardTabs({
     }
   }
 
-  const handleEducatorChange = (identity: EducatorIdentity | null) => {
-    setEducatorIdentity(identity)
+  const handleEducatorChange = useCallback((identity: EducatorIdentity | null) => {
+    setEducatorIdentity((current) => {
+      if (
+        current?.username === identity?.username &&
+        current?.displayName === identity?.displayName &&
+        current?.role === identity?.role
+      ) return current
+      return identity
+    })
     if (!identity) setApplicationSession('unauthenticated')
-  }
+  }, [])
 
-  const handleEducatorAccessChange = (status: EducatorAccess) => {
+  const handleEducatorAccessChange = useCallback((status: EducatorAccess) => {
     setEducatorAccess(status)
     if (status === 'unauthenticated') setApplicationSession('unauthenticated')
-  }
+  }, [])
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'roster', label: 'Effectifs' },
@@ -245,7 +252,7 @@ export function DashboardTabs({
                   title="Ma photo de profil"
                   className="rounded-full ring-2 ring-accent/70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white"
                 >
-                  <EducatorAvatar username={educatorIdentity.username} revision={profilePhotoRevision} size="size-10" />
+                  <EducatorAvatar username={educatorIdentity.username} revision={profilePhotoRevision} size="size-14" />
                 </button>
                 <button
                   type="button"
@@ -326,6 +333,8 @@ export function DashboardTabs({
                   />
                 ) : (
                   <EducatorRoster
+                    initialEducator={educatorIdentity}
+                    photoRevision={profilePhotoRevision}
                     onSessionStatusChange={handleEducatorAccessChange}
                     onEducatorChange={handleEducatorChange}
                   />
@@ -333,6 +342,8 @@ export function DashboardTabs({
               </>
             ) : (
               <EducatorRoster
+                initialEducator={educatorIdentity}
+                photoRevision={profilePhotoRevision}
                 onSessionStatusChange={handleEducatorAccessChange}
                 onEducatorChange={handleEducatorChange}
                 onLoginSuccess={() => {

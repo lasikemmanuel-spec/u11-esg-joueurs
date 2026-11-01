@@ -10,7 +10,7 @@ import { EducatorAccountManagement } from '@/components/educator-account-managem
 import { EducatorAvatar } from '@/components/educator-avatar'
 import { prepareEducatorPhoto } from '@/lib/prepare-educator-photo'
 
-type EducatorIdentity = { username: string; displayName: string; role: 'educator' | 'admin' }
+type EducatorIdentity = { username: string; displayName: string; role: 'educator' | 'admin' | 'reader' }
 
 const POSITION_ORDER = ['gard', 'déf', 'def', 'lat', 'cent', 'mil', 'ail', 'att', 'av']
 
@@ -29,10 +29,14 @@ type DirectoryView = 'educators' | 'players' | 'accounts'
 type EducatorSessionStatus = 'checking' | 'unauthenticated' | 'authenticated' | 'unavailable'
 
 export function EducatorRoster({
+  initialEducator = null,
+  photoRevision = 0,
   onSessionStatusChange,
   onEducatorChange,
   onLoginSuccess,
 }: {
+  initialEducator?: EducatorIdentity | null
+  photoRevision?: number
   onSessionStatusChange?: (status: EducatorSessionStatus) => void
   onEducatorChange?: (educator: EducatorIdentity | null) => void
   onLoginSuccess?: () => void
@@ -42,7 +46,7 @@ export function EducatorRoster({
   const [directoryView, setDirectoryView] = useState<DirectoryView>('educators')
   const [expandedPositions, setExpandedPositions] = useState<Set<string>>(() => new Set())
   const [copiedId, setCopiedId] = useState<string | null>(null)
-  const [educator, setEducator] = useState<EducatorIdentity | null>(null)
+  const [educator, setEducator] = useState<EducatorIdentity | null>(initialEducator)
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [phones, setPhones] = useState<Record<number, PlayerPhones>>({})
@@ -50,11 +54,10 @@ export function EducatorRoster({
   const [isPhoneDevice, setIsPhoneDevice] = useState(false)
   const [phoneEditor, setPhoneEditor] = useState<PhoneEditor | null>(null)
   const [migrationRequired, setMigrationRequired] = useState(false)
-  const [sessionChecked, setSessionChecked] = useState(false)
+  const [sessionChecked, setSessionChecked] = useState(Boolean(initialEducator))
   const [requestPending, setRequestPending] = useState(false)
   const [authError, setAuthError] = useState('')
   const [notice, setNotice] = useState('')
-  const [profilePhotoRevision, setProfilePhotoRevision] = useState(0)
 
   const loadPrivatePlayers = useCallback(async () => {
     const response = await fetch('/api/educators/players', { cache: 'no-store' })
@@ -112,18 +115,25 @@ export function EducatorRoster({
       setMigrationRequired(false)
       await loadPrivatePlayers()
     } catch (error) {
-      onSessionStatusChange?.('unavailable')
-      setAuthError(error instanceof Error ? error.message : 'Impossible de charger les coordonnées.')
+      onSessionStatusChange?.(initialEducator ? 'authenticated' : 'unavailable')
+      const message = error instanceof Error ? error.message : 'Impossible de charger les coordonnées.'
+      setAuthError(initialEducator
+        ? `Votre session reste active, mais les données éducateurs ne sont pas disponibles. Réessayez sans vous reconnecter. (${message})`
+        : message)
     } finally {
       setRequestPending(false)
       setSessionChecked(true)
     }
-  }, [loadPrivatePlayers, onEducatorChange, onSessionStatusChange])
+  }, [initialEducator, loadPrivatePlayers, onEducatorChange, onSessionStatusChange])
 
   useEffect(() => {
+    if (initialEducator) {
+      setEducator(initialEducator)
+      setSessionChecked(true)
+    }
     void loadPhoneContacts()
     setIsPhoneDevice(/iPhone|iPod|Android.*Mobile|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(navigator.userAgent))
-  }, [loadPhoneContacts])
+  }, [initialEducator, loadPhoneContacts])
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -256,7 +266,7 @@ export function EducatorRoster({
         <form onSubmit={handleLogin} className="mx-auto flex w-full max-w-md flex-col gap-4 rounded-2xl border border-accent/60 bg-white p-6 shadow-sm">
           <div className="flex justify-center">
             <div className="flex size-36 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-accent/40">
-              <EducatorAvatar username={username} revision={profilePhotoRevision} size="size-32" />
+              <EducatorAvatar username={username} revision={photoRevision} size="size-32" />
             </div>
           </div>
           <h2 id="educator-login-title" className="text-center text-lg font-black text-primary">Connexion éducateur</h2>
@@ -302,8 +312,7 @@ export function EducatorRoster({
           canEdit={educator.role === 'admin'}
           showAddButton={false}
           currentEducator={educator}
-          photoRevision={profilePhotoRevision}
-          onPhotoChange={() => setProfilePhotoRevision((revision) => revision + 1)}
+          photoRevision={photoRevision}
         />
         {educator.role === 'admin' ? (
           <button
@@ -332,7 +341,21 @@ export function EducatorRoster({
 
   return (
     <section aria-label="Liste des éducateurs" className="flex flex-col gap-4">
-      {authError && <p role="alert" className="text-sm font-medium text-destructive">{authError}</p>}
+      {authError && (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p role="alert" className="text-sm font-medium text-destructive">{authError}</p>
+          {educator && (
+            <button
+              type="button"
+              onClick={() => void loadPhoneContacts()}
+              disabled={requestPending}
+              className="min-h-9 rounded-lg border border-accent/50 px-3 text-sm font-semibold text-primary disabled:opacity-50"
+            >
+              {requestPending ? 'Chargement…' : 'Réessayer'}
+            </button>
+          )}
+        </div>
+      )}
       {notice && <p role="status" className="text-sm font-medium text-emerald-700 dark:text-emerald-300">{notice}</p>}
 
       <div className="flex flex-col gap-3 rounded-xl border border-accent/50 bg-card p-3 shadow-sm">
@@ -385,8 +408,7 @@ export function EducatorRoster({
             searchTitle={query.trim() ? 'Résultats éducateurs' : undefined}
             showAddButton={false}
             currentEducator={educator}
-            photoRevision={profilePhotoRevision}
-            onPhotoChange={() => setProfilePhotoRevision((revision) => revision + 1)}
+            photoRevision={photoRevision}
           />
         </div>
       )}

@@ -1,21 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
 import { ArrowDown, ArrowUp } from 'lucide-react'
 
 export function ScrollToTopButton() {
-  const [isVisible, setIsVisible] = useState(false)
-
-  useEffect(() => {
-    const updateVisibility = () => setIsVisible(window.scrollY > 240)
-
-    updateVisibility()
-    window.addEventListener('scroll', updateVisibility, { passive: true })
-    return () => window.removeEventListener('scroll', updateVisibility)
-  }, [])
-
-  if (!isVisible) return null
-
   const scrollTo = (position: 'top' | 'bottom') => {
     window.scrollTo({
       top: position === 'top' ? 0 : document.documentElement.scrollHeight,

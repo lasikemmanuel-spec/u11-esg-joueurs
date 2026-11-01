@@ -202,6 +202,27 @@ export function PlayerOffensiveRankings({ players }: { players: PlayerStats[] })
   ]
   const allRankingsSelected = selectedViews.size === rankingOptions.length
 
+  const toggleRanking = (key: RankingKey) => {
+    const isSelected = selectedViews.has(key)
+    setSelectedViews((current) => {
+      const next = new Set(current)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+
+    if (!isSelected && window.matchMedia('(max-width: 767px)').matches) {
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          document.getElementById(`player-ranking-${key}`)?.scrollIntoView({
+            behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+            block: 'start',
+          })
+        })
+      })
+    }
+  }
+
   return (
     <section aria-label="Classements des joueurs" className="flex flex-col gap-4">
       <div className="sticky top-2 z-20 flex flex-col gap-2 rounded-xl border border-accent/50 bg-card/95 p-2 shadow-md backdrop-blur xl:hidden">
@@ -225,12 +246,7 @@ export function PlayerOffensiveRankings({ players }: { players: PlayerStats[] })
                 key={key}
                 type="button"
                 aria-pressed={isSelected}
-                onClick={() => setSelectedViews((current) => {
-                  const next = new Set(current)
-                  if (next.has(key)) next.delete(key)
-                  else next.add(key)
-                  return next
-                })}
+                onClick={() => toggleRanking(key)}
                 className={`min-h-9 rounded-lg border px-2.5 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                   isSelected
                     ? 'border-primary bg-primary text-primary-foreground'
@@ -245,16 +261,16 @@ export function PlayerOffensiveRankings({ players }: { players: PlayerStats[] })
       </div>
 
       <div className="grid items-start gap-4 xl:grid-cols-2">
-        <div className={selectedViews.has('scorers') ? 'block xl:block' : 'hidden xl:block'}>
+        <div id="player-ranking-scorers" className={`scroll-mt-24 ${selectedViews.has('scorers') ? 'block xl:block' : 'hidden xl:block'}`}>
           <Ranking {...scorerRanking} />
         </div>
-        <div className={selectedViews.has('assists') ? 'block xl:block' : 'hidden xl:block'}>
+        <div id="player-ranking-assists" className={`scroll-mt-24 ${selectedViews.has('assists') ? 'block xl:block' : 'hidden xl:block'}`}>
           <Ranking {...passerRanking} />
         </div>
-        <div className={selectedViews.has('training') ? 'block xl:block' : 'hidden xl:block'}>
+        <div id="player-ranking-training" className={`scroll-mt-24 ${selectedViews.has('training') ? 'block xl:block' : 'hidden xl:block'}`}>
           <Ranking {...trainingRanking} />
         </div>
-        <div className={selectedViews.has('matches') ? 'block xl:block' : 'hidden xl:block'}>
+        <div id="player-ranking-matches" className={`scroll-mt-24 ${selectedViews.has('matches') ? 'block xl:block' : 'hidden xl:block'}`}>
           <Ranking {...matchRanking} />
         </div>
         {selectedViews.size === 0 && (

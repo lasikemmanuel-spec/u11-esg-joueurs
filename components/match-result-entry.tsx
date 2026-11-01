@@ -62,8 +62,10 @@ const inputClass = 'h-10 w-full rounded-lg border border-accent/50 bg-background
 
 export function MatchResultEntry({
   entries,
+  onConnect,
 }: {
   entries: MatchSheetEntry[]
+  onConnect: () => void
 }) {
   const router = useRouter()
   const [status, setStatus] = useState<MatchEntryStatus | null>(null)
@@ -209,6 +211,13 @@ export function MatchResultEntry({
       ) : status.role === null ? (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted px-3 py-2">
           <p className="text-sm text-muted-foreground">Connecte-toi dans l’espace éducateurs ci-dessous pour ajouter ou modifier les matchs.</p>
+          <button
+            type="button"
+            onClick={onConnect}
+            className="inline-flex min-h-9 shrink-0 items-center justify-center rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground"
+          >
+            Se connecter
+          </button>
         </div>
       ) : null}
 

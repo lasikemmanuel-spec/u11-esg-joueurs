@@ -25,7 +25,7 @@ type ParentKey = 'father' | 'mother'
 type PhoneEditor = { number: number; name: string; parent: ParentKey | null; value: string }
 type DirectoryView = 'educators' | 'players' | 'accounts'
 
-export function EducatorRoster() {
+export function EducatorRoster({ loginRequest = 0 }: { loginRequest?: number }) {
   const [players, setPlayers] = useState<EducatorPlayer[]>([])
   const [query, setQuery] = useState('')
   const [directoryView, setDirectoryView] = useState<DirectoryView>('educators')
@@ -104,6 +104,10 @@ export function EducatorRoster() {
     void loadPhoneContacts()
     setIsPhoneDevice(/iPhone|iPod|Android.*Mobile|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(navigator.userAgent))
   }, [loadPhoneContacts])
+
+  useEffect(() => {
+    if (loginRequest > 0) setLoginOpen(true)
+  }, [loginRequest])
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()

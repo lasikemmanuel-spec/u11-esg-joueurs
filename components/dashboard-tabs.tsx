@@ -38,6 +38,7 @@ export function DashboardTabs({
 }) {
   const [activeTab, setActiveTab] = useState<TabKey>('roster')
   const [educatorSection, setEducatorSection] = useState<EducatorSection>('matches')
+  const [loginRequest, setLoginRequest] = useState(0)
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'roster', label: 'Effectifs' },
@@ -137,9 +138,15 @@ export function DashboardTabs({
               })}
             </nav>
             {educatorSection === 'matches' ? (
-              <MatchResultEntry entries={matchResults.entries} />
+              <MatchResultEntry
+                entries={matchResults.entries}
+                onConnect={() => {
+                  setEducatorSection('directory')
+                  setLoginRequest((request) => request + 1)
+                }}
+              />
             ) : (
-              <EducatorRoster />
+              <EducatorRoster loginRequest={loginRequest} />
             )}
           </div>
         )}

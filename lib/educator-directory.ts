@@ -6,6 +6,7 @@ import {
   updateAuthenticatedSheetValues,
 } from '@/lib/google-sheets'
 import { decryptPhone, encryptPhone } from '@/lib/phone-crypto'
+import { hasEducatorSurname, sameEducatorName } from '@/lib/educator-name'
 
 const TAB = 'Annuaire éducateurs'
 const HEADERS = ['ID', 'Nom', 'Licence FFF', 'Téléphone']
@@ -102,16 +103,15 @@ export async function saveOwnEducatorDirectoryEntry(input: {
   if (phone.length > 80) throw new Error('Le numéro de téléphone est trop long.')
 
   const sheet = await readSheet(true)
-  const normalizedName = name.toLocaleLowerCase('fr-FR')
   const exactMatches = sheet.rows.flatMap((row, index) =>
-    index > 0 && row[1]?.trim().toLocaleLowerCase('fr-FR') === normalizedName ? [index] : [],
+    index > 0 && sameEducatorName(row[1]?.trim() ?? '', name) ? [index] : [],
   )
-  const suffixMatches = normalizedName.includes(' ')
+  const suffixMatches = name.includes(' ')
     ? []
     : sheet.rows.flatMap((row, index) =>
-        index > 0 && row[1]?.trim().toLocaleLowerCase('fr-FR').endsWith(` ${normalizedName}`) ? [index] : [],
+        index > 0 && hasEducatorSurname(row[1]?.trim() ?? '', name) ? [index] : [],
       )
-  const matches = normalizedName.includes(' ') ? exactMatches : suffixMatches.length ? suffixMatches : exactMatches
+  const matches = name.includes(' ') ? exactMatches : suffixMatches.length ? suffixMatches : exactMatches
   if (matches.length > 1) {
     throw new Error('Plusieurs fiches portent votre nom. Contactez un administrateur pour les rapprocher.')
   }

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Pencil, Phone, Plus, Save, X } from 'lucide-react'
 import { EducatorAvatar } from '@/components/educator-avatar'
 import type { DirectoryEducator } from '@/lib/educator-directory'
+import { hasEducatorSurname, sameEducatorName } from '@/lib/educator-name'
 import { matchesSearch } from '@/lib/search'
 
 type Draft = { id?: string; name: string; licenseNumber: string; phone: string }
@@ -39,12 +40,9 @@ export function EducatorDirectory({
   )
   const ownDirectoryEntry = (() => {
     if (!currentEducator) return undefined
-    const displayName = currentEducator.displayName.trim().toLocaleLowerCase('fr-FR')
-    const exactMatches = educators.filter((educator) => educator.name.trim().toLocaleLowerCase('fr-FR') === displayName)
-    if (displayName.includes(' ')) return exactMatches.length === 1 ? exactMatches[0] : undefined
-    const suffixMatches = educators.filter((educator) =>
-      educator.name.trim().toLocaleLowerCase('fr-FR').endsWith(` ${displayName}`),
-    )
+    const exactMatches = educators.filter((educator) => sameEducatorName(educator.name, currentEducator.displayName))
+    if (currentEducator.displayName.trim().includes(' ')) return exactMatches.length === 1 ? exactMatches[0] : undefined
+    const suffixMatches = educators.filter((educator) => hasEducatorSurname(educator.name, currentEducator.displayName))
     if (suffixMatches.length > 1) return undefined
     return suffixMatches[0] ?? (exactMatches.length === 1 ? exactMatches[0] : undefined)
   })()

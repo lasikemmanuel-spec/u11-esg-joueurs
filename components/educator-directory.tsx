@@ -7,13 +7,20 @@ import type { DirectoryEducator } from '@/lib/educator-directory'
 type Draft = { id?: string; name: string; licenseNumber: string; phone: string }
 const blank: Draft = { name: '', licenseNumber: '', phone: '' }
 
-export function EducatorDirectory({ canEdit }: { canEdit: boolean }) {
+const normalizeSearch = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr-FR')
+
+export function EducatorDirectory({ canEdit, searchQuery }: { canEdit: boolean; searchQuery?: string }) {
   const [educators, setEducators] = useState<DirectoryEducator[]>([])
   const [draft, setDraft] = useState<Draft>(blank)
   const [open, setOpen] = useState(false)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const terms = normalizeSearch(searchQuery ?? '').trim().split(/\s+/).filter(Boolean)
+  const filteredEducators = educators.filter((educator) => {
+    const searchable = normalizeSearch([educator.name, educator.licenseNumber, educator.phone].join(' '))
+    return terms.every((term) => searchable.includes(term))
+  })
 
   const load = useCallback(async () => {
     const response = await fetch('/api/educators/directory', { cache: 'no-store' })
@@ -67,9 +74,11 @@ export function EducatorDirectory({ canEdit }: { canEdit: boolean }) {
         <p className="mt-3 rounded-lg bg-muted px-3 py-4 text-center text-sm text-muted-foreground">
           L’annuaire est vide. {canEdit ? 'Ajoute la première fiche pour créer son onglet dédié dans le Sheet.' : 'Un administrateur pourra ajouter les fiches.'}
         </p>
+      ) : filteredEducators.length === 0 ? (
+        <p className="mt-3 rounded-lg bg-muted px-3 py-4 text-center text-sm text-muted-foreground">Aucun éducateur ne correspond à cette recherche.</p>
       ) : (
         <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {educators.map((educator) => (
+          {filteredEducators.map((educator) => (
             <li key={educator.id} className="rounded-xl border border-border bg-background p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">

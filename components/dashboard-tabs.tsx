@@ -16,6 +16,7 @@ import type { PlayerStats as PlayerStat } from '@/lib/stats'
 
 type TabKey = 'roster' | 'educator' | 'players' | 'matches'
 type EducatorSection = 'matches' | 'directory'
+type EducatorAccess = 'checking' | 'unauthenticated' | 'authenticated' | 'unavailable'
 
 export function DashboardTabs({
   players,
@@ -40,6 +41,7 @@ export function DashboardTabs({
   const [educatorSection, setEducatorSection] = useState<EducatorSection>('matches')
   const [loginRequest, setLoginRequest] = useState(0)
   const [returnToMatchesAfterLogin, setReturnToMatchesAfterLogin] = useState(false)
+  const [educatorAccess, setEducatorAccess] = useState<EducatorAccess>('checking')
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'roster', label: 'Effectifs' },
@@ -112,47 +114,57 @@ export function DashboardTabs({
         )}
         {activeTab === 'educator' && (
           <div className="flex flex-col gap-4">
-            <nav aria-label="Rubriques éducateurs" className="grid grid-cols-2 gap-2 rounded-xl border border-accent/50 bg-muted/50 p-1.5">
-              {([
-                { key: 'matches' as const, label: 'Matchs', Icon: CalendarDays },
-                { key: 'directory' as const, label: 'Annuaire & licences', Icon: ContactRound },
-              ]).map(({ key, label, Icon }) => {
-                const isActive = educatorSection === key
-                return (
-                  <button
-                    key={key}
-                    type="button"
-                    aria-pressed={isActive}
-                    onClick={() => {
-                      setReturnToMatchesAfterLogin(false)
-                      setEducatorSection(key)
+            {educatorAccess === 'authenticated' ? (
+              <>
+                <nav aria-label="Rubriques éducateurs" className="grid grid-cols-2 gap-2 rounded-xl border border-accent/50 bg-muted/50 p-1.5">
+                  {([
+                    { key: 'matches' as const, label: 'Matchs', Icon: CalendarDays },
+                    { key: 'directory' as const, label: 'Annuaire & licences', Icon: ContactRound },
+                  ]).map(({ key, label, Icon }) => {
+                    const isActive = educatorSection === key
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        aria-pressed={isActive}
+                        onClick={() => {
+                          setReturnToMatchesAfterLogin(false)
+                          setEducatorSection(key)
+                        }}
+                        className={[
+                          'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                          isActive
+                            ? 'bg-primary text-primary-foreground shadow-sm'
+                            : 'text-muted-foreground hover:bg-card hover:text-primary',
+                        ].join(' ')}
+                      >
+                        <Icon aria-hidden="true" className="size-4 shrink-0" />
+                        <span>{label}</span>
+                      </button>
+                    )
+                  })}
+                </nav>
+                {educatorSection === 'matches' ? (
+                  <MatchResultEntry
+                    entries={matchResults.entries}
+                    onConnect={() => {
+                      setReturnToMatchesAfterLogin(true)
+                      setEducatorSection('directory')
+                      setLoginRequest((request) => request + 1)
                     }}
-                    className={[
-                      'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
-                      'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                      isActive
-                        ? 'bg-primary text-primary-foreground shadow-sm'
-                        : 'text-muted-foreground hover:bg-card hover:text-primary',
-                    ].join(' ')}
-                  >
-                    <Icon aria-hidden="true" className="size-4 shrink-0" />
-                    <span>{label}</span>
-                  </button>
-                )
-              })}
-            </nav>
-            {educatorSection === 'matches' ? (
-              <MatchResultEntry
-                entries={matchResults.entries}
-                onConnect={() => {
-                  setReturnToMatchesAfterLogin(true)
-                  setEducatorSection('directory')
-                  setLoginRequest((request) => request + 1)
-                }}
-              />
+                  />
+                ) : (
+                  <EducatorRoster
+                    loginRequest={loginRequest}
+                    onSessionStatusChange={setEducatorAccess}
+                  />
+                )}
+              </>
             ) : (
               <EducatorRoster
-                loginRequest={loginRequest}
+                forceLogin={educatorAccess !== 'checking'}
+                onSessionStatusChange={setEducatorAccess}
                 onLoginSuccess={() => {
                   if (!returnToMatchesAfterLogin) return
                   setReturnToMatchesAfterLogin(false)

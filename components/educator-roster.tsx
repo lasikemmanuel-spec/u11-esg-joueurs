@@ -24,12 +24,17 @@ type EducatorPlayer = PublicPlayer & Pick<Player, 'licenseNumber'>
 type ParentKey = 'father' | 'mother'
 type PhoneEditor = { number: number; name: string; parent: ParentKey | null; value: string }
 type DirectoryView = 'educators' | 'players' | 'accounts'
+type EducatorSessionStatus = 'checking' | 'unauthenticated' | 'authenticated' | 'unavailable'
 
 export function EducatorRoster({
   loginRequest = 0,
+  forceLogin = false,
+  onSessionStatusChange,
   onLoginSuccess,
 }: {
   loginRequest?: number
+  forceLogin?: boolean
+  onSessionStatusChange?: (status: EducatorSessionStatus) => void
   onLoginSuccess?: () => void
 }) {
   const [players, setPlayers] = useState<EducatorPlayer[]>([])
@@ -55,6 +60,7 @@ export function EducatorRoster({
     const response = await fetch('/api/educators/players', { cache: 'no-store' })
     const result = await response.json()
     if (response.status === 401) {
+      onSessionStatusChange?.('unauthenticated')
       setEducator(null)
       setPlayers([])
       setPhones({})
@@ -64,7 +70,7 @@ export function EducatorRoster({
     }
     if (!response.ok) throw new Error(result.error ?? 'Impossible de charger les joueurs.')
     setPlayers(result.players as EducatorPlayer[])
-  }, [])
+  }, [onSessionStatusChange])
 
   const loadPhoneContacts = useCallback(async () => {
     setRequestPending(true)
@@ -73,6 +79,7 @@ export function EducatorRoster({
       const response = await fetch('/api/educators/contacts', { cache: 'no-store' })
       const result = await response.json()
       if (response.status === 401) {
+        onSessionStatusChange?.('unauthenticated')
         setEducator(null)
         setPhones({})
         setVisiblePhones({})
@@ -81,6 +88,7 @@ export function EducatorRoster({
         return
       }
       if (response.status === 409 && result.migrationRequired) {
+        onSessionStatusChange?.('authenticated')
         setEducator(result.educator)
         setPhones({})
         setVisiblePhones({})
@@ -94,17 +102,19 @@ export function EducatorRoster({
       const nextPhones = Object.fromEntries(
         (result.phones as Array<{ number: number } & PlayerPhones>).map(({ number, ...contacts }) => [number, contacts]),
       ) as Record<number, PlayerPhones>
+      onSessionStatusChange?.('authenticated')
       setEducator(result.educator)
       setPhones(nextPhones)
       setMigrationRequired(false)
       await loadPrivatePlayers()
     } catch (error) {
+      onSessionStatusChange?.('unavailable')
       setAuthError(error instanceof Error ? error.message : 'Impossible de charger les coordonnées.')
     } finally {
       setRequestPending(false)
       setSessionChecked(true)
     }
-  }, [loadPrivatePlayers])
+  }, [loadPrivatePlayers, onSessionStatusChange])
 
   useEffect(() => {
     void loadPhoneContacts()
@@ -114,6 +124,10 @@ export function EducatorRoster({
   useEffect(() => {
     if (loginRequest > 0) setLoginOpen(true)
   }, [loginRequest])
+
+  useEffect(() => {
+    if (forceLogin) setLoginOpen(true)
+  }, [forceLogin])
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -147,6 +161,7 @@ export function EducatorRoster({
       if (!response.ok) throw new Error('Déconnexion impossible.')
       setEducator(null)
       window.dispatchEvent(new Event('educator-session-changed'))
+      onSessionStatusChange?.('unauthenticated')
       setPhones({})
       setPlayers([])
       setVisiblePhones({})

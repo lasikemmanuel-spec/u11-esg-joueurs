@@ -103,9 +103,15 @@ export async function saveOwnEducatorDirectoryEntry(input: {
 
   const sheet = await readSheet(true)
   const normalizedName = name.toLocaleLowerCase('fr-FR')
-  const matches = sheet.rows.flatMap((row, index) =>
+  const exactMatches = sheet.rows.flatMap((row, index) =>
     index > 0 && row[1]?.trim().toLocaleLowerCase('fr-FR') === normalizedName ? [index] : [],
   )
+  const suffixMatches = normalizedName.includes(' ')
+    ? []
+    : sheet.rows.flatMap((row, index) =>
+        index > 0 && row[1]?.trim().toLocaleLowerCase('fr-FR').endsWith(` ${normalizedName}`) ? [index] : [],
+      )
+  const matches = normalizedName.includes(' ') ? exactMatches : suffixMatches.length ? suffixMatches : exactMatches
   if (matches.length > 1) {
     throw new Error('Plusieurs fiches portent votre nom. Contactez un administrateur pour les rapprocher.')
   }

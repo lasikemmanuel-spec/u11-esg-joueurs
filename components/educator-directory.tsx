@@ -37,18 +37,17 @@ export function EducatorDirectory({
   const filteredEducators = educators.filter((educator) =>
     matchesSearch(searchQuery ?? '', [educator.name, educator.licenseNumber, educator.phone]),
   )
-  const ownDirectoryEntry = currentEducator
-    ? educators.find((educator) =>
-        educator.name.trim().toLocaleLowerCase('fr-FR') === currentEducator.displayName.trim().toLocaleLowerCase('fr-FR'),
-      ) ?? (() => {
-        const suffixMatches = educators.filter((educator) =>
-          educator.name.trim().toLocaleLowerCase('fr-FR').endsWith(
-            ` ${currentEducator.displayName.trim().toLocaleLowerCase('fr-FR')}`,
-          ),
-        )
-        return suffixMatches.length === 1 ? suffixMatches[0] : undefined
-      })()
-    : undefined
+  const ownDirectoryEntry = (() => {
+    if (!currentEducator) return undefined
+    const displayName = currentEducator.displayName.trim().toLocaleLowerCase('fr-FR')
+    const exactMatches = educators.filter((educator) => educator.name.trim().toLocaleLowerCase('fr-FR') === displayName)
+    if (displayName.includes(' ')) return exactMatches.length === 1 ? exactMatches[0] : undefined
+    const suffixMatches = educators.filter((educator) =>
+      educator.name.trim().toLocaleLowerCase('fr-FR').endsWith(` ${displayName}`),
+    )
+    if (suffixMatches.length > 1) return undefined
+    return suffixMatches[0] ?? (exactMatches.length === 1 ? exactMatches[0] : undefined)
+  })()
   const visibleEducators = !isSearching && ownDirectoryEntry
     ? filteredEducators.filter((educator) => educator.id !== ownDirectoryEntry.id)
     : filteredEducators
@@ -143,7 +142,7 @@ export function EducatorDirectory({
           <EducatorAvatar username={currentEducator.username} revision={photoRevision} size="size-16" />
           <div className="min-w-0 flex-1">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ma fiche éducateur</p>
-            <p className="truncate font-bold text-foreground">{currentEducator.displayName.trim().split(/\s+/)[0]}</p>
+            <p className="truncate font-bold text-foreground">{ownDirectoryEntry?.name ?? currentEducator.displayName}</p>
             <span className="mt-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
               {currentEducator.role === 'admin' ? 'Administrateur' : currentEducator.role === 'educator' ? 'Éducateur' : 'Lecteur'}
             </span>

@@ -129,15 +129,15 @@ function columnName(columnIndex: number) {
 
 function matchDateKey(value: string) {
   const trimmed = value.trim()
-  const iso = trimmed.match(/^(\\d{4})-(\\d{1,2})-(\\d{1,2})$/)
+  const iso = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
   if (iso) return iso[1] + '-' + iso[2].padStart(2, '0') + '-' + iso[3].padStart(2, '0')
-  const dayFirst = trimmed.match(/^(\\d{1,2})[/. -](\\d{1,2})[/. -](\\d{4})$/)
+  const dayFirst = trimmed.match(/^(\d{1,2})[/. -](\d{1,2})[/. -](\d{4})$/)
   if (dayFirst) return dayFirst[3] + '-' + dayFirst[2].padStart(2, '0') + '-' + dayFirst[1].padStart(2, '0')
   return ''
 }
 
 function normalizeOpponent(value: string) {
-  return value.normalize('NFD').replace(/[\\u0300-\\u036f]/g, '').trim().toLocaleLowerCase('fr-FR')
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().toLocaleLowerCase('fr-FR')
 }
 
 /**

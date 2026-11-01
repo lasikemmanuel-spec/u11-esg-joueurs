@@ -8,9 +8,10 @@ import { matchesSearch } from '@/lib/search'
 type Draft = { id?: string; name: string; licenseNumber: string; phone: string }
 const blank: Draft = { name: '', licenseNumber: '', phone: '' }
 
-export function EducatorDirectory({ canEdit, searchQuery, showAddButton = true }: {
+export function EducatorDirectory({ canEdit, searchQuery, searchTitle, showAddButton = true }: {
   canEdit: boolean
   searchQuery?: string
+  searchTitle?: string
   showAddButton?: boolean
 }) {
   const [educators, setEducators] = useState<DirectoryEducator[]>([])
@@ -84,14 +85,18 @@ export function EducatorDirectory({ canEdit, searchQuery, showAddButton = true }
       {notice && <p role="status" className="mt-3 text-sm font-medium text-emerald-700">{notice}</p>}
       {error && !open && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
       {educators.length === 0 ? (
-        <p className="mt-3 rounded-lg bg-muted px-3 py-4 text-center text-sm text-muted-foreground">
-          L’annuaire est vide. {canEdit ? 'Ajoute la première fiche pour créer son onglet dédié dans le Sheet.' : 'Un administrateur pourra ajouter les fiches.'}
-        </p>
+        isSearching ? null : (
+          <p className="mt-3 rounded-lg bg-muted px-3 py-4 text-center text-sm text-muted-foreground">
+            L’annuaire est vide. {canEdit ? 'Ajoute la première fiche pour créer son onglet dédié dans le Sheet.' : 'Un administrateur pourra ajouter les fiches.'}
+          </p>
+        )
       ) : filteredEducators.length === 0 ? (
-        <p className="mt-3 rounded-lg bg-muted px-3 py-4 text-center text-sm text-muted-foreground">Aucun éducateur ne correspond à cette recherche.</p>
+        null
       ) : (
-        <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredEducators.map((educator) => (
+        <>
+          {isSearching && searchTitle && <h2 className="font-bold text-primary">{searchTitle}</h2>}
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {filteredEducators.map((educator) => (
             <li key={educator.id} className="rounded-xl border border-border bg-background p-3">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
@@ -131,8 +136,9 @@ export function EducatorDirectory({ canEdit, searchQuery, showAddButton = true }
                 {canEdit && <button type="button" onClick={() => edit(educator)} aria-label={`Modifier ${educator.name}`} className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-accent/50 px-2 text-xs font-semibold text-primary"><Pencil aria-hidden="true" className="size-3.5" /> Modifier</button>}
               </div>
             </li>
-          ))}
-        </ul>
+            ))}
+          </ul>
+        </>
       )}
       {!canEdit && <p className="mt-3 text-xs text-muted-foreground">L’ajout et la modification des fiches sont réservés à l’administrateur.</p>}
       {open && canEdit && (

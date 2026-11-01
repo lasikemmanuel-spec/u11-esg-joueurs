@@ -89,8 +89,8 @@ export default async function Page() {
   }).format(new Date(roster.fetchedAt))
 
   return (
-    <div className="min-h-dvh bg-muted/40">
-      <header className="border-b-2 border-accent bg-gradient-to-b from-[oklch(0.32_0.06_272)] to-primary text-primary-foreground">
+    <div className="relative isolate min-h-dvh bg-muted/40">
+      <header className="relative z-20 border-b-2 border-accent bg-gradient-to-b from-[oklch(0.32_0.06_272)] to-primary text-primary-foreground">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-6 md:flex-row md:items-center md:justify-between md:px-6 md:py-8">
           <div className="flex items-center gap-4 md:gap-5">
             <ClubCrest className="size-16 md:size-24" />
@@ -110,7 +110,11 @@ export default async function Page() {
         </div>
       </header>
 
-      <main className="mx-auto flex max-w-7xl flex-col gap-4 px-4 pt-6 pb-24 md:gap-6 md:px-6 md:pt-8 md:pb-24 xl:pb-8">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-[58%] z-30 flex -translate-y-1/2 justify-center">
+        <ClubCrest className="size-[min(78vw,32rem)] opacity-[0.045]" />
+      </div>
+
+      <main className="relative z-20 mx-auto flex max-w-7xl flex-col gap-4 px-4 pt-6 pb-24 md:gap-6 md:px-6 md:pt-8 md:pb-24 xl:pb-8">
         <DashboardTabs
           players={stats.players}
           rosterPlayers={publicPlayers}

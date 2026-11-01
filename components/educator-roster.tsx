@@ -371,8 +371,12 @@ export function EducatorRoster({
 
       {(directoryView === 'educators' || Boolean(query.trim())) && (
         <div className="flex flex-col gap-2">
-          {query.trim() && <h2 className="font-bold text-primary">Résultats éducateurs</h2>}
-          <EducatorDirectory canEdit={educator.role === 'admin'} searchQuery={query} showAddButton={false} />
+          <EducatorDirectory
+            canEdit={educator.role === 'admin'}
+            searchQuery={query}
+            searchTitle={query.trim() ? 'Résultats éducateurs' : undefined}
+            showAddButton={false}
+          />
         </div>
       )}
 

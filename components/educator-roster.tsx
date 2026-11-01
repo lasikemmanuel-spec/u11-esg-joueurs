@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useCallback, type FormEvent } from 'react'
-import { Search, Copy, Check, Award, LockKeyhole, LogOut, Phone, Save, ChevronDown, ChevronUp, Pencil, X } from 'lucide-react'
+import { Search, Copy, Check, Award, LockKeyhole, LogOut, Phone, Save, ChevronDown, ChevronUp, Pencil, X, ContactRound, UsersRound } from 'lucide-react'
 import type { Player } from '@/lib/players'
 import { ParentAvatar } from '@/components/parent-avatar'
 import { EducatorDirectory } from '@/components/educator-directory'
@@ -23,9 +23,11 @@ const positionRank = (position: string | null) => {
 type PlayerPhones = { legacyPhone: string; fatherPhone: string; motherPhone: string }
 type ParentKey = 'father' | 'mother'
 type PhoneEditor = { number: number; name: string; parent: ParentKey | null; value: string }
+type DirectoryView = 'educators' | 'players'
 
 export function EducatorRoster({ players }: { players: Player[] }) {
   const [query, setQuery] = useState('')
+  const [directoryView, setDirectoryView] = useState<DirectoryView>('educators')
   const [expandedPositions, setExpandedPositions] = useState<Set<string>>(() => new Set())
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [educator, setEducator] = useState<EducatorIdentity | null>(null)
@@ -193,11 +195,8 @@ export function EducatorRoster({ players }: { players: Player[] }) {
     const grouped = new Map<string, Player[]>()
 
     for (const player of players) {
-      const firstName = normalize(player.firstName)
-      const lastName = normalize(player.lastName)
-      const matchesQuery = searchTerms.every(
-        (term) => firstName.includes(term) || lastName.includes(term),
-      )
+      const searchablePlayer = normalize([player.firstName, player.lastName, player.licenseNumber ?? ''].join(' '))
+      const matchesQuery = searchTerms.every((term) => searchablePlayer.includes(term))
       if (!matchesQuery) continue
 
       const position = player.position ?? 'Non renseigné'
@@ -315,13 +314,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
 
   return (
     <section aria-label="Liste des éducateurs" className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-card px-3 py-1.5 text-xs font-semibold">
-          <Award className="size-3.5 text-amber-600 dark:text-amber-400" />
-          <span>
-            <strong className="text-amber-700 dark:text-amber-300">{missingLicenseCount}</strong> sans n° de licence
-          </span>
-        </div>
+      <div className="flex items-center justify-end gap-2">
         <span className="text-xs text-muted-foreground">{educator.displayName}</span>
         <button
           type="button"
@@ -338,8 +331,55 @@ export function EducatorRoster({ players }: { players: Player[] }) {
       {authError && <p role="alert" className="text-sm font-medium text-destructive">{authError}</p>}
       {notice && <p role="status" className="text-sm font-medium text-emerald-700 dark:text-emerald-300">{notice}</p>}
 
-      <EducatorDirectory canEdit={educator.role === 'admin'} />
+      <div className="flex flex-col gap-3 rounded-xl border border-accent/50 bg-card p-3 shadow-sm">
+        <label htmlFor="directory-search" className="block text-sm font-semibold text-primary">Recherche joueur / éducateur</label>
+        <div className="relative">
+          <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            id="directory-search"
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Nom, prénom ou n° de licence…"
+            className="h-11 w-full rounded-lg border border-accent/50 bg-background pr-3 pl-10 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          />
+        </div>
+        <nav aria-label="Choisir un annuaire" className="grid grid-cols-2 gap-2 rounded-lg bg-muted/70 p-1">
+          {([
+            { key: 'educators' as const, label: 'Éducateurs', Icon: ContactRound },
+            { key: 'players' as const, label: 'Joueurs', Icon: UsersRound },
+          ]).map(({ key, label, Icon }) => {
+            const isActive = directoryView === key
+            return (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => setDirectoryView(key)}
+                className={[
+                  'inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition-colors',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                  isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-card hover:text-primary',
+                ].join(' ')}
+              >
+                <Icon aria-hidden="true" className="size-4" />
+                {label}
+              </button>
+            )
+          })}
+        </nav>
+      </div>
 
+      {directoryView === 'educators' && <EducatorDirectory canEdit={educator.role === 'admin'} searchQuery={query} />}
+
+      {directoryView === 'players' && (
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-end">
+            <div className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-card px-3 py-1.5 text-xs font-semibold">
+              <Award className="size-3.5 text-amber-600 dark:text-amber-400" />
+              <span><strong className="text-amber-700 dark:text-amber-300">{missingLicenseCount}</strong> sans n° de licence</span>
+            </div>
+          </div>
       <div className="flex flex-wrap items-end gap-2">
         {groups.length > 0 && (
           <button
@@ -353,22 +393,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
             <span>{allGroupsExpanded ? "Tout −" : "Tout +"}</span>
           </button>
         )}
-        <div className="min-w-0 max-w-xl flex-1">
-          <label htmlFor="educator-search" className="mb-1 block text-xs font-semibold text-muted-foreground">
-            Recherche joueurs
-          </label>
-          <div className="relative">
-            <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
-            <input
-              id="educator-search"
-              type="search"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Par nom, prénom ou les deux…"
-              className="h-10 w-full rounded-xl border border-accent/40 bg-background pr-3 pl-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
-          </div>
-        </div>
+
       </div>
 
       {groups.length === 0 ? (
@@ -536,6 +561,8 @@ export function EducatorRoster({ players }: { players: Player[] }) {
           )})}
         </div>
       )}
+        </div>
+      )}
 
       {phoneEditor && educator.role === 'admin' && (
         <div
@@ -630,7 +657,7 @@ export function EducatorRoster({ players }: { players: Player[] }) {
           </section>
         </div>
       )}
-      {hasExpandedVisibleGroup && (
+      {directoryView === 'players' && hasExpandedVisibleGroup && (
         <div className="pointer-events-none fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center sm:hidden">
           <button
             type="button"

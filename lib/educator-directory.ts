@@ -90,6 +90,16 @@ export async function saveEducatorDirectoryEntry(input: {
   return { id }
 }
 
+export async function deleteEducatorDirectoryEntry(id: string) {
+  const sheet = await readSheet()
+  const rowIndex = sheet.rows.findIndex((row, index) => index > 0 && row[0]?.trim() === id)
+  if (rowIndex < 1) throw new Error('Cet éducateur n’existe plus dans l’annuaire.')
+  await updateAuthenticatedSheetValues([{
+    range: cellRange(sheet.sheetTitle, rowIndex + 1),
+    values: [['', '', '', '']],
+  }])
+}
+
 export async function saveOwnEducatorDirectoryEntry(input: {
   name: string
   licenseNumber: string

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { getEducatorSession, hasEducatorAccess, isSameOriginRequest } from '@/lib/educator-auth'
-import { getEducatorDirectory, saveEducatorDirectoryEntry } from '@/lib/educator-directory'
+import { deleteEducatorDirectoryEntry, getEducatorDirectory, saveEducatorDirectoryEntry } from '@/lib/educator-directory'
 
 export const runtime = 'nodejs'
 
@@ -70,3 +70,40 @@ async function save(request: Request, editing: boolean) {
 
 export async function POST(request: Request) { return save(request, false) }
 export async function PUT(request: Request) { return save(request, true) }
+
+export async function DELETE(request: Request) {
+  if (process.env.VERCEL_ENV !== 'production') return response({ error: 'La saisie est désactivée dans cet aperçu.' }, 403)
+  if (!isSameOriginRequest(request)) return response({ error: 'Requête non autorisée.' }, 403)
+
+  let educator
+  try {
+    educator = await getEducatorSession(request)
+  } catch (error) {
+    console.error('Erreur de vérification de session éducateur:', error)
+    return response({ error: 'La connexion éducateur n’est pas disponible.' }, 503)
+  }
+  if (!educator) return response({ error: 'Connexion requise.' }, 401)
+  if (educator.role !== 'admin') return response({ error: 'Droits administrateur requis.' }, 403)
+  if (Number(request.headers.get('content-length') ?? 0) > 1024) {
+    return response({ error: 'Requête trop volumineuse.' }, 413)
+  }
+
+  let input: Record<string, unknown>
+  try {
+    input = await request.json()
+  } catch {
+    return response({ error: 'Identifiant de fiche invalide.' }, 400)
+  }
+  if (typeof input.id !== 'string' || !/^[0-9a-f-]{36}$/i.test(input.id)) {
+    return response({ error: 'Identifiant de fiche invalide.' }, 400)
+  }
+
+  try {
+    await deleteEducatorDirectoryEntry(input.id)
+    revalidateTag('google-sheet', 'max')
+    return response({ ok: true })
+  } catch (error) {
+    console.error('Erreur de suppression d’une fiche éducateur:', error)
+    return response({ error: error instanceof Error ? error.message : 'Impossible de supprimer cette fiche.' }, 500)
+  }
+}

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { Pencil, Phone, Plus, Save, X } from 'lucide-react'
+import { Pencil, Phone, Plus, Save, Trash2, X } from 'lucide-react'
 import { EducatorAvatar } from '@/components/educator-avatar'
 import type { DirectoryEducator } from '@/lib/educator-directory'
 import { hasEducatorSurname, sameEducatorName } from '@/lib/educator-name'
@@ -32,6 +32,7 @@ export function EducatorDirectory({
   const [open, setOpen] = useState(false)
   const [editingOwn, setEditingOwn] = useState(false)
   const [pending, setPending] = useState(false)
+  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const isSearching = Boolean(searchQuery?.trim())
@@ -118,6 +119,28 @@ export function EducatorDirectory({
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Impossible d’enregistrer votre fiche.')
     } finally { setPending(false) }
+  }
+
+  const removeEducator = async (educator: DirectoryEducator) => {
+    if (!window.confirm(`Supprimer la fiche de ${educator.name} ? Son compte de connexion ne sera pas supprimé.`)) return
+    setDeletingId(educator.id)
+    setError('')
+    setNotice('')
+    try {
+      const response = await fetch('/api/educators/directory', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: educator.id }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error ?? 'Impossible de supprimer cette fiche.')
+      await load()
+      setNotice(`Fiche de ${educator.name} supprimée. Son compte de connexion est conservé.`)
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Impossible de supprimer cette fiche.')
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   return (
@@ -248,7 +271,22 @@ export function EducatorDirectory({
                       </div>
                     )}
                 </div>
-                {canEdit && <button type="button" onClick={() => edit(educator)} aria-label={`Modifier ${educator.name}`} className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-accent/50 px-2 text-xs font-semibold text-primary"><Pencil aria-hidden="true" className="size-3.5" /> Modifier</button>}
+                {canEdit && (
+                  <div className="flex shrink-0 gap-1">
+                    <button type="button" onClick={() => edit(educator)} aria-label={`Modifier ${educator.name}`} className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-accent/50 px-2 text-xs font-semibold text-primary">
+                      <Pencil aria-hidden="true" className="size-3.5" /> Modifier
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void removeEducator(educator)}
+                      disabled={deletingId !== null}
+                      aria-label={`Supprimer la fiche de ${educator.name}`}
+                      className="inline-flex min-h-8 items-center justify-center rounded-lg border border-destructive/40 px-2 text-destructive disabled:opacity-50"
+                    >
+                      <Trash2 aria-hidden="true" className="size-4" />
+                    </button>
+                  </div>
+                )}
               </div>
             </li>
             ))}

@@ -1,7 +1,8 @@
 'use client'
 
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { CalendarDays, ContactRound, LogOut, X } from 'lucide-react'
+import { ClubCrest } from '@/components/club-crest'
 import { MatchCallupBreakdown } from '@/components/match-callup-breakdown'
 import { PlayerStats } from '@/components/player-stats'
 import { PositionBreakdown } from '@/components/position-breakdown'
@@ -10,6 +11,8 @@ import { MatchResultEntry } from '@/components/match-result-entry'
 import { DashboardTitle } from '@/components/dashboard-title'
 import { EducatorAvatar } from '@/components/educator-avatar'
 import { EducatorProfilePhotoEditor } from '@/components/educator-profile-photo-editor'
+import { RefreshSheetButton } from '@/components/refresh-sheet-button'
+import { ThemeToggle } from '@/components/theme-toggle'
 import type { Convocation } from '@/lib/convocations'
 import type { PublicPlayer } from '@/lib/players'
 import type { TeamMatchResults } from '@/lib/match-results'
@@ -32,6 +35,8 @@ export function DashboardTabs({
   matchResults,
   cohesionDays,
   matchDataErrors,
+  updatedAt,
+  children,
 }: {
   players: PlayerStat[]
   rosterPlayers: PublicPlayer[]
@@ -41,6 +46,8 @@ export function DashboardTabs({
   matchResults: TeamMatchResults
   cohesionDays: CohesionDay[]
   matchDataErrors: string[]
+  updatedAt: string
+  children: ReactNode
 }) {
   const [activeTab, setActiveTab] = useState<TabKey>('roster')
   const [educatorSection, setEducatorSection] = useState<EducatorSection>('matches')
@@ -162,58 +169,126 @@ export function DashboardTabs({
     matches: { title: 'Stats Matchs', subtitle: 'Résultats, scores et convocations.' },
     educator: { title: 'Éducateurs', subtitle: 'Annuaire, calendrier et informations du groupe.' },
   }[activeTab]
+  const mainHeader = (
+    <header className="relative z-20 border-b-2 border-accent bg-gradient-to-b from-[oklch(0.32_0.06_272)] to-primary text-primary-foreground">
+      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:py-5 md:flex-row md:items-center md:justify-between md:px-6 md:py-6">
+        <div className="flex items-center gap-4 md:gap-5">
+          <ClubCrest className="size-16 md:size-24" />
+          <div className="flex min-w-0 flex-col gap-1">
+            <h1 className="text-2xl font-extrabold tracking-wide uppercase md:text-4xl">ES Genech</h1>
+            <p className="text-sm text-accent md:text-base">Toujours ensemble, allez l’ESG</p>
+            <p className="text-sm text-accent/80">Groupe U11 - Saison 2026/2027</p>
+          </div>
+        </div>
+        <div className="flex min-w-0 flex-col gap-2 md:items-end">
+          <div className="flex flex-wrap items-center gap-2 md:justify-end">
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <RefreshSheetButton />
+            </div>
+            {educatorIdentity && (
+              <div className="flex items-center gap-2 rounded-xl border border-primary-foreground/20 bg-primary-foreground/5 px-2 py-1.5">
+                <button
+                  type="button"
+                  onClick={() => setProfilePhotoOpen(true)}
+                  aria-label="Afficher ou changer ma photo de profil"
+                  title="Ma photo de profil"
+                  className="shrink-0 rounded-full ring-2 ring-accent/70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white"
+                >
+                  <EducatorAvatar username={educatorIdentity.username} revision={profilePhotoRevision} size="size-11" />
+                </button>
+                <span className="min-w-0 text-xs font-semibold leading-tight">
+                  <span className="block truncate text-sm">
+                    {educatorIdentity.displayName.trim().split(/\s+/)[0]}
+                  </span>
+                  <span className="block text-primary-foreground/70">
+                    {educatorIdentity.role === 'admin' ? 'Admin' :
+                      educatorIdentity.role === 'educator' ? 'Éducateur' : 'Lecteur'}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => void handleEducatorLogout()}
+                  disabled={logoutPending}
+                  aria-label="Se déconnecter"
+                  title="Se déconnecter"
+                  className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-white/10 px-2 text-sm font-semibold text-white hover:bg-white/20 disabled:opacity-50 sm:px-3"
+                >
+                  <LogOut aria-hidden="true" className="size-4" />
+                  <span className="hidden sm:inline">Déconnexion</span>
+                </button>
+              </div>
+            )}
+          </div>
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+            {logoutError && <p role="alert" className="text-xs font-medium text-red-200">{logoutError}</p>}
+            <p className="text-xs text-primary-foreground/70">Synchronisé le {updatedAt}</p>
+          </div>
+        </div>
+      </div>
+    </header>
+  )
 
   if (applicationSession !== 'authenticated') {
     return (
-      <section className="mx-auto w-full max-w-md rounded-2xl border border-accent/50 bg-card p-6 shadow-lg">
-        <h2 className="text-xl font-black text-primary">Connexion à l’application</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Connectez-vous pour accéder aux rubriques selon votre rôle. La session reste active 8 heures.
-        </p>
-        {applicationSession === 'checking' ? (
-          <p role="status" className="mt-5 text-sm text-muted-foreground">Vérification de la connexion…</p>
-        ) : applicationSession === 'unavailable' ? (
-          <p role="alert" className="mt-5 text-sm font-medium text-destructive">
-            La connexion n’est pas disponible actuellement. Réessayez dans quelques instants.
-          </p>
-        ) : (
-          <form onSubmit={handleLogin} className="mt-5 grid gap-3">
-            <label className="grid gap-1 text-sm font-semibold">
-              Identifiant ou adresse e-mail
-              <input
-                required
-                autoComplete="username"
-                value={loginUsername}
-                onChange={(event) => setLoginUsername(event.target.value)}
-                className="h-11 rounded-lg border border-accent/50 bg-background px-3 font-normal"
-              />
-            </label>
-            <label className="grid gap-1 text-sm font-semibold">
-              Mot de passe
-              <input
-                required
-                type="password"
-                autoComplete="current-password"
-                value={loginPassword}
-                onChange={(event) => setLoginPassword(event.target.value)}
-                className="h-11 rounded-lg border border-accent/50 bg-background px-3 font-normal"
-              />
-            </label>
-            {loginError && <p role="alert" className="text-sm font-medium text-destructive">{loginError}</p>}
-            <button
-              type="submit"
-              disabled={loginPending}
-              className="mt-1 min-h-11 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
-            >
-              {loginPending ? 'Connexion…' : 'Se connecter'}
-            </button>
-          </form>
-        )}
-      </section>
+      <>
+        {mainHeader}
+        <main className="relative z-20 mx-auto flex max-w-7xl flex-col gap-4 px-4 pt-6 pb-24 md:gap-6 md:px-6 md:pt-8 md:pb-24 xl:pb-8">
+          <section className="mx-auto w-full max-w-md rounded-2xl border border-accent/50 bg-card p-6 shadow-lg">
+            <h2 className="text-xl font-black text-primary">Connexion à l’application</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Connectez-vous pour accéder aux rubriques selon votre rôle. La session reste active 8 heures.
+            </p>
+            {applicationSession === 'checking' ? (
+              <p role="status" className="mt-5 text-sm text-muted-foreground">Vérification de la connexion…</p>
+            ) : applicationSession === 'unavailable' ? (
+              <p role="alert" className="mt-5 text-sm font-medium text-destructive">
+                La connexion n’est pas disponible actuellement. Réessayez dans quelques instants.
+              </p>
+            ) : (
+              <form onSubmit={handleLogin} className="mt-5 grid gap-3">
+                <label className="grid gap-1 text-sm font-semibold">
+                  Identifiant ou adresse e-mail
+                  <input
+                    required
+                    autoComplete="username"
+                    value={loginUsername}
+                    onChange={(event) => setLoginUsername(event.target.value)}
+                    className="h-11 rounded-lg border border-accent/50 bg-background px-3 font-normal"
+                  />
+                </label>
+                <label className="grid gap-1 text-sm font-semibold">
+                  Mot de passe
+                  <input
+                    required
+                    type="password"
+                    autoComplete="current-password"
+                    value={loginPassword}
+                    onChange={(event) => setLoginPassword(event.target.value)}
+                    className="h-11 rounded-lg border border-accent/50 bg-background px-3 font-normal"
+                  />
+                </label>
+                {loginError && <p role="alert" className="text-sm font-medium text-destructive">{loginError}</p>}
+                <button
+                  type="submit"
+                  disabled={loginPending}
+                  className="mt-1 min-h-11 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
+                >
+                  {loginPending ? 'Connexion…' : 'Se connecter'}
+                </button>
+              </form>
+            )}
+          </section>
+          {children}
+        </main>
+      </>
     )
   }
 
   return (
+    <>
+    {mainHeader}
+    <main className="relative z-20 mx-auto flex max-w-7xl flex-col gap-4 px-4 pt-6 pb-24 md:gap-6 md:px-6 md:pt-8 md:pb-24 xl:pb-8">
     <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm xl:grid xl:grid-cols-[220px_minmax(0,1fr)]">
       <nav aria-label="Statistiques" className="hidden border-b border-border bg-card p-2 xl:block xl:border-r xl:border-b-0 xl:p-3">
         <div className="mx-auto flex max-w-3xl gap-2 rounded-full bg-muted p-1 xl:flex-col xl:rounded-xl">
@@ -246,35 +321,6 @@ export function DashboardTabs({
           <DashboardTitle
             {...activeTitle}
             eyebrow={activeTab === 'educator' ? 'ESG Genech · Éducateurs' : undefined}
-            action={educatorIdentity && (
-              <div className="flex shrink-0 items-center gap-2">
-                <span className="hidden text-right text-xs font-semibold text-white sm:block">
-                  {educatorIdentity.displayName.trim().split(/\s+/)[0]} · {
-                    educatorIdentity.role === 'admin' ? 'Admin' :
-                      educatorIdentity.role === 'educator' ? 'Éducateur' : 'Lecteur'
-                  }
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setProfilePhotoOpen(true)}
-                  aria-label="Afficher ou changer ma photo de profil"
-                  title="Ma photo de profil"
-                  className="rounded-full ring-2 ring-accent/70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white"
-                >
-                  <EducatorAvatar username={educatorIdentity.username} revision={profilePhotoRevision} size="size-14" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void handleEducatorLogout()}
-                  disabled={logoutPending}
-                  aria-label="Se déconnecter"
-                  title="Se déconnecter"
-                  className="inline-flex size-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 disabled:opacity-50"
-                >
-                  <LogOut aria-hidden="true" className="size-4" />
-                </button>
-              </div>
-            )}
           />
         </div>
         {activeTab === 'players' && (
@@ -300,7 +346,6 @@ export function DashboardTabs({
         )}
         {activeTab === 'educator' && (
           <div className="flex flex-col gap-4">
-            {logoutError && <p role="alert" className="text-sm font-medium text-destructive">{logoutError}</p>}
             {educatorAccess === 'authenticated' ? (
               <>
                 <nav aria-label="Rubriques éducateurs" className="grid grid-cols-2 gap-2 rounded-xl border border-accent/50 bg-muted/50 p-1.5">
@@ -426,5 +471,8 @@ export function DashboardTabs({
         </div>
       )}
     </section>
+    {children}
+    </main>
+    </>
   )
 }

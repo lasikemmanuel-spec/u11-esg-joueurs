@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useCallback, useRef, type FormEvent } from 'react'
+import { useState, useMemo, useEffect, useLayoutEffect, useCallback, useRef, type FormEvent } from 'react'
 import { Search, Copy, Check, Award, Phone, Save, ChevronDown, ChevronUp, Pencil, X, ContactRound, UsersRound, KeyRound } from 'lucide-react'
 import type { Player, PublicPlayer } from '@/lib/players'
 import { matchesSearch } from '@/lib/search'
@@ -45,7 +45,7 @@ export function EducatorRoster({
   const [query, setQuery] = useState('')
   const [directoryView, setDirectoryView] = useState<DirectoryView>('educators')
   const [expandedPositions, setExpandedPositions] = useState<Set<string>>(() => new Set())
-  const positionControlsRef = useRef<HTMLDivElement | null>(null)
+  const shouldScrollToTopAfterCollapse = useRef(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [educator, setEducator] = useState<EducatorIdentity | null>(initialEducator)
   const [username, setUsername] = useState('')
@@ -252,12 +252,15 @@ export function EducatorRoster({
   const allGroupsExpanded = groups.length > 0 && groups.every(([position]) => expandedPositions.has(position))
   const hasExpandedVisibleGroup = groups.some(([position]) => expandedPositions.has(position))
   const collapseAllPositions = () => {
+    shouldScrollToTopAfterCollapse.current = true
     setExpandedPositions(new Set())
-    window.requestAnimationFrame(() => positionControlsRef.current?.scrollIntoView({
-      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
-      block: 'start',
-    }))
   }
+
+  useLayoutEffect(() => {
+    if (!shouldScrollToTopAfterCollapse.current) return
+    shouldScrollToTopAfterCollapse.current = false
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [expandedPositions])
 
   if (!sessionChecked) {
     return (
@@ -537,11 +540,14 @@ export function EducatorRoster({
             )
           ) : (
             <>
-      <div ref={positionControlsRef} className="scroll-mt-4 flex flex-wrap items-center justify-start gap-2">
+      <div className="flex flex-wrap items-center justify-start gap-2">
         {groups.length > 0 && (
           <button
             type="button"
-            onClick={() => setExpandedPositions(allGroupsExpanded ? new Set() : new Set(groups.map(([position]) => position)))}
+            onClick={() => {
+              if (allGroupsExpanded) collapseAllPositions()
+              else setExpandedPositions(new Set(groups.map(([position]) => position)))
+            }}
             aria-label={allGroupsExpanded ? "Fermer tous les postes" : "Ouvrir tous les postes"}
             title={allGroupsExpanded ? "Fermer tous les postes" : "Ouvrir tous les postes"}
             className="inline-flex h-10 shrink-0 items-center gap-1 rounded-lg border border-accent/40 bg-card px-2 text-xs font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"

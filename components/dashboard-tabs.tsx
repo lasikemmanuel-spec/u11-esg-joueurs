@@ -1,13 +1,14 @@
 'use client'
 
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
-import { CalendarDays, ContactRound, LogOut, X } from 'lucide-react'
+import { CalendarDays, ContactRound, LogOut, UsersRound, X } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import { MatchCallupBreakdown } from '@/components/match-callup-breakdown'
 import { PlayerStats } from '@/components/player-stats'
 import { PositionBreakdown } from '@/components/position-breakdown'
 import { EducatorRoster } from '@/components/educator-roster'
 import { MatchResultEntry } from '@/components/match-result-entry'
+import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
 import { EducatorAvatar } from '@/components/educator-avatar'
 import { EducatorProfilePhotoEditor } from '@/components/educator-profile-photo-editor'
 import { RefreshSheetButton } from '@/components/refresh-sheet-button'
@@ -19,7 +20,7 @@ import type { CohesionDay } from '@/lib/cohesion'
 import type { PlayerStats as PlayerStat } from '@/lib/stats'
 
 type TabKey = 'roster' | 'educator' | 'players' | 'matches'
-type EducatorSection = 'matches' | 'directory'
+type EducatorSection = 'matches' | 'callups' | 'directory'
 type EducatorAccess = 'checking' | 'unauthenticated' | 'authenticated' | 'unavailable'
 type AccountRole = 'educator' | 'admin' | 'reader'
 type EducatorIdentity = { username: string; displayName: string; role: AccountRole }
@@ -335,9 +336,10 @@ export function DashboardTabs({
           <div className="flex flex-col gap-4">
             {educatorAccess === 'authenticated' ? (
               <>
-                <nav aria-label="Rubriques éducateurs" className="grid grid-cols-2 gap-2 rounded-xl border border-accent/50 bg-muted/50 p-1.5">
+                <nav aria-label="Rubriques éducateurs" className="grid grid-cols-3 gap-2 rounded-xl border border-accent/50 bg-muted/50 p-1.5">
                   {([
                     { key: 'matches' as const, label: 'Matchs', Icon: CalendarDays },
+                    { key: 'callups' as const, label: 'Convocations', Icon: UsersRound },
                     { key: 'directory' as const, label: 'Annuaire & licences', Icon: ContactRound },
                   ]).map(({ key, label, Icon }) => {
                     const isActive = educatorSection === key
@@ -372,6 +374,8 @@ export function DashboardTabs({
                       setEducatorSection('directory')
                     }}
                   />
+                ) : educatorSection === 'callups' ? (
+                  <CallupScheduleEntry players={rosterPlayers} convocations={convocations} />
                 ) : (
                   <EducatorRoster
                     initialEducator={educatorIdentity}

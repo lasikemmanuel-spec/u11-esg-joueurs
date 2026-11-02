@@ -160,11 +160,11 @@ export function EducatorDirectory({
       </div>
       )}
       {!isSearching && currentEducator && (
-        <div className="mt-4 flex flex-wrap items-center gap-3 rounded-xl border border-accent/50 bg-background p-3">
-          <EducatorAvatar username={currentEducator.username} revision={photoRevision} size="size-16" />
-          <div className="min-w-0 flex-1">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ma fiche éducateur</p>
-            <p className="truncate font-bold text-foreground">{ownDirectoryEntry?.name ?? currentEducator.displayName}</p>
+        <div className="mt-4 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-xl border border-accent/50 bg-background p-3 sm:flex sm:flex-wrap">
+          <EducatorAvatar username={currentEducator.username} revision={photoRevision} size="size-14 sm:size-16" />
+          <div className="min-w-0 sm:flex-1">
+            <p className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">Ma fiche éducateur</p>
+            <p className="break-words font-bold text-foreground">{ownDirectoryEntry?.name ?? currentEducator.displayName}</p>
             <span className="mt-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
               {currentEducator.role === 'admin' ? 'Administrateur' : currentEducator.role === 'educator' ? 'Éducateur' : 'Lecteur'}
             </span>
@@ -214,7 +214,7 @@ export function EducatorDirectory({
               setError('')
               setOpen(true)
             }}
-            className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-accent/50 bg-card px-3 text-sm font-bold text-primary"
+            className="col-span-2 inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-accent/50 bg-card px-3 text-sm font-bold text-primary sm:ml-auto sm:w-auto"
           >
             <Pencil aria-hidden="true" className="size-4" /> Modifier ma fiche
           </button>

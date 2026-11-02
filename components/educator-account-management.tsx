@@ -204,16 +204,16 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
             const isSelf = account.username.toLocaleLowerCase('fr-FR') === currentUsername.toLocaleLowerCase('fr-FR')
             return (
               <li key={account.username} className="rounded-xl border border-border bg-background p-3">
-                <div className="flex items-start justify-between gap-2">
+                <div className="grid gap-3 sm:flex sm:items-start sm:justify-between sm:gap-2">
                   <div className="min-w-0">
-                    <h3 className="truncate font-bold text-foreground">{account.displayName}{isSelf ? ' (vous)' : ''}</h3>
-                    <p className="mt-1 truncate text-sm text-muted-foreground">{account.username}</p>
+                    <h3 className="break-words font-bold text-foreground sm:truncate">{account.displayName}{isSelf ? ' (vous)' : ''}</h3>
+                    <p className="mt-1 break-all text-sm text-muted-foreground sm:truncate">{account.username}</p>
                     <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs font-semibold">
                       {account.role === 'admin' ? <Shield aria-hidden="true" className="size-3.5" /> : <UserRound aria-hidden="true" className="size-3.5" />}
                       {account.role === 'admin' ? 'Administrateur' : account.role === 'reader' ? 'Lecteur' : 'Éducateur'}
                     </span>
                   </div>
-                  <div className="flex shrink-0 flex-col gap-1.5">
+                  <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:flex-col sm:gap-1.5">
                     <button
                       type="button"
                       onClick={() => {
@@ -228,19 +228,19 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
                         setError('')
                       }}
                       disabled={pendingUsername !== null}
-                      className="inline-flex min-h-8 items-center justify-center gap-1 rounded-lg border border-accent/50 px-2 text-xs font-semibold text-primary disabled:opacity-50"
+                      className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-lg border border-accent/50 px-2 text-xs font-semibold text-primary disabled:opacity-50 sm:min-h-8"
                     >
                       <Pencil aria-hidden="true" className="size-3.5" />
                       Identité
                     </button>
-                    <label className="grid gap-1 text-[11px] font-semibold text-muted-foreground">
+                    <label className="col-span-2 grid min-w-0 gap-1 text-[11px] font-semibold text-muted-foreground sm:col-span-1">
                       Rôle
                       <select
                         value={account.role}
                         onChange={(event) => void updateRole(account, event.target.value as AccountRole)}
                         disabled={pendingUsername !== null || (isSelf && account.role === 'admin')}
                         aria-label={`Rôle de ${account.displayName}`}
-                        className="h-8 rounded-lg border border-accent/50 bg-background px-2 text-xs font-semibold text-primary disabled:opacity-50"
+                        className="h-10 w-full rounded-lg border border-accent/50 bg-background px-2 text-xs font-semibold text-primary disabled:opacity-50 sm:h-8 sm:w-auto"
                       >
                         <option value="admin">Administrateur</option>
                         <option value="educator">Éducateur</option>
@@ -251,7 +251,7 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
                       type="button"
                       onClick={() => { setPasswordDraft(''); setPasswordTarget(account); setError('') }}
                       disabled={pendingUsername !== null}
-                      className="inline-flex min-h-8 items-center justify-center gap-1 rounded-lg border border-accent/50 px-2 text-xs font-semibold text-primary disabled:opacity-50"
+                      className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-lg border border-accent/50 px-2 text-xs font-semibold text-primary disabled:opacity-50 sm:min-h-8"
                     >
                       <KeyRound aria-hidden="true" className="size-3.5" />
                       Mot de passe
@@ -260,7 +260,7 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
                       type="button"
                       onClick={() => void deleteAccount(account)}
                       disabled={pendingUsername !== null || isSelf}
-                      className="inline-flex min-h-8 items-center justify-center gap-1 rounded-lg border border-destructive/40 px-2 text-xs font-semibold text-destructive disabled:opacity-50"
+                      className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-lg border border-destructive/40 px-2 text-xs font-semibold text-destructive disabled:opacity-50 sm:min-h-8"
                     >
                       <Trash2 aria-hidden="true" className="size-3.5" />
                       Supprimer

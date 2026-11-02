@@ -177,7 +177,7 @@ export function DashboardTabs({
           <div className="flex min-w-0 flex-col gap-1">
             <h1 className="text-xl font-extrabold tracking-wide uppercase sm:text-2xl md:text-4xl">ES Genech</h1>
             <p className="text-xs text-accent sm:text-sm md:text-base">Toujours ensemble, allez l’ESG</p>
-            <p className="text-xs text-accent/80 sm:text-sm">Groupe U11 - Saison 2026/2027</p>
+            <p className="text-sm text-white sm:text-base">Groupe U11 - Saison 2026/2027</p>
           </div>
         </div>
         <div className="flex min-w-0 flex-col gap-2 md:items-end">

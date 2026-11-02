@@ -17,6 +17,11 @@ const STATUS_OPTIONS: Array<{ value: EditableCallupStatus; label: string }> = [
   { value: '🩺 Blessé', label: '🩺 Blessé' },
   { value: 'Pas de licence', label: 'Pas de licence' },
 ]
+const TEAM_ONE_STATUS: EditableCallupStatus = '✅ Convoqué E1'
+const TEAM_TWO_STATUS: EditableCallupStatus = '✅ Convoqué E2'
+const OTHER_STATUS_OPTIONS = STATUS_OPTIONS.filter(
+  ({ value }) => value !== TEAM_ONE_STATUS && value !== TEAM_TWO_STATUS,
+)
 
 type SelectionValue = EditableCallupStatus | ''
 
@@ -116,8 +121,8 @@ export function CallupScheduleEntry({
   }, [players, query])
 
   const selectedCount = Object.values(selections).filter(Boolean).length
-  const teamOneCount = Object.values(selections).filter((value) => value === '✅ Convoqué E1').length
-  const teamTwoCount = Object.values(selections).filter((value) => value === '✅ Convoqué E2').length
+  const teamOneCount = Object.values(selections).filter((value) => value === TEAM_ONE_STATUS).length
+  const teamTwoCount = Object.values(selections).filter((value) => value === TEAM_TWO_STATUS).length
   const existingDate = dates.includes(date)
 
   const save = async (event: FormEvent<HTMLFormElement>) => {
@@ -223,6 +228,10 @@ export function CallupScheduleEntry({
           <span className="inline-flex items-center gap-1.5"><UsersRound aria-hidden="true" className="size-4" /> {selectedCount}/{players.length} statuts renseignés</span>
           <span>Équipe 1 : {teamOneCount} · Équipe 2 : {teamTwoCount}</span>
         </div>
+        <p className="rounded-lg border border-accent/40 bg-background px-3 py-2 text-xs leading-relaxed text-muted-foreground sm:hidden">
+          Pour convoquer un joueur, touche <strong className="text-primary">Équipe 1</strong> ou <strong className="text-primary">Équipe 2</strong>.
+          Pour un autre cas, choisis son statut dans la liste.
+        </p>
 
         <div className="flex flex-col gap-2 sm:flex-row">
           <label className="sr-only" htmlFor="callup-player-search">Rechercher un joueur</label>
@@ -239,40 +248,94 @@ export function CallupScheduleEntry({
             onClick={() => setSelections(Object.fromEntries(players.map((player) => [player.number, '❌ Non convoqué'])))}
             className="min-h-10 rounded-lg border border-accent/50 bg-background px-3 text-xs font-semibold text-primary"
           >
-            Tout mettre « Non convoqué »
+            Préremplir : tous non convoqués
           </button>
         </div>
+        <p className="text-[11px] text-muted-foreground">
+          Le préremplissage remplace les choix affichés, mais rien n’est écrit dans le Sheet avant d’appuyer sur « Enregistrer ».
+        </p>
 
         <ul className="divide-y divide-accent/30 rounded-lg border border-accent/40">
-          {visiblePlayers.map((player) => (
-            <li key={player.number} className="grid min-w-0 grid-cols-1 items-center gap-2 px-3 py-2 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,auto)]">
-              <span className="min-w-0 truncate text-sm font-semibold text-foreground">
-                {player.firstName} <span className="font-black uppercase text-primary">{player.lastName}</span>
-              </span>
-              <label className="sr-only" htmlFor={`callup-status-${player.number}`}>Statut de {player.firstName} {player.lastName}</label>
-              <select
-                id={`callup-status-${player.number}`}
-                value={selections[player.number] ?? ''}
-                onChange={(event) => {
-                  const value = event.target.value as SelectionValue
-                  setSelections((current) => ({ ...current, [player.number]: value }))
-                }}
-                className="h-10 w-full min-w-0 rounded-lg border border-accent/50 bg-background px-2 text-sm sm:w-56"
-              >
-                <option value="">Choisir un statut…</option>
-                {STATUS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>{option.label}</option>
-                ))}
-              </select>
-            </li>
-          ))}
+          {visiblePlayers.map((player) => {
+            const selection = selections[player.number] ?? ''
+            const setSelection = (value: SelectionValue) =>
+              setSelections((current) => ({ ...current, [player.number]: value }))
+
+            return (
+              <li key={player.number} className="grid min-w-0 grid-cols-1 items-center gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,auto)] sm:py-2">
+                <span className="min-w-0 truncate text-sm font-semibold text-foreground">
+                  {player.firstName} <span className="font-black uppercase text-primary">{player.lastName}</span>
+                </span>
+                <div className="grid grid-cols-2 gap-2 sm:hidden">
+                  {[TEAM_ONE_STATUS, TEAM_TWO_STATUS].map((status, index) => {
+                    const selected = selection === status
+                    const teamLabel = index === 0 ? 'Équipe 1' : 'Équipe 2'
+                    return (
+                      <button
+                        key={status}
+                        type="button"
+                        aria-pressed={selected}
+                        onClick={() => setSelection(status)}
+                        className={`min-h-11 rounded-lg border px-2 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                          selected
+                            ? 'border-primary bg-primary text-primary-foreground'
+                            : 'border-accent/50 bg-background text-primary'
+                        }`}
+                      >
+                        ✅ {teamLabel}
+                      </button>
+                    )
+                  })}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelection('')}
+                  aria-label={`Vider le statut de ${player.firstName} ${player.lastName}`}
+                  className="min-h-10 rounded-lg border border-accent/50 bg-background px-3 text-xs font-semibold text-muted-foreground hover:bg-muted sm:hidden"
+                >
+                  Vider le statut
+                </button>
+                <label className="sr-only sm:hidden" htmlFor={`callup-other-status-${player.number}`}>
+                  Autre statut de {player.firstName} {player.lastName}
+                </label>
+                <select
+                  id={`callup-other-status-${player.number}`}
+                  value={OTHER_STATUS_OPTIONS.some(({ value }) => value === selection) ? selection : ''}
+                  onChange={(event) => setSelection(event.target.value as SelectionValue)}
+                  className="h-11 w-full min-w-0 rounded-lg border border-accent/50 bg-background px-2 text-sm sm:hidden"
+                >
+                  <option value="">Autre statut…</option>
+                  {OTHER_STATUS_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+                <label className="sr-only hidden sm:block" htmlFor={`callup-status-${player.number}`}>
+                  Statut de {player.firstName} {player.lastName}
+                </label>
+                <select
+                  id={`callup-status-${player.number}`}
+                  value={selection}
+                  onChange={(event) => setSelection(event.target.value as SelectionValue)}
+                  className="hidden h-10 w-full min-w-0 rounded-lg border border-accent/50 bg-background px-2 text-sm sm:block sm:w-56"
+                >
+                  <option value="">Statut vide</option>
+                  {STATUS_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>{option.label}</option>
+                  ))}
+                </select>
+              </li>
+            )
+          })}
         </ul>
 
         {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
         {notice && <p role="status" className="text-sm font-medium text-emerald-700 dark:text-emerald-300">{notice}</p>}
+        <p className="text-xs text-muted-foreground">
+          Un statut vide effacera la cellule du joueur pour cette date lors de l’enregistrement.
+        </p>
         <button
           type="submit"
-          disabled={!savingEnabled || pending || players.length === 0 || selectedCount !== players.length}
+          disabled={!savingEnabled || pending || players.length === 0}
           className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Save aria-hidden="true" className="size-4" />

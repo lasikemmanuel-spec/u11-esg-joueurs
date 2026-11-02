@@ -21,8 +21,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
-function isCallupStatus(value: unknown): value is EditableCallupStatus {
-  return typeof value === 'string' && statuses.some((status) => status === value)
+function isCallupStatus(value: unknown): value is CallupSelection['status'] {
+  return value === '' || (typeof value === 'string' && statuses.some((status) => status === value))
 }
 
 function jsonResponse(body: object, status = 200) {

@@ -17,7 +17,7 @@ export type EditableCallupStatus =
 
 export type CallupSelection = {
   number: number
-  status: EditableCallupStatus
+  status: EditableCallupStatus | ''
 }
 
 function columnName(columnIndex: number) {

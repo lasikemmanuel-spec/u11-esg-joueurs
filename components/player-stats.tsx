@@ -13,6 +13,7 @@ const MATCH_STYLES: Record<MatchStatus, { label: string; className: string }> = 
   absent: { label: 'Absent', className: 'bg-blue-950 text-white' },
   injured: { label: 'Blessé', className: 'bg-red-600 text-white' },
   notCalled: { label: 'Non convoqué', className: 'border border-lime-500 bg-lime-400 text-lime-950' },
+  noLicense: { label: 'Pas de licence', className: 'bg-muted text-muted-foreground' },
   unknown: { label: '?', className: 'bg-muted text-muted-foreground' },
 }
 
@@ -82,6 +83,8 @@ function SaturdaySection({
                         ? 'Conv. abs.'
                         : m.status === 'notCalled'
                           ? 'Non conv.'
+                          : m.status === 'noLicense'
+                            ? 'Sans lic.'
                         : style.label.split(' ')[0]}
                   </span>
                   <span className="sr-only">{style.label}</span>
@@ -90,7 +93,7 @@ function SaturdaySection({
             })}
           </ol>
           <ul className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
-            {(['called', 'calledAbsent', 'absent', 'injured', 'notCalled'] as const).map((s) => (
+            {(['called', 'calledAbsent', 'absent', 'injured', 'notCalled', 'noLicense'] as const).map((s) => (
               <li key={s} className="flex items-center gap-1">
                 <span aria-hidden="true" className={`size-2.5 rounded-sm ${MATCH_STYLES[s].className}`} />
                 {MATCH_STYLES[s].label}

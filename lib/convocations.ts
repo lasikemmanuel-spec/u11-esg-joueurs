@@ -6,7 +6,7 @@ const FIRST_MATCH_COL = 2
 const MATCH_COLS = 30
 const TOTALS_COL = FIRST_MATCH_COL + MATCH_COLS
 
-export type MatchStatus = 'called' | 'absent' | 'injured' | 'notCalled' | 'calledAbsent' | 'present' | 'unknown'
+export type MatchStatus = 'called' | 'absent' | 'injured' | 'notCalled' | 'calledAbsent' | 'present' | 'noLicense' | 'unknown'
 
 export type MatchEntry = {
   date: string
@@ -49,6 +49,7 @@ function parseStatus(raw: string): Pick<MatchEntry, 'status' | 'team'> {
   const team = raw.match(/\bE(\d)\b/)?.[0] ?? null
 
   if (text.includes('bless')) return { status: 'injured', team: null }
+  if (text.includes('licence')) return { status: 'noLicense', team: null }
   if (text.includes('non convoq') || text.includes('non convoqué') || text.includes('non convoque')) {
     return { status: 'notCalled', team: null }
   }

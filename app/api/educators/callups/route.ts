@@ -8,15 +8,13 @@ import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
 export const runtime = 'nodejs'
 
 const statuses = [
-  'called:E1',
-  'called:E2',
-  'called',
-  'present:E1',
-  'present:E2',
-  'calledAbsent',
-  'absent',
-  'injured',
-  'notCalled',
+  '✅ Convoqué E1',
+  '❌ Non convoqué',
+  '⚠️ Convoqué absent',
+  '🗓️ Absent',
+  '✅ Convoqué E2',
+  '🩺 Blessé',
+  'Pas de licence',
 ] as const satisfies readonly EditableCallupStatus[]
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -7,15 +7,13 @@ const FIRST_MATCH_COLUMN = 2
 const MATCH_COLUMN_COUNT = 30
 
 export type EditableCallupStatus =
-  | 'called:E1'
-  | 'called:E2'
-  | 'called'
-  | 'present:E1'
-  | 'present:E2'
-  | 'calledAbsent'
-  | 'absent'
-  | 'injured'
-  | 'notCalled'
+  | '✅ Convoqué E1'
+  | '❌ Non convoqué'
+  | '⚠️ Convoqué absent'
+  | '🗓️ Absent'
+  | '✅ Convoqué E2'
+  | '🩺 Blessé'
+  | 'Pas de licence'
 
 export type CallupSelection = {
   number: number
@@ -46,20 +44,6 @@ function dateKey(value: string) {
     return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
   }
   return ''
-}
-
-function statusLabel(status: EditableCallupStatus) {
-  switch (status) {
-    case 'called:E1': return 'Convoqué E1'
-    case 'called:E2': return 'Convoqué E2'
-    case 'called': return 'Convoqué'
-    case 'present:E1': return 'Présent E1'
-    case 'present:E2': return 'Présent E2'
-    case 'calledAbsent': return 'Convoqué absent'
-    case 'absent': return 'Absent'
-    case 'injured': return 'Blessé'
-    case 'notCalled': return 'Non convoqué'
-  }
 }
 
 export async function writeCallupSchedule(date: string, selections: CallupSelection[]) {
@@ -108,7 +92,7 @@ export async function writeCallupSchedule(date: string, selections: CallupSelect
     { range: cellRange(dateRowIndex), values: [[`${day}/${month}/${year}`]] },
     ...selections.map((selection) => ({
       range: cellRange(playerRows.get(selection.number)!),
-      values: [[statusLabel(selection.status)]],
+      values: [[selection.status]],
     })),
   ]
 

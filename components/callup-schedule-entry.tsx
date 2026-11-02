@@ -9,15 +9,13 @@ import type { PublicPlayer } from '@/lib/players'
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
 
 const STATUS_OPTIONS: Array<{ value: EditableCallupStatus; label: string }> = [
-  { value: 'called:E1', label: 'Convoqué — Équipe 1' },
-  { value: 'called:E2', label: 'Convoqué — Équipe 2' },
-  { value: 'present:E1', label: 'Présent — Équipe 1' },
-  { value: 'present:E2', label: 'Présent — Équipe 2' },
-  { value: 'calledAbsent', label: 'Convoqué absent' },
-  { value: 'absent', label: 'Absent' },
-  { value: 'injured', label: 'Blessé' },
-  { value: 'notCalled', label: 'Non convoqué' },
-  { value: 'called', label: 'Convoqué — équipe à préciser' },
+  { value: '✅ Convoqué E1', label: '✅ Convoqué E1' },
+  { value: '❌ Non convoqué', label: '❌ Non convoqué' },
+  { value: '⚠️ Convoqué absent', label: '⚠️ Convoqué absent' },
+  { value: '🗓️ Absent', label: '🗓️ Absent' },
+  { value: '✅ Convoqué E2', label: '✅ Convoqué E2' },
+  { value: '🩺 Blessé', label: '🩺 Blessé' },
+  { value: 'Pas de licence', label: 'Pas de licence' },
 ]
 
 type SelectionValue = EditableCallupStatus | ''
@@ -44,12 +42,13 @@ function nextSaturday() {
 }
 
 function existingSelection(status: MatchStatus, team: string | null): SelectionValue {
-  if (status === 'called' && team === 'E1') return 'called:E1'
-  if (status === 'called' && team === 'E2') return 'called:E2'
-  if (status === 'present' && team === 'E1') return 'present:E1'
-  if (status === 'present' && team === 'E2') return 'present:E2'
-  if (status === 'calledAbsent' || status === 'absent' || status === 'injured' || status === 'notCalled') return status
-  if (status === 'called') return 'called'
+  if ((status === 'called' || status === 'present') && team === 'E1') return '✅ Convoqué E1'
+  if ((status === 'called' || status === 'present') && team === 'E2') return '✅ Convoqué E2'
+  if (status === 'calledAbsent') return '⚠️ Convoqué absent'
+  if (status === 'absent') return '🗓️ Absent'
+  if (status === 'injured') return '🩺 Blessé'
+  if (status === 'notCalled') return '❌ Non convoqué'
+  if (status === 'noLicense') return 'Pas de licence'
   return ''
 }
 
@@ -117,8 +116,8 @@ export function CallupScheduleEntry({
   }, [players, query])
 
   const selectedCount = Object.values(selections).filter(Boolean).length
-  const teamOneCount = Object.values(selections).filter((value) => value === 'called:E1' || value === 'present:E1').length
-  const teamTwoCount = Object.values(selections).filter((value) => value === 'called:E2' || value === 'present:E2').length
+  const teamOneCount = Object.values(selections).filter((value) => value === '✅ Convoqué E1').length
+  const teamTwoCount = Object.values(selections).filter((value) => value === '✅ Convoqué E2').length
   const existingDate = dates.includes(date)
 
   const save = async (event: FormEvent<HTMLFormElement>) => {
@@ -237,7 +236,7 @@ export function CallupScheduleEntry({
           />
           <button
             type="button"
-            onClick={() => setSelections(Object.fromEntries(players.map((player) => [player.number, 'notCalled'])))}
+            onClick={() => setSelections(Object.fromEntries(players.map((player) => [player.number, '❌ Non convoqué'])))}
             className="min-h-10 rounded-lg border border-accent/50 bg-background px-3 text-xs font-semibold text-primary"
           >
             Tout mettre « Non convoqué »

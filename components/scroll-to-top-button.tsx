@@ -26,7 +26,7 @@ export function ScrollToTopButton() {
         aria-label="Descendre en bas de la page"
         title="Descendre en bas"
         onClick={() => scrollTo('bottom')}
-        className="inline-flex size-12 items-center justify-center rounded-full border-2 border-accent bg-primary text-primary-foreground shadow-[0_6px_24px_rgba(0,0,0,0.28)] transition-transform hover:translate-y-1 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+        className="hidden size-12 items-center justify-center rounded-full border-2 border-accent bg-primary text-primary-foreground shadow-[0_6px_24px_rgba(0,0,0,0.28)] transition-transform hover:translate-y-1 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:inline-flex"
       >
         <ArrowDown aria-hidden="true" className="size-6" />
       </button>

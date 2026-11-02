@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useCallback, type FormEvent } from 'react'
+import { useState, useMemo, useEffect, useCallback, useRef, type FormEvent } from 'react'
 import { Search, Copy, Check, Award, Phone, Save, ChevronDown, ChevronUp, Pencil, X, ContactRound, UsersRound, KeyRound } from 'lucide-react'
 import type { Player, PublicPlayer } from '@/lib/players'
 import { matchesSearch } from '@/lib/search'
@@ -45,6 +45,7 @@ export function EducatorRoster({
   const [query, setQuery] = useState('')
   const [directoryView, setDirectoryView] = useState<DirectoryView>('educators')
   const [expandedPositions, setExpandedPositions] = useState<Set<string>>(() => new Set())
+  const positionControlsRef = useRef<HTMLDivElement | null>(null)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [educator, setEducator] = useState<EducatorIdentity | null>(initialEducator)
   const [username, setUsername] = useState('')
@@ -250,6 +251,13 @@ export function EducatorRoster({
   const matchingPlayers = groups.flatMap(([, list]) => list)
   const allGroupsExpanded = groups.length > 0 && groups.every(([position]) => expandedPositions.has(position))
   const hasExpandedVisibleGroup = groups.some(([position]) => expandedPositions.has(position))
+  const collapseAllPositions = () => {
+    setExpandedPositions(new Set())
+    window.requestAnimationFrame(() => positionControlsRef.current?.scrollIntoView({
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+      block: 'start',
+    }))
+  }
 
   if (!sessionChecked) {
     return (
@@ -435,7 +443,7 @@ export function EducatorRoster({
                     const label = parent === 'father' ? 'Papa' : 'Maman'
                     const key = `${player.number}-${parent}`
                     return (
-                      <div key={parent} className="flex flex-nowrap items-center gap-2">
+                      <div key={parent} className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
                         <button
                           type="button"
                           onClick={() => setVisiblePhones((current) => ({ ...current, [key]: !current[key] }))}
@@ -448,13 +456,13 @@ export function EducatorRoster({
                           <span>{label}</span>
                         </button>
                         {visiblePhones[key] && (
-                          <div className="inline-flex shrink-0 flex-nowrap items-center gap-2 whitespace-nowrap">
-                            <span className="text-sm font-semibold text-primary">{value}</span>
+                          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
+                            <span className="min-w-0 break-all text-sm font-semibold text-primary">{value}</span>
                             {isPhoneDevice && (
                               <a
                                 href={`tel:${value.replace(/[^\d+]/g, '')}`}
                                 aria-label={`Appeler ${label} pour ${player.firstName} ${player.lastName}`}
-                                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground"
+                                className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground"
                               >
                                 <Phone aria-hidden="true" className="size-3.5" />
                                 Appeler
@@ -507,13 +515,13 @@ export function EducatorRoster({
                           </button>
                         )}
                         {phone?.legacyPhone && visiblePhones[`${player.number}-legacy`] && (
-                          <div className="inline-flex shrink-0 flex-nowrap items-center gap-2 whitespace-nowrap">
-                            <span className="text-sm font-semibold text-primary">{phone.legacyPhone}</span>
+                          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
+                            <span className="min-w-0 break-all text-sm font-semibold text-primary">{phone.legacyPhone}</span>
                             {isPhoneDevice && (
                               <a
                                 href={`tel:${phone.legacyPhone.replace(/[^\d+]/g, '')}`}
                                 aria-label={`Appeler l’autre contact de ${player.firstName} ${player.lastName}`}
-                                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground"
+                                className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground"
                               >
                                 <Phone aria-hidden="true" className="size-3.5" />
                                 Appeler
@@ -529,7 +537,7 @@ export function EducatorRoster({
             )
           ) : (
             <>
-      <div className="flex flex-wrap items-center justify-start gap-2">
+      <div ref={positionControlsRef} className="scroll-mt-4 flex flex-wrap items-center justify-start gap-2">
         {groups.length > 0 && (
           <button
             type="button"
@@ -605,7 +613,7 @@ export function EducatorRoster({
                     const label = parent === 'father' ? 'Papa' : 'Maman'
                     const key = player.number + '-' + parent
                     return (
-                      <div key={parent} className="flex flex-nowrap items-center gap-2">
+                      <div key={parent} className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
                         <button
                           type="button"
                           onClick={() => setVisiblePhones((current) => ({ ...current, [key]: !current[key] }))}
@@ -618,14 +626,14 @@ export function EducatorRoster({
                           <span>{label}</span>
                         </button>
                         {visiblePhones[key] && (
-                          <div className="inline-flex shrink-0 flex-nowrap items-center gap-2 whitespace-nowrap">
-                            <span className="text-sm font-semibold text-primary">{value}</span>
+                          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
+                            <span className="min-w-0 break-all text-sm font-semibold text-primary">{value}</span>
                             {isPhoneDevice && (
                               <a
                                 href={'tel:' + value.replace(/[^\d+]/g, '')}
                                 aria-label={`Appeler ${label} pour ${player.firstName} ${player.lastName}`}
                                 title={`Appeler ${label}`}
-                                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground"
+                                className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground"
                               >
                                 <Phone aria-hidden="true" className="size-3.5" />
                                 Appeler
@@ -677,13 +685,13 @@ export function EducatorRoster({
                                 Autre contact
                               </button>
                               {visiblePhones[player.number + '-legacy'] && (
-                                <div className="inline-flex shrink-0 flex-nowrap items-center gap-2 whitespace-nowrap">
-                                  <span className="text-sm font-semibold text-primary">{phone.legacyPhone}</span>
+                                <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
+                                  <span className="min-w-0 break-all text-sm font-semibold text-primary">{phone.legacyPhone}</span>
                                   {isPhoneDevice && (
                                     <a
                                       href={'tel:' + phone.legacyPhone.replace(/[^\d+]/g, '')}
                                       aria-label="Appeler l’autre contact"
-                                      className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground"
+                                      className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground"
                                     >
                                       <Phone aria-hidden="true" className="size-3.5" />
                                       Appeler
@@ -823,7 +831,7 @@ export function EducatorRoster({
         <div className="pointer-events-none fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center sm:hidden">
           <button
             type="button"
-            onClick={() => setExpandedPositions(new Set())}
+            onClick={collapseAllPositions}
             aria-label="Replier tous les postes ouverts"
             title="Replier tous les postes ouverts"
             className="pointer-events-auto inline-flex min-h-10 items-center gap-1.5 rounded-full border border-accent bg-primary px-4 text-xs font-bold text-primary-foreground shadow-lg"

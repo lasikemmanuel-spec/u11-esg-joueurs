@@ -168,7 +168,7 @@ export function EducatorDirectory({
             <span className="mt-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
               {currentEducator.role === 'admin' ? 'Administrateur' : currentEducator.role === 'educator' ? 'Éducateur' : 'Lecteur'}
             </span>
-            <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+            <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
               <span>Licence FFF : <strong className="text-primary">{ownDirectoryEntry?.licenseNumber || 'non renseignée'}</strong></span>
               {ownDirectoryEntry?.phone && (
                 <div className="flex flex-wrap items-center gap-2">
@@ -183,14 +183,14 @@ export function EducatorDirectory({
                     <span>Téléphone</span>
                   </button>
                   {visiblePhones[ownPhoneKey] && (
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-semibold text-primary">{ownDirectoryEntry.phone}</span>
+                    <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
+                      <span className="min-w-0 break-all text-sm font-semibold text-primary">{ownDirectoryEntry.phone}</span>
                       {isPhoneDevice && (
                         <a
                           href={`tel:${ownDirectoryEntry.phone.replace(/[^+\d]/g, '')}`}
                           aria-label={`Appeler ${ownDirectoryEntry.name}`}
                           title={`Appeler ${ownDirectoryEntry.name}`}
-                          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground"
+                          className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground"
                         >
                           <Phone aria-hidden="true" className="size-3.5" />
                           Appeler
@@ -253,14 +253,14 @@ export function EducatorDirectory({
                           <span>Téléphone</span>
                         </button>
                         {visiblePhones[educator.id] && (
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm font-semibold text-primary">{educator.phone}</span>
+                          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
+                            <span className="min-w-0 break-all text-sm font-semibold text-primary">{educator.phone}</span>
                             {isPhoneDevice && (
                               <a
                                 href={`tel:${educator.phone.replace(/[^+\d]/g, '')}`}
                                 aria-label={`Appeler ${educator.name}`}
                                 title={`Appeler ${educator.name}`}
-                                className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground"
+                                className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground"
                               >
                                 <Phone aria-hidden="true" className="size-3.5" />
                                 Appeler

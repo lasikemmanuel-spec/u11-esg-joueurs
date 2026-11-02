@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { RefreshCw } from 'lucide-react'
 import { refreshSheetData } from '@/app/actions'
 
-export function RefreshSheetButton() {
+export function RefreshSheetButton({ compact = false }: { compact?: boolean }) {
   const router = useRouter()
   const [canRefresh, setCanRefresh] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -42,16 +42,19 @@ export function RefreshSheetButton() {
   if (!canRefresh) return null
 
   return (
-    <div className="flex flex-col items-start gap-1 md:items-end">
+    <div className="flex flex-row items-center gap-1 md:items-end">
       <button
         type="button"
         onClick={refresh}
         disabled={isPending}
         aria-busy={isPending}
-        className="inline-flex w-fit items-center gap-2 rounded-xl border border-primary-foreground/25 bg-primary-foreground/10 px-4 py-2 text-sm font-semibold text-primary-foreground hover:bg-primary-foreground/15 disabled:cursor-wait disabled:opacity-70"
+        className="inline-flex min-h-10 w-fit items-center justify-center gap-1.5 rounded-xl border border-primary-foreground/25 bg-primary-foreground/10 px-2.5 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary-foreground/15 disabled:cursor-wait disabled:opacity-70 sm:gap-2 sm:px-4 sm:text-sm"
       >
         <RefreshCw aria-hidden="true" className={`size-4 ${isPending ? 'animate-spin' : ''}`} />
-        {isPending ? 'Actualisation…' : 'Actualiser les données'}
+        <span className={compact ? 'sm:hidden' : 'hidden'}>{isPending ? 'Actualisation…' : 'Actualiser'}</span>
+        <span className={compact ? 'hidden sm:inline' : ''}>
+          {isPending ? 'Actualisation…' : 'Actualiser les données'}
+        </span>
       </button>
       {error && <p role="alert" className="max-w-xs text-right text-xs text-red-200">{error}</p>}
     </div>

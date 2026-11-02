@@ -171,23 +171,23 @@ export function DashboardTabs({
   }[activeTab]
   const mainHeader = (
     <header className="relative z-20 border-b-2 border-accent bg-gradient-to-b from-[oklch(0.32_0.06_272)] to-primary text-primary-foreground">
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-4 sm:py-5 md:flex-row md:items-center md:justify-between md:px-6 md:py-6">
-        <div className="flex items-center gap-4 md:gap-5">
-          <ClubCrest className="size-16 md:size-24" />
+      <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:gap-4 sm:py-5 md:flex-row md:items-center md:justify-between md:px-6 md:py-6">
+        <div className="flex items-center gap-3 sm:gap-4 md:gap-5">
+          <ClubCrest className="size-14 shrink-0 sm:size-16 md:size-24" />
           <div className="flex min-w-0 flex-col gap-1">
-            <h1 className="text-2xl font-extrabold tracking-wide uppercase md:text-4xl">ES Genech</h1>
-            <p className="text-sm text-accent md:text-base">Toujours ensemble, allez l’ESG</p>
-            <p className="text-sm text-accent/80">Groupe U11 - Saison 2026/2027</p>
+            <h1 className="text-xl font-extrabold tracking-wide uppercase sm:text-2xl md:text-4xl">ES Genech</h1>
+            <p className="text-xs text-accent sm:text-sm md:text-base">Toujours ensemble, allez l’ESG</p>
+            <p className="text-xs text-accent/80 sm:text-sm">Groupe U11 - Saison 2026/2027</p>
           </div>
         </div>
         <div className="flex min-w-0 flex-col gap-2 md:items-end">
-          <div className="flex flex-wrap items-center gap-2 md:justify-end">
-            <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 md:justify-end">
+            <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
               <ThemeToggle />
-              <RefreshSheetButton />
+              <RefreshSheetButton compact />
             </div>
             {educatorIdentity && (
-              <div className="flex items-center gap-2 rounded-xl border border-primary-foreground/20 bg-primary-foreground/5 px-2 py-1.5">
+              <div className="flex min-w-0 items-center gap-1.5 rounded-xl border border-primary-foreground/20 bg-primary-foreground/5 px-1.5 py-1 sm:gap-2 sm:px-2 sm:py-1.5">
                 <button
                   type="button"
                   onClick={() => setProfilePhotoOpen(true)}
@@ -195,10 +195,10 @@ export function DashboardTabs({
                   title="Ma photo de profil"
                   className="shrink-0 rounded-full ring-2 ring-accent/70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white"
                 >
-                  <EducatorAvatar username={educatorIdentity.username} revision={profilePhotoRevision} size="size-11" />
+                  <EducatorAvatar username={educatorIdentity.username} revision={profilePhotoRevision} size="size-10 sm:size-11" />
                 </button>
-                <span className="min-w-0 text-xs font-semibold leading-tight">
-                  <span className="block truncate text-sm">
+                <span className="min-w-0 text-[11px] font-semibold leading-tight sm:text-xs">
+                  <span className="block max-w-20 truncate text-sm sm:max-w-none">
                     {educatorIdentity.displayName.trim().split(/\s+/)[0]}
                   </span>
                   <span className="block text-primary-foreground/70">
@@ -212,7 +212,7 @@ export function DashboardTabs({
                   disabled={logoutPending}
                   aria-label="Se déconnecter"
                   title="Se déconnecter"
-                  className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-white/10 px-2 text-sm font-semibold text-white hover:bg-white/20 disabled:opacity-50 sm:px-3"
+                  className="inline-flex size-10 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-white/10 text-sm font-semibold text-white hover:bg-white/20 disabled:opacity-50 sm:size-auto sm:min-h-10 sm:px-3"
                 >
                   <LogOut aria-hidden="true" className="size-4" />
                   <span className="hidden sm:inline">Déconnexion</span>

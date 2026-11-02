@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ChevronDown, ChevronUp, Search } from 'lucide-react'
 import { PlayerCard } from '@/components/player-stats'
 import type { Convocation } from '@/lib/convocations'
@@ -33,6 +33,7 @@ export function PositionBreakdown({
   const [query, setQuery] = useState('')
   const [expandedPositions, setExpandedPositions] = useState<Set<string>>(() => new Set())
   const playerCardRef = useRef<HTMLDivElement>(null)
+  const shouldScrollToTopAfterCollapse = useRef(false)
   const searchTerm = normalizeName(query.trim())
   const matchingPlayers = searchTerm
     ? players.filter((player) =>
@@ -53,6 +54,9 @@ export function PositionBreakdown({
   const allGroupsExpanded = sorted.length > 0 && sorted.every(([position, list]) =>
     expandedPositions.has(position) || list.some((player) => player.number === selectedNumber),
   )
+  const hasExpandedVisibleGroup = sorted.some(([position, list]) =>
+    expandedPositions.has(position) || list.some((player) => player.number === selectedNumber),
+  )
   const selectedPlayer = players.find((player) => player.number === selectedNumber)
   const selectedStats = selectedPlayer
     ? stats.find((playerStats) => playerStats.number === selectedPlayer.number) ?? {
@@ -69,6 +73,20 @@ export function PositionBreakdown({
         ire: null,
       }
     : null
+
+  const collapseAllPositions = () => {
+    shouldScrollToTopAfterCollapse.current = true
+    setExpandedPositions(new Set())
+    setSelectedNumber(null)
+  }
+
+  useLayoutEffect(() => {
+    if (!shouldScrollToTopAfterCollapse.current) return
+    shouldScrollToTopAfterCollapse.current = false
+    if (window.matchMedia('(max-width: 639px)').matches) {
+      window.scrollTo({ top: 0, behavior: 'instant' })
+    }
+  }, [expandedPositions, selectedNumber])
 
   useEffect(() => {
     if (selectedNumber === null) return
@@ -94,8 +112,7 @@ export function PositionBreakdown({
             type="button"
             onClick={() => {
               if (allGroupsExpanded) {
-                setExpandedPositions(new Set())
-                setSelectedNumber(null)
+                collapseAllPositions()
               } else {
                 setExpandedPositions(new Set(sorted.map(([position]) => position)))
               }
@@ -129,7 +146,7 @@ export function PositionBreakdown({
       </div>
 
       <div className={`roster-player-layout grid items-start gap-4 ${selectedPlayer ? 'has-selected-player' : ''}`}>
-        <div className={`roster-player-groups columns-1 gap-3 sm:columns-2 ${selectedPlayer ? '2xl:columns-2' : 'xl:columns-3'}`}>
+        <div className={`roster-player-groups grid grid-cols-1 items-start gap-3 sm:grid-cols-2 ${selectedPlayer ? '2xl:grid-cols-2' : 'xl:grid-cols-3'}`}>
             {matchingPlayers.length === 0 && (
               <p className="break-inside-avoid rounded-lg border border-accent/40 bg-card p-3 text-sm text-muted-foreground">
                 {searchTerm
@@ -142,7 +159,7 @@ export function PositionBreakdown({
               const isExpanded = expandedPositions.has(position) || isSelectedGroup
               const groupId = `roster-position-${groupIndex}`
               return (
-              <article key={position} className="mb-3 flex scroll-mt-4 break-inside-avoid flex-col overflow-hidden rounded-lg border border-accent/50 bg-card shadow-sm">
+              <article key={position} className="flex scroll-mt-4 flex-col overflow-hidden rounded-lg border border-accent/50 bg-card shadow-sm">
                 <h3>
                   <button
                     type="button"
@@ -217,6 +234,20 @@ export function PositionBreakdown({
           </div>
         )}
       </div>
+      {hasExpandedVisibleGroup && (
+        <div className="pointer-events-none fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center sm:hidden">
+          <button
+            type="button"
+            onClick={collapseAllPositions}
+            aria-label="Replier tous les postes ouverts"
+            title="Replier tous les postes ouverts"
+            className="pointer-events-auto inline-flex min-h-10 items-center gap-1.5 rounded-full border border-accent bg-primary px-4 text-xs font-bold text-primary-foreground shadow-lg"
+          >
+            <ChevronUp aria-hidden="true" className="size-4" />
+            Tout replier
+          </button>
+        </div>
+      )}
     </section>
   )
 }

@@ -1,8 +1,18 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { ArrowDown, ArrowUp } from 'lucide-react'
 
 export function ScrollToTopButton() {
+  const [hasScrolled, setHasScrolled] = useState(false)
+
+  useEffect(() => {
+    const updateScrollState = () => setHasScrolled(window.scrollY > 120)
+    updateScrollState()
+    window.addEventListener('scroll', updateScrollState, { passive: true })
+    return () => window.removeEventListener('scroll', updateScrollState)
+  }, [])
+
   const scrollTo = (position: 'top' | 'bottom') => {
     window.scrollTo({
       top: position === 'top' ? 0 : document.documentElement.scrollHeight,
@@ -17,7 +27,7 @@ export function ScrollToTopButton() {
         aria-label="Remonter en haut de la page"
         title="Remonter en haut"
         onClick={() => scrollTo('top')}
-        className="inline-flex size-12 items-center justify-center rounded-full border-2 border-accent bg-primary text-primary-foreground shadow-[0_6px_24px_rgba(0,0,0,0.28)] transition-transform hover:-translate-y-1 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+        className={`${hasScrolled ? 'inline-flex' : 'hidden'} size-12 items-center justify-center rounded-full border-2 border-accent bg-primary text-primary-foreground shadow-[0_6px_24px_rgba(0,0,0,0.28)] transition-transform hover:-translate-y-1 hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 sm:inline-flex`}
       >
         <ArrowUp aria-hidden="true" className="size-6" />
       </button>

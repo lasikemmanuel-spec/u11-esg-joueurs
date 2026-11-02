@@ -8,7 +8,6 @@ import { PlayerStats } from '@/components/player-stats'
 import { PositionBreakdown } from '@/components/position-breakdown'
 import { EducatorRoster } from '@/components/educator-roster'
 import { MatchResultEntry } from '@/components/match-result-entry'
-import { DashboardTitle } from '@/components/dashboard-title'
 import { EducatorAvatar } from '@/components/educator-avatar'
 import { EducatorProfilePhotoEditor } from '@/components/educator-profile-photo-editor'
 import { RefreshSheetButton } from '@/components/refresh-sheet-button'
@@ -163,12 +162,6 @@ export function DashboardTabs({
       ? [{ key: 'educator' as const, label: 'Éducateurs' }]
       : []),
   ]
-  const activeTitle = {
-    roster: { title: 'Effectifs', subtitle: 'Joueurs regroupés par poste.' },
-    players: { title: 'Stats Joueurs', subtitle: 'Top 5 buteurs, passeurs, entraînements et matchs joués.' },
-    matches: { title: 'Stats Matchs', subtitle: 'Résultats, scores et convocations.' },
-    educator: { title: 'Éducateurs', subtitle: 'Annuaire, calendrier et informations du groupe.' },
-  }[activeTab]
   const mainHeader = (
     <header className="relative z-20 border-b-2 border-accent bg-gradient-to-b from-[oklch(0.32_0.06_272)] to-primary text-primary-foreground">
       <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:gap-4 sm:py-5 md:flex-row md:items-center md:justify-between md:px-6 md:py-6">
@@ -317,12 +310,6 @@ export function DashboardTabs({
       </nav>
 
       <div className="min-w-0 p-3 sm:p-4 md:p-5">
-        <div className="mb-3 sm:mb-4">
-          <DashboardTitle
-            {...activeTitle}
-            eyebrow={activeTab === 'educator' ? 'ESG Genech · Éducateurs' : undefined}
-          />
-        </div>
         {activeTab === 'players' && (
           <PlayerStats players={players} />
         )}

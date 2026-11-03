@@ -385,7 +385,7 @@ export function MatchResultEntry({
               </header>
               <div className="flex flex-col gap-2 p-2 sm:p-3">
                 {matches.map((entry) => (
-                  <div key={entry.team + '-' + entry.slotColumn} className="relative flex flex-wrap items-start justify-between gap-3 rounded-lg border border-border px-3 py-3">
+                  <div key={entry.team + '-' + entry.slotColumn} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-border px-3 py-3">
                     <div className="min-w-0">
                       <p className="flex flex-wrap items-center gap-x-1.5 text-xs font-semibold text-muted-foreground">
                         <span>Équipe {entry.team === 'E1' ? '1' : '2'}</span>
@@ -396,7 +396,7 @@ export function MatchResultEntry({
                       </p>
                       <h4 className="mt-1 truncate font-bold text-foreground">{entry.opponent || 'Adversaire à préciser'}</h4>
                     </div>
-                    <div className="flex shrink-0 flex-col items-end gap-2">
+                    <div className="flex shrink-0 items-center gap-2">
                       {canManage && (
                         <button
                           type="button"

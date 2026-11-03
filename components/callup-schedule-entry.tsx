@@ -326,6 +326,13 @@ export function CallupScheduleEntry({
             const setSelection = (value: SelectionValue) =>
               setSelections((current) => ({ ...current, [player.number]: value }))
             const playerIre = playerStats.find((stats) => stats.number === player.number)?.ire
+            const ireTone = playerIre === null || playerIre === undefined
+              ? 'bg-slate-100 text-slate-700'
+              : playerIre > 1.1
+                ? 'bg-red-100 text-red-800'
+                : playerIre < 0.9
+                  ? 'bg-orange-100 text-orange-800'
+                  : 'bg-emerald-100 text-emerald-800'
             const playerTrainingStatuses = relevantTrainingDates.map((sessionDate) => ({
               date: sessionDate,
               status: attendanceByDate.get(sessionDate)?.[player.number],
@@ -339,7 +346,7 @@ export function CallupScheduleEntry({
                     <span className="min-w-0 truncate text-sm font-semibold text-foreground">
                       {player.firstName} <span className="font-black uppercase text-primary">{player.lastName}</span>
                     </span>
-                    <span className="shrink-0 rounded bg-[#dbeafe] px-1.5 py-0.5 text-[10px] font-bold text-[#172554]">
+                    <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold ${ireTone}`}>
                       IRE {playerIre === null || playerIre === undefined ? '—' : playerIre.toFixed(2).replace('.', ',')}
                     </span>
                   </div>
@@ -384,7 +391,7 @@ export function CallupScheduleEntry({
 
         {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
         {notice && <p role="status" className="text-sm font-medium text-emerald-700 dark:text-emerald-300">{notice}</p>}
-        <div className="fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center px-3 py-1 xl:inset-x-auto xl:right-6 xl:bottom-6 xl:justify-end xl:px-0">
+        <div className="fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center px-3 py-1 xl:inset-x-auto xl:right-24 xl:bottom-6 xl:justify-end xl:px-0">
           <button
             type="submit"
             disabled={!savingEnabled || pending || players.length === 0 || dates.length === 0}

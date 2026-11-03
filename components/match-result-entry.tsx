@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, Check, Pencil, Plus, Save, UsersRound } from 'lucide-react'
+import { Check, Pencil, Plus, Save, UsersRound } from 'lucide-react'
 import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
 import type { MatchSheetEntry } from '@/lib/match-results'
 import type { Convocation } from '@/lib/convocations'
@@ -221,7 +221,6 @@ export function MatchResultEntry({
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h2 id="match-entry-title" className="font-bold text-primary">Calendrier et résultats des matchs</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Choisis un mois pour voir les rencontres E1 et E2.</p>
         </div>
         <div className="flex shrink-0 items-end gap-2">
           <label className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
@@ -378,15 +377,18 @@ export function MatchResultEntry({
               </header>
               <div className="flex flex-col gap-2 p-2 sm:p-3">
                 {matches.map((entry) => (
-                  <div key={entry.team + '-' + entry.slotColumn} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border px-3 py-3">
+                  <div key={entry.team + '-' + entry.slotColumn} className="relative flex flex-wrap items-start justify-between gap-3 rounded-lg border border-border px-3 py-3">
                     <div className="min-w-0">
-                      <p className="text-xs font-semibold text-muted-foreground">
-                        Équipe {entry.team === 'E1' ? '1' : '2'} · {entry.competition || 'Type à préciser'}
+                      <p className="flex flex-wrap items-center gap-x-1.5 pr-10 text-xs font-semibold text-muted-foreground">
+                        <span>Équipe {entry.team === 'E1' ? '1' : '2'}</span>
+                        <span aria-hidden="true">·</span>
+                        <span>{entry.competition || 'Type à préciser'}</span>
+                        <span aria-hidden="true">·</span>
+                        <span>{entry.homeAway || 'Lieu à préciser'}</span>
                       </p>
                       <h4 className="mt-1 truncate font-bold text-foreground">{entry.opponent || 'Adversaire à préciser'}</h4>
-                      <p className="text-xs text-muted-foreground">{entry.homeAway || 'Lieu à préciser'}</p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex shrink-0 items-center gap-2">
                       <span className="rounded-lg bg-muted px-3 py-2 font-mono text-sm font-bold text-primary">
                         {entry.resultLabel === 'Annulé'
                           ? 'Annulé'
@@ -399,10 +401,9 @@ export function MatchResultEntry({
                           type="button"
                           onClick={() => startEdit(entry)}
                           aria-label={'Modifier le match contre ' + (entry.opponent || 'cet adversaire')}
-                          className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-accent/50 px-3 text-xs font-semibold text-primary"
+                          className="absolute top-2 right-2 inline-flex size-9 items-center justify-center rounded-lg border border-accent/50 text-primary"
                         >
                           <Pencil aria-hidden="true" className="size-3.5" />
-                          Modifier
                         </button>
                       )}
                     </div>
@@ -424,10 +425,6 @@ export function MatchResultEntry({
         })}
       </div>
 
-      <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-        <CalendarDays aria-hidden="true" className="size-3.5" />
-        Le match reste sur sa ligne E1/E2 quand tu modifies sa date, son adversaire ou son score.
-      </p>
     </section>
   )
 }

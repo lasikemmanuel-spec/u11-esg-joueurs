@@ -34,6 +34,7 @@ export type Convocation = {
 export type ConvocationsData = {
   players: Convocation[]
   matchesPlayed: number
+  matchDates: string[]
   presentCounts: Record<string, number>
 }
 
@@ -132,5 +133,5 @@ export async function getConvocations(): Promise<ConvocationsData> {
     })
   }
 
-  return { players, matchesPlayed: dates.filter(Boolean).length, presentCounts }
+  return { players, matchesPlayed: dates.filter(Boolean).length, matchDates: dates.filter(Boolean), presentCounts }
 }

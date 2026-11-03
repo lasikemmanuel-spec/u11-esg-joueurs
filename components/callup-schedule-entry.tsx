@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { Save, UsersRound } from 'lucide-react'
+import { ClubCrest } from '@/components/club-crest'
 import type { Convocation, MatchStatus } from '@/lib/convocations'
 import type { EditableCallupStatus } from '@/lib/convocation-management'
 import type { PublicPlayer } from '@/lib/players'
@@ -39,13 +40,6 @@ function dateKey(value: string) {
   return ''
 }
 
-function nextSaturday() {
-  const date = new Date()
-  date.setDate(date.getDate() + ((6 - date.getDay() + 7) % 7))
-  date.setMinutes(date.getMinutes() - date.getTimezoneOffset())
-  return date.toISOString().slice(0, 10)
-}
-
 function existingSelection(status: MatchStatus, team: string | null): SelectionValue {
   if ((status === 'called' || status === 'present') && team === 'E1') return '✅ Convoqué E1'
   if ((status === 'called' || status === 'present') && team === 'E2') return '✅ Convoqué E2'
@@ -71,12 +65,16 @@ function selectionForPlayer(
 export function CallupScheduleEntry({
   players,
   convocations,
+  convocationDates,
+  scheduledMatchDates,
 }: {
   players: PublicPlayer[]
   convocations: Convocation[]
+  convocationDates: string[]
+  scheduledMatchDates: string[]
 }) {
   const router = useRouter()
-  const [date, setDate] = useState(nextSaturday)
+  const [date, setDate] = useState('')
   const [selections, setSelections] = useState<Record<number, SelectionValue>>({})
   const [query, setQuery] = useState('')
   const [pending, setPending] = useState(false)
@@ -108,10 +106,21 @@ export function CallupScheduleEntry({
     ))
   }, [players, convocations, date])
 
-  const dates = useMemo(() => {
-    const values = new Set(convocations.flatMap((player) => player.matches.map((match) => dateKey(match.date)).filter(Boolean)))
-    return [...values].sort((a, b) => b.localeCompare(a))
-  }, [convocations])
+  const dates = useMemo(() => [...new Set(
+    scheduledMatchDates
+      .map(dateKey)
+      .filter((value) => value >= MATCH_SEASON_START && value <= MATCH_SEASON_END)
+      .filter((value) => new Date(`${value}T12:00:00`).getDay() === 6),
+  )].sort(), [scheduledMatchDates])
+  const savedDates = useMemo(() => new Set(convocationDates.map(dateKey).filter(Boolean)), [convocationDates])
+
+  useEffect(() => {
+    if (dates.includes(date)) return
+    const today = new Date()
+    today.setMinutes(today.getMinutes() - today.getTimezoneOffset())
+    const todayKey = today.toISOString().slice(0, 10)
+    setDate(dates.find((value) => value >= todayKey) ?? dates.at(-1) ?? '')
+  }, [dates, date])
 
   const visiblePlayers = useMemo(() => {
     const normalizedQuery = query.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr-FR')
@@ -123,10 +132,14 @@ export function CallupScheduleEntry({
   const selectedCount = Object.values(selections).filter(Boolean).length
   const teamOneCount = Object.values(selections).filter((value) => value === TEAM_ONE_STATUS).length
   const teamTwoCount = Object.values(selections).filter((value) => value === TEAM_TWO_STATUS).length
-  const existingDate = dates.includes(date)
+  const existingDate = savedDates.has(date)
 
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
+    if (!date) {
+      setError('Aucun match programmé. Ajoute d’abord un match dans la rubrique « Matchs ».')
+      return
+    }
     if (date < MATCH_SEASON_START || date > MATCH_SEASON_END) {
       setError('La date doit être comprise entre le 1er septembre 2026 et le 30 juin 2027.')
       return
@@ -137,10 +150,6 @@ export function CallupScheduleEntry({
     }
     if (!savingEnabled) {
       setError('La saisie est désactivée dans cet aperçu. Elle sera disponible sur le site officiel.')
-      return
-    }
-    if (selectedCount !== players.length) {
-      setError('Choisis un statut pour chaque joueur avant d’enregistrer.')
       return
     }
     setPending(true)
@@ -169,69 +178,56 @@ export function CallupScheduleEntry({
   }
 
   return (
-    <section aria-labelledby="callup-entry-title" className="rounded-xl border border-accent/50 bg-card p-4 shadow-sm">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 id="callup-entry-title" className="font-bold text-primary">Convocations du samedi</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Répartis les joueurs entre E1 et E2, puis indique le statut de chacun.</p>
-        </div>
-        <div className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground sm:items-end">
-          <label htmlFor="callup-date">Date du samedi</label>
-          <input
-            id="callup-date"
-            type="date"
-            value={date}
-            min={MATCH_SEASON_START}
-            max={MATCH_SEASON_END}
-            onChange={(event) => {
-              setDate(event.target.value)
-              setError('')
-              setNotice('')
-            }}
-            className="h-10 rounded-lg border border-accent/50 bg-background px-3 text-sm font-normal text-foreground"
-          />
+    <section aria-labelledby="callup-entry-title" className="overflow-hidden rounded-xl border border-[#172554]/20 bg-[#eef2ff] shadow-sm">
+      <header className="flex items-center gap-3 bg-gradient-to-r from-[#172554] via-[#1e3a70] to-[#172554] px-4 py-3 text-white sm:px-5 sm:py-4">
+        <ClubCrest className="size-12 ring-2 ring-[#d4af37] sm:size-14" />
+        <div className="min-w-0">
+          <h2 id="callup-entry-title" className="font-bold">Convocations du samedi</h2>
+          <p className="mt-0.5 text-xs text-white/75">Répartir les joueurs entre E1 et E2</p>
         </div>
       </header>
 
-      {dates.length > 0 && (
-        <label className="mt-3 flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
-          Reprendre une date déjà saisie
-          <select
-            value={dates.includes(date) ? date : ''}
-            onChange={(event) => {
-              if (!event.target.value) return
-              setDate(event.target.value)
-              setError('')
-              setNotice('')
-            }}
-            className="h-10 rounded-lg border border-accent/50 bg-background px-3 text-sm font-normal text-foreground"
-          >
-            <option value="">Choisir une date enregistrée</option>
-            {dates.map((savedDate) => (
-              <option key={savedDate} value={savedDate}>
-                {new Intl.DateTimeFormat('fr-FR', { dateStyle: 'full', timeZone: 'UTC' }).format(new Date(`${savedDate}T12:00:00Z`))}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
-
-      <form onSubmit={save} className="mt-4 flex flex-col gap-3">
+      <form onSubmit={save} className="flex flex-col gap-3 p-3 sm:gap-4 sm:p-5">
         {!savingStatusChecked ? (
-          <p role="status" className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">Vérification des droits de saisie…</p>
+          <p role="status" className="rounded-lg bg-white/70 px-3 py-2 text-sm text-[#172554]">Vérification…</p>
         ) : !savingEnabled ? (
-          <p className="rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
-            La saisie est désactivée dans cet aperçu. Elle sera disponible sur le site officiel.
+          <p className="rounded-lg bg-white/70 px-3 py-2 text-sm text-[#172554]">
+            Saisie disponible sur le site officiel.
           </p>
         ) : null}
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-muted/70 px-3 py-2 text-xs font-semibold">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-[#dbeafe] px-3 py-2 text-xs font-semibold text-[#172554]">
           <span className="inline-flex items-center gap-1.5"><UsersRound aria-hidden="true" className="size-4" /> {selectedCount}/{players.length} statuts renseignés</span>
           <span>Équipe 1 : {teamOneCount} · Équipe 2 : {teamTwoCount}</span>
         </div>
-        <p className="rounded-lg border border-accent/40 bg-background px-3 py-2 text-xs leading-relaxed text-muted-foreground sm:hidden">
-          Pour convoquer un joueur, touche <strong className="text-primary">Équipe 1</strong> ou <strong className="text-primary">Équipe 2</strong>.
-          Pour un autre cas, choisis son statut dans la liste.
-        </p>
+
+        <label className="flex flex-col gap-1 text-xs font-bold text-[#172554]">
+          Match programmé
+          <span className="flex items-center gap-2">
+            <select
+              value={date}
+              onChange={(event) => {
+                setDate(event.target.value)
+                setError('')
+                setNotice('')
+              }}
+              className="h-11 min-w-0 flex-1 rounded-lg border border-[#172554]/25 bg-white px-3 text-sm font-normal text-[#172554]"
+            >
+              {dates.length === 0 ? (
+                <option value="">Aucun match programmé</option>
+              ) : dates.map((matchDate) => (
+                <option key={matchDate} value={matchDate}>
+                  {new Date(`${matchDate}T12:00:00`).toLocaleDateString('fr-FR', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}
+                </option>
+              ))}
+            </select>
+            {existingDate && <span className="shrink-0 rounded-full bg-[#dbeafe] px-2 py-1 text-[10px] font-bold text-[#172554]">Déjà saisi</span>}
+          </span>
+        </label>
 
         <div className="flex flex-col gap-2 sm:flex-row">
           <label className="sr-only" htmlFor="callup-player-search">Rechercher un joueur</label>
@@ -241,21 +237,25 @@ export function CallupScheduleEntry({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Rechercher un joueur…"
-            className="h-10 min-w-0 flex-1 rounded-lg border border-accent/50 bg-background px-3 text-sm"
+            className="h-11 min-w-0 flex-1 rounded-lg border border-[#172554]/20 bg-white px-3 text-sm"
           />
           <button
             type="button"
             onClick={() => setSelections(Object.fromEntries(players.map((player) => [player.number, '❌ Non convoqué'])))}
-            className="min-h-10 rounded-lg border border-accent/50 bg-background px-3 text-xs font-semibold text-primary"
+            className="min-h-11 rounded-lg border border-[#172554]/25 bg-white px-3 text-xs font-semibold text-[#172554]"
           >
-            Préremplir : tous non convoqués
+            Tous non convoqués
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelections(Object.fromEntries(players.map((player) => [player.number, ''])))}
+            className="min-h-11 rounded-lg border border-[#172554]/25 bg-white px-3 text-xs font-semibold text-[#172554]"
+          >
+            Vider tous les statuts
           </button>
         </div>
-        <p className="text-[11px] text-muted-foreground">
-          Le préremplissage remplace les choix affichés, mais rien n’est écrit dans le Sheet avant d’appuyer sur « Enregistrer ».
-        </p>
 
-        <ul className="divide-y divide-accent/30 rounded-lg border border-accent/40">
+        <ul className="divide-y divide-[#172554]/10 rounded-lg border border-[#172554]/15 bg-white/60">
           {visiblePlayers.map((player) => {
             const selection = selections[player.number] ?? ''
             const setSelection = (value: SelectionValue) =>
@@ -276,10 +276,10 @@ export function CallupScheduleEntry({
                         type="button"
                         aria-pressed={selected}
                         onClick={() => setSelection(status)}
-                        className={`min-h-11 rounded-lg border px-2 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                        className={`min-h-11 rounded-lg border px-2 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#172554] ${
                           selected
-                            ? 'border-primary bg-primary text-primary-foreground'
-                            : 'border-accent/50 bg-background text-primary'
+                            ? 'border-[#172554] bg-[#172554] text-white'
+                            : 'border-[#172554]/25 bg-white text-[#172554]'
                         }`}
                       >
                         ✅ {teamLabel}
@@ -287,14 +287,6 @@ export function CallupScheduleEntry({
                     )
                   })}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setSelection('')}
-                  aria-label={`Vider le statut de ${player.firstName} ${player.lastName}`}
-                  className="min-h-10 rounded-lg border border-accent/50 bg-background px-3 text-xs font-semibold text-muted-foreground hover:bg-muted sm:hidden"
-                >
-                  Vider le statut
-                </button>
                 <label className="sr-only sm:hidden" htmlFor={`callup-other-status-${player.number}`}>
                   Autre statut de {player.firstName} {player.lastName}
                 </label>
@@ -302,9 +294,9 @@ export function CallupScheduleEntry({
                   id={`callup-other-status-${player.number}`}
                   value={OTHER_STATUS_OPTIONS.some(({ value }) => value === selection) ? selection : ''}
                   onChange={(event) => setSelection(event.target.value as SelectionValue)}
-                  className="h-11 w-full min-w-0 rounded-lg border border-accent/50 bg-background px-2 text-sm sm:hidden"
+                  className="h-11 w-full min-w-0 rounded-lg border border-[#172554]/20 bg-white px-2 text-sm text-[#172554] sm:hidden"
                 >
-                  <option value="">Autre statut…</option>
+                  <option value="" disabled>Autre statut…</option>
                   {OTHER_STATUS_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>{option.label}</option>
                   ))}
@@ -316,9 +308,9 @@ export function CallupScheduleEntry({
                   id={`callup-status-${player.number}`}
                   value={selection}
                   onChange={(event) => setSelection(event.target.value as SelectionValue)}
-                  className="hidden h-10 w-full min-w-0 rounded-lg border border-accent/50 bg-background px-2 text-sm sm:block sm:w-56"
+                  className="hidden h-10 w-full min-w-0 rounded-lg border border-[#172554]/20 bg-white px-2 text-sm text-[#172554] sm:block sm:w-56"
                 >
-                  <option value="">Statut vide</option>
+                  <option value="" disabled>Choisir un statut…</option>
                   {STATUS_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>{option.label}</option>
                   ))}
@@ -330,13 +322,10 @@ export function CallupScheduleEntry({
 
         {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
         {notice && <p role="status" className="text-sm font-medium text-emerald-700 dark:text-emerald-300">{notice}</p>}
-        <p className="text-xs text-muted-foreground">
-          Un statut vide effacera la cellule du joueur pour cette date lors de l’enregistrement.
-        </p>
         <button
           type="submit"
-          disabled={!savingEnabled || pending || players.length === 0}
-          className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+          disabled={!savingEnabled || pending || players.length === 0 || dates.length === 0}
+          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#172554] px-4 text-sm font-bold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Save aria-hidden="true" className="size-4" />
           {pending ? 'Enregistrement…' : existingDate ? 'Mettre à jour les convocations' : 'Enregistrer les convocations'}

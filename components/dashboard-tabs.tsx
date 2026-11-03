@@ -31,6 +31,7 @@ export function DashboardTabs({
   rosterPlayers,
   convocations,
   matchesPlayed,
+  convocationDates,
   presentCounts,
   matchResults,
   cohesionDays,
@@ -42,6 +43,7 @@ export function DashboardTabs({
   rosterPlayers: PublicPlayer[]
   convocations: Convocation[]
   matchesPlayed: number
+  convocationDates: string[]
   presentCounts: Record<string, number>
   matchResults: TeamMatchResults
   cohesionDays: CohesionDay[]
@@ -375,7 +377,12 @@ export function DashboardTabs({
                     }}
                   />
                 ) : educatorSection === 'callups' ? (
-                  <CallupScheduleEntry players={rosterPlayers} convocations={convocations} />
+                  <CallupScheduleEntry
+                    players={rosterPlayers}
+                    convocations={convocations}
+                    convocationDates={convocationDates}
+                    scheduledMatchDates={matchResults.entries.map((entry) => entry.date)}
+                  />
                 ) : (
                   <EducatorRoster
                     initialEducator={educatorIdentity}

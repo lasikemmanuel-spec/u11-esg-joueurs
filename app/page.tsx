@@ -25,6 +25,7 @@ const fallbackStats: StatsData = {
 const fallbackConvocations: ConvocationsData = {
   players: [],
   matchesPlayed: 0,
+  matchDates: [],
   presentCounts: {},
 }
 
@@ -97,6 +98,7 @@ export default async function Page() {
         rosterPlayers={publicPlayers}
         convocations={convocations.players}
         matchesPlayed={convocations.matchesPlayed}
+        convocationDates={convocations.matchDates}
         presentCounts={convocations.presentCounts}
         matchResults={matchResults}
         cohesionDays={cohesionResult.data}

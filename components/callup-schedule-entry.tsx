@@ -249,6 +249,9 @@ export function CallupScheduleEntry({
         }),
       })
       const result = await response.json()
+      if (response.status === 401) {
+        throw new Error('La session éducateur n’est plus valide. Reconnecte-toi dans un autre onglet, puis réessaie ici pour conserver tes choix.')
+      }
       if (!response.ok) {
         if (result.callupsSaved) router.refresh()
         throw new Error(result.error ?? 'Impossible d’enregistrer les convocations.')

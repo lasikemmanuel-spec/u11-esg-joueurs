@@ -116,7 +116,7 @@ export async function POST(request: Request) {
     }
 
     const saved = await writeCallupSchedule(date, selections)
-    revalidateTag('google-sheet', 'max')
+    revalidateTag('google-sheet', { expire: 0 })
     return jsonResponse({ ok: true, ...saved })
   } catch (error) {
     console.error('Erreur lors de l’enregistrement des convocations:', error)

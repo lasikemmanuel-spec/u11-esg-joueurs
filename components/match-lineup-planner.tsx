@@ -216,7 +216,7 @@ export function MatchLineupPlanner({
                     </p>
                   ) : (
                     <>
-                      <ul className="max-h-80 divide-y divide-border overflow-y-auto rounded-lg border border-border">
+                      <ul className="divide-y divide-border rounded-lg border border-border">
                         {calledPlayers.map((player) => (
                           <li key={player.number} className="flex min-w-0 items-center justify-between gap-2 px-2 py-2">
                             <span className="min-w-0 truncate text-sm font-medium">

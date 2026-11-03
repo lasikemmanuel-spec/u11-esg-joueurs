@@ -180,16 +180,18 @@ export function CallupScheduleEntry({
         }
       }
 
-      return relevantTrainingDates.map((targetDate) => {
-        const session = selectedSessions.get(targetDate)
-        return {
-          targetDate,
-          date: session?.date ?? targetDate,
-          playerStatuses: session?.playerStatuses,
-          sessionAvailable: Boolean(session),
-          isPrevious: Boolean(session && session.date !== targetDate),
-        }
-      })
+      return relevantTrainingDates
+        .map((targetDate) => {
+          const session = selectedSessions.get(targetDate)
+          return {
+            targetDate,
+            date: session?.date ?? targetDate,
+            playerStatuses: session?.playerStatuses,
+            sessionAvailable: Boolean(session),
+            isPrevious: Boolean(session && session.date !== targetDate),
+          }
+        })
+        .sort((a, b) => a.date.localeCompare(b.date))
     },
     [relevantTrainingDates, sortedTrainingAttendance],
   )
@@ -368,16 +370,11 @@ export function CallupScheduleEntry({
 
             return (
               <li key={player.number} className="grid min-w-0 grid-cols-1 items-center gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,auto)] sm:py-2">
-                <div className="flex min-w-0 flex-col gap-1">
-                  <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
-                    <span className="min-w-0 truncate text-sm font-semibold text-foreground">
-                      {player.firstName} <span className="font-black uppercase text-primary">{player.lastName}</span>
-                    </span>
-                    <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold ${ireTone}`}>
-                      IRE {playerIre === null || playerIre === undefined ? '—' : playerIre.toFixed(2).replace('.', ',')}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-1">
+                <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,auto)_auto]">
+                  <span className="col-start-1 row-start-1 min-w-0 truncate text-sm font-semibold text-foreground">
+                    {player.firstName} <span className="font-black uppercase text-primary">{player.lastName}</span>
+                  </span>
+                  <div className="col-span-2 row-start-2 flex flex-wrap gap-1 sm:col-start-2 sm:col-span-1 sm:row-start-1">
                     {playerTrainingStatuses.map(({ targetDate, date: sessionDate, status, sessionAvailable, isPrevious }) => {
                       const sessionDateLabel = new Date(`${sessionDate}T12:00:00`).toLocaleDateString('fr-FR', {
                         day: '2-digit',
@@ -411,6 +408,9 @@ export function CallupScheduleEntry({
                       )
                     })}
                   </div>
+                  <span className={`col-start-2 row-start-1 shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold ${ireTone} sm:col-start-3`}>
+                    IRE {playerIre === null || playerIre === undefined ? '—' : playerIre.toFixed(2).replace('.', ',')}
+                  </span>
                 </div>
                 <label className="sr-only" htmlFor={`callup-status-${player.number}`}>
                   Statut de {player.firstName} {player.lastName}

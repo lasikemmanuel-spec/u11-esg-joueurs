@@ -51,7 +51,7 @@ function getMatchFormat(type: string | null) {
     return { label: 'Championnat', size: 11 }
   }
   if (/amical/.test(normalizedType)) {
-    return { label: 'Amical', size: 12 }
+    return { label: 'Amical', size: 11 }
   }
   if (/entrainement/.test(normalizedType)) {
     return { label: 'Entraînement', size: 12 }

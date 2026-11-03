@@ -3,6 +3,8 @@ import { revalidateTag } from 'next/cache'
 import { getRoster } from '@/lib/players'
 import { getEducatorSession, hasEducatorAccess, isSameOriginRequest } from '@/lib/educator-auth'
 import { writeCallupSchedule, type CallupSelection, type EditableCallupStatus } from '@/lib/convocation-management'
+import { getMatchResults } from '@/lib/match-results'
+import { syncMatchLineupsWithCallups } from '@/lib/match-lineups'
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
 
 export const runtime = 'nodejs'
@@ -103,7 +105,6 @@ export async function POST(request: Request) {
     }
     selections.push({ number: item.number, status: item.status })
   }
-
   try {
     const roster = await getRoster()
     const rosterNumbers = roster.players.map((player) => player.number).sort((a, b) => a - b)
@@ -116,6 +117,17 @@ export async function POST(request: Request) {
     }
 
     const saved = await writeCallupSchedule(date, selections)
+    revalidateTag('google-sheet', { expire: 0 })
+    try {
+      const matches = await getMatchResults()
+      await syncMatchLineupsWithCallups(date, matches.entries, selections)
+    } catch (syncError) {
+      console.error('Erreur lors de la synchronisation des feuilles de match avec les convocations:', syncError)
+      return jsonResponse({
+        error: 'Les convocations sont enregistrées, mais les feuilles de match n’ont pas pu être actualisées. Réessaie d’enregistrer les convocations.',
+        callupsSaved: true,
+      }, 500)
+    }
     revalidateTag('google-sheet', { expire: 0 })
     return jsonResponse({ ok: true, ...saved })
   } catch (error) {

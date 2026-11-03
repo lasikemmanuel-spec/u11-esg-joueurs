@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { useRouter } from 'next/navigation'
 import { Check, Pencil, Plus, Save, UsersRound } from 'lucide-react'
 import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
+import { MatchLineupPlanner } from '@/components/match-lineup-planner'
 import type { MatchSheetEntry } from '@/lib/match-results'
 import type { Convocation } from '@/lib/convocations'
 import { MATCH_RESULT_STATUSES } from '@/lib/match-result-options'
@@ -275,6 +276,14 @@ export function MatchResultEntry({
 
       {notice && <p role="status" className="mt-3 text-sm font-semibold text-emerald-700 dark:text-emerald-300">{notice}</p>}
       {error && <p role="alert" className="mt-3 text-sm font-semibold text-destructive">{error}</p>}
+
+      {canManage && (
+        <MatchLineupPlanner
+          entries={entries}
+          players={players}
+          convocations={convocations}
+        />
+      )}
 
       {open && canManage && (
         <form onSubmit={save} className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-2">

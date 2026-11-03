@@ -20,8 +20,6 @@ const STATUS_OPTIONS: Array<{ value: EditableCallupStatus; label: string }> = [
   { value: '🩺 Blessé', label: '🩺 Blessé' },
   { value: 'Pas de licence', label: 'Pas de licence' },
 ]
-const TEAM_ONE_STATUS: EditableCallupStatus = '✅ Convoqué E1'
-const TEAM_TWO_STATUS: EditableCallupStatus = '✅ Convoqué E2'
 type SelectionValue = EditableCallupStatus | ''
 
 function dateKey(value: string) {
@@ -216,8 +214,8 @@ export function CallupScheduleEntry({
   }, [players, query])
 
   const selectedCount = Object.values(selections).filter(Boolean).length
-  const teamOneCount = Object.values(selections).filter((value) => value === TEAM_ONE_STATUS).length
-  const teamTwoCount = Object.values(selections).filter((value) => value === TEAM_TWO_STATUS).length
+  const teamOneCount = Object.values(selections).filter((value) => value === '✅ Convoqué E1').length
+  const teamTwoCount = Object.values(selections).filter((value) => value === '✅ Convoqué E2').length
   const existingDate = savedDates.has(date)
 
   const save = async (event: FormEvent<HTMLFormElement>) => {
@@ -251,7 +249,10 @@ export function CallupScheduleEntry({
         }),
       })
       const result = await response.json()
-      if (!response.ok) throw new Error(result.error ?? 'Impossible d’enregistrer les convocations.')
+      if (!response.ok) {
+        if (result.callupsSaved) router.refresh()
+        throw new Error(result.error ?? 'Impossible d’enregistrer les convocations.')
+      }
       setNotice(existingDate
         ? 'Les convocations de ce samedi ont été mises à jour dans « ' + result.sheetTitle + ' ».'
         : 'Les convocations ont été enregistrées dans « ' + result.sheetTitle + ' ».')

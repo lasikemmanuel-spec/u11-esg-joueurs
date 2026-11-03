@@ -160,11 +160,39 @@ export function CallupScheduleEntry({
       .filter((value) => new Date(`${value}T12:00:00`).getDay() === 6),
   )].sort(), [scheduledMatchDates])
   const savedDates = useMemo(() => new Set(convocationDates.map(dateKey).filter(Boolean)), [convocationDates])
-  const attendanceByDate = useMemo(
-    () => new Map(trainingAttendance.map((session) => [session.date, session.playerStatuses])),
+  const sortedTrainingAttendance = useMemo(
+    () => [...trainingAttendance].sort((a, b) => a.date.localeCompare(b.date)),
     [trainingAttendance],
   )
   const relevantTrainingDates = useMemo(() => callupTrainingDates(date), [date])
+  const relevantTrainingSessions = useMemo(
+    () => {
+      const selectedSessions = new Map<string, TrainingAttendanceSession>()
+      const usedSessionDates = new Set<string>()
+
+      for (const targetDate of [...relevantTrainingDates].sort((a, b) => b.localeCompare(a))) {
+        const session = [...sortedTrainingAttendance].reverse().find(
+          (attendance) => attendance.date <= targetDate && !usedSessionDates.has(attendance.date),
+        )
+        if (session) {
+          selectedSessions.set(targetDate, session)
+          usedSessionDates.add(session.date)
+        }
+      }
+
+      return relevantTrainingDates.map((targetDate) => {
+        const session = selectedSessions.get(targetDate)
+        return {
+          targetDate,
+          date: session?.date ?? targetDate,
+          playerStatuses: session?.playerStatuses,
+          sessionAvailable: Boolean(session),
+          isPrevious: Boolean(session && session.date !== targetDate),
+        }
+      })
+    },
+    [relevantTrainingDates, sortedTrainingAttendance],
+  )
 
   useEffect(() => {
     if (initialDate && dates.includes(initialDate)) {
@@ -333,10 +361,9 @@ export function CallupScheduleEntry({
                 : playerIre < 0.9
                   ? 'bg-orange-100 text-orange-800'
                   : 'bg-emerald-100 text-emerald-800'
-            const playerTrainingStatuses = relevantTrainingDates.map((sessionDate) => ({
-              date: sessionDate,
-              status: attendanceByDate.get(sessionDate)?.[player.number],
-              sessionAvailable: attendanceByDate.has(sessionDate),
+            const playerTrainingStatuses = relevantTrainingSessions.map((session) => ({
+              ...session,
+              status: session.playerStatuses?.[player.number],
             }))
 
             return (
@@ -351,20 +378,35 @@ export function CallupScheduleEntry({
                     </span>
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    {playerTrainingStatuses.map(({ date: sessionDate, status, sessionAvailable }, index) => {
+                    {playerTrainingStatuses.map(({ targetDate, date: sessionDate, status, sessionAvailable, isPrevious }) => {
                       const sessionDateLabel = new Date(`${sessionDate}T12:00:00`).toLocaleDateString('fr-FR', {
                         day: '2-digit',
                         month: '2-digit',
                       })
-                      const weekdayLabel = index === 0 ? 'Mar.' : 'Ven.'
+                      const weekdayLabel = new Date(`${sessionDate}T12:00:00`).toLocaleDateString('fr-FR', {
+                        weekday: 'short',
+                      })
+                      const targetDateLabel = new Date(`${targetDate}T12:00:00`).toLocaleDateString('fr-FR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                      })
+                      const targetWeekdayLabel = new Date(`${targetDate}T12:00:00`).toLocaleDateString('fr-FR', {
+                        weekday: 'short',
+                      })
                       const label = sessionAvailable ? attendanceLabel(status) : 'Séance non trouvée'
                       return (
                         <span
-                          key={sessionDate}
-                          title={`${weekdayLabel} ${sessionDateLabel} : ${label}`}
+                          key={targetDate}
+                          title={isPrevious
+                            ? `Séance avant ${targetWeekdayLabel} ${targetDateLabel}, tenue ${weekdayLabel} ${sessionDateLabel} : ${label}`
+                            : `${targetWeekdayLabel} ${targetDateLabel} : ${label}`}
                           className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${attendanceTone(status)}`}
                         >
-                          {weekdayLabel} {sessionDateLabel} · {status ? attendanceLabel(status) : sessionAvailable ? 'Non renseigné' : '—'}
+                          {isPrevious
+                            ? `Avant ${targetDateLabel} · ${weekdayLabel} ${sessionDateLabel}`
+                            : `${weekdayLabel} ${sessionDateLabel}`}
+                          {' · '}
+                          {status ? attendanceLabel(status) : sessionAvailable ? 'Non renseigné' : '—'}
                         </span>
                       )
                     })}

@@ -7,6 +7,8 @@ import { ClubCrest } from '@/components/club-crest'
 import type { Convocation, MatchStatus } from '@/lib/convocations'
 import type { EditableCallupStatus } from '@/lib/convocation-management'
 import type { PublicPlayer } from '@/lib/players'
+import type { PlayerStats } from '@/lib/stats'
+import type { TrainingAttendanceSession } from '@/lib/training-attendance'
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
 
 const STATUS_OPTIONS: Array<{ value: EditableCallupStatus; label: string }> = [
@@ -58,18 +60,53 @@ function selectionForPlayer(
   return entry ? existingSelection(entry.status, entry.team) : ''
 }
 
+function callupTrainingDates(matchDate: string) {
+  if (!matchDate) return []
+  const tuesday = new Date(`${matchDate}T12:00:00`)
+  tuesday.setDate(tuesday.getDate() - 4)
+  const friday = new Date(tuesday)
+  friday.setDate(friday.getDate() - 4)
+  const toDateKey = (date: Date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
+
+  return [toDateKey(tuesday), toDateKey(friday)]
+}
+
+function attendanceLabel(status: string | undefined) {
+  if (!status) return 'Non renseigné'
+  if (status === 'P') return 'Présent'
+  if (status === 'AJ') return 'Abs. justifiée'
+  if (status === 'AI') return 'Abs. injustifiée'
+  if (status === 'B') return 'Blessé'
+  if (status === 'E') return 'Exempt'
+  return status
+}
+
+function attendanceTone(status: string | undefined) {
+  if (status === 'P') return 'bg-emerald-100 text-emerald-800'
+  if (status === 'AI') return 'bg-red-100 text-red-800'
+  if (status === 'AJ' || status === 'B') return 'bg-amber-100 text-amber-900'
+  return 'bg-slate-100 text-slate-700'
+}
+
 export function CallupScheduleEntry({
   players,
+  playerStats,
   convocations,
   convocationDates,
   scheduledMatchDates,
   initialDate,
+  trainingAttendance,
+  trainingAttendanceError,
 }: {
   players: PublicPlayer[]
+  playerStats: PlayerStats[]
   convocations: Convocation[]
   convocationDates: string[]
   scheduledMatchDates: string[]
   initialDate?: string
+  trainingAttendance: TrainingAttendanceSession[]
+  trainingAttendanceError: boolean
 }) {
   const router = useRouter()
   const callupTitleRef = useRef<HTMLElement>(null)
@@ -123,6 +160,11 @@ export function CallupScheduleEntry({
       .filter((value) => new Date(`${value}T12:00:00`).getDay() === 6),
   )].sort(), [scheduledMatchDates])
   const savedDates = useMemo(() => new Set(convocationDates.map(dateKey).filter(Boolean)), [convocationDates])
+  const attendanceByDate = useMemo(
+    () => new Map(trainingAttendance.map((session) => [session.date, session.playerStatuses])),
+    [trainingAttendance],
+  )
+  const relevantTrainingDates = useMemo(() => callupTrainingDates(date), [date])
 
   useEffect(() => {
     if (initialDate && dates.includes(initialDate)) {
@@ -208,6 +250,11 @@ export function CallupScheduleEntry({
             Saisie disponible sur le site officiel.
           </p>
         ) : null}
+        {trainingAttendanceError && (
+          <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-800">
+            Présences aux entraînements indisponibles.
+          </p>
+        )}
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-[#dbeafe] px-3 py-2 text-xs font-semibold text-[#172554]">
           <span className="inline-flex items-center gap-1.5"><UsersRound aria-hidden="true" className="size-4" /> {selectedCount}/{players.length} statuts renseignés</span>
           <span>Équipe 1 : {teamOneCount} · Équipe 2 : {teamTwoCount}</span>
@@ -278,12 +325,44 @@ export function CallupScheduleEntry({
             const selection = selections[player.number] ?? ''
             const setSelection = (value: SelectionValue) =>
               setSelections((current) => ({ ...current, [player.number]: value }))
+            const playerIre = playerStats.find((stats) => stats.number === player.number)?.ire
+            const playerTrainingStatuses = relevantTrainingDates.map((sessionDate) => ({
+              date: sessionDate,
+              status: attendanceByDate.get(sessionDate)?.[player.number],
+              sessionAvailable: attendanceByDate.has(sessionDate),
+            }))
 
             return (
               <li key={player.number} className="grid min-w-0 grid-cols-1 items-center gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,auto)] sm:py-2">
-                <span className="min-w-0 truncate text-sm font-semibold text-foreground">
-                  {player.firstName} <span className="font-black uppercase text-primary">{player.lastName}</span>
-                </span>
+                <div className="flex min-w-0 flex-col gap-1">
+                  <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-2 gap-y-0.5">
+                    <span className="min-w-0 truncate text-sm font-semibold text-foreground">
+                      {player.firstName} <span className="font-black uppercase text-primary">{player.lastName}</span>
+                    </span>
+                    <span className="shrink-0 rounded bg-[#dbeafe] px-1.5 py-0.5 text-[10px] font-bold text-[#172554]">
+                      IRE {playerIre === null || playerIre === undefined ? '—' : playerIre.toFixed(2).replace('.', ',')}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {playerTrainingStatuses.map(({ date: sessionDate, status, sessionAvailable }, index) => {
+                      const sessionDateLabel = new Date(`${sessionDate}T12:00:00`).toLocaleDateString('fr-FR', {
+                        day: '2-digit',
+                        month: '2-digit',
+                      })
+                      const weekdayLabel = index === 0 ? 'Mar.' : 'Ven.'
+                      const label = sessionAvailable ? attendanceLabel(status) : 'Séance non trouvée'
+                      return (
+                        <span
+                          key={sessionDate}
+                          title={`${weekdayLabel} ${sessionDateLabel} : ${label}`}
+                          className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${attendanceTone(status)}`}
+                        >
+                          {weekdayLabel} {sessionDateLabel} · {status ? attendanceLabel(status) : sessionAvailable ? 'Non renseigné' : '—'}
+                        </span>
+                      )
+                    })}
+                  </div>
+                </div>
                 <label className="sr-only" htmlFor={`callup-status-${player.number}`}>
                   Statut de {player.firstName} {player.lastName}
                 </label>

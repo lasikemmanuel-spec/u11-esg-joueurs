@@ -7,6 +7,7 @@ import { getStats, type StatsData } from '@/lib/stats'
 import { getConvocations, type ConvocationsData } from '@/lib/convocations'
 import { getMatchResults, type TeamMatchResults } from '@/lib/match-results'
 import { getCohesionDays, type CohesionDay } from '@/lib/cohesion'
+import { getTrainingAttendance, type TrainingAttendanceSession } from '@/lib/training-attendance'
 
 export const dynamic = 'force-dynamic'
 
@@ -40,9 +41,10 @@ const fallbackMatchResults: TeamMatchResults = {
 }
 
 const fallbackCohesionDays: CohesionDay[] = []
+const fallbackTrainingAttendance: TrainingAttendanceSession[] = []
 
 export default async function Page() {
-  const [roster, stats, convocationsResult, matchResultsResult, cohesionResult] = await Promise.all([
+  const [roster, stats, convocationsResult, matchResultsResult, cohesionResult, trainingAttendanceResult] = await Promise.all([
     getRoster().catch((error) => {
       console.error('Impossible de charger l’effectif:', error)
       return fallbackRoster
@@ -62,6 +64,10 @@ export default async function Page() {
     getCohesionDays().then((data) => ({ data, error: false })).catch((error) => {
       console.error('Impossible de charger les journées de cohésion:', error)
       return { data: fallbackCohesionDays, error: true }
+    }),
+    getTrainingAttendance().then((data) => ({ data, error: false })).catch((error) => {
+      console.error('Impossible de charger les présences aux entraînements:', error)
+      return { data: fallbackTrainingAttendance, error: true }
     }),
   ])
   const convocations = convocationsResult.data
@@ -101,6 +107,8 @@ export default async function Page() {
         convocationDates={convocations.matchDates}
         presentCounts={convocations.presentCounts}
         matchResults={matchResults}
+        trainingAttendance={trainingAttendanceResult.data}
+        trainingAttendanceError={trainingAttendanceResult.error}
         cohesionDays={cohesionResult.data}
         matchDataErrors={matchDataErrors}
         updatedAt={updatedAt}

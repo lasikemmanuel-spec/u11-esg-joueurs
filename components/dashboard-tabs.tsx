@@ -15,6 +15,7 @@ import { ThemeToggle } from '@/components/theme-toggle'
 import type { Convocation } from '@/lib/convocations'
 import type { PublicPlayer } from '@/lib/players'
 import type { TeamMatchResults } from '@/lib/match-results'
+import type { TrainingAttendanceSession } from '@/lib/training-attendance'
 import type { CohesionDay } from '@/lib/cohesion'
 import type { PlayerStats as PlayerStat } from '@/lib/stats'
 
@@ -33,6 +34,8 @@ export function DashboardTabs({
   convocationDates,
   presentCounts,
   matchResults,
+  trainingAttendance,
+  trainingAttendanceError,
   cohesionDays,
   matchDataErrors,
   updatedAt,
@@ -45,6 +48,8 @@ export function DashboardTabs({
   convocationDates: string[]
   presentCounts: Record<string, number>
   matchResults: TeamMatchResults
+  trainingAttendance: TrainingAttendanceSession[]
+  trainingAttendanceError: boolean
   cohesionDays: CohesionDay[]
   matchDataErrors: string[]
   updatedAt: string
@@ -370,8 +375,11 @@ export function DashboardTabs({
                   <MatchResultEntry
                     entries={matchResults.entries}
                     players={rosterPlayers}
+                    playerStats={players}
                     convocations={convocations}
                     convocationDates={convocationDates}
+                    trainingAttendance={trainingAttendance}
+                    trainingAttendanceError={trainingAttendanceError}
                     onConnect={() => {
                       setReturnToMatchesAfterLogin(true)
                       setEducatorSection('directory')

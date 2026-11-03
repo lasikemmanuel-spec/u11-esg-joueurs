@@ -8,6 +8,8 @@ import type { MatchSheetEntry } from '@/lib/match-results'
 import type { Convocation } from '@/lib/convocations'
 import { MATCH_RESULT_STATUSES } from '@/lib/match-result-options'
 import type { PublicPlayer } from '@/lib/players'
+import type { PlayerStats } from '@/lib/stats'
+import type { TrainingAttendanceSession } from '@/lib/training-attendance'
 import {
   clampToMatchSeason,
   MATCH_SEASON_END,
@@ -72,14 +74,20 @@ const inputClass = 'h-10 w-full rounded-lg border border-accent/50 bg-background
 export function MatchResultEntry({
   entries,
   players,
+  playerStats,
   convocations,
   convocationDates,
+  trainingAttendance,
+  trainingAttendanceError,
   onConnect,
 }: {
   entries: MatchSheetEntry[]
   players: PublicPlayer[]
+  playerStats: PlayerStats[]
   convocations: Convocation[]
   convocationDates: string[]
+  trainingAttendance: TrainingAttendanceSession[]
+  trainingAttendanceError: boolean
   onConnect: () => void
 }) {
   const router = useRouter()
@@ -379,7 +387,7 @@ export function MatchResultEntry({
                 {matches.map((entry) => (
                   <div key={entry.team + '-' + entry.slotColumn} className="relative flex flex-wrap items-start justify-between gap-3 rounded-lg border border-border px-3 py-3">
                     <div className="min-w-0">
-                      <p className="flex flex-wrap items-center gap-x-1.5 pr-10 text-xs font-semibold text-muted-foreground">
+                      <p className="flex flex-wrap items-center gap-x-1.5 text-xs font-semibold text-muted-foreground">
                         <span>Équipe {entry.team === 'E1' ? '1' : '2'}</span>
                         <span aria-hidden="true">·</span>
                         <span>{entry.competition || 'Type à préciser'}</span>
@@ -388,7 +396,17 @@ export function MatchResultEntry({
                       </p>
                       <h4 className="mt-1 truncate font-bold text-foreground">{entry.opponent || 'Adversaire à préciser'}</h4>
                     </div>
-                    <div className="flex shrink-0 items-center gap-2">
+                    <div className="flex shrink-0 flex-col items-end gap-2">
+                      {canManage && (
+                        <button
+                          type="button"
+                          onClick={() => startEdit(entry)}
+                          aria-label={'Modifier le match contre ' + (entry.opponent || 'cet adversaire')}
+                          className="inline-flex size-9 items-center justify-center rounded-lg border border-accent/50 text-primary"
+                        >
+                          <Pencil aria-hidden="true" className="size-3.5" />
+                        </button>
+                      )}
                       <span className="rounded-lg bg-muted px-3 py-2 font-mono text-sm font-bold text-primary">
                         {entry.resultLabel === 'Annulé'
                           ? 'Annulé'
@@ -396,16 +414,6 @@ export function MatchResultEntry({
                             ? 'À jouer'
                             : (getEditableResult(entry) ? getEditableResult(entry) + ' · ' : '') + entry.goalsFor + ' – ' + entry.goalsAgainst}
                       </span>
-                      {canManage && (
-                        <button
-                          type="button"
-                          onClick={() => startEdit(entry)}
-                          aria-label={'Modifier le match contre ' + (entry.opponent || 'cet adversaire')}
-                          className="absolute top-2 right-2 inline-flex size-9 items-center justify-center rounded-lg border border-accent/50 text-primary"
-                        >
-                          <Pencil aria-hidden="true" className="size-3.5" />
-                        </button>
-                      )}
                     </div>
                   </div>
                 ))}
@@ -413,10 +421,13 @@ export function MatchResultEntry({
                   <CallupScheduleEntry
                     key={date}
                     players={players}
+                    playerStats={playerStats}
                     convocations={convocations}
                     convocationDates={convocationDates}
                     scheduledMatchDates={entries.map((entry) => entry.date)}
                     initialDate={date}
+                    trainingAttendance={trainingAttendance}
+                    trainingAttendanceError={trainingAttendanceError}
                   />
                 )}
               </div>

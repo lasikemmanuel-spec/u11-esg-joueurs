@@ -277,14 +277,6 @@ export function MatchResultEntry({
       {notice && <p role="status" className="mt-3 text-sm font-semibold text-emerald-700 dark:text-emerald-300">{notice}</p>}
       {error && <p role="alert" className="mt-3 text-sm font-semibold text-destructive">{error}</p>}
 
-      {canManage && (
-        <MatchLineupPlanner
-          entries={entries}
-          players={players}
-          convocations={convocations}
-        />
-      )}
-
       {open && canManage && (
         <form onSubmit={save} className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
           <h3 className="text-base font-bold text-primary sm:col-span-2">
@@ -444,6 +436,14 @@ export function MatchResultEntry({
           )
         })}
       </div>
+
+      {canManage && (
+        <MatchLineupPlanner
+          entries={entries}
+          players={players}
+          convocations={convocations}
+        />
+      )}
 
     </section>
   )

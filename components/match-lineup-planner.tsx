@@ -86,6 +86,14 @@ export function MatchLineupPlanner({
     const upcomingDates = new Set([...new Set(scheduled.map((entry) => entry.date))].slice(0, 2))
     return scheduled.filter((entry) => upcomingDates.has(entry.date))
   }, [entries])
+  const previousMatches = useMemo(() => {
+    const today = localToday()
+    return entries
+      .filter((entry) => entry.resultLabel !== 'Annulé')
+      .map((entry) => ({ ...entry, date: dateKey(entry.date) }))
+      .filter((entry) => entry.date && entry.date < today)
+      .sort((a, b) => b.date.localeCompare(a.date) || a.slotColumn - b.slotColumn)
+  }, [entries])
 
   useEffect(() => {
     let active = true
@@ -144,20 +152,24 @@ export function MatchLineupPlanner({
     }
   }
 
-  if (upcomingMatches.length === 0) return null
+  if (upcomingMatches.length === 0 && previousMatches.length === 0) return null
   const upcomingDateCount = new Set(upcomingMatches.map((match) => match.date)).size
 
   return (
     <section aria-labelledby="match-lineup-title" className="mt-4 rounded-xl border border-accent/50 bg-card p-4 shadow-sm">
       <header className="mb-3">
         <h3 id="match-lineup-title" className="font-bold text-primary">
-          {upcomingDateCount === 1
-            ? 'Feuille de match de la prochaine date'
-            : 'Feuilles de match des 2 prochaines dates'}
+          {upcomingMatches.length === 0
+            ? 'Feuilles de match'
+            : upcomingDateCount === 1
+              ? 'Feuille de match de la prochaine date'
+              : 'Feuilles de match des 2 prochaines dates'}
         </h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Les joueurs convoqués sont ajoutés automatiquement. Choisis ici les titulaires et les remplaçants ; les rôles sont enregistrés immédiatement. Toute modification de convocation actualise la feuille.
-        </p>
+        {upcomingMatches.length > 0 && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Les joueurs convoqués sont ajoutés automatiquement. Choisis ici les titulaires et les remplaçants ; les rôles sont enregistrés immédiatement. Toute modification de convocation actualise la feuille.
+          </p>
+        )}
       </header>
       {loading ? (
         <p className="text-sm text-muted-foreground">Chargement des feuilles de match…</p>
@@ -253,6 +265,63 @@ export function MatchLineupPlanner({
               )
             })}
           </div>
+          {previousMatches.length > 0 && (
+            <details className="mt-4 rounded-lg border border-border">
+              <summary className="cursor-pointer rounded-lg bg-muted/50 px-3 py-3 text-sm font-bold text-primary">
+                Feuilles de match précédentes ({previousMatches.length})
+              </summary>
+              <div className="grid gap-2 p-3 lg:grid-cols-2">
+                {previousMatches.map((match) => {
+                  const key = matchKey(match)
+                  const assignments = assignmentsFromLineup(lineups.find((item) => matchKey(item) === key))
+                  const calledPlayers = players.filter((player) => isCalledForTeam(
+                    convocations.find((convocation) => convocation.number === player.number),
+                    match.date,
+                    match.team,
+                  ))
+
+                  return (
+                    <article key={key} className="min-w-0 rounded-lg border border-border bg-background p-3">
+                      <header className="mb-2">
+                        <h4 className="font-bold capitalize text-foreground">
+                          {new Date(`${match.date}T12:00:00`).toLocaleDateString('fr-FR', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric',
+                          })}
+                        </h4>
+                        <p className="text-xs text-muted-foreground">
+                          Équipe {match.team === 'E1' ? '1' : '2'} · {match.opponent || 'Adversaire à préciser'} · {match.competition}
+                        </p>
+                      </header>
+                      {calledPlayers.length === 0 ? (
+                        <p className="rounded-lg bg-muted px-3 py-3 text-center text-sm text-muted-foreground">
+                          Aucune convocation enregistrée pour cette équipe.
+                        </p>
+                      ) : (
+                        <ul className="divide-y divide-border rounded-lg border border-border">
+                          {calledPlayers.map((player) => {
+                            const role = assignments[player.number]
+                            return (
+                              <li key={player.number} className="flex items-center justify-between gap-2 px-2 py-2 text-sm">
+                                <span className="min-w-0 truncate font-medium">
+                                  {player.firstName} <span className="font-bold uppercase">{player.lastName}</span>
+                                </span>
+                                <span className="shrink-0 text-xs text-muted-foreground">
+                                  {role === 'starter' ? 'Titulaire' : role === 'substitute' ? 'Remplaçant' : 'Rôle non renseigné'}
+                                </span>
+                              </li>
+                            )
+                          })}
+                        </ul>
+                      )}
+                    </article>
+                  )
+                })}
+              </div>
+            </details>
+          )}
         </>
       )}
     </section>

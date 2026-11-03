@@ -67,14 +67,16 @@ export function CallupScheduleEntry({
   convocations,
   convocationDates,
   scheduledMatchDates,
+  initialDate,
 }: {
   players: PublicPlayer[]
   convocations: Convocation[]
   convocationDates: string[]
   scheduledMatchDates: string[]
+  initialDate?: string
 }) {
   const router = useRouter()
-  const [date, setDate] = useState('')
+  const [date, setDate] = useState(initialDate ?? '')
   const [selections, setSelections] = useState<Record<number, SelectionValue>>({})
   const [query, setQuery] = useState('')
   const [pending, setPending] = useState(false)
@@ -115,12 +117,16 @@ export function CallupScheduleEntry({
   const savedDates = useMemo(() => new Set(convocationDates.map(dateKey).filter(Boolean)), [convocationDates])
 
   useEffect(() => {
+    if (initialDate && dates.includes(initialDate)) {
+      if (date !== initialDate) setDate(initialDate)
+      return
+    }
     if (dates.includes(date)) return
     const today = new Date()
     today.setMinutes(today.getMinutes() - today.getTimezoneOffset())
     const todayKey = today.toISOString().slice(0, 10)
     setDate(dates.find((value) => value >= todayKey) ?? dates.at(-1) ?? '')
-  }, [dates, date])
+  }, [dates, date, initialDate])
 
   const visiblePlayers = useMemo(() => {
     const normalizedQuery = query.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr-FR')
@@ -200,34 +206,46 @@ export function CallupScheduleEntry({
           <span>Équipe 1 : {teamOneCount} · Équipe 2 : {teamTwoCount}</span>
         </div>
 
-        <label className="flex flex-col gap-1 text-xs font-bold text-[#172554]">
-          Match programmé
-          <span className="flex items-center gap-2">
-            <select
-              value={date}
-              onChange={(event) => {
-                setDate(event.target.value)
-                setError('')
-                setNotice('')
-              }}
-              className="h-11 min-w-0 flex-1 rounded-lg border border-[#172554]/25 bg-white px-3 text-sm font-normal text-[#172554]"
-            >
-              {dates.length === 0 ? (
-                <option value="">Aucun match programmé</option>
-              ) : dates.map((matchDate) => (
-                <option key={matchDate} value={matchDate}>
-                  {new Date(`${matchDate}T12:00:00`).toLocaleDateString('fr-FR', {
-                    weekday: 'long',
-                    day: 'numeric',
-                    month: 'long',
-                    year: 'numeric',
-                  })}
-                </option>
-              ))}
-            </select>
-            {existingDate && <span className="shrink-0 rounded-full bg-[#dbeafe] px-2 py-1 text-[10px] font-bold text-[#172554]">Déjà saisi</span>}
-          </span>
-        </label>
+        {initialDate ? (
+          <p className="flex flex-wrap items-center gap-2 text-xs font-bold text-[#172554]">
+            {new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', {
+              weekday: 'long',
+              day: 'numeric',
+              month: 'long',
+              year: 'numeric',
+            })}
+            {existingDate && <span className="rounded-full bg-[#dbeafe] px-2 py-1 text-[10px]">Déjà saisi</span>}
+          </p>
+        ) : (
+          <label className="flex flex-col gap-1 text-xs font-bold text-[#172554]">
+            Match programmé
+            <span className="flex items-center gap-2">
+              <select
+                value={date}
+                onChange={(event) => {
+                  setDate(event.target.value)
+                  setError('')
+                  setNotice('')
+                }}
+                className="h-11 min-w-0 flex-1 rounded-lg border border-[#172554]/25 bg-white px-3 text-sm font-normal text-[#172554]"
+              >
+                {dates.length === 0 ? (
+                  <option value="">Aucun match programmé</option>
+                ) : dates.map((matchDate) => (
+                  <option key={matchDate} value={matchDate}>
+                    {new Date(`${matchDate}T12:00:00`).toLocaleDateString('fr-FR', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </option>
+                ))}
+              </select>
+              {existingDate && <span className="shrink-0 rounded-full bg-[#dbeafe] px-2 py-1 text-[10px] font-bold text-[#172554]">Déjà saisi</span>}
+            </span>
+          </label>
+        )}
 
         <div className="flex flex-col gap-2 sm:flex-row">
           <label className="sr-only" htmlFor="callup-player-search">Rechercher un joueur</label>

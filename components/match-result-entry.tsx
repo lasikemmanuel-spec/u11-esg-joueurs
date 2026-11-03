@@ -2,9 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, Pencil, Plus, Save } from 'lucide-react'
+import { CalendarDays, Check, Pencil, Plus, Save, UsersRound } from 'lucide-react'
+import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
 import type { MatchSheetEntry } from '@/lib/match-results'
+import type { Convocation } from '@/lib/convocations'
 import { MATCH_RESULT_STATUSES } from '@/lib/match-result-options'
+import type { PublicPlayer } from '@/lib/players'
 import {
   clampToMatchSeason,
   MATCH_SEASON_END,
@@ -68,9 +71,15 @@ const inputClass = 'h-10 w-full rounded-lg border border-accent/50 bg-background
 
 export function MatchResultEntry({
   entries,
+  players,
+  convocations,
+  convocationDates,
   onConnect,
 }: {
   entries: MatchSheetEntry[]
+  players: PublicPlayer[]
+  convocations: Convocation[]
+  convocationDates: string[]
   onConnect: () => void
 }) {
   const router = useRouter()
@@ -78,6 +87,7 @@ export function MatchResultEntry({
   const [draft, setDraft] = useState<Draft>(createDraft)
   const [month, setMonth] = useState(clampToMatchSeason(localToday()).slice(0, 7))
   const [editingSlot, setEditingSlot] = useState<number | null>(null)
+  const [openCallupDate, setOpenCallupDate] = useState('')
   const [open, setOpen] = useState(false)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
@@ -103,6 +113,21 @@ export function MatchResultEntry({
   const monthEntries = useMemo(
     () => entries.filter((entry) => dateInputValue(entry.date).slice(0, 7) === month),
     [entries, month],
+  )
+  const dayEntries = useMemo(() => {
+    const grouped = new Map<string, MatchSheetEntry[]>()
+    for (const entry of monthEntries) {
+      const date = dateInputValue(entry.date)
+      if (!date) continue
+      grouped.set(date, [...(grouped.get(date) ?? []), entry])
+    }
+    return [...grouped.entries()]
+      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+      .map(([date, matches]) => ({ date, matches }))
+  }, [monthEntries])
+  const savedConvocationDates = useMemo(
+    () => new Set(convocationDates.map(dateInputValue).filter(Boolean)),
+    [convocationDates],
   )
   const canManage = Boolean(status?.enabled && (status.role === 'educator' || status.role === 'admin'))
 
@@ -309,41 +334,88 @@ export function MatchResultEntry({
       )}
 
       <div className="mt-4 flex flex-col gap-2">
-        {monthEntries.length === 0 ? (
+        {dayEntries.length === 0 ? (
           <p className="rounded-lg bg-muted px-3 py-4 text-center text-sm text-muted-foreground">
             Aucun match enregistré pour ce mois.
           </p>
-        ) : monthEntries.map((entry) => (
-          <article key={entry.team + '-' + entry.slotColumn} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-background px-3 py-3">
-            <div className="min-w-0">
-              <p className="text-xs font-semibold text-muted-foreground">
-                {entry.date} · Équipe {entry.team === 'E1' ? '1' : '2'} · {entry.competition || 'Type à préciser'}
-              </p>
-              <h3 className="mt-1 truncate font-bold text-foreground">{entry.opponent || 'Adversaire à préciser'}</h3>
-              <p className="text-xs text-muted-foreground">{entry.homeAway || 'Lieu à préciser'}</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="rounded-lg bg-muted px-3 py-2 font-mono text-sm font-bold text-primary">
-                {entry.resultLabel === 'Annulé'
-                  ? 'Annulé'
-                  : entry.goalsFor === null || entry.goalsAgainst === null
-                    ? 'À jouer'
-                    : (getEditableResult(entry) ? getEditableResult(entry) + ' · ' : '') + entry.goalsFor + ' – ' + entry.goalsAgainst}
-              </span>
-              {canManage && (
-                <button
-                  type="button"
-                  onClick={() => startEdit(entry)}
-                  aria-label={'Modifier le match contre ' + (entry.opponent || 'cet adversaire')}
-                  className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-accent/50 px-3 text-xs font-semibold text-primary"
-                >
-                  <Pencil aria-hidden="true" className="size-3.5" />
-                  Modifier
-                </button>
-              )}
-            </div>
-          </article>
-        ))}
+        ) : dayEntries.map(({ date, matches }) => {
+          const isSaturday = new Date(`${date}T12:00:00`).getDay() === 6
+          const canScheduleCallup = canManage && isSaturday && matches.some((entry) => entry.resultLabel !== 'Annulé')
+          const hasConvocations = savedConvocationDates.has(date)
+          return (
+            <article key={date} className="overflow-hidden rounded-xl border border-border bg-background">
+              <header className="flex flex-wrap items-center justify-between gap-2 bg-muted/60 px-3 py-3">
+                <div>
+                  <h3 className="font-bold capitalize text-foreground">
+                    {new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
+                    })}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    {matches.length} rencontre{matches.length === 1 ? '' : 's'}
+                  </p>
+                </div>
+                {canScheduleCallup && (
+                  <button
+                    type="button"
+                    aria-expanded={openCallupDate === date}
+                    onClick={() => setOpenCallupDate((current) => current === date ? '' : date)}
+                    className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground sm:text-sm"
+                  >
+                    {hasConvocations ? <Check aria-hidden="true" className="size-4" /> : <UsersRound aria-hidden="true" className="size-4" />}
+                    {hasConvocations ? 'Convocations saisies' : 'Saisir les convocations'}
+                  </button>
+                )}
+              </header>
+              <div className="flex flex-col gap-2 p-2 sm:p-3">
+                {matches.map((entry) => (
+                  <div key={entry.team + '-' + entry.slotColumn} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border px-3 py-3">
+                    <div className="min-w-0">
+                      <p className="text-xs font-semibold text-muted-foreground">
+                        Équipe {entry.team === 'E1' ? '1' : '2'} · {entry.competition || 'Type à préciser'}
+                      </p>
+                      <h4 className="mt-1 truncate font-bold text-foreground">{entry.opponent || 'Adversaire à préciser'}</h4>
+                      <p className="text-xs text-muted-foreground">{entry.homeAway || 'Lieu à préciser'}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="rounded-lg bg-muted px-3 py-2 font-mono text-sm font-bold text-primary">
+                        {entry.resultLabel === 'Annulé'
+                          ? 'Annulé'
+                          : entry.goalsFor === null || entry.goalsAgainst === null
+                            ? 'À jouer'
+                            : (getEditableResult(entry) ? getEditableResult(entry) + ' · ' : '') + entry.goalsFor + ' – ' + entry.goalsAgainst}
+                      </span>
+                      {canManage && (
+                        <button
+                          type="button"
+                          onClick={() => startEdit(entry)}
+                          aria-label={'Modifier le match contre ' + (entry.opponent || 'cet adversaire')}
+                          className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-accent/50 px-3 text-xs font-semibold text-primary"
+                        >
+                          <Pencil aria-hidden="true" className="size-3.5" />
+                          Modifier
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {openCallupDate === date && canScheduleCallup && (
+                  <CallupScheduleEntry
+                    key={date}
+                    players={players}
+                    convocations={convocations}
+                    convocationDates={convocationDates}
+                    scheduledMatchDates={entries.map((entry) => entry.date)}
+                    initialDate={date}
+                  />
+                )}
+              </div>
+            </article>
+          )
+        })}
       </div>
 
       <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">

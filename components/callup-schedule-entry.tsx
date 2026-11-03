@@ -72,7 +72,7 @@ export function CallupScheduleEntry({
   initialDate?: string
 }) {
   const router = useRouter()
-  const playersTableRef = useRef<HTMLUListElement>(null)
+  const callupTitleRef = useRef<HTMLElement>(null)
   const [date, setDate] = useState(initialDate ?? '')
   const [selections, setSelections] = useState<Record<number, SelectionValue>>({})
   const [query, setQuery] = useState('')
@@ -85,7 +85,7 @@ export function CallupScheduleEntry({
   useEffect(() => {
     if (!initialDate) return
     const frame = window.requestAnimationFrame(() => {
-      playersTableRef.current?.scrollIntoView({
+      callupTitleRef.current?.scrollIntoView({
         behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
         block: 'start',
       })
@@ -193,11 +193,10 @@ export function CallupScheduleEntry({
 
   return (
     <section aria-labelledby="callup-entry-title" className="overflow-visible rounded-xl border border-[#172554]/20 bg-[#eef2ff] shadow-sm">
-      <header className="flex items-center gap-3 rounded-t-xl bg-gradient-to-r from-[#172554] via-[#1e3a70] to-[#172554] px-4 py-3 text-white sm:px-5 sm:py-4">
+      <header ref={callupTitleRef} className="scroll-mt-4 flex items-center gap-3 rounded-t-xl bg-gradient-to-r from-[#172554] via-[#1e3a70] to-[#172554] px-4 py-3 text-white sm:px-5 sm:py-4">
         <ClubCrest className="size-12 ring-2 ring-[#d4af37] sm:size-14" />
         <div className="min-w-0">
           <h2 id="callup-entry-title" className="font-bold">Convocations du samedi</h2>
-          <p className="mt-0.5 text-xs text-white/75">Répartir les joueurs entre E1 et E2</p>
         </div>
       </header>
 
@@ -214,46 +213,53 @@ export function CallupScheduleEntry({
           <span>Équipe 1 : {teamOneCount} · Équipe 2 : {teamTwoCount}</span>
         </div>
 
-        {initialDate ? (
-          <p className="flex flex-wrap items-center gap-2 text-xs font-bold text-[#172554]">
-            {new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', {
-              weekday: 'long',
-              day: 'numeric',
-              month: 'long',
-              year: 'numeric',
-            })}
-            {existingDate && <span className="rounded-full bg-[#dbeafe] px-2 py-1 text-[10px]">Déjà saisi</span>}
-          </p>
-        ) : (
-          <label className="flex flex-col gap-1 text-xs font-bold text-[#172554]">
-            Match programmé
-            <span className="flex items-center gap-2">
-              <select
-                value={date}
-                onChange={(event) => {
-                  setDate(event.target.value)
-                  setError('')
-                  setNotice('')
-                }}
-                className="h-11 min-w-0 flex-1 rounded-lg border border-[#172554]/25 bg-white px-3 text-sm font-normal text-[#172554]"
-              >
-                {dates.length === 0 ? (
-                  <option value="">Aucun match programmé</option>
-                ) : dates.map((matchDate) => (
-                  <option key={matchDate} value={matchDate}>
-                    {new Date(`${matchDate}T12:00:00`).toLocaleDateString('fr-FR', {
-                      weekday: 'long',
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                    })}
-                  </option>
-                ))}
-              </select>
-              {existingDate && <span className="shrink-0 rounded-full bg-[#dbeafe] px-2 py-1 text-[10px] font-bold text-[#172554]">Déjà saisi</span>}
-            </span>
-          </label>
-        )}
+        <div className="flex items-center gap-2">
+          {initialDate ? (
+            <p className="min-w-0 flex-1 text-xs font-bold text-[#172554]">
+              {new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })}
+            </p>
+          ) : (
+            <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs font-bold text-[#172554]">
+              Match programmé
+              <span className="flex items-center gap-2">
+                <select
+                  value={date}
+                  onChange={(event) => {
+                    setDate(event.target.value)
+                    setError('')
+                    setNotice('')
+                  }}
+                  className="h-11 min-w-0 flex-1 rounded-lg border border-[#172554]/25 bg-white px-3 text-sm font-normal text-[#172554]"
+                >
+                  {dates.length === 0 ? (
+                    <option value="">Aucun match programmé</option>
+                  ) : dates.map((matchDate) => (
+                    <option key={matchDate} value={matchDate}>
+                      {new Date(`${matchDate}T12:00:00`).toLocaleDateString('fr-FR', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </option>
+                  ))}
+                </select>
+              </span>
+            </label>
+          )}
+          <button
+            type="button"
+            onClick={() => setSelections(Object.fromEntries(players.map((player) => [player.number, ''])))}
+            className="min-h-8 shrink-0 rounded-lg border border-[#172554]/25 bg-white px-2 text-[10px] font-semibold text-[#172554] sm:text-xs"
+          >
+            Réinit statut
+          </button>
+        </div>
 
         <div className="flex flex-col gap-2 sm:flex-row">
           <label className="sr-only" htmlFor="callup-player-search">Rechercher un joueur</label>
@@ -265,16 +271,9 @@ export function CallupScheduleEntry({
             placeholder="Rechercher un joueur…"
             className="h-11 min-w-0 flex-1 rounded-lg border border-[#172554]/20 bg-white px-3 text-sm"
           />
-          <button
-            type="button"
-            onClick={() => setSelections(Object.fromEntries(players.map((player) => [player.number, ''])))}
-            className="min-h-11 rounded-lg border border-[#172554]/25 bg-white px-3 text-xs font-semibold text-[#172554]"
-          >
-            Réinit statut
-          </button>
         </div>
 
-        <ul ref={playersTableRef} className="scroll-mt-4 divide-y divide-[#172554]/10 rounded-lg border border-[#172554]/15 bg-white/60">
+        <ul className="divide-y divide-[#172554]/10 rounded-lg border border-[#172554]/15 bg-white/60">
           {visiblePlayers.map((player) => {
             const selection = selections[player.number] ?? ''
             const setSelection = (value: SelectionValue) =>
@@ -306,14 +305,14 @@ export function CallupScheduleEntry({
 
         {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
         {notice && <p role="status" className="text-sm font-medium text-emerald-700 dark:text-emerald-300">{notice}</p>}
-        <div className="fixed inset-x-3 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 mx-auto max-w-xl bg-[#eef2ff]/95 px-3 py-2 shadow-[0_-8px_16px_rgba(23,37,84,0.12)] backdrop-blur xl:inset-x-auto xl:right-6 xl:bottom-6 xl:mx-0 xl:w-96 xl:rounded-xl xl:px-4">
+        <div className="fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center px-3 py-1 xl:inset-x-auto xl:right-6 xl:bottom-6 xl:justify-end xl:px-0">
           <button
             type="submit"
             disabled={!savingEnabled || pending || players.length === 0 || dates.length === 0}
-            className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#172554] px-4 text-sm font-bold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-h-10 w-auto max-w-full items-center justify-center gap-2 rounded-lg bg-[#172554] px-5 text-sm font-bold text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Save aria-hidden="true" className="size-4" />
-            {pending ? 'Enregistrement…' : existingDate ? 'Mettre à jour les convocations' : 'Enregistrer les convocations'}
+            {pending ? 'Enregistrement…' : 'Enregistrer'}
           </button>
         </div>
         <p className="text-xs text-muted-foreground">

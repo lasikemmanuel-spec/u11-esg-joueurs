@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState, type FormEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { Save, UsersRound } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
@@ -72,6 +72,7 @@ export function CallupScheduleEntry({
   initialDate?: string
 }) {
   const router = useRouter()
+  const playersTableRef = useRef<HTMLUListElement>(null)
   const [date, setDate] = useState(initialDate ?? '')
   const [selections, setSelections] = useState<Record<number, SelectionValue>>({})
   const [query, setQuery] = useState('')
@@ -80,6 +81,17 @@ export function CallupScheduleEntry({
   const [savingStatusChecked, setSavingStatusChecked] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+
+  useEffect(() => {
+    if (!initialDate) return
+    const frame = window.requestAnimationFrame(() => {
+      playersTableRef.current?.scrollIntoView({
+        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
+        block: 'start',
+      })
+    })
+    return () => window.cancelAnimationFrame(frame)
+  }, [initialDate])
 
   useEffect(() => {
     let active = true
@@ -189,7 +201,7 @@ export function CallupScheduleEntry({
         </div>
       </header>
 
-      <form onSubmit={save} className="flex flex-col gap-3 p-3 sm:gap-4 sm:p-5">
+      <form onSubmit={save} className="flex flex-col gap-3 p-3 pb-24 sm:gap-4 sm:p-5 sm:pb-24">
         {!savingStatusChecked ? (
           <p role="status" className="rounded-lg bg-white/70 px-3 py-2 text-sm text-[#172554]">Vérification…</p>
         ) : !savingEnabled ? (
@@ -262,7 +274,7 @@ export function CallupScheduleEntry({
           </button>
         </div>
 
-        <ul className="divide-y divide-[#172554]/10 rounded-lg border border-[#172554]/15 bg-white/60">
+        <ul ref={playersTableRef} className="scroll-mt-4 divide-y divide-[#172554]/10 rounded-lg border border-[#172554]/15 bg-white/60">
           {visiblePlayers.map((player) => {
             const selection = selections[player.number] ?? ''
             const setSelection = (value: SelectionValue) =>
@@ -294,7 +306,7 @@ export function CallupScheduleEntry({
 
         {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
         {notice && <p role="status" className="text-sm font-medium text-emerald-700 dark:text-emerald-300">{notice}</p>}
-        <div className="-mx-3 sticky bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-20 bg-[#eef2ff]/95 px-3 py-2 shadow-[0_-8px_16px_rgba(23,37,84,0.12)] backdrop-blur sm:-mx-5 sm:px-5 xl:bottom-4">
+        <div className="fixed inset-x-3 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 mx-auto max-w-xl bg-[#eef2ff]/95 px-3 py-2 shadow-[0_-8px_16px_rgba(23,37,84,0.12)] backdrop-blur xl:inset-x-auto xl:right-6 xl:bottom-6 xl:mx-0 xl:w-96 xl:rounded-xl xl:px-4">
           <button
             type="submit"
             disabled={!savingEnabled || pending || players.length === 0 || dates.length === 0}

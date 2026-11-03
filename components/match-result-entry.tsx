@@ -125,10 +125,16 @@ export function MatchResultEntry({
       .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
       .map(([date, matches]) => ({ date, matches }))
   }, [monthEntries])
-  const savedConvocationDates = useMemo(
-    () => new Set(convocationDates.map(dateInputValue).filter(Boolean)),
-    [convocationDates],
-  )
+  const completedConvocationDates = useMemo(() => new Set(
+    convocationDates
+      .map(dateInputValue)
+      .filter(Boolean)
+      .filter((date) => players.length > 0 && players.every((player) =>
+        convocations
+          .find((convocation) => convocation.number === player.number)
+          ?.matches.some((match) => dateInputValue(match.date) === date && match.raw.trim().length > 0),
+      )),
+  ), [convocationDates, convocations, players])
   const canManage = Boolean(status?.enabled && (status.role === 'educator' || status.role === 'admin'))
 
   const startNew = () => {
@@ -341,7 +347,7 @@ export function MatchResultEntry({
         ) : dayEntries.map(({ date, matches }) => {
           const isSaturday = new Date(`${date}T12:00:00`).getDay() === 6
           const canScheduleCallup = canManage && isSaturday && matches.some((entry) => entry.resultLabel !== 'Annulé')
-          const hasConvocations = savedConvocationDates.has(date)
+          const hasConvocations = completedConvocationDates.has(date)
           return (
             <article key={date} className="overflow-visible rounded-xl border border-border bg-background">
               <header className="flex flex-wrap items-center justify-between gap-2 rounded-t-xl bg-muted/60 px-3 py-3">
@@ -366,7 +372,7 @@ export function MatchResultEntry({
                     className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground sm:text-sm"
                   >
                     {hasConvocations ? <Check aria-hidden="true" className="size-4" /> : <UsersRound aria-hidden="true" className="size-4" />}
-                    {hasConvocations ? 'Convocations saisies' : 'Saisir les convocations'}
+                    {hasConvocations ? 'Convocations saisies' : 'Convocation à saisir'}
                   </button>
                 )}
               </header>

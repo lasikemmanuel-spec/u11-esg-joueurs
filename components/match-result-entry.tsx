@@ -343,8 +343,8 @@ export function MatchResultEntry({
           const canScheduleCallup = canManage && isSaturday && matches.some((entry) => entry.resultLabel !== 'Annulé')
           const hasConvocations = savedConvocationDates.has(date)
           return (
-            <article key={date} className="overflow-hidden rounded-xl border border-border bg-background">
-              <header className="flex flex-wrap items-center justify-between gap-2 bg-muted/60 px-3 py-3">
+            <article key={date} className="overflow-visible rounded-xl border border-border bg-background">
+              <header className="flex flex-wrap items-center justify-between gap-2 rounded-t-xl bg-muted/60 px-3 py-3">
                 <div>
                   <h3 className="font-bold capitalize text-foreground">
                     {new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', {

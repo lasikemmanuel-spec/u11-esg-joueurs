@@ -20,10 +20,6 @@ const STATUS_OPTIONS: Array<{ value: EditableCallupStatus; label: string }> = [
 ]
 const TEAM_ONE_STATUS: EditableCallupStatus = '✅ Convoqué E1'
 const TEAM_TWO_STATUS: EditableCallupStatus = '✅ Convoqué E2'
-const OTHER_STATUS_OPTIONS = STATUS_OPTIONS.filter(
-  ({ value }) => value !== TEAM_ONE_STATUS && value !== TEAM_TWO_STATUS,
-)
-
 type SelectionValue = EditableCallupStatus | ''
 
 function dateKey(value: string) {
@@ -184,8 +180,8 @@ export function CallupScheduleEntry({
   }
 
   return (
-    <section aria-labelledby="callup-entry-title" className="overflow-hidden rounded-xl border border-[#172554]/20 bg-[#eef2ff] shadow-sm">
-      <header className="flex items-center gap-3 bg-gradient-to-r from-[#172554] via-[#1e3a70] to-[#172554] px-4 py-3 text-white sm:px-5 sm:py-4">
+    <section aria-labelledby="callup-entry-title" className="overflow-visible rounded-xl border border-[#172554]/20 bg-[#eef2ff] shadow-sm">
+      <header className="flex items-center gap-3 rounded-t-xl bg-gradient-to-r from-[#172554] via-[#1e3a70] to-[#172554] px-4 py-3 text-white sm:px-5 sm:py-4">
         <ClubCrest className="size-12 ring-2 ring-[#d4af37] sm:size-14" />
         <div className="min-w-0">
           <h2 id="callup-entry-title" className="font-bold">Convocations du samedi</h2>
@@ -259,17 +255,10 @@ export function CallupScheduleEntry({
           />
           <button
             type="button"
-            onClick={() => setSelections(Object.fromEntries(players.map((player) => [player.number, '❌ Non convoqué'])))}
-            className="min-h-11 rounded-lg border border-[#172554]/25 bg-white px-3 text-xs font-semibold text-[#172554]"
-          >
-            Tous non convoqués
-          </button>
-          <button
-            type="button"
             onClick={() => setSelections(Object.fromEntries(players.map((player) => [player.number, ''])))}
             className="min-h-11 rounded-lg border border-[#172554]/25 bg-white px-3 text-xs font-semibold text-[#172554]"
           >
-            Vider tous les statuts
+            Réinit statut
           </button>
         </div>
 
@@ -284,49 +273,14 @@ export function CallupScheduleEntry({
                 <span className="min-w-0 truncate text-sm font-semibold text-foreground">
                   {player.firstName} <span className="font-black uppercase text-primary">{player.lastName}</span>
                 </span>
-                <div className="grid grid-cols-2 gap-2 sm:hidden">
-                  {[TEAM_ONE_STATUS, TEAM_TWO_STATUS].map((status, index) => {
-                    const selected = selection === status
-                    const teamLabel = index === 0 ? 'Équipe 1' : 'Équipe 2'
-                    return (
-                      <button
-                        key={status}
-                        type="button"
-                        aria-pressed={selected}
-                        onClick={() => setSelection(status)}
-                        className={`min-h-11 rounded-lg border px-2 text-xs font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#172554] ${
-                          selected
-                            ? 'border-[#172554] bg-[#172554] text-white'
-                            : 'border-[#172554]/25 bg-white text-[#172554]'
-                        }`}
-                      >
-                        ✅ {teamLabel}
-                      </button>
-                    )
-                  })}
-                </div>
-                <label className="sr-only sm:hidden" htmlFor={`callup-other-status-${player.number}`}>
-                  Autre statut de {player.firstName} {player.lastName}
-                </label>
-                <select
-                  id={`callup-other-status-${player.number}`}
-                  value={OTHER_STATUS_OPTIONS.some(({ value }) => value === selection) ? selection : ''}
-                  onChange={(event) => setSelection(event.target.value as SelectionValue)}
-                  className="h-11 w-full min-w-0 rounded-lg border border-[#172554]/20 bg-white px-2 text-sm text-[#172554] sm:hidden"
-                >
-                  <option value="" disabled>Autre statut…</option>
-                  {OTHER_STATUS_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-                <label className="sr-only hidden sm:block" htmlFor={`callup-status-${player.number}`}>
+                <label className="sr-only" htmlFor={`callup-status-${player.number}`}>
                   Statut de {player.firstName} {player.lastName}
                 </label>
                 <select
                   id={`callup-status-${player.number}`}
                   value={selection}
                   onChange={(event) => setSelection(event.target.value as SelectionValue)}
-                  className="hidden h-10 w-full min-w-0 rounded-lg border border-[#172554]/20 bg-white px-2 text-sm text-[#172554] sm:block sm:w-56"
+                  className="h-11 w-full min-w-0 rounded-lg border border-[#172554]/20 bg-white px-2 text-sm text-[#172554] sm:h-10 sm:w-56"
                 >
                   <option value="" disabled>Choisir un statut…</option>
                   {STATUS_OPTIONS.map((option) => (
@@ -340,14 +294,16 @@ export function CallupScheduleEntry({
 
         {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
         {notice && <p role="status" className="text-sm font-medium text-emerald-700 dark:text-emerald-300">{notice}</p>}
-        <button
-          type="submit"
-          disabled={!savingEnabled || pending || players.length === 0 || dates.length === 0}
-          className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-[#172554] px-4 text-sm font-bold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <Save aria-hidden="true" className="size-4" />
-          {pending ? 'Enregistrement…' : existingDate ? 'Mettre à jour les convocations' : 'Enregistrer les convocations'}
-        </button>
+        <div className="-mx-3 sticky bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-20 bg-[#eef2ff]/95 px-3 py-2 shadow-[0_-8px_16px_rgba(23,37,84,0.12)] backdrop-blur sm:-mx-5 sm:px-5 xl:bottom-4">
+          <button
+            type="submit"
+            disabled={!savingEnabled || pending || players.length === 0 || dates.length === 0}
+            className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-[#172554] px-4 text-sm font-bold text-white shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Save aria-hidden="true" className="size-4" />
+            {pending ? 'Enregistrement…' : existingDate ? 'Mettre à jour les convocations' : 'Enregistrer les convocations'}
+          </button>
+        </div>
         <p className="text-xs text-muted-foreground">
           Les statuts sont enregistrés dans l’onglet « 📣 Convocations Matchs ». Une date déjà saisie sera mise à jour.
         </p>

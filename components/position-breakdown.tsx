@@ -146,7 +146,11 @@ export function PositionBreakdown({
       </div>
 
       <div className={`roster-player-layout grid items-start gap-4 ${selectedPlayer ? 'has-selected-player' : ''}`}>
-        <div className={`roster-player-groups grid grid-cols-1 items-start gap-3 sm:grid-cols-2 ${selectedPlayer ? '2xl:grid-cols-2' : 'xl:grid-cols-3'}`}>
+      <div className={`roster-player-groups ${
+        allGroupsExpanded
+          ? 'columns-1 gap-3 sm:columns-2 xl:columns-3'
+          : `grid grid-cols-1 items-start gap-3 sm:grid-cols-2 ${selectedPlayer ? '2xl:grid-cols-2' : 'xl:grid-cols-3'}`
+      }`}>
             {matchingPlayers.length === 0 && (
               <p className="break-inside-avoid rounded-lg border border-accent/40 bg-card p-3 text-sm text-muted-foreground">
                 {searchTerm
@@ -159,7 +163,9 @@ export function PositionBreakdown({
               const isExpanded = expandedPositions.has(position) || isSelectedGroup
               const groupId = `roster-position-${groupIndex}`
               return (
-              <article key={position} className="flex scroll-mt-4 flex-col overflow-hidden rounded-lg border border-accent/50 bg-card shadow-sm">
+              <article key={position} className={`flex scroll-mt-4 flex-col overflow-hidden rounded-lg border border-accent/50 bg-card shadow-sm ${
+                allGroupsExpanded ? 'mb-3 inline-block w-full break-inside-avoid' : ''
+              }`}>
                 <h3>
                   <button
                     type="button"

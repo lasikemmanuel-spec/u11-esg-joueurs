@@ -465,8 +465,7 @@ export function MatchResultEntry({
                       <div className="flex flex-1 flex-col gap-3 p-3">
                         {/* Adversaire */}
                         <div>
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Adversaire</p>
-                          <h4 className="mt-0.5 truncate text-lg font-black leading-tight text-foreground">
+                          <h4 className="truncate text-lg font-black leading-tight text-foreground">
                             {entry.opponent || 'À préciser'}
                           </h4>
                         </div>

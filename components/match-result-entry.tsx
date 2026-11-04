@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, Pencil, Plus, Save, UsersRound } from 'lucide-react'
+import { Check, Pencil, Plus, Save, Sparkles, UsersRound } from 'lucide-react'
 import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
 import { MatchLineupPlanner } from '@/components/match-lineup-planner'
+import { ClubCrest } from '@/components/club-crest'
 import type { MatchSheetEntry } from '@/lib/match-results'
 import type { Convocation } from '@/lib/convocations'
 import { MATCH_RESULT_STATUSES } from '@/lib/match-result-options'
@@ -226,36 +227,43 @@ export function MatchResultEntry({
   if (!status) return null
 
   return (
-    <section aria-labelledby="match-entry-title" className="rounded-xl border border-accent/50 bg-card p-4 shadow-sm">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h2 id="match-entry-title" className="font-bold text-primary">Calendrier et résultats des matchs</h2>
-        </div>
-        <div className="flex shrink-0 items-end gap-2">
-          <label className="flex flex-col gap-1 text-xs font-semibold text-muted-foreground">
-            Mois
+    <section aria-labelledby="match-entry-title" className="overflow-hidden rounded-2xl border border-[#d4af37]/30 bg-card shadow-md">
+      {/* Bandeau ESG */}
+      <header className="relative overflow-hidden bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-4 py-3 sm:px-5 sm:py-4">
+        <Sparkles aria-hidden="true" className="absolute -right-3 -top-5 size-24 rotate-12 text-[#d4af37]/15" />
+        <div className="relative flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <ClubCrest className="size-9 shrink-0 ring-2 ring-[#d4af37] sm:size-11" />
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-[#d4af37]">ES Genech · U11</p>
+              <h2 id="match-entry-title" className="text-sm font-black text-white sm:text-base">Calendrier &amp; résultats</h2>
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
             <select
+              aria-label="Mois"
               value={month}
               onChange={(event) => setMonth(event.target.value)}
-              className="h-10 min-w-36 rounded-lg border border-accent/50 bg-background px-2 text-sm font-normal text-foreground sm:min-w-40"
+              className="h-9 min-w-36 rounded-lg border border-white/20 bg-white/10 px-2 text-sm font-semibold text-white backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-[#d4af37] sm:min-w-40"
             >
               {MATCH_SEASON_MONTHS.map(({ value, label }) => (
-                <option key={value} value={value}>{label}</option>
+                <option key={value} value={value} className="bg-[#172554] text-white">{label}</option>
               ))}
             </select>
-          </label>
-          {canManage && (
-            <button
-              type="button"
-              onClick={startNew}
-              className="inline-flex min-h-10 shrink-0 items-center gap-1 whitespace-nowrap rounded-xl bg-primary px-2 text-xs font-bold text-primary-foreground sm:gap-1.5 sm:px-3 sm:text-sm"
-            >
-              <Plus aria-hidden="true" className="size-4" />
-              Ajouter un match
-            </button>
-          )}
+            {canManage && (
+              <button
+                type="button"
+                onClick={startNew}
+                className="inline-flex min-h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl bg-[#d4af37] px-3 text-xs font-black text-blue-950 shadow hover:bg-amber-300 sm:px-4 sm:text-sm"
+              >
+                <Plus aria-hidden="true" className="size-4" />
+                Ajouter un match
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      </header>
+      <div className="p-3 sm:p-4">
 
       {!status.enabled ? (
         <p className="mt-3 rounded-lg bg-muted px-3 py-2 text-sm text-muted-foreground">
@@ -384,41 +392,79 @@ export function MatchResultEntry({
                   </button>
                 )}
               </header>
-              <div className="flex flex-col gap-2 p-2 sm:p-3">
-                {matches.map((entry) => (
-                  <div key={entry.team + '-' + entry.slotColumn} className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-3 rounded-lg border border-border px-3 py-3">
-                    <div className="min-w-0">
-                      <p className="flex flex-wrap items-center gap-x-1.5 text-xs font-semibold text-muted-foreground">
-                        <span>Équipe {entry.team === 'E1' ? '1' : '2'}</span>
-                        <span aria-hidden="true">·</span>
-                        <span>{entry.competition || 'Type à préciser'}</span>
-                        <span aria-hidden="true">·</span>
-                        <span>{entry.homeAway || 'Lieu à préciser'}</span>
-                      </p>
-                      <h4 className="mt-1 truncate font-bold text-foreground">{entry.opponent || 'Adversaire à préciser'}</h4>
-                    </div>
-                    <div className="flex shrink-0 items-center gap-2">
-                      {canManage && (
-                        <button
-                          type="button"
-                          onClick={() => startEdit(entry)}
-                          aria-label={'Modifier le match contre ' + (entry.opponent || 'cet adversaire')}
-                          className="inline-flex size-9 items-center justify-center rounded-lg border border-accent/50 text-primary"
+              <div className="grid gap-2 p-2 sm:grid-cols-2 sm:p-3">
+                {matches.map((entry) => {
+                  const isE1 = entry.team === 'E1'
+                  const score = entry.resultLabel === 'Annulé'
+                    ? 'Annulé'
+                    : entry.goalsFor === null || entry.goalsAgainst === null
+                      ? 'À jouer'
+                      : (getEditableResult(entry) ? getEditableResult(entry) + ' · ' : '') + entry.goalsFor + ' – ' + entry.goalsAgainst
+                  const isPlayed = entry.goalsFor !== null && entry.goalsAgainst !== null && entry.resultLabel !== 'Annulé'
+                  const result = isPlayed ? getEditableResult(entry) : null
+                  const badgeColor = result === 'Gagné'
+                    ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500/30'
+                    : result === 'Perdu'
+                      ? 'bg-red-500/15 text-red-700 dark:text-red-300 ring-1 ring-red-500/30'
+                      : result === 'Nul'
+                        ? 'bg-amber-400/15 text-amber-700 dark:text-amber-300 ring-1 ring-amber-400/30'
+                        : entry.resultLabel === 'Annulé'
+                          ? 'bg-muted text-muted-foreground ring-1 ring-border'
+                          : 'bg-[#172554]/10 text-[#172554] dark:bg-blue-950/40 dark:text-blue-200 ring-1 ring-[#172554]/20'
+                  return (
+                    <div
+                      key={entry.team + '-' + entry.slotColumn}
+                      className={[
+                        'relative flex min-w-0 flex-col gap-2 overflow-hidden rounded-xl border p-3 transition-shadow hover:shadow-md',
+                        isE1
+                          ? 'border-[#172554]/30 bg-gradient-to-br from-[#172554]/5 to-[#1e3a8a]/10'
+                          : 'border-amber-400/40 bg-gradient-to-br from-amber-400/5 to-amber-500/10',
+                      ].join(' ')}
+                    >
+                      {/* Badge équipe */}
+                      <div className="flex items-start justify-between gap-2">
+                        <span
+                          className={[
+                            'inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-black uppercase tracking-widest',
+                            isE1
+                              ? 'bg-[#172554] text-white'
+                              : 'bg-amber-400 text-blue-950',
+                          ].join(' ')}
                         >
-                          <Pencil aria-hidden="true" className="size-3.5" />
-                        </button>
-                      )}
-                      <span className="rounded-lg bg-muted px-3 py-2 font-mono text-sm font-bold text-primary">
-                        {entry.resultLabel === 'Annulé'
-                          ? 'Annulé'
-                          : entry.goalsFor === null || entry.goalsAgainst === null
-                            ? 'À jouer'
-                            : (getEditableResult(entry) ? getEditableResult(entry) + ' · ' : '') + entry.goalsFor + ' – ' + entry.goalsAgainst}
-                      </span>
+                          Équipe {isE1 ? '1' : '2'}
+                        </span>
+                        {canManage && (
+                          <button
+                            type="button"
+                            onClick={() => startEdit(entry)}
+                            aria-label={'Modifier le match contre ' + (entry.opponent || 'cet adversaire')}
+                            className="inline-flex size-7 shrink-0 items-center justify-center rounded-lg border border-accent/50 text-muted-foreground hover:text-primary"
+                          >
+                            <Pencil aria-hidden="true" className="size-3" />
+                          </button>
+                        )}
+                      </div>
+                      {/* Adversaire */}
+                      <div className="min-w-0">
+                        <h4 className="truncate text-base font-black text-foreground">{entry.opponent || 'Adversaire à préciser'}</h4>
+                        <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[11px] font-medium text-muted-foreground">
+                          <span>{entry.competition || 'Type à préciser'}</span>
+                          <span aria-hidden="true">·</span>
+                          <span>{entry.homeAway || 'Lieu à préciser'}</span>
+                        </p>
+                      </div>
+                      {/* Score / statut */}
+                      <div className="mt-auto pt-1">
+                        <span className={['inline-flex items-center rounded-lg px-3 py-1.5 font-mono text-sm font-black', badgeColor].join(' ')}>
+                          {score}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
-                {openCallupDate === date && canScheduleCallup && (
+                  )
+                })}
+              </div>
+              {openCallupDate === date && canScheduleCallup && (
+                <div className="p-2 pt-0 sm:p-3 sm:pt-0">
                   <CallupScheduleEntry
                     key={date}
                     players={players}
@@ -430,8 +476,8 @@ export function MatchResultEntry({
                     trainingAttendance={trainingAttendance}
                     trainingAttendanceError={trainingAttendanceError}
                   />
-                )}
-              </div>
+                </div>
+              )}
             </article>
           )
         })}
@@ -445,6 +491,7 @@ export function MatchResultEntry({
         />
       )}
 
+      </div>
     </section>
   )
 }

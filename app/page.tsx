@@ -73,12 +73,13 @@ export default async function Page() {
   const convocations = convocationsResult.data
   const matchResults = matchResultsResult.data
   const publicPlayers: PublicPlayer[] = roster.players.map(
-    ({ number, lastName, firstName, position, transferStatus }) => ({
+    ({ number, lastName, firstName, position, transferStatus, licenseNumber }) => ({
       number,
       lastName,
       firstName,
       position,
       transferStatus,
+      licenseNumber,
     }),
   )
   const matchDataErrors = [

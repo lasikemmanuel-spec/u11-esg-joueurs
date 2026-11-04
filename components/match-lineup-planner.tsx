@@ -263,9 +263,20 @@ export function MatchLineupPlanner({
 
                           return (
                             <li key={player.number} className="flex min-w-0 flex-col items-stretch gap-2 px-2 py-2 sm:flex-row sm:items-center sm:justify-between">
-                              <span className="min-w-0 whitespace-normal break-words text-sm font-medium">
-                                {player.firstName} <span className="font-bold uppercase">{player.lastName}</span>
-                              </span>
+                              <div className="min-w-0 flex-1">
+                                <span className="min-w-0 whitespace-normal break-words text-sm font-medium">
+                                  {player.firstName} <span className="font-bold uppercase">{player.lastName}</span>
+                                </span>
+                                {player.licenseNumber ? (
+                                  <span className="block text-xs font-mono text-muted-foreground">
+                                    Licence : {player.licenseNumber}
+                                  </span>
+                                ) : (
+                                  <span className="block text-xs italic text-amber-600 dark:text-amber-400">
+                                    Licence non renseignée
+                                  </span>
+                                )}
+                              </div>
                               <div role="group" aria-label={`Action pour ${player.firstName} ${player.lastName}`} className="flex shrink-0 items-center gap-2">
                                 <button
                                   type="button"
@@ -360,9 +371,20 @@ export function MatchLineupPlanner({
                             const role = assignments[player.number]
                             return (
                               <li key={player.number} className="flex min-w-0 flex-col gap-1 px-2 py-2 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-                                <span className="min-w-0 whitespace-normal break-words font-medium">
-                                  {player.firstName} <span className="font-bold uppercase">{player.lastName}</span>
-                                </span>
+                                <div className="min-w-0 flex-1">
+                                  <span className="min-w-0 whitespace-normal break-words font-medium">
+                                    {player.firstName} <span className="font-bold uppercase">{player.lastName}</span>
+                                  </span>
+                                  {player.licenseNumber ? (
+                                    <span className="block text-xs font-mono text-muted-foreground">
+                                      Licence : {player.licenseNumber}
+                                    </span>
+                                  ) : (
+                                    <span className="block text-xs italic text-amber-600 dark:text-amber-400">
+                                      Licence non renseignée
+                                    </span>
+                                  )}
+                                </div>
                                 {role ? (
                                   <span
                                     title={role === 'starter' ? 'Commence le match' : 'Peut entrer en cours de jeu'}

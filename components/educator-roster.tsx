@@ -4,6 +4,7 @@ import { useState, useMemo, useEffect, useLayoutEffect, useCallback, useRef, typ
 import { Search, Copy, Check, Award, Phone, Save, ChevronDown, ChevronUp, Pencil, X, ContactRound, UsersRound, KeyRound } from 'lucide-react'
 import type { Player, PublicPlayer } from '@/lib/players'
 import { matchesSearch } from '@/lib/search'
+import { ClubCrest } from '@/components/club-crest'
 import { ParentAvatar } from '@/components/parent-avatar'
 import { EducatorDirectory } from '@/components/educator-directory'
 import { EducatorAccountManagement } from '@/components/educator-account-management'
@@ -537,33 +538,45 @@ export function EducatorRoster({
                   }
 
                   return (
-                    <li key={player.number} className="rounded-xl border border-accent/50 bg-card p-3 shadow-sm">
+                    <li
+                      key={player.number}
+                      className="rounded-2xl border-2 border-[#172554]/15 bg-card p-3.5 shadow-sm transition-all hover:border-[#172554]/40 hover:shadow-md"
+                    >
                       <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <p className="truncate font-semibold text-foreground">
-                              {player.firstName} <span className="font-black uppercase tracking-wide text-primary">{player.lastName}</span>
-                            </p>
-                            {educator.role === 'admin' && (
-                              <button
-                                type="button"
-                                onClick={() => openPhoneEditor(player)}
-                                disabled={requestPending}
-                                aria-label={`Modifier les téléphones de ${player.firstName} ${player.lastName}`}
-                                title="Modifier les numéros"
-                                className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-accent/40 bg-card text-muted-foreground transition hover:bg-accent/40 hover:text-foreground disabled:opacity-50"
-                              >
-                                <Pencil aria-hidden="true" className="size-3" />
-                              </button>
-                            )}
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span
+                            title={`N°${player.number}`}
+                            className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-[#172554] text-xs font-black text-amber-300 ring-2 ring-amber-400/50 shadow-sm"
+                          >
+                            {player.number}
+                          </span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <p className="truncate text-base font-bold text-foreground">
+                                {player.firstName} <span className="font-black uppercase tracking-wide text-primary">{player.lastName}</span>
+                              </p>
+                              {educator.role === 'admin' && (
+                                <button
+                                  type="button"
+                                  onClick={() => openPhoneEditor(player)}
+                                  disabled={requestPending}
+                                  aria-label={`Modifier les téléphones de ${player.firstName} ${player.lastName}`}
+                                  title="Modifier les numéros"
+                                  className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-accent/40 bg-card text-muted-foreground transition hover:bg-accent/40 hover:text-foreground disabled:opacity-50"
+                                >
+                                  <Pencil aria-hidden="true" className="size-3" />
+                                </button>
+                              )}
+                            </div>
+                            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+                              <span>Poste : <strong className="text-foreground">{player.position ?? 'Non renseigné'}</strong></span>
+                              <span>·</span>
+                              <span>Licence : <span className="font-mono font-medium">{licenseNumber ?? 'non renseignée'}</span></span>
+                            </div>
                           </div>
-                          <p className="mt-1 text-xs text-muted-foreground">{player.position ?? 'Poste non renseigné'}</p>
-                          <p className="mt-1 text-sm text-muted-foreground">
-                            Licence FFF : <span className="font-mono">{licenseNumber ?? 'non renseignée'}</span>
-                          </p>
                         </div>
                       </div>
-                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                      <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-accent/40 bg-muted/40 p-2">
                         {parentContact('father', phone?.fatherPhone ?? '')}
                         {parentContact('mother', phone?.motherPhone ?? '')}
                         {phone?.legacyPhone && (
@@ -656,18 +669,19 @@ export function EducatorRoster({
                       }))
                     }
                   }}
-                  className="flex w-full items-center justify-between gap-2 bg-primary px-3 py-2.5 text-left text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                  className="flex w-full items-center justify-between gap-2.5 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-3.5 py-3 text-left text-white shadow-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                 >
-                  <span className="flex min-w-0 items-center gap-2">
+                  <span className="flex min-w-0 items-center gap-2.5">
                     <ChevronDown aria-hidden="true" className={`size-4 shrink-0 transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
-                    <span className="truncate font-semibold">{position}</span>
+                    <ClubCrest className="size-6 shrink-0 ring-2 ring-amber-400/80 shadow-md" />
+                    <span className="truncate text-sm font-bold tracking-wide uppercase text-white">{position}</span>
                   </span>
-                  <span className="rounded-full bg-accent px-2 py-0.5 font-mono text-xs font-bold text-accent-foreground">
+                  <span className="inline-flex items-center rounded-full bg-amber-400 px-2.5 py-0.5 font-mono text-xs font-black text-blue-950 shadow-sm">
                     {list.length}
                   </span>
                 </button>
               </h3>
-              {isExpanded && <ul id={groupId} className="divide-y divide-accent/25">
+              {isExpanded && <ul id={groupId} className="flex flex-col gap-3 p-3 bg-slate-100/60 dark:bg-slate-900/40">
                 {list.map((player) => {
                   const licenseNumber = player.licenseNumber
                   const isCopied = licenseNumber && copiedId === licenseNumber
@@ -709,71 +723,84 @@ export function EducatorRoster({
                   }
 
                   return (
-                    <li key={player.number} className="flex min-w-0 items-center justify-between gap-2 px-3 py-2.5 transition-colors hover:bg-muted/40">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="truncate font-semibold text-foreground">
-                            {player.firstName} <span className="font-black uppercase tracking-wide text-primary">{player.lastName}</span>
-                          </p>
-                          {educator.role === 'admin' && (
-                            <button
-                              type="button"
-                              onClick={() => openPhoneEditor(player)}
-                              disabled={requestPending}
-                              aria-label={`Modifier les téléphones pour ${player.firstName} ${player.lastName}`}
-                              title="Modifier les numéros"
-                              className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-accent/40 bg-card text-muted-foreground transition hover:bg-accent/40 hover:text-foreground disabled:opacity-50"
-                            >
-                              <Pencil aria-hidden="true" className="size-3" />
-                            </button>
-                          )}
-                        </div>
-                        <div className="mt-1 flex min-w-0 items-center gap-1 text-xs text-muted-foreground">
-                          <span className="truncate">Licence FFF : <span className="font-mono">{licenseNumber ?? 'non renseigné'}</span></span>
-                          {licenseNumber && (
-                            <button
-                              type="button"
-                              onClick={() => handleCopy(licenseNumber)}
-                              className={`inline-flex size-6 shrink-0 items-center justify-center rounded-md transition ${
-                                isCopied
-                                  ? 'bg-emerald-600 text-white'
-                                  : 'text-muted-foreground hover:bg-accent/40 hover:text-foreground'
-                              }`}
-                              title="Copier le numéro de licence"
-                              aria-label={`Copier le numéro de licence de ${player.firstName} ${player.lastName}`}
-                            >
-                              {isCopied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
-                            </button>
-                          )}
-                        </div>
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          {parentContact('father', phone?.fatherPhone ?? '')}
-                          {parentContact('mother', phone?.motherPhone ?? '')}
-                          {phone?.legacyPhone && (
-                            <div className="inline-flex flex-wrap items-center gap-2">
-                              <button
-                                type="button"
-                                onClick={() => setVisiblePhones((current) => ({ ...current, [player.number + '-legacy']: !current[player.number + '-legacy'] }))}
-                                aria-expanded={Boolean(visiblePhones[player.number + '-legacy'])}
-                                aria-label="Afficher ou masquer l’ancien numéro de téléphone"
-                                className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-accent/50 bg-card px-2.5 text-xs font-semibold text-muted-foreground"
-                              >
-                                <Phone aria-hidden="true" className="size-3.5" />
-                                Autre contact
-                              </button>
-                              {visiblePhones[player.number + '-legacy'] && (
-                                <span className="font-mono text-sm font-bold text-primary">{phone.legacyPhone}</span>
-                              )}
-                              {visiblePhones[player.number + '-legacy'] && (
-                                <PhoneActionButtons
-                                  phone={phone.legacyPhone}
-                                  label="l’autre contact"
-                                  playerName={`${player.firstName} ${player.lastName}`}
-                                />
+                    <li
+                      key={player.number}
+                      className="rounded-2xl border-2 border-[#172554]/15 bg-card p-3.5 shadow-sm transition-all hover:border-[#172554]/40 hover:shadow-md"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <span
+                            title={`N°${player.number}`}
+                            className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-[#172554] text-xs font-black text-amber-300 ring-2 ring-amber-400/50 shadow-sm"
+                          >
+                            {player.number}
+                          </span>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <p className="truncate text-base font-bold text-foreground">
+                                {player.firstName} <span className="font-black uppercase tracking-wide text-primary">{player.lastName}</span>
+                              </p>
+                              {educator.role === 'admin' && (
+                                <button
+                                  type="button"
+                                  onClick={() => openPhoneEditor(player)}
+                                  disabled={requestPending}
+                                  aria-label={`Modifier les téléphones pour ${player.firstName} ${player.lastName}`}
+                                  title="Modifier les numéros"
+                                  className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-accent/40 bg-card text-muted-foreground transition hover:bg-accent/40 hover:text-foreground disabled:opacity-50"
+                                >
+                                  <Pencil aria-hidden="true" className="size-3" />
+                                </button>
                               )}
                             </div>
-                          )}
+                            <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
+                              <span>Licence FFF : <span className="font-mono font-medium">{licenseNumber ?? 'non renseigné'}</span></span>
+                              {licenseNumber && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleCopy(licenseNumber)}
+                                  className={`inline-flex size-5 shrink-0 items-center justify-center rounded transition ${
+                                    isCopied
+                                      ? 'bg-emerald-600 text-white'
+                                      : 'text-muted-foreground hover:bg-accent/40 hover:text-foreground'
+                                  }`}
+                                  title="Copier le numéro de licence"
+                                  aria-label={`Copier le numéro de licence de ${player.firstName} ${player.lastName}`}
+                                >
+                                  {isCopied ? <Check className="size-3" /> : <Copy className="size-3" />}
+                                </button>
+                              )}
+                            </div>
+                          </div>
                         </div>
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-accent/40 bg-muted/40 p-2">
+                        {parentContact('father', phone?.fatherPhone ?? '')}
+                        {parentContact('mother', phone?.motherPhone ?? '')}
+                        {phone?.legacyPhone && (
+                          <div className="inline-flex flex-wrap items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => setVisiblePhones((current) => ({ ...current, [player.number + '-legacy']: !current[player.number + '-legacy'] }))}
+                              aria-expanded={Boolean(visiblePhones[player.number + '-legacy'])}
+                              aria-label="Afficher ou masquer l’ancien numéro de téléphone"
+                              className="inline-flex min-h-9 items-center gap-1.5 rounded-xl border border-accent/50 bg-card px-2.5 text-xs font-semibold text-muted-foreground"
+                            >
+                              <Phone aria-hidden="true" className="size-3.5" />
+                              Autre contact
+                            </button>
+                            {visiblePhones[player.number + '-legacy'] && (
+                              <span className="font-mono text-sm font-bold text-primary">{phone.legacyPhone}</span>
+                            )}
+                            {visiblePhones[player.number + '-legacy'] && (
+                              <PhoneActionButtons
+                                phone={phone.legacyPhone}
+                                label="l’autre contact"
+                                playerName={`${player.firstName} ${player.lastName}`}
+                              />
+                            )}
+                          </div>
+                        )}
                       </div>
                     </li>
                   )

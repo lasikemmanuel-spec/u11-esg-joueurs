@@ -441,9 +441,12 @@ export function MatchResultEntry({
                             : 'bg-amber-400 text-blue-950',
                         ].join(' ')}
                       >
-                        <span className="text-[11px] font-black uppercase tracking-widest">
-                          Équipe {isE1 ? '1' : '2'}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <ClubCrest className={['size-6 shrink-0 rounded-full ring-2', isE1 ? 'ring-white/40' : 'ring-blue-950/30'].join(' ')} />
+                          <span className="text-[11px] font-black uppercase tracking-widest">
+                            ESG – Équipe {isE1 ? '1' : '2'}
+                          </span>
+                        </div>
                         {canManage && (
                           <button
                             type="button"

@@ -2,7 +2,7 @@
 
 import { ClubCrest } from '@/components/club-crest'
 import { PlayerOffensiveRankings } from '@/components/player-offensive-rankings'
-import { ireStatus, type IreStatus, type PlayerStats as Stats } from '@/lib/stats'
+import { ireStatus, type IreStatus, type PlayerStats as Stats } from '@/lib/stats-shared'
 import type { Convocation, MatchStatus } from '@/lib/convocations'
 import type { PublicPlayer } from '@/lib/players'
 

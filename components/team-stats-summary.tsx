@@ -1,4 +1,4 @@
-import { ireStatus, type StatsData } from '@/lib/stats'
+import { ireStatus, type StatsData } from '@/lib/stats-shared'
 
 const sum = (values: (number | null)[]) => values.reduce<number>((acc, v) => acc + (v ?? 0), 0)
 

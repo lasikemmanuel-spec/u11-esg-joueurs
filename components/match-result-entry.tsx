@@ -468,11 +468,11 @@ export function MatchResultEntry({
                           <h4 className="truncate text-base font-black leading-tight text-foreground">
                             {entry.opponent || 'À préciser'}
                           </h4>
-                          <div className="mt-1 flex flex-wrap gap-1">
-                            <span className="inline-flex items-center rounded-full border border-border bg-background px-2 py-px text-[10px] font-semibold text-foreground">
+                          <div className="mt-1 flex flex-nowrap gap-1 overflow-hidden">
+                            <span className="inline-flex shrink-0 items-center rounded-full border border-border bg-background px-2 py-px text-[10px] font-semibold text-foreground">
                               {entry.competition || 'Type ?'}
                             </span>
-                            <span className="inline-flex items-center gap-0.5 rounded-full border border-border bg-background px-2 py-px text-[10px] font-semibold text-foreground">
+                            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-border bg-background px-2 py-px text-[10px] font-semibold text-foreground">
                               <span>{homeAwayIcon}</span>
                               <span>{entry.homeAway || 'Lieu ?'}</span>
                             </span>

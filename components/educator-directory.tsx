@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState, type FormEvent } from 'react'
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Pencil, Phone, Plus, Save, Trash2, X } from 'lucide-react'
 import { EducatorAvatar } from '@/components/educator-avatar'
 import { ClubCrest } from '@/components/club-crest'
@@ -49,10 +49,22 @@ export function EducatorDirectory({
     if (suffixMatches.length > 1) return undefined
     return suffixMatches[0] ?? (exactMatches.length === 1 ? exactMatches[0] : undefined)
   })()
-  const visibleEducators = !isSearching && ownDirectoryEntry
-    ? filteredEducators.filter((educator) => educator.id !== ownDirectoryEntry.id)
-    : filteredEducators
-  const ownPhoneKey = 'own-educator-profile'
+  const allCards = useMemo(() => {
+    if (isSearching) return filteredEducators
+    if (!currentEducator) return filteredEducators
+    if (ownDirectoryEntry) {
+      const others = filteredEducators.filter((e) => e.id !== ownDirectoryEntry.id)
+      return [ownDirectoryEntry, ...others]
+    }
+    const myEntry: DirectoryEducator = {
+      id: 'me-auto-entry',
+      name: currentEducator.displayName,
+      licenseNumber: '',
+      phone: '',
+    }
+    return [myEntry, ...filteredEducators]
+  }, [currentEducator, filteredEducators, isSearching, ownDirectoryEntry])
+
   const load = useCallback(async () => {
     const response = await fetch('/api/educators/directory', { cache: 'no-store' })
     const data = await response.json()
@@ -172,77 +184,6 @@ export function EducatorDirectory({
         </div>
       </div>
       )}
-      {!isSearching && currentEducator && (
-        <div className="mt-4 rounded-2xl border-2 border-[#172554]/20 bg-card p-4 shadow-sm transition-all hover:border-[#172554]/40 hover:shadow-md">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3.5 min-w-0">
-              <div className="relative shrink-0 ring-2 ring-amber-400/60 rounded-full">
-                <EducatorAvatar username={currentEducator.username} revision={photoRevision} size="size-14 sm:size-16" />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Ma fiche</span>
-                  <span className="inline-flex rounded-full bg-[#172554] px-2 py-0.5 text-[11px] font-black text-amber-300 ring-1 ring-amber-400/40">
-                    {currentEducator.role === 'admin' ? 'Administrateur' : currentEducator.role === 'educator' ? 'Éducateur' : 'Lecteur'}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDraft({
-                        name: currentEducator.displayName,
-                        licenseNumber: ownDirectoryEntry?.licenseNumber ?? '',
-                        phone: ownDirectoryEntry?.phone ?? '',
-                      })
-                      setEditingOwn(true)
-                      setError('')
-                      setOpen(true)
-                    }}
-                    aria-label="Modifier ma fiche"
-                    title="Modifier ma fiche"
-                    className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-accent/40 bg-card text-muted-foreground transition hover:bg-accent/40 hover:text-foreground"
-                  >
-                    <Pencil aria-hidden="true" className="size-3" />
-                  </button>
-                </div>
-                <p className="truncate text-base font-black text-primary">{ownDirectoryEntry?.name ?? currentEducator.displayName}</p>
-                <p className="mt-0.5 text-xs text-muted-foreground">
-                  Licence FFF : <span className="font-mono font-medium">{ownDirectoryEntry?.licenseNumber || 'non renseignée'}</span>
-                </p>
-              </div>
-            </div>
-          </div>
-          {ownDirectoryEntry?.phone && (
-            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-accent/40 bg-muted/40 p-2">
-              <div className="flex items-center gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setVisiblePhones((current) => ({ ...current, [ownPhoneKey]: !current[ownPhoneKey] }))}
-                  aria-expanded={Boolean(visiblePhones[ownPhoneKey])}
-                  aria-label={`${visiblePhones[ownPhoneKey] ? 'Masquer' : 'Afficher'} votre téléphone`}
-                  className={`inline-flex min-h-9 items-center gap-2 rounded-xl border px-2.5 text-xs font-bold transition shadow-sm ${
-                    visiblePhones[ownPhoneKey]
-                      ? 'border-primary/60 bg-primary/10 text-primary'
-                      : 'border-accent/50 bg-card text-primary hover:bg-primary/5 hover:shadow-md'
-                  }`}
-                >
-                  <Phone aria-hidden="true" className="size-3.5" />
-                  <span>Téléphone</span>
-                </button>
-                {visiblePhones[ownPhoneKey] && (
-                  <span className="font-mono text-sm font-bold text-primary whitespace-nowrap">{ownDirectoryEntry.phone}</span>
-                )}
-              </div>
-              {visiblePhones[ownPhoneKey] && (
-                <PhoneActionButtons
-                  phone={ownDirectoryEntry.phone}
-                  label="mon numéro"
-                  playerName={ownDirectoryEntry.name}
-                />
-              )}
-            </div>
-          )}
-        </div>
-      )}
       {notice && <p role="status" className="mt-3 text-sm font-medium text-emerald-700">{notice}</p>}
       {error && !open && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
       {educators.length === 0 ? (
@@ -251,13 +192,14 @@ export function EducatorDirectory({
             L’annuaire est vide. {canEdit ? 'Ajoute la première fiche pour créer son onglet dédié dans le Sheet.' : 'Un administrateur pourra ajouter les fiches.'}
           </p>
         )
-      ) : visibleEducators.length === 0 ? (
+      ) : allCards.length === 0 ? (
         null
       ) : (
         <>
           {isSearching && searchTitle && <h2 className="font-bold text-primary">{searchTitle}</h2>}
           <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {visibleEducators.map((educator) => {
+            {allCards.map((educator: DirectoryEducator) => {
+              const isOwn = currentEducator && (educator.id === ownDirectoryEntry?.id || educator.id === 'me-auto-entry')
               const isPhoneOpen = Boolean(visiblePhones[educator.id])
               return (
                 <li
@@ -266,36 +208,68 @@ export function EducatorDirectory({
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#172554] text-xs font-black text-amber-300 ring-2 ring-amber-400/40 shadow-sm">
-                        {educator.name.split(' ').map((n) => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()}
-                      </span>
+                      {isOwn ? (
+                        <div className="size-9 shrink-0 overflow-hidden rounded-xl ring-2 ring-amber-400/60 shadow-sm flex items-center justify-center bg-[#172554]">
+                          <EducatorAvatar username={currentEducator.username} revision={photoRevision} size="size-9" />
+                        </div>
+                      ) : (
+                        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#172554] text-xs font-black text-amber-300 ring-2 ring-amber-400/40 shadow-sm">
+                          {educator.name.split(' ').map((n: string) => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()}
+                        </span>
+                      )}
                       <div className="min-w-0">
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1.5 flex-wrap">
                           <h3 className="truncate text-base font-bold text-foreground">
                             {educator.name}
                           </h3>
-                          {canEdit && (
+                          {isOwn && (
+                            <span className="inline-flex rounded-full bg-[#172554] px-2 py-0.5 text-[10px] font-black text-amber-300 ring-1 ring-amber-400/40">
+                              {currentEducator.role === 'admin' ? 'Admin' : 'Moi'}
+                            </span>
+                          )}
+                          {isOwn ? (
                             <button
                               type="button"
-                              onClick={() => edit(educator)}
-                              aria-label={`Modifier ${educator.name}`}
-                              title="Modifier la fiche"
+                              onClick={() => {
+                                setDraft({
+                                  name: currentEducator.displayName,
+                                  licenseNumber: ownDirectoryEntry?.licenseNumber ?? '',
+                                  phone: ownDirectoryEntry?.phone ?? '',
+                                })
+                                setEditingOwn(true)
+                                setError('')
+                                setOpen(true)
+                              }}
+                              aria-label="Modifier ma fiche"
+                              title="Modifier ma fiche"
                               className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-accent/40 bg-card text-muted-foreground transition hover:bg-accent/40 hover:text-foreground"
                             >
                               <Pencil aria-hidden="true" className="size-3" />
                             </button>
-                          )}
-                          {canEdit && (
-                            <button
-                              type="button"
-                              onClick={() => void removeEducator(educator)}
-                              disabled={deletingId !== null}
-                              aria-label={`Supprimer la fiche de ${educator.name}`}
-                              title="Supprimer la fiche"
-                              className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-destructive/30 bg-card text-destructive transition hover:bg-destructive/10 disabled:opacity-50"
-                            >
-                              <Trash2 aria-hidden="true" className="size-3" />
-                            </button>
+                          ) : (
+                            canEdit && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => edit(educator)}
+                                  aria-label={`Modifier ${educator.name}`}
+                                  title="Modifier la fiche"
+                                  className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-accent/40 bg-card text-muted-foreground transition hover:bg-accent/40 hover:text-foreground"
+                                >
+                                  <Pencil aria-hidden="true" className="size-3" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => void removeEducator(educator)}
+                                  disabled={deletingId !== null}
+                                  aria-label={`Supprimer la fiche de ${educator.name}`}
+                                  title="Supprimer la fiche"
+                                  className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-destructive/30 bg-card text-destructive transition hover:bg-destructive/10 disabled:opacity-50"
+                                >
+                                  <Trash2 aria-hidden="true" className="size-3" />
+                                </button>
+                              </>
+                            )
                           )}
                         </div>
                         <p className="mt-0.5 text-xs text-muted-foreground">
@@ -305,7 +279,7 @@ export function EducatorDirectory({
                     </div>
                   </div>
 
-                  {educator.phone && (
+                  {educator.phone ? (
                     <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-accent/40 bg-muted/40 p-2">
                       <div className="flex items-center gap-2 shrink-0">
                         <button
@@ -334,7 +308,27 @@ export function EducatorDirectory({
                         />
                       )}
                     </div>
-                  )}
+                  ) : isOwn ? (
+                    <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-dashed border-accent/60 bg-muted/20 p-2 text-xs text-muted-foreground">
+                      <span>Aucun téléphone</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDraft({
+                            name: currentEducator.displayName,
+                            licenseNumber: ownDirectoryEntry?.licenseNumber ?? '',
+                            phone: '',
+                          })
+                          setEditingOwn(true)
+                          setError('')
+                          setOpen(true)
+                        }}
+                        className="font-bold text-primary hover:underline"
+                      >
+                        Ajouter
+                      </button>
+                    </div>
+                  ) : null}
                 </li>
               )
             })}

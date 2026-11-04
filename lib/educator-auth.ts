@@ -6,6 +6,7 @@ export type { EducatorAccount } from '@/lib/educator-account-store'
 
 const SESSION_COOKIE = 'educator_session'
 const SESSION_DURATION_SECONDS = 8 * 60 * 60
+const SESSION_REMEMBER_ME_SECONDS = 30 * 24 * 60 * 60
 
 export type EducatorSession = Pick<EducatorAccount, 'username' | 'displayName' | 'role'>
 
@@ -68,8 +69,9 @@ export function hashEducatorPassword(password: string) {
   return `scrypt$${salt.toString('base64url')}$${hash.toString('base64url')}`
 }
 
-export function createEducatorSession(account: EducatorAccount) {
-  const expiresAt = Math.floor(Date.now() / 1000) + SESSION_DURATION_SECONDS
+export function createEducatorSession(account: EducatorAccount, rememberMe = false) {
+  const duration = rememberMe ? SESSION_REMEMBER_ME_SECONDS : SESSION_DURATION_SECONDS
+  const expiresAt = Math.floor(Date.now() / 1000) + duration
   const credentialVersion = crypto.createHash('sha256').update(account.passwordHash).digest('base64url')
   const payload = Buffer.from(JSON.stringify({
     username: account.username,
@@ -77,7 +79,7 @@ export function createEducatorSession(account: EducatorAccount) {
     credentialVersion,
   })).toString('base64url')
   const signature = crypto.createHmac('sha256', getSessionSecret()).update(payload).digest('base64url')
-  return { token: `${payload}.${signature}`, maxAge: SESSION_DURATION_SECONDS }
+  return { token: `${payload}.${signature}`, maxAge: duration }
 }
 
 export async function getEducatorSession(request: Request): Promise<EducatorSession | null> {

@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { getEducatorSession } from '@/lib/educator-auth'
 import {
   createGoogleOAuthState,
   getGoogleOAuthRedirectUri,
@@ -7,6 +8,14 @@ import {
 } from '@/lib/google-oauth-state'
 
 export async function GET(request: Request) {
+  const educator = await getEducatorSession(request).catch(() => null)
+  if (!educator || educator.role !== 'admin') {
+    return NextResponse.json(
+      { error: 'Accès réservé aux administrateurs du club.' },
+      { status: 403, headers: { 'Cache-Control': 'no-store' } },
+    )
+  }
+
   const clientId = process.env.GOOGLE_CLIENT_ID
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET
   if (!clientId || !clientSecret) {

@@ -1,3 +1,4 @@
+import { getEducatorSession } from '@/lib/educator-auth'
 import {
   getGoogleOAuthRedirectUri,
   googleOAuthStateCookieName,
@@ -44,6 +45,11 @@ function errorPage(message: string, status: number) {
 }
 
 export async function GET(request: Request) {
+  const educator = await getEducatorSession(request).catch(() => null)
+  if (!educator || educator.role !== 'admin') {
+    return errorPage('Accès réservé aux administrateurs du club.', 403)
+  }
+
   const url = new URL(request.url)
   if (!hasValidGoogleOAuthState(request, url.searchParams.get('state'))) {
     return errorPage('La requête a expiré ou n’est pas valide. Recommencez l’autorisation.', 400)

@@ -63,6 +63,7 @@ export function DashboardTabs({
   const [applicationSession, setApplicationSession] = useState<ApplicationSession>('checking')
   const [loginUsername, setLoginUsername] = useState('')
   const [loginPassword, setLoginPassword] = useState('')
+  const [rememberMe, setRememberMe] = useState(true)
   const [loginError, setLoginError] = useState('')
   const [loginPending, setLoginPending] = useState(false)
   const [logoutPending, setLogoutPending] = useState(false)
@@ -106,7 +107,7 @@ export function DashboardTabs({
       const response = await fetch('/api/educators/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: loginUsername, password: loginPassword }),
+        body: JSON.stringify({ username: loginUsername, password: loginPassword, rememberMe }),
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error ?? 'Connexion impossible.')
@@ -237,7 +238,7 @@ export function DashboardTabs({
           <section className="mx-auto w-full max-w-md rounded-2xl border border-accent/50 bg-card p-6 shadow-lg">
             <h2 className="text-xl font-black text-primary">Connexion à l’application</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              Connectez-vous pour accéder aux rubriques selon votre rôle. La session reste active 8 heures.
+              Connectez-vous pour accéder aux effectifs, convocations et statistiques selon votre rôle.
             </p>
             {applicationSession === 'checking' ? (
               <p role="status" className="mt-5 text-sm text-muted-foreground">Vérification de la connexion…</p>
@@ -267,6 +268,15 @@ export function DashboardTabs({
                     onChange={(event) => setLoginPassword(event.target.value)}
                     className="h-11 rounded-lg border border-accent/50 bg-background px-3 font-normal"
                   />
+                </label>
+                <label className="flex items-center gap-2 pt-1 text-xs text-muted-foreground select-none cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(event) => setRememberMe(event.target.checked)}
+                    className="size-4 rounded border-accent/60 accent-primary"
+                  />
+                  <span>Rester connecté sur cet appareil (30 jours)</span>
                 </label>
                 {loginError && <p role="alert" className="text-sm font-medium text-destructive">{loginError}</p>}
                 <button

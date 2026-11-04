@@ -190,11 +190,6 @@ export function MatchLineupPlanner({
               ? 'Feuille de match de la prochaine date'
               : 'Feuilles de match des 2 prochaines dates'}
         </h3>
-        {upcomingMatches.length > 0 && (
-          <p className="mt-1 text-xs text-muted-foreground">
-            Les joueurs convoqués sont ajoutés automatiquement. Indique qui commence le match (8 maximum) et qui peut entrer en cours de jeu ; les choix sont enregistrés immédiatement. Toute modification de convocation actualise la feuille.
-          </p>
-        )}
       </header>
       {loading ? (
         <p className="text-sm text-muted-foreground">Chargement des feuilles de match…</p>

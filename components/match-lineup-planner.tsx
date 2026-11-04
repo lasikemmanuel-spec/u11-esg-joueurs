@@ -111,6 +111,18 @@ export function MatchLineupPlanner({
     const upcomingDates = new Set([...new Set(scheduled.map((entry) => entry.date))].slice(0, 2))
     return scheduled.filter((entry) => upcomingDates.has(entry.date))
   }, [entries])
+  const upcomingDateGroups = useMemo(() => {
+    const matchesByDate = new Map<string, typeof upcomingMatches>()
+    for (const match of upcomingMatches) {
+      matchesByDate.set(match.date, [...(matchesByDate.get(match.date) ?? []), match])
+    }
+    return [...matchesByDate.entries()].map(([date, matches]) => ({
+      date,
+      matches: [...matches].sort((a, b) =>
+        a.team === b.team ? a.slotColumn - b.slotColumn : a.team === 'E1' ? -1 : 1,
+      ),
+    }))
+  }, [upcomingMatches])
   const previousMatches = useMemo(() => {
     const today = localToday()
     return entries
@@ -178,27 +190,27 @@ export function MatchLineupPlanner({
   }
 
   if (upcomingMatches.length === 0 && previousMatches.length === 0) return null
-  const upcomingDateCount = new Set(upcomingMatches.map((match) => match.date)).size
 
   return (
-    <section aria-labelledby="match-lineup-title" className="mt-4 rounded-xl border border-accent/50 bg-card p-4 shadow-sm">
-      <header className="mb-3">
-        <h3 id="match-lineup-title" className="font-bold text-primary">
-          {upcomingMatches.length === 0
-            ? 'Feuilles de match'
-            : upcomingDateCount === 1
-              ? 'Feuille de match de la prochaine date'
-              : 'Feuilles de match des 2 prochaines dates'}
-        </h3>
-      </header>
+    <section aria-label="Feuilles de match" className="mt-4 rounded-xl border border-accent/50 bg-card p-4 shadow-sm">
       {loading ? (
         <p className="text-sm text-muted-foreground">Chargement des feuilles de match…</p>
       ) : (
         <>
           {error && <p role="alert" className="mb-3 text-sm font-medium text-destructive">{error}</p>}
           {notice && <p role="status" className="mb-3 text-sm font-medium text-emerald-700">{notice}</p>}
-          <div className="grid gap-3 lg:grid-cols-2">
-            {upcomingMatches.map((match) => {
+          {upcomingDateGroups.map(({ date, matches }) => (
+            <details key={date} open className="mb-3 rounded-lg border border-border">
+              <summary className="cursor-pointer rounded-lg bg-muted/50 px-3 py-3 font-bold capitalize text-primary">
+                Feuille de match du {new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })}
+              </summary>
+              <div className="grid gap-3 p-3 lg:grid-cols-2">
+                {matches.map((match) => {
               const key = matchKey(match)
               const lineup = lineups.find((item) => matchKey(item) === key)
               const assignments = assignmentsFromLineup(lineup)
@@ -215,14 +227,10 @@ export function MatchLineupPlanner({
                   <header className="mb-3 flex flex-wrap items-start justify-between gap-2">
                     <div>
                       <h4 className="font-bold text-foreground">
-                        {new Date(`${match.date}T12:00:00`).toLocaleDateString('fr-FR', {
-                          weekday: 'long',
-                          day: 'numeric',
-                          month: 'long',
-                        })}
+                        Équipe {match.team === 'E1' ? '1' : '2'}
                       </h4>
                       <p className="text-xs text-muted-foreground">
-                        Équipe {match.team === 'E1' ? '1' : '2'} · {match.opponent || 'Adversaire à préciser'} · {match.competition}
+                        {match.opponent || 'Adversaire à préciser'} · {match.competition}
                       </p>
                     </div>
                     <span className="rounded-full bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground">
@@ -309,7 +317,9 @@ export function MatchLineupPlanner({
                 </article>
               )
             })}
-          </div>
+              </div>
+            </details>
+          ))}
           {previousMatches.length > 0 && (
             <details className="mt-4 rounded-lg border border-border">
               <summary className="cursor-pointer rounded-lg bg-muted/50 px-3 py-3 text-sm font-bold text-primary">

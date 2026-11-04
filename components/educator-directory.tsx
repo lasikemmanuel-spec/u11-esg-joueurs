@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Pencil, Phone, Plus, Save, Trash2, X } from 'lucide-react'
 import { EducatorAvatar } from '@/components/educator-avatar'
+import { ClubCrest } from '@/components/club-crest'
+import { PhoneActionButtons } from '@/components/phone-action-buttons'
 import type { DirectoryEducator } from '@/lib/educator-directory'
 import { hasEducatorSurname, sameEducatorName } from '@/lib/educator-name'
 import { matchesSearch } from '@/lib/search'
@@ -149,75 +151,96 @@ export function EducatorDirectory({
       className={isSearching ? '' : 'rounded-2xl border border-accent/50 bg-card p-4 shadow-sm'}
     >
       {!isSearching && (
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h2 id="educator-directory-title" className="font-bold text-primary">Annuaire des éducateurs</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Coordonnées séparées des fiches joueurs.</p>
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] p-4 text-white shadow-sm">
+        <div className="flex items-center gap-3">
+          <ClubCrest className="size-10 shrink-0 ring-2 ring-amber-400/80 shadow-md" />
+          <div>
+            <h2 id="educator-directory-title" className="text-lg font-black tracking-wide text-white">Annuaire des éducateurs</h2>
+            <p className="mt-0.5 text-xs text-blue-200">Coordonnées et licences de l’encadrement ESG</p>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          {canEdit && showAddButton && <button type="button" onClick={() => { setDraft(blank); setEditingOwn(false); setError(''); setOpen(true) }} className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground"><Plus className="size-4" /> Ajouter un éducateur</button>}
+          {canEdit && showAddButton && (
+            <button
+              type="button"
+              onClick={() => { setDraft(blank); setEditingOwn(false); setError(''); setOpen(true) }}
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-amber-400 px-3.5 text-xs font-black text-blue-950 shadow-sm transition hover:bg-amber-300"
+            >
+              <Plus className="size-4" /> Ajouter un éducateur
+            </button>
+          )}
         </div>
       </div>
       )}
       {!isSearching && currentEducator && (
-        <div className="mt-4 grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-xl border border-accent/50 bg-background p-3 sm:flex sm:flex-wrap">
-          <EducatorAvatar username={currentEducator.username} revision={photoRevision} size="size-14 sm:size-16" />
-          <div className="min-w-0 sm:flex-1">
-            <p className="whitespace-nowrap text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">Ma fiche éducateur</p>
-            <p className="break-words font-bold text-foreground">{ownDirectoryEntry?.name ?? currentEducator.displayName}</p>
-            <span className="mt-1 inline-flex rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary">
-              {currentEducator.role === 'admin' ? 'Administrateur' : currentEducator.role === 'educator' ? 'Éducateur' : 'Lecteur'}
-            </span>
-            <div className="mt-2 flex min-w-0 flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
-              <span>Licence FFF : <strong className="text-primary">{ownDirectoryEntry?.licenseNumber || 'non renseignée'}</strong></span>
-              {ownDirectoryEntry?.phone && (
-                <div className="flex flex-wrap items-center gap-2">
+        <div className="mt-4 rounded-2xl border-2 border-[#172554]/20 bg-card p-4 shadow-sm transition-all hover:border-[#172554]/40 hover:shadow-md">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3.5 min-w-0">
+              <div className="relative shrink-0 ring-2 ring-amber-400/60 rounded-full">
+                <EducatorAvatar username={currentEducator.username} revision={photoRevision} size="size-14 sm:size-16" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Ma fiche</span>
+                  <span className="inline-flex rounded-full bg-[#172554] px-2 py-0.5 text-[11px] font-black text-amber-300 ring-1 ring-amber-400/40">
+                    {currentEducator.role === 'admin' ? 'Administrateur' : currentEducator.role === 'educator' ? 'Éducateur' : 'Lecteur'}
+                  </span>
                   <button
                     type="button"
-                    onClick={() => setVisiblePhones((current) => ({ ...current, [ownPhoneKey]: !current[ownPhoneKey] }))}
-                    aria-expanded={Boolean(visiblePhones[ownPhoneKey])}
-                    aria-label={`${visiblePhones[ownPhoneKey] ? 'Masquer' : 'Afficher'} votre téléphone`}
-                    className="inline-flex min-h-9 items-center gap-2 rounded-xl border border-accent/50 bg-card px-2.5 text-sm font-bold text-primary shadow-sm transition hover:bg-primary/5 hover:shadow-md"
+                    onClick={() => {
+                      setDraft({
+                        name: currentEducator.displayName,
+                        licenseNumber: ownDirectoryEntry?.licenseNumber ?? '',
+                        phone: ownDirectoryEntry?.phone ?? '',
+                      })
+                      setEditingOwn(true)
+                      setError('')
+                      setOpen(true)
+                    }}
+                    aria-label="Modifier ma fiche"
+                    title="Modifier ma fiche"
+                    className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-accent/40 bg-card text-muted-foreground transition hover:bg-accent/40 hover:text-foreground"
                   >
-                    <Phone aria-hidden="true" className="size-4" />
-                    <span>Téléphone</span>
+                    <Pencil aria-hidden="true" className="size-3" />
                   </button>
-                  {visiblePhones[ownPhoneKey] && (
-                    <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
-                      <span className="min-w-0 break-all text-sm font-semibold text-primary">{ownDirectoryEntry.phone}</span>
-                      {isPhoneDevice && (
-                        <a
-                          href={`tel:${ownDirectoryEntry.phone.replace(/[^+\d]/g, '')}`}
-                          aria-label={`Appeler ${ownDirectoryEntry.name}`}
-                          title={`Appeler ${ownDirectoryEntry.name}`}
-                          className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground"
-                        >
-                          <Phone aria-hidden="true" className="size-3.5" />
-                          Appeler
-                        </a>
-                      )}
-                    </div>
-                  )}
                 </div>
-              )}
+                <p className="truncate text-base font-black text-primary">{ownDirectoryEntry?.name ?? currentEducator.displayName}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Licence FFF : <span className="font-mono font-medium">{ownDirectoryEntry?.licenseNumber || 'non renseignée'}</span>
+                </p>
+              </div>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              setDraft({
-                name: currentEducator.displayName,
-                licenseNumber: ownDirectoryEntry?.licenseNumber ?? '',
-                phone: ownDirectoryEntry?.phone ?? '',
-              })
-              setEditingOwn(true)
-              setError('')
-              setOpen(true)
-            }}
-            className="col-span-2 inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-accent/50 bg-card px-3 text-sm font-bold text-primary sm:ml-auto sm:w-auto"
-          >
-            <Pencil aria-hidden="true" className="size-4" /> Modifier ma fiche
-          </button>
+          {ownDirectoryEntry?.phone && (
+            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-accent/40 bg-muted/40 p-2">
+              <div className="flex items-center gap-2 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setVisiblePhones((current) => ({ ...current, [ownPhoneKey]: !current[ownPhoneKey] }))}
+                  aria-expanded={Boolean(visiblePhones[ownPhoneKey])}
+                  aria-label={`${visiblePhones[ownPhoneKey] ? 'Masquer' : 'Afficher'} votre téléphone`}
+                  className={`inline-flex min-h-9 items-center gap-2 rounded-xl border px-2.5 text-xs font-bold transition shadow-sm ${
+                    visiblePhones[ownPhoneKey]
+                      ? 'border-primary/60 bg-primary/10 text-primary'
+                      : 'border-accent/50 bg-card text-primary hover:bg-primary/5 hover:shadow-md'
+                  }`}
+                >
+                  <Phone aria-hidden="true" className="size-3.5" />
+                  <span>Téléphone</span>
+                </button>
+                {visiblePhones[ownPhoneKey] && (
+                  <span className="font-mono text-sm font-bold text-primary whitespace-nowrap">{ownDirectoryEntry.phone}</span>
+                )}
+              </div>
+              {visiblePhones[ownPhoneKey] && (
+                <PhoneActionButtons
+                  phone={ownDirectoryEntry.phone}
+                  label="mon numéro"
+                  playerName={ownDirectoryEntry.name}
+                />
+              )}
+            </div>
+          )}
         </div>
       )}
       {notice && <p role="status" className="mt-3 text-sm font-medium text-emerald-700">{notice}</p>}
@@ -233,63 +256,88 @@ export function EducatorDirectory({
       ) : (
         <>
           {isSearching && searchTitle && <h2 className="font-bold text-primary">{searchTitle}</h2>}
-          <ul className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {visibleEducators.map((educator) => (
-            <li key={educator.id} className="rounded-xl border border-border bg-background p-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                    <h3 className="truncate font-bold text-foreground">{educator.name}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">Licence FFF : {educator.licenseNumber || 'non renseignée'}</p>
-                    {educator.phone && (
-                      <div className="mt-2 flex flex-wrap items-center gap-2">
+          <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {visibleEducators.map((educator) => {
+              const isPhoneOpen = Boolean(visiblePhones[educator.id])
+              return (
+                <li
+                  key={educator.id}
+                  className="rounded-2xl border-2 border-[#172554]/15 bg-card p-3.5 shadow-sm transition-all hover:border-[#172554]/40 hover:shadow-md"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#172554] text-xs font-black text-amber-300 ring-2 ring-amber-400/40 shadow-sm">
+                        {educator.name.split(' ').map((n) => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()}
+                      </span>
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          <h3 className="truncate text-base font-bold text-foreground">
+                            {educator.name}
+                          </h3>
+                          {canEdit && (
+                            <button
+                              type="button"
+                              onClick={() => edit(educator)}
+                              aria-label={`Modifier ${educator.name}`}
+                              title="Modifier la fiche"
+                              className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-accent/40 bg-card text-muted-foreground transition hover:bg-accent/40 hover:text-foreground"
+                            >
+                              <Pencil aria-hidden="true" className="size-3" />
+                            </button>
+                          )}
+                          {canEdit && (
+                            <button
+                              type="button"
+                              onClick={() => void removeEducator(educator)}
+                              disabled={deletingId !== null}
+                              aria-label={`Supprimer la fiche de ${educator.name}`}
+                              title="Supprimer la fiche"
+                              className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-destructive/30 bg-card text-destructive transition hover:bg-destructive/10 disabled:opacity-50"
+                            >
+                              <Trash2 aria-hidden="true" className="size-3" />
+                            </button>
+                          )}
+                        </div>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          Licence FFF : <span className="font-mono font-medium">{educator.licenseNumber || 'non renseignée'}</span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {educator.phone && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-accent/40 bg-muted/40 p-2">
+                      <div className="flex items-center gap-2 shrink-0">
                         <button
                           type="button"
                           onClick={() => setVisiblePhones((current) => ({ ...current, [educator.id]: !current[educator.id] }))}
-                          aria-expanded={Boolean(visiblePhones[educator.id])}
-                          aria-label={`${visiblePhones[educator.id] ? 'Masquer' : 'Afficher'} le téléphone de ${educator.name}`}
-                          className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-accent/50 bg-card px-2.5 text-sm font-bold text-primary shadow-sm transition hover:bg-primary/5 hover:shadow-md"
+                          aria-expanded={isPhoneOpen}
+                          aria-label={`${isPhoneOpen ? 'Masquer' : 'Afficher'} le téléphone de ${educator.name}`}
+                          className={`inline-flex min-h-9 items-center gap-2 rounded-xl border px-2.5 text-xs font-bold transition shadow-sm ${
+                            isPhoneOpen
+                              ? 'border-primary/60 bg-primary/10 text-primary'
+                              : 'border-accent/50 bg-card text-primary hover:bg-primary/5 hover:shadow-md'
+                          }`}
                         >
-                          <Phone aria-hidden="true" className="size-4" />
+                          <Phone aria-hidden="true" className="size-3.5" />
                           <span>Téléphone</span>
                         </button>
-                        {visiblePhones[educator.id] && (
-                          <div className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
-                            <span className="min-w-0 break-all text-sm font-semibold text-primary">{educator.phone}</span>
-                            {isPhoneDevice && (
-                              <a
-                                href={`tel:${educator.phone.replace(/[^+\d]/g, '')}`}
-                                aria-label={`Appeler ${educator.name}`}
-                                title={`Appeler ${educator.name}`}
-                                className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg bg-primary px-2.5 text-xs font-bold text-primary-foreground"
-                              >
-                                <Phone aria-hidden="true" className="size-3.5" />
-                                Appeler
-                              </a>
-                            )}
-                          </div>
+                        {isPhoneOpen && (
+                          <span className="font-mono text-sm font-bold text-primary whitespace-nowrap">{educator.phone}</span>
                         )}
                       </div>
-                    )}
-                </div>
-                {canEdit && (
-                  <div className="flex shrink-0 gap-1">
-                    <button type="button" onClick={() => edit(educator)} aria-label={`Modifier ${educator.name}`} className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-accent/50 px-2 text-xs font-semibold text-primary">
-                      <Pencil aria-hidden="true" className="size-3.5" /> Modifier
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void removeEducator(educator)}
-                      disabled={deletingId !== null}
-                      aria-label={`Supprimer la fiche de ${educator.name}`}
-                      className="inline-flex min-h-8 items-center justify-center rounded-lg border border-destructive/40 px-2 text-destructive disabled:opacity-50"
-                    >
-                      <Trash2 aria-hidden="true" className="size-4" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            </li>
-            ))}
+                      {isPhoneOpen && (
+                        <PhoneActionButtons
+                          phone={educator.phone}
+                          label="le numéro"
+                          playerName={educator.name}
+                        />
+                      )}
+                    </div>
+                  )}
+                </li>
+              )
+            })}
           </ul>
         </>
       )}

@@ -462,29 +462,28 @@ export function MatchResultEntry({
                         )}
                       </div>
                       {/* Corps */}
-                      <div className="flex flex-1 flex-col gap-3 p-3">
-                        {/* Adversaire */}
-                        <div>
-                          <h4 className="truncate text-lg font-black leading-tight text-foreground">
+                      <div className="flex items-center justify-between gap-2 px-3 py-2">
+                        {/* Gauche : nom + pills */}
+                        <div className="min-w-0 flex-1">
+                          <h4 className="truncate text-base font-black leading-tight text-foreground">
                             {entry.opponent || 'À préciser'}
                           </h4>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            <span className="inline-flex items-center rounded-full border border-border bg-background px-2 py-px text-[10px] font-semibold text-foreground">
+                              {entry.competition || 'Type ?'}
+                            </span>
+                            <span className="inline-flex items-center gap-0.5 rounded-full border border-border bg-background px-2 py-px text-[10px] font-semibold text-foreground">
+                              <span>{homeAwayIcon}</span>
+                              <span>{entry.homeAway || 'Lieu ?'}</span>
+                            </span>
+                          </div>
                         </div>
-                        {/* Pills infos */}
-                        <div className="flex flex-wrap gap-1.5">
-                          <span className="inline-flex items-center rounded-full border border-border bg-background px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                            {entry.competition || 'Type ?'}
-                          </span>
-                          <span className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2.5 py-0.5 text-[11px] font-semibold text-foreground">
-                            <span>{homeAwayIcon}</span>
-                            <span>{entry.homeAway || 'Lieu ?'}</span>
-                          </span>
-                        </div>
-                        {/* Score */}
-                        <div className="mt-auto flex items-end justify-between gap-2">
+                        {/* Droite : score */}
+                        <div className="flex shrink-0 flex-col items-end gap-0.5">
                           {resultLabel && (
-                            <span className="text-xs font-bold text-muted-foreground">{resultLabel}</span>
+                            <span className="text-[10px] font-bold text-muted-foreground">{resultLabel}</span>
                           )}
-                          <span className={['ml-auto inline-flex items-center rounded-xl px-4 py-1.5 font-mono text-sm font-black', scoreBg].join(' ')}>
+                          <span className={['inline-flex items-center rounded-lg px-3 py-1 font-mono text-sm font-black', scoreBg].join(' ')}>
                             {scoreLabel}
                           </span>
                         </div>

@@ -2,6 +2,7 @@ import { DashboardTabs } from '@/components/dashboard-tabs'
 import { ClubCrest } from '@/components/club-crest'
 import { DataQualityPanel } from '@/components/data-quality-panel'
 import { ScrollToTopButton } from '@/components/scroll-to-top-button'
+import Link from 'next/link'
 import { getRoster, type PublicPlayer, type Roster } from '@/lib/players'
 import { getStats, type StatsData } from '@/lib/stats'
 import { getConvocations, type ConvocationsData } from '@/lib/convocations'
@@ -117,6 +118,15 @@ export default async function Page() {
         <DataQualityPanel players={roster.players} />
       </DashboardTabs>
       <ScrollToTopButton />
+      {/* Footer RGPD */}
+      <footer className="relative z-10 pb-6 pt-2 text-center">
+        <Link
+          href="/confidentialite"
+          className="text-xs text-muted-foreground/60 underline underline-offset-2 hover:text-muted-foreground"
+        >
+          🔒 Politique de confidentialité &amp; RGPD
+        </Link>
+      </footer>
     </div>
   )
 }

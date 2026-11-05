@@ -83,11 +83,11 @@ export default function ConfidentialitePage() {
             <div className="rounded-xl border border-gray-200 bg-white p-4">
               <p className="font-black text-gray-900">Données des parents / représentants légaux</p>
               <ul className="mt-2 list-disc space-y-1 pl-5">
-                <li>Prénom (Papa / Maman)</li>
-                <li>Numéro de téléphone mobile</li>
+                <li>Lien de parenté uniquement (désignation « Papa » / « Maman » — <strong>aucun prénom ni nom de famille des parents n&apos;est enregistré</strong>)</li>
+                <li>Numéro de téléphone mobile de contact</li>
               </ul>
               <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
-                ⚠️ Ces données concernent des mineurs (enfants nés entre 2014 et 2016). Elles sont traitées avec la plus grande prudence.
+                ⚠️ Ces coordonnées permettent de joindre les responsables légaux des mineurs en cas d&apos;urgence ou pour les convocations. Elles sont chiffrées et visibles uniquement par les éducateurs connectés.
               </p>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-4">

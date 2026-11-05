@@ -171,14 +171,14 @@ export function DashboardTabs({
       : []),
   ]
   const mainHeader = (
-    <header className="relative z-20 border-b-2 border-accent bg-gradient-to-b from-[oklch(0.32_0.06_272)] to-primary text-primary-foreground">
-      <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:gap-4 sm:py-5 md:flex-row md:items-center md:justify-between md:px-6 md:py-6">
+    <header className="relative z-20 border-b-2 border-[#d4af37] bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] text-white shadow-md">
+      <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:gap-4 sm:py-5 md:flex-row md:items-center md:justify-between md:px-6 md:py-5">
         <div className="flex items-center gap-3 sm:gap-4 md:gap-5">
-          <ClubCrest className="size-14 shrink-0 sm:size-16 md:size-24" />
-          <div className="flex min-w-0 flex-col gap-1">
-            <h1 className="text-xl font-extrabold tracking-wide uppercase sm:text-2xl md:text-4xl">ES Genech</h1>
-            <p className="text-xs text-accent sm:text-sm md:text-base">Toujours ensemble, allez l’ESG</p>
-            <p className="text-sm text-white sm:text-base">Groupe U11 - Saison 2026/2027</p>
+          <ClubCrest className="size-14 shrink-0 rounded-full ring-2 ring-[#d4af37] shadow-lg sm:size-16 md:size-20" />
+          <div className="flex min-w-0 flex-col gap-0.5">
+            <h1 className="text-xl font-black tracking-wider uppercase text-white sm:text-2xl md:text-3xl">ES Genech</h1>
+            <p className="text-xs font-extrabold tracking-wide text-amber-300 sm:text-sm">Toujours ensemble, allez l’ESG</p>
+            <p className="text-xs text-white/80 font-medium sm:text-sm">Groupe U11 · Saison 2026/2027</p>
           </div>
         </div>
         <div className="flex min-w-0 flex-col gap-2 md:items-end">
@@ -188,21 +188,21 @@ export function DashboardTabs({
               <RefreshSheetButton compact />
             </div>
             {educatorIdentity && (
-              <div className="flex min-w-0 items-center gap-1.5 rounded-xl border border-primary-foreground/20 bg-primary-foreground/5 px-1.5 py-1 sm:gap-2 sm:px-2 sm:py-1.5">
+              <div className="flex min-w-0 items-center gap-1.5 rounded-xl border border-amber-400/30 bg-white/10 backdrop-blur-sm px-2 py-1 sm:gap-2 sm:px-2.5 sm:py-1.5">
                 <button
                   type="button"
                   onClick={() => setProfilePhotoOpen(true)}
                   aria-label="Afficher ou changer ma photo de profil"
                   title="Ma photo de profil"
-                  className="shrink-0 rounded-full ring-2 ring-accent/70 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white"
+                  className="shrink-0 rounded-full ring-2 ring-amber-400 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-white"
                 >
                   <EducatorAvatar username={educatorIdentity.username} revision={profilePhotoRevision} size="size-10 sm:size-11" />
                 </button>
                 <span className="min-w-0 text-[11px] font-semibold leading-tight sm:text-xs">
-                  <span className="block max-w-20 truncate text-sm sm:max-w-none">
+                  <span className="block max-w-20 truncate text-sm font-bold text-white sm:max-w-none">
                     {educatorIdentity.displayName.trim().split(/\s+/)[0]}
                   </span>
-                  <span className="block text-primary-foreground/70">
+                  <span className="block text-amber-300 font-semibold">
                     {educatorIdentity.role === 'admin' ? 'Admin' :
                       educatorIdentity.role === 'educator' ? 'Éducateur' : 'Lecteur'}
                   </span>
@@ -213,9 +213,9 @@ export function DashboardTabs({
                   disabled={logoutPending}
                   aria-label="Se déconnecter"
                   title="Se déconnecter"
-                  className="inline-flex size-10 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-white/10 text-sm font-semibold text-white hover:bg-white/20 disabled:opacity-50 sm:size-auto sm:min-h-10 sm:px-3"
+                  className="inline-flex size-9 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-white/10 text-xs font-semibold text-white hover:bg-white/20 disabled:opacity-50 sm:size-auto sm:min-h-9 sm:px-2.5"
                 >
-                  <LogOut aria-hidden="true" className="size-4" />
+                  <LogOut aria-hidden="true" className="size-3.5" />
                   <span className="hidden sm:inline">Déconnexion</span>
                 </button>
               </div>
@@ -223,7 +223,7 @@ export function DashboardTabs({
           </div>
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
             {logoutError && <p role="alert" className="text-xs font-medium text-red-200">{logoutError}</p>}
-            <p className="text-xs text-primary-foreground/70">Synchronisé le {updatedAt}</p>
+            <p className="text-[11px] text-white/70">Synchronisé le {updatedAt}</p>
           </div>
         </div>
       </div>
@@ -235,59 +235,65 @@ export function DashboardTabs({
       <>
         {mainHeader}
         <main className="relative z-20 mx-auto flex max-w-7xl flex-col gap-4 px-4 pt-6 pb-24 md:gap-6 md:px-6 md:pt-8 md:pb-24 xl:pb-8">
-          <section className="mx-auto w-full max-w-md rounded-2xl border border-accent/50 bg-card p-6 shadow-lg">
-            <h2 className="text-xl font-black text-primary">Connexion à l’application</h2>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Connectez-vous pour accéder aux effectifs, convocations et statistiques selon votre rôle.
-            </p>
-            {applicationSession === 'checking' ? (
-              <p role="status" className="mt-5 text-sm text-muted-foreground">Vérification de la connexion…</p>
-            ) : applicationSession === 'unavailable' ? (
-              <p role="alert" className="mt-5 text-sm font-medium text-destructive">
-                La connexion n’est pas disponible actuellement. Réessayez dans quelques instants.
+          <section className="mx-auto w-full max-w-md overflow-hidden rounded-2xl border border-amber-400/40 bg-card shadow-2xl">
+            <div className="bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] p-5 text-center text-white border-b border-amber-400/30">
+              <ClubCrest className="mx-auto size-16 ring-2 ring-amber-400/80 shadow-md" />
+              <h2 className="mt-3 text-xl font-black text-white">Connexion à l’application</h2>
+              <p className="mt-1 text-xs text-amber-300 font-bold">ES Genech · Groupe U11</p>
+            </div>
+            <div className="p-6">
+              <p className="text-xs text-muted-foreground text-center">
+                Connectez-vous pour accéder aux effectifs, convocations et statistiques selon votre rôle.
               </p>
-            ) : (
-              <form onSubmit={handleLogin} className="mt-5 grid gap-3">
-                <label className="grid gap-1 text-sm font-semibold">
-                  Identifiant ou adresse e-mail
-                  <input
-                    required
-                    autoComplete="username"
-                    value={loginUsername}
-                    onChange={(event) => setLoginUsername(event.target.value)}
-                    className="h-11 rounded-lg border border-accent/50 bg-background px-3 font-normal"
-                  />
-                </label>
-                <label className="grid gap-1 text-sm font-semibold">
-                  Mot de passe
-                  <input
-                    required
-                    type="password"
-                    autoComplete="current-password"
-                    value={loginPassword}
-                    onChange={(event) => setLoginPassword(event.target.value)}
-                    className="h-11 rounded-lg border border-accent/50 bg-background px-3 font-normal"
-                  />
-                </label>
-                <label className="flex items-center gap-2 pt-1 text-xs text-muted-foreground select-none cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(event) => setRememberMe(event.target.checked)}
-                    className="size-4 rounded border-accent/60 accent-primary"
-                  />
-                  <span>Rester connecté sur cet appareil (30 jours)</span>
-                </label>
-                {loginError && <p role="alert" className="text-sm font-medium text-destructive">{loginError}</p>}
-                <button
-                  type="submit"
-                  disabled={loginPending}
-                  className="mt-1 min-h-11 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
-                >
-                  {loginPending ? 'Connexion…' : 'Se connecter'}
-                </button>
-              </form>
-            )}
+              {applicationSession === 'checking' ? (
+                <p role="status" className="mt-5 text-sm text-center text-muted-foreground">Vérification de la connexion…</p>
+              ) : applicationSession === 'unavailable' ? (
+                <p role="alert" className="mt-5 text-sm text-center font-medium text-destructive">
+                  La connexion n’est pas disponible actuellement. Réessayez dans quelques instants.
+                </p>
+              ) : (
+                <form onSubmit={handleLogin} className="mt-5 grid gap-3">
+                  <label className="grid gap-1 text-sm font-semibold">
+                    Identifiant ou adresse e-mail
+                    <input
+                      required
+                      autoComplete="username"
+                      value={loginUsername}
+                      onChange={(event) => setLoginUsername(event.target.value)}
+                      className="h-11 rounded-lg border border-accent/50 bg-background px-3 font-normal"
+                    />
+                  </label>
+                  <label className="grid gap-1 text-sm font-semibold">
+                    Mot de passe
+                    <input
+                      required
+                      type="password"
+                      autoComplete="current-password"
+                      value={loginPassword}
+                      onChange={(event) => setLoginPassword(event.target.value)}
+                      className="h-11 rounded-lg border border-accent/50 bg-background px-3 font-normal"
+                    />
+                  </label>
+                  <label className="flex items-center gap-2 pt-1 text-xs text-muted-foreground select-none cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={rememberMe}
+                      onChange={(event) => setRememberMe(event.target.checked)}
+                      className="size-4 rounded border-accent/60 accent-primary"
+                    />
+                    <span>Rester connecté sur cet appareil (30 jours)</span>
+                  </label>
+                  {loginError && <p role="alert" className="text-sm font-medium text-destructive">{loginError}</p>}
+                  <button
+                    type="submit"
+                    disabled={loginPending}
+                    className="mt-2 min-h-11 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-105 active:scale-95 px-4 text-sm font-black text-blue-950 shadow-md transition-all disabled:opacity-50"
+                  >
+                    {loginPending ? 'Connexion…' : 'Se connecter'}
+                  </button>
+                </form>
+              )}
+            </div>
           </section>
           {children}
         </main>
@@ -312,11 +318,11 @@ export function DashboardTabs({
                 aria-pressed={isActive}
                 onClick={() => setActiveTab(tab.key)}
                 className={[
-                  'flex-1 rounded-full px-4 py-2.5 text-sm font-semibold transition-all duration-200 xl:flex-none xl:text-left',
+                  'flex-1 rounded-full px-4 py-2.5 text-sm transition-all duration-200 xl:flex-none xl:text-left',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                   isActive
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted-foreground hover:bg-background hover:text-foreground',
+                    ? 'bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] text-amber-300 font-extrabold shadow-md border border-amber-400/40'
+                    : 'text-muted-foreground font-semibold hover:bg-background hover:text-foreground',
                 ].join(' ')}
               >
                 {tab.label}
@@ -436,11 +442,11 @@ export function DashboardTabs({
                 aria-pressed={isActive}
                 onClick={() => setActiveTab(tab.key)}
                 className={[
-                  'min-h-11 flex-1 rounded-lg px-2 py-2 text-xs font-semibold transition-colors sm:text-sm',
+                  'min-h-11 flex-1 rounded-lg px-2 py-2 text-xs transition-all sm:text-sm',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                   isActive
-                    ? 'bg-primary text-primary-foreground shadow-sm'
-                    : 'text-muted-foreground hover:bg-background hover:text-foreground',
+                    ? 'bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] text-amber-300 font-extrabold shadow-md border border-amber-400/40'
+                    : 'text-muted-foreground font-semibold hover:bg-background hover:text-foreground',
                 ].join(' ')}
               >
                 {tab.label}

@@ -193,12 +193,15 @@ export function MatchCallupBreakdown({
       )}
       <section aria-label="Bilan des équipes" className="flex flex-col gap-4">
         <article aria-labelledby="group-results-title" className="overflow-hidden rounded-xl border border-accent/70 bg-gradient-to-br from-secondary via-card to-accent/10 shadow-sm">
-          <header className="flex flex-wrap items-center justify-between gap-3 bg-primary px-5 py-4 text-primary-foreground">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Bilan général</p>
-              <h3 id="group-results-title" className="mt-1 text-lg font-bold">Groupe U11</h3>
+          <header className="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-5 py-4 text-white border-b border-amber-400/30">
+            <div className="flex items-center gap-3">
+              <ClubCrest className="size-9 shrink-0 ring-1 ring-amber-400/80 shadow-sm" />
+              <div>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-amber-300">Bilan général</p>
+                <h3 id="group-results-title" className="text-lg font-black text-white">Groupe U11</h3>
+              </div>
             </div>
-            <span className="rounded-full bg-accent px-3 py-1 text-xs font-bold text-accent-foreground">
+            <span className="rounded-full bg-amber-400 px-3 py-1 text-xs font-black text-blue-950 shadow-sm">
               {groupResults.length} match{groupResults.length === 1 ? '' : 's'}
             </span>
           </header>
@@ -242,12 +245,21 @@ export function MatchCallupBreakdown({
 
             return (
               <article key={key} className={`overflow-hidden rounded-xl border shadow-sm ${styles.panel}`}>
-                <header className="flex items-center justify-between gap-3 border-b border-accent/50 bg-primary px-5 py-4 text-primary-foreground">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-accent">Saison</p>
-                    <h3 className="mt-1 text-lg font-bold">{label}</h3>
+                <header className={`flex items-center justify-between gap-3 px-5 py-3.5 border-b shadow-sm ${
+                  key === 'E1'
+                    ? 'bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] text-white border-amber-400/30'
+                    : 'bg-gradient-to-r from-amber-400 via-amber-300 to-amber-500 text-blue-950 border-blue-950/20'
+                }`}>
+                  <div className="flex items-center gap-2.5">
+                    <ClubCrest className={`size-7 shrink-0 ring-1 shadow-sm ${key === 'E1' ? 'ring-amber-400/80' : 'ring-blue-950/40'}`} />
+                    <div>
+                      <p className={`text-[10px] font-bold uppercase tracking-[0.16em] ${key === 'E1' ? 'text-amber-300' : 'text-blue-950/80'}`}>Saison 2026-2027</p>
+                      <h3 className="text-base font-black tracking-tight">{label}</h3>
+                    </div>
                   </div>
-                  <span className={`rounded-full px-3 py-1 text-xs font-semibold ${styles.badge}`}>
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-black shadow-sm ${
+                    key === 'E1' ? 'bg-amber-400 text-blue-950' : 'bg-[#172554] text-white'
+                  }`}>
                     {results.length} match{results.length === 1 ? '' : 's'}
                   </span>
                 </header>

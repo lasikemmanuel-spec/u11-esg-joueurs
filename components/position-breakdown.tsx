@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ChevronDown, ChevronUp, Search } from 'lucide-react'
 import { PlayerCard } from '@/components/player-stats'
+import { ClubCrest } from '@/components/club-crest'
 import type { Convocation } from '@/lib/convocations'
 import type { PublicPlayer } from '@/lib/players'
 import type { PlayerStats } from '@/lib/stats'
@@ -187,18 +188,19 @@ export function PositionBreakdown({
                         }))
                       }
                     }}
-                    className="flex w-full items-center justify-between gap-2 bg-primary px-3 py-2 text-left text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                    className="flex w-full items-center justify-between gap-2 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-3.5 py-2.5 text-left text-white shadow-sm border-b border-amber-400/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                   >
-                    <span className="flex min-w-0 items-center gap-2">
-                      <ChevronDown aria-hidden="true" className={`size-4 shrink-0 transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
-                      <span className="truncate font-semibold">{position}</span>
+                    <span className="flex min-w-0 items-center gap-2.5">
+                      <ChevronDown aria-hidden="true" className={`size-4 shrink-0 text-amber-300 transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
+                      <ClubCrest className="size-6 shrink-0 ring-1 ring-amber-400/80 shadow-sm" />
+                      <span className="truncate font-extrabold uppercase tracking-wide text-white text-sm">{position}</span>
                     </span>
-                    <span className="rounded-full bg-accent px-2.5 py-0.5 font-mono text-xs font-bold text-accent-foreground">
+                    <span className="rounded-full bg-amber-400 px-2.5 py-0.5 font-mono text-xs font-black text-blue-950 shadow-sm">
                       {list.length}
                     </span>
                   </button>
                 </h3>
-                {isExpanded && <ul id={groupId} className="flex flex-col divide-y divide-accent/30 px-2.5 text-sm">
+                {isExpanded && <ul id={groupId} className="flex flex-col divide-y divide-border/60 bg-card px-2.5 py-1 text-sm">
                   {[...list]
                     .sort((a, b) => a.lastName.localeCompare(b.lastName, 'fr'))
                     .map((player) => {
@@ -209,15 +211,22 @@ export function PositionBreakdown({
                             type="button"
                             aria-pressed={isSelected}
                             onClick={() => setSelectedNumber(isSelected ? null : player.number)}
-                            className={`flex w-full items-center gap-3 rounded-md px-1 py-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                              isSelected ? 'bg-accent/30' : 'hover:bg-secondary/60'
+                            className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                              isSelected ? 'bg-amber-400/20 border border-amber-400/50' : 'hover:bg-slate-100 dark:hover:bg-slate-800/60'
                             }`}
                           >
+                            <span
+                              title={`N°${player.number}`}
+                              className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#172554] text-xs font-black text-amber-300 ring-1 ring-amber-400/40 shadow-sm"
+                            >
+                              {player.number}
+                            </span>
                             <span className="truncate">
-                              <span className="font-semibold uppercase tracking-wide">{player.lastName}</span> {player.firstName}
+                              <span className="font-extrabold uppercase tracking-wide text-foreground">{player.lastName}</span>{' '}
+                              <span className="font-medium text-foreground/90">{player.firstName}</span>
                             </span>
                             {player.transferStatus && (
-                              <span className="ml-auto shrink-0 rounded bg-accent px-1.5 py-0.5 text-xs font-medium text-accent-foreground">
+                              <span className="ml-auto shrink-0 rounded-md bg-amber-400/20 border border-amber-400/40 px-1.5 py-0.5 text-[11px] font-bold text-amber-900 dark:text-amber-200">
                                 {player.transferStatus}
                               </span>
                             )}
@@ -247,7 +256,7 @@ export function PositionBreakdown({
             onClick={collapseAllPositions}
             aria-label="Replier tous les postes ouverts"
             title="Replier tous les postes ouverts"
-            className="pointer-events-auto inline-flex min-h-10 items-center gap-1.5 rounded-full border border-accent bg-primary px-4 text-xs font-bold text-primary-foreground shadow-lg"
+            className="pointer-events-auto inline-flex min-h-10 items-center gap-1.5 rounded-full border border-amber-400/50 bg-[#172554] px-4 text-xs font-black text-amber-300 shadow-xl active:scale-95"
           >
             <ChevronUp aria-hidden="true" className="size-4" />
             Tout replier

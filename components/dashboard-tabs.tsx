@@ -246,9 +246,6 @@ export function DashboardTabs({
               <p className="mt-1 text-xs text-amber-300 font-bold">ES Genech · Groupe U11</p>
             </div>
             <div className="p-6">
-              <p className="text-xs text-muted-foreground text-center">
-                Connectez-vous pour accéder aux effectifs, convocations et statistiques selon votre rôle.
-              </p>
               {applicationSession === 'checking' ? (
                 <p role="status" className="mt-5 text-sm text-center text-muted-foreground">Vérification de la connexion…</p>
               ) : applicationSession === 'unavailable' ? (
@@ -308,6 +305,9 @@ export function DashboardTabs({
     <>
     {mainHeader}
     <main className="relative z-20 mx-auto flex max-w-7xl flex-col gap-4 px-4 pt-6 pb-24 md:gap-6 md:px-6 md:pt-8 md:pb-24 xl:pb-8">
+    <p className="text-center text-xs text-muted-foreground">
+      Effectifs, convocations et statistiques de l’équipe, selon votre rôle.
+    </p>
     <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm xl:grid xl:grid-cols-[220px_minmax(0,1fr)]">
       <nav aria-label="Statistiques" className="hidden border-b border-border bg-card p-2 xl:block xl:border-r xl:border-b-0 xl:p-3">
         <div className="mx-auto flex max-w-3xl gap-2 rounded-full bg-muted p-1 xl:flex-col xl:rounded-xl">

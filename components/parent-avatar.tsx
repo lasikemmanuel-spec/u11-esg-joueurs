@@ -1,14 +1,15 @@
 type Parent = 'father' | 'mother'
 
-export function ParentAvatar({ parent }: { parent: Parent }) {
+export function ParentAvatar({ parent, className }: { parent: Parent; className?: string }) {
   const isFather = parent === 'father'
+  const size = className ?? 'size-7'
 
   return (
     <span
       aria-hidden="true"
-      className={`relative inline-flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full ${isFather ? 'bg-sky-100' : 'bg-rose-100'}`}
+      className={`relative inline-flex ${size} shrink-0 items-center justify-center overflow-hidden rounded-full ${isFather ? 'bg-sky-100' : 'bg-rose-100'}`}
     >
-      <svg viewBox="0 0 48 48" className="size-10" role="presentation">
+      <svg viewBox="0 0 48 48" className="size-full" role="presentation">
         <path d="M7 48c1-9 7-14 17-14s16 5 17 14" fill={isFather ? '#26345f' : '#7a365f'} />
         <path d="M13 18c0-9 5-14 12-14s12 5 12 14v10c0 8-5 13-12 13s-12-5-12-13z" fill="#f1c6a5" />
         {isFather ? (
@@ -26,7 +27,7 @@ export function ParentAvatar({ parent }: { parent: Parent }) {
         <circle cx="29" cy="23" r="1.2" fill="#20213c" />
         <path d="M21 29c2 2 5 2 7 0" fill="none" stroke="#a85258" strokeWidth="1.7" strokeLinecap="round" />
       </svg>
-      <span className="absolute right-0 bottom-0 flex size-4 items-center justify-center rounded-full border border-white bg-accent text-[9px] leading-none">⚽</span>
+      <span className="absolute right-0 bottom-0 flex size-3.5 items-center justify-center rounded-full border border-white bg-accent text-[8px] leading-none">⚽</span>
     </span>
   )
 }

@@ -450,14 +450,14 @@ export function EducatorRoster({
                     const key = `${player.number}-${parent}`
                     const isOpen = Boolean(visiblePhones[key])
                     return (
-                      <div key={parent} className="flex flex-wrap items-center gap-2">
+                      <div key={parent} className="inline-flex flex-wrap items-center gap-2">
                         <div className="flex items-center gap-2 shrink-0">
                           <button
                             type="button"
                             onClick={() => setVisiblePhones((current) => ({ ...current, [key]: !current[key] }))}
                             aria-expanded={isOpen}
                             aria-label={`${isOpen ? 'Masquer' : 'Afficher'} le téléphone de ${label} pour ${player.firstName} ${player.lastName}`}
-                            className={`inline-flex min-h-9 items-center gap-2 rounded-xl border px-2.5 text-xs font-bold transition shadow-sm ${
+                            className={`inline-flex min-h-9 items-center gap-1.5 rounded-xl border px-2.5 text-xs font-bold transition shadow-sm ${
                               isOpen
                                 ? 'border-primary/60 bg-primary/10 text-primary'
                                 : 'border-accent/50 bg-card text-primary hover:bg-primary/5 hover:shadow-md'
@@ -525,7 +525,7 @@ export function EducatorRoster({
                         {parentContact('father', phone?.fatherPhone ?? '')}
                         {parentContact('mother', phone?.motherPhone ?? '')}
                         {phone?.legacyPhone && (
-                          <div className="flex flex-wrap items-center gap-2">
+                          <div className="inline-flex flex-wrap items-center gap-2">
                             <div className="flex items-center gap-2 shrink-0">
                               <button
                                 type="button"
@@ -639,14 +639,14 @@ export function EducatorRoster({
                     const key = player.number + '-' + parent
                     const isOpen = Boolean(visiblePhones[key])
                     return (
-                      <div key={parent} className="flex flex-wrap items-center gap-2">
+                      <div key={parent} className="inline-flex flex-wrap items-center gap-2">
                         <div className="flex items-center gap-2 shrink-0">
                           <button
                             type="button"
                             onClick={() => setVisiblePhones((current) => ({ ...current, [key]: !current[key] }))}
                             aria-expanded={isOpen}
                             aria-label={`${isOpen ? 'Masquer' : 'Afficher'} le téléphone de ${label} pour ${player.firstName} ${player.lastName}`}
-                            className={`inline-flex min-h-9 items-center gap-2 rounded-xl border px-2.5 text-xs font-bold transition shadow-sm ${
+                            className={`inline-flex min-h-9 items-center gap-1.5 rounded-xl border px-2.5 text-xs font-bold transition shadow-sm ${
                               isOpen
                                 ? 'border-primary/60 bg-primary/10 text-primary'
                                 : 'border-accent/50 bg-card text-primary hover:bg-primary/5 hover:shadow-md'
@@ -727,7 +727,7 @@ export function EducatorRoster({
                         {parentContact('father', phone?.fatherPhone ?? '')}
                         {parentContact('mother', phone?.motherPhone ?? '')}
                         {phone?.legacyPhone && (
-                          <div className="flex flex-wrap items-center gap-2">
+                          <div className="inline-flex flex-wrap items-center gap-2">
                             <div className="flex items-center gap-2 shrink-0">
                               <button
                                 type="button"

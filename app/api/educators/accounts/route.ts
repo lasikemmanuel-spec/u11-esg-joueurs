@@ -249,9 +249,10 @@ export async function PATCH(request: Request) {
       result.cookies.set(educatorSessionCookieName(), session.token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
+        sameSite: 'lax',
         path: '/',
         maxAge: session.maxAge,
+        expires: new Date(Date.now() + session.maxAge * 1000),
       })
     }
     return result

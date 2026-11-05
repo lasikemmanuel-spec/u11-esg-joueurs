@@ -147,7 +147,7 @@ export function EducatorRoster({
       const response = await fetch('/api/educators/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ username, password, rememberMe: true }),
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error ?? 'Connexion impossible.')

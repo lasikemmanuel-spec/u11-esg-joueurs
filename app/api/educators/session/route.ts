@@ -146,9 +146,10 @@ export async function POST(request: Request) {
   response.cookies.set(educatorSessionCookieName(), session.token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',
     path: '/',
     maxAge: session.maxAge,
+    expires: new Date(Date.now() + session.maxAge * 1000),
   })
   logSecurityEvent({
     event: 'login_success',
@@ -180,9 +181,19 @@ export async function DELETE(request: Request) {
   response.cookies.set(educatorSessionCookieName(), '', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: 'lax',
     path: '/',
     maxAge: 0,
+    expires: new Date(0),
+  })
+  // Supprime aussi l'ancien cookie __Host- si présent
+  response.cookies.set(`__Host-${educatorSessionCookieName()}`, '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'lax',
+    path: '/',
+    maxAge: 0,
+    expires: new Date(0),
   })
   return response
 }

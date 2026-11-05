@@ -83,12 +83,12 @@ export function createEducatorSession(account: EducatorAccount, rememberMe = fal
 }
 
 export async function getEducatorSession(request: Request): Promise<EducatorSession | null> {
-  const cookieName = educatorSessionCookieName()
-  const cookie = request.headers.get('cookie')
-    ?.split(';')
+  const cookieHeader = request.headers.get('cookie') ?? ''
+  const cookie = cookieHeader
+    .split(';')
     .map((part) => part.trim())
-    .find((part) => part.startsWith(`${cookieName}=`))
-    ?.slice(cookieName.length + 1)
+    .find((part) => part.startsWith(`${SESSION_COOKIE}=`) || part.startsWith(`__Host-${SESSION_COOKIE}=`))
+    ?.replace(/^(__Host-)?educator_session=/, '')
   if (!cookie) return null
 
   const [payload, signature, extra] = cookie.split('.')
@@ -125,5 +125,5 @@ export async function getEducatorSession(request: Request): Promise<EducatorSess
 }
 
 export function educatorSessionCookieName() {
-  return process.env.NODE_ENV === 'production' ? `__Host-${SESSION_COOKIE}` : SESSION_COOKIE
+  return SESSION_COOKIE
 }

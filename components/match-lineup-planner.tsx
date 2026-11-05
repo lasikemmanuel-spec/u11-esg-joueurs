@@ -267,15 +267,6 @@ export function MatchLineupPlanner({
                                 <span className="min-w-0 whitespace-normal break-words text-sm font-medium">
                                   {player.firstName} <span className="font-bold uppercase">{player.lastName}</span>
                                 </span>
-                                {player.licenseNumber ? (
-                                  <span className="block text-xs font-mono text-muted-foreground">
-                                    Licence : {player.licenseNumber}
-                                  </span>
-                                ) : (
-                                  <span className="block text-xs italic text-amber-600 dark:text-amber-400">
-                                    Licence non renseignée
-                                  </span>
-                                )}
                               </div>
                               <div role="group" aria-label={`Action pour ${player.firstName} ${player.lastName}`} className="flex shrink-0 items-center gap-2">
                                 <button
@@ -375,15 +366,6 @@ export function MatchLineupPlanner({
                                   <span className="min-w-0 whitespace-normal break-words font-medium">
                                     {player.firstName} <span className="font-bold uppercase">{player.lastName}</span>
                                   </span>
-                                  {player.licenseNumber ? (
-                                    <span className="block text-xs font-mono text-muted-foreground">
-                                      Licence : {player.licenseNumber}
-                                    </span>
-                                  ) : (
-                                    <span className="block text-xs italic text-amber-600 dark:text-amber-400">
-                                      Licence non renseignée
-                                    </span>
-                                  )}
                                 </div>
                                 {role ? (
                                   <span

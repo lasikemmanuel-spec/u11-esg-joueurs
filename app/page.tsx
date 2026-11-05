@@ -3,6 +3,8 @@ import { ClubCrest } from '@/components/club-crest'
 import { DataQualityPanel } from '@/components/data-quality-panel'
 import { ScrollToTopButton } from '@/components/scroll-to-top-button'
 import Link from 'next/link'
+import { headers } from 'next/headers'
+import { getEducatorSession } from '@/lib/educator-auth'
 import { getRoster, type PublicPlayer, type Roster } from '@/lib/players'
 import { getStats, type StatsData } from '@/lib/stats'
 import { getConvocations, type ConvocationsData } from '@/lib/convocations'
@@ -45,42 +47,44 @@ const fallbackCohesionDays: CohesionDay[] = []
 const fallbackTrainingAttendance: TrainingAttendanceSession[] = []
 
 export default async function Page() {
+  const educator = await getEducatorSession(
+    new Request('https://localhost', { headers: await headers() }),
+  )
   const [roster, stats, convocationsResult, matchResultsResult, cohesionResult, trainingAttendanceResult] = await Promise.all([
-    getRoster().catch((error) => {
+    educator ? getRoster().catch((error) => {
       console.error('Impossible de charger l’effectif:', error)
       return fallbackRoster
-    }),
-    getStats().catch((error) => {
+    }) : fallbackRoster,
+    educator ? getStats().catch((error) => {
       console.error('Impossible de charger les statistiques joueurs:', error)
       return fallbackStats
-    }),
-    getConvocations().then((data) => ({ data, error: false })).catch((error) => {
+    }) : fallbackStats,
+    educator ? getConvocations().then((data) => ({ data, error: false })).catch((error) => {
       console.error('Impossible de charger les convocations:', error)
       return { data: fallbackConvocations, error: true }
-    }),
-    getMatchResults().then((data) => ({ data, error: false })).catch((error) => {
+    }) : { data: fallbackConvocations, error: false },
+    educator ? getMatchResults().then((data) => ({ data, error: false })).catch((error) => {
       console.error('Impossible de charger les résultats des matchs:', error)
       return { data: fallbackMatchResults, error: true }
-    }),
-    getCohesionDays().then((data) => ({ data, error: false })).catch((error) => {
+    }) : { data: fallbackMatchResults, error: false },
+    educator ? getCohesionDays().then((data) => ({ data, error: false })).catch((error) => {
       console.error('Impossible de charger les journées de cohésion:', error)
       return { data: fallbackCohesionDays, error: true }
-    }),
-    getTrainingAttendance().then((data) => ({ data, error: false })).catch((error) => {
+    }) : { data: fallbackCohesionDays, error: false },
+    educator ? getTrainingAttendance().then((data) => ({ data, error: false })).catch((error) => {
       console.error('Impossible de charger les présences aux entraînements:', error)
       return { data: fallbackTrainingAttendance, error: true }
-    }),
+    }) : { data: fallbackTrainingAttendance, error: false },
   ])
   const convocations = convocationsResult.data
   const matchResults = matchResultsResult.data
   const publicPlayers: PublicPlayer[] = roster.players.map(
-    ({ number, lastName, firstName, position, transferStatus, licenseNumber }) => ({
+    ({ number, lastName, firstName, position, transferStatus }) => ({
       number,
       lastName,
       firstName,
       position,
       transferStatus,
-      licenseNumber,
     }),
   )
   const matchDataErrors = [
@@ -115,7 +119,7 @@ export default async function Page() {
         matchDataErrors={matchDataErrors}
         updatedAt={updatedAt}
       >
-        <DataQualityPanel players={roster.players} />
+        {educator && <DataQualityPanel players={roster.players} />}
       </DashboardTabs>
       <ScrollToTopButton />
       {/* Footer RGPD */}

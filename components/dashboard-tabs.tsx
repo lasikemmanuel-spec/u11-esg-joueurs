@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { useRouter } from 'next/navigation'
 import { CalendarDays, ContactRound, LogOut, X } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import { MatchCallupBreakdown } from '@/components/match-callup-breakdown'
@@ -55,6 +56,7 @@ export function DashboardTabs({
   updatedAt: string
   children: ReactNode
 }) {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabKey>('roster')
   const [educatorSection, setEducatorSection] = useState<EducatorSection>('matches')
   const [returnToMatchesAfterLogin, setReturnToMatchesAfterLogin] = useState(false)
@@ -118,6 +120,7 @@ export function DashboardTabs({
       setLoginPassword('')
       if (identity.role === 'reader' && activeTab === 'educator') setActiveTab('roster')
       window.dispatchEvent(new Event('educator-session-changed'))
+      router.refresh()
     } catch (error) {
       setLoginError(error instanceof Error ? error.message : 'Connexion impossible.')
     } finally {
@@ -138,6 +141,7 @@ export function DashboardTabs({
       setReturnToMatchesAfterLogin(false)
       setEducatorSection('matches')
       window.dispatchEvent(new Event('educator-session-changed'))
+      router.refresh()
     } catch (error) {
       setLogoutError(error instanceof Error ? error.message : 'Déconnexion impossible.')
     } finally {
@@ -295,7 +299,6 @@ export function DashboardTabs({
               )}
             </div>
           </section>
-          {children}
         </main>
       </>
     )

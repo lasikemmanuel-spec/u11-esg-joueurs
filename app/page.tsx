@@ -122,15 +122,16 @@ export default async function Page() {
         {educator && <DataQualityPanel players={roster.players} />}
       </DashboardTabs>
       <ScrollToTopButton />
-      {/* Footer RGPD */}
-      <footer className="relative z-10 pb-6 pt-2 text-center">
-        <Link
-          href="/confidentialite"
-          className="text-xs text-muted-foreground/60 underline underline-offset-2 hover:text-muted-foreground"
-        >
-          🔒 Politique de confidentialité &amp; RGPD
-        </Link>
-      </footer>
+      {educator && (
+        <footer className="relative z-10 pb-6 pt-2 text-center">
+          <Link
+            href="/confidentialite"
+            className="text-xs text-muted-foreground/60 underline underline-offset-2 hover:text-muted-foreground"
+          >
+            🔒 Politique de confidentialité &amp; RGPD
+          </Link>
+        </footer>
+      )}
     </div>
   )
 }

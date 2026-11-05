@@ -6,6 +6,7 @@ import { writeCallupSchedule, type CallupSelection, type EditableCallupStatus } 
 import { getMatchResults } from '@/lib/match-results'
 import { syncMatchLineupsWithCallups } from '@/lib/match-lineups'
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
+import { logSecurityEvent, getClientIp, getUserAgent } from '@/lib/security-logger'
 
 export const runtime = 'nodejs'
 
@@ -129,6 +130,14 @@ export async function POST(request: Request) {
       }, 500)
     }
     revalidateTag('google-sheet', { expire: 0 })
+    logSecurityEvent({
+      event: 'callup_saved',
+      username: educator.username,
+      ip: getClientIp(request),
+      userAgent: getUserAgent(request),
+      role: educator.role,
+      detail: `date=${date} players_count=${selections.length}`,
+    })
     return jsonResponse({ ok: true, ...saved })
   } catch (error) {
     console.error('Erreur lors de l’enregistrement des convocations:', error)

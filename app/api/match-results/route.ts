@@ -4,6 +4,7 @@ import { getEducatorSession, hasEducatorAccess, isSameOriginRequest } from '@/li
 import { writeMatchResult } from '@/lib/match-results'
 import { MATCH_RESULT_STATUSES } from '@/lib/match-result-options'
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
+import { logSecurityEvent, getClientIp, getUserAgent } from '@/lib/security-logger'
 
 export const runtime = 'nodejs'
 
@@ -120,6 +121,14 @@ async function save(request: Request, editing: boolean) {
       goalsAgainst: hasNoScore ? null : goalsAgainst as number,
     })
     revalidateTag('google-sheet', 'max')
+    logSecurityEvent({
+      event: 'match_modified',
+      username: educator.username,
+      ip: getClientIp(request),
+      userAgent: getUserAgent(request),
+      role: educator.role,
+      detail: `${editing ? 'update' : 'create'} team=${team} date=${date} opponent=${opponent}`,
+    })
     return jsonResponse({ ok: true, ...saved })
   } catch (error) {
     console.error('Erreur lors de l’enregistrement du match:', error)

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getEducatorSession, hasEducatorAccess, isSameOriginRequest } from '@/lib/educator-auth'
+import { logSecurityEvent, getClientIp, getUserAgent } from '@/lib/security-logger'
 import {
   getEducatorPhones,
   PhoneMigrationRequiredError,
@@ -55,8 +56,17 @@ export async function PUT(request: Request) {
     return jsonResponse({ error: 'La connexion éducateur n’est pas disponible.' }, 503)
   }
   if (!educator) return jsonResponse({ error: 'Connexion requise.' }, 401)
-  if (!hasEducatorAccess(educator)) return jsonResponse({ error: 'Accès réservé aux éducateurs.' }, 403)
-  if (educator.role !== 'admin') return jsonResponse({ error: 'Droits insuffisants.' }, 403)
+  if (!hasEducatorAccess(educator) || educator.role !== 'admin') {
+    logSecurityEvent({
+      event: 'unauthorized_access',
+      username: educator.username,
+      ip: getClientIp(request),
+      userAgent: getUserAgent(request),
+      role: educator.role,
+      detail: 'tentative_modification_contact_sans_droits_admin',
+    })
+    return jsonResponse({ error: 'Droits insuffisants.' }, 403)
+  }
   if (Number(request.headers.get('content-length') ?? 0) > 2048) {
     return jsonResponse({ error: 'Requête trop volumineuse.' }, 413)
   }
@@ -78,6 +88,14 @@ export async function PUT(request: Request) {
 
   try {
     await updateEducatorParentPhone(input.number, parent, input.phone)
+    logSecurityEvent({
+      event: 'contact_modified',
+      username: educator.username,
+      ip: getClientIp(request),
+      userAgent: getUserAgent(request),
+      role: educator.role,
+      detail: `player_number=${input.number} parent=${parent}`,
+    })
     return jsonResponse({ ok: true })
   } catch (error) {
     console.error('Erreur de mise à jour du téléphone éducateur:', error)

@@ -8,6 +8,7 @@ import {
 } from '@/lib/educator-auth'
 import { getEducatorAccounts, saveEducatorAccounts } from '@/lib/educator-account-store'
 import { renameEducatorProfilePhoto } from '@/lib/educator-profile-photo'
+import { logSecurityEvent, getClientIp, getUserAgent } from '@/lib/security-logger'
 
 export const runtime = 'nodejs'
 
@@ -91,6 +92,8 @@ async function readInput(request: Request) {
 export async function POST(request: Request) {
   const authorizationError = await authorizeMutation(request)
   if (authorizationError) return authorizationError
+  const access = await requireAdmin(request)
+  if ('response' in access) return access.response
   const parsed = await readInput(request)
   if (parsed.error) return parsed.error
 
@@ -126,6 +129,14 @@ export async function POST(request: Request) {
       role,
     }
     await saveEducatorAccounts([...accounts, account])
+    logSecurityEvent({
+      event: 'account_created',
+      username: access.educator.username,
+      ip: getClientIp(request),
+      userAgent: getUserAgent(request),
+      role: access.educator.role,
+      detail: `new_user=${account.username} role=${account.role}`,
+    })
     return response({ ok: true, account: { username: account.username, displayName: account.displayName, role: account.role } }, 201)
   } catch (error) {
     console.error('Erreur de création d’un compte éducateur:', error)
@@ -225,6 +236,14 @@ export async function PATCH(request: Request) {
       ok: true,
       account: { username: updated.username, displayName: updated.displayName, firstName: updated.firstName ?? '', lastName: updated.lastName ?? updated.displayName, role: updated.role },
     })
+    logSecurityEvent({
+      event: password !== undefined ? 'password_changed' : 'account_modified',
+      username: access.educator.username,
+      ip: getClientIp(request),
+      userAgent: getUserAgent(request),
+      role: access.educator.role,
+      detail: `target=${target.username}${role !== undefined ? ` new_role=${role}` : ''}`,
+    })
     if (target.username.toLocaleLowerCase('fr-FR') === access.educator.username.toLocaleLowerCase('fr-FR') && target.username !== updated.username) {
       const session = createEducatorSession(updated)
       result.cookies.set(educatorSessionCookieName(), session.token, {
@@ -266,6 +285,14 @@ export async function DELETE(request: Request) {
       return response({ error: 'Impossible de supprimer le dernier administrateur.' }, 409)
     }
     await saveEducatorAccounts(accounts.filter((account) => account !== target))
+    logSecurityEvent({
+      event: 'account_deleted',
+      username: access.educator.username,
+      ip: getClientIp(request),
+      userAgent: getUserAgent(request),
+      role: access.educator.role,
+      detail: `deleted_user=${target.username} deleted_role=${target.role}`,
+    })
     return response({ ok: true })
   } catch (error) {
     console.error('Erreur de suppression d’un compte éducateur:', error)

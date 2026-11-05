@@ -7,6 +7,7 @@ import {
   isSameOriginRequest,
   verifyEducatorPassword,
 } from '@/lib/educator-auth'
+import { logSecurityEvent, getClientIp, getUserAgent } from '@/lib/security-logger'
 
 export const runtime = 'nodejs'
 
@@ -89,6 +90,13 @@ export async function POST(request: Request) {
     (attemptsUser && attemptsUser.resetAt > now && attemptsUser.count >= MAX_USER_ATTEMPTS) ||
     (attemptsIp && attemptsIp.resetAt > now && attemptsIp.count >= MAX_IP_ATTEMPTS)
   ) {
+    logSecurityEvent({
+      event: 'login_blocked',
+      username,
+      ip: getClientIp(request),
+      userAgent: getUserAgent(request),
+      detail: `attempts_user=${attemptsUser?.count ?? 0} attempts_ip=${attemptsIp?.count ?? 0}`,
+    })
     return jsonResponse({ error: 'Trop de tentatives infructueuses. Veuillez patienter 15 minutes.' }, 429)
   }
 
@@ -114,6 +122,13 @@ export async function POST(request: Request) {
   if (!account || !validPassword) {
     recordFailure(userKey, now)
     recordFailure(ipKey, now)
+    logSecurityEvent({
+      event: 'login_failure',
+      username,
+      ip: getClientIp(request),
+      userAgent: getUserAgent(request),
+      detail: !account ? 'compte_inconnu' : 'mot_de_passe_incorrect',
+    })
     return jsonResponse({ error: 'Identifiant ou mot de passe invalide.' }, 401)
   }
 
@@ -135,11 +150,32 @@ export async function POST(request: Request) {
     path: '/',
     maxAge: session.maxAge,
   })
+  logSecurityEvent({
+    event: 'login_success',
+    username: account.username,
+    ip: getClientIp(request),
+    userAgent: getUserAgent(request),
+    role: account.role,
+    detail: credentials.rememberMe ? 'remember_me=true' : 'remember_me=false',
+  })
   return response
 }
 
 export async function DELETE(request: Request) {
   if (!isSameOriginRequest(request)) return jsonResponse({ error: 'Requête non autorisée.' }, 403)
+  let educator: Awaited<ReturnType<typeof getEducatorSession>> = null
+  try {
+    educator = await getEducatorSession(request)
+  } catch {
+    // session invalide ou expirée — on déconnecte quand même
+  }
+  logSecurityEvent({
+    event: 'logout',
+    username: educator?.username,
+    ip: getClientIp(request),
+    userAgent: getUserAgent(request),
+    role: educator?.role,
+  })
   const response = jsonResponse({ ok: true })
   response.cookies.set(educatorSessionCookieName(), '', {
     httpOnly: true,

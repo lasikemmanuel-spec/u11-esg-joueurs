@@ -1,5 +1,10 @@
 import { NextResponse } from 'next/server'
-import { findEducator, getEducatorSession, isSameOriginRequest } from '@/lib/educator-auth'
+import {
+  findEducator,
+  getEducatorSession,
+  hasEducatorAccess,
+  isSameOriginRequest,
+} from '@/lib/educator-auth'
 import { getEducatorProfilePhoto, saveEducatorProfilePhoto } from '@/lib/educator-profile-photo'
 
 export const runtime = 'nodejs'
@@ -45,6 +50,9 @@ async function requireEducator(request: Request) {
   try {
     const educator = await getEducatorSession(request)
     if (!educator) return { error: jsonResponse({ error: 'Connexion requise.' }, 401) }
+    if (!hasEducatorAccess(educator)) {
+      return { error: jsonResponse({ error: 'Accès réservé aux éducateurs.' }, 403) }
+    }
     return { educator }
   } catch (error) {
     console.error('Erreur de vérification de session éducateur:', error)
@@ -53,9 +61,18 @@ async function requireEducator(request: Request) {
 }
 
 export async function GET(request: Request) {
+  const access = await requireEducator(request)
+  if (access.error) return access.error
+
   const username = new URL(request.url).searchParams.get('username')?.trim()
   if (!username || username.length > 120 || !/^[\p{L}\p{N}._@+-]+$/u.test(username)) {
     return jsonResponse({ error: 'Identifiant invalide.' }, 400)
+  }
+  if (
+    access.educator.role !== 'admin' &&
+    username.toLocaleLowerCase('fr-FR') !== access.educator.username.toLocaleLowerCase('fr-FR')
+  ) {
+    return jsonResponse({ error: 'Accès réservé à votre photo de profil.' }, 403)
   }
 
   try {

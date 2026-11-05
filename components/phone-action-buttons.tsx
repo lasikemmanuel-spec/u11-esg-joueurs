@@ -1,6 +1,6 @@
 'use client'
 
-import { Phone } from 'lucide-react'
+import { MessageSquare, Phone } from 'lucide-react'
 
 export function getWhatsAppUrl(phone: string): string {
   let cleaned = phone.replace(/\D/g, '')
@@ -31,33 +31,33 @@ export function PhoneActionButtons({
   const waUrl = getWhatsAppUrl(phone)
 
   return (
-    <div className="inline-flex items-center gap-1.5">
+    <div className="inline-flex items-center gap-1">
       <a
         href={`tel:${telNumber}`}
         aria-label={`Appeler ${label} pour ${playerName}`}
-        className="inline-flex min-h-8 shrink-0 items-center gap-1 rounded-lg bg-emerald-600 px-2 text-[11px] font-bold text-white shadow-sm transition hover:bg-emerald-700"
+        title={`Appeler ${label}`}
+        className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm transition hover:bg-emerald-700"
       >
-        <Phone aria-hidden="true" className="size-3" />
-        Appeler
+        <Phone aria-hidden="true" className="size-4" />
       </a>
       <a
         href={`sms:${telNumber}`}
         aria-label={`Envoyer un SMS à ${label} pour ${playerName}`}
-        className="inline-flex min-h-8 shrink-0 items-center gap-1 rounded-lg bg-sky-600 px-2 text-[11px] font-bold text-white shadow-sm transition hover:bg-sky-700"
+        title={`Envoyer un SMS à ${label}`}
+        className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-600 text-white shadow-sm transition hover:bg-sky-700"
       >
-        💬 SMS
+        <MessageSquare aria-hidden="true" className="size-4" />
       </a>
       <a
         href={waUrl}
         target="_blank"
         rel="noopener noreferrer"
         aria-label={`Ouvrir WhatsApp avec ${label} pour ${playerName}`}
-        className="inline-flex min-h-8 shrink-0 items-center gap-1 rounded-lg bg-[#25D366] px-2 text-[11px] font-bold text-white shadow-sm transition hover:bg-[#20bd5a]"
+        title={`Ouvrir WhatsApp avec ${label}`}
+        className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#25D366] text-white shadow-sm transition hover:bg-[#20bd5a]"
       >
-        <WhatsAppIcon className="size-3 fill-current" />
-        WhatsApp
+        <WhatsAppIcon className="size-4 fill-current" />
       </a>
     </div>
   )
 }
-

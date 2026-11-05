@@ -87,7 +87,7 @@ export default function ConfidentialitePage() {
                 <li>Numéro de téléphone mobile de contact</li>
               </ul>
               <p className="mt-2 rounded-lg bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-800">
-                ⚠️ Ces coordonnées permettent de joindre les responsables légaux des mineurs en cas d&apos;urgence ou pour les convocations. Elles sont chiffrées et visibles uniquement par les éducateurs connectés.
+                ⚠️ Ces coordonnées permettent aux éducateurs connectés de joindre les responsables légaux des mineurs en cas d&apos;urgence ou pour les convocations. Elles sont chiffrées et les numéros ne sont pas affichés dans l&apos;annuaire : seuls des boutons d&apos;appel, de SMS et de WhatsApp sont proposés.
               </p>
             </div>
             <div className="rounded-xl border border-gray-200 bg-white p-4">
@@ -209,4 +209,3 @@ export default function ConfidentialitePage() {
     </div>
   )
 }
-

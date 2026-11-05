@@ -31,22 +31,22 @@ export function PhoneActionButtons({
   const waUrl = getWhatsAppUrl(phone)
 
   return (
-    <div className="inline-flex items-center gap-1">
+    <div className="inline-flex items-center gap-2">
       <a
         href={`tel:${telNumber}`}
         aria-label={`Appeler ${label} pour ${playerName}`}
         title={`Appeler ${label}`}
-        className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-white shadow-sm transition hover:bg-emerald-700"
+        className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm transition hover:bg-emerald-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700 focus-visible:ring-offset-2 active:scale-95"
       >
-        <Phone aria-hidden="true" className="size-4" />
+        <Phone aria-hidden="true" className="size-5" />
       </a>
       <a
         href={`sms:${telNumber}`}
         aria-label={`Envoyer un SMS à ${label} pour ${playerName}`}
         title={`Envoyer un SMS à ${label}`}
-        className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-sky-600 text-white shadow-sm transition hover:bg-sky-700"
+        className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-sky-600 text-white shadow-sm transition hover:bg-sky-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-700 focus-visible:ring-offset-2 active:scale-95"
       >
-        <MessageSquare aria-hidden="true" className="size-4" />
+        <MessageSquare aria-hidden="true" className="size-5" />
       </a>
       <a
         href={waUrl}
@@ -54,9 +54,9 @@ export function PhoneActionButtons({
         rel="noopener noreferrer"
         aria-label={`Ouvrir WhatsApp avec ${label} pour ${playerName}`}
         title={`Ouvrir WhatsApp avec ${label}`}
-        className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg bg-[#25D366] text-white shadow-sm transition hover:bg-[#20bd5a]"
+        className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-[#25D366] text-white shadow-sm transition hover:bg-[#20bd5a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#128c45] focus-visible:ring-offset-2 active:scale-95"
       >
-        <WhatsAppIcon className="size-4 fill-current" />
+        <WhatsAppIcon className="size-5 fill-current" />
       </a>
     </div>
   )

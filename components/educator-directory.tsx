@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Pencil, Phone, Plus, Save, Trash2, X } from 'lucide-react'
+import { Pencil, Plus, Save, Trash2, X } from 'lucide-react'
 import { EducatorAvatar } from '@/components/educator-avatar'
 import { ClubCrest } from '@/components/club-crest'
 import { PhoneActionButtons } from '@/components/phone-action-buttons'
@@ -28,7 +28,6 @@ export function EducatorDirectory({
   photoRevision?: number
 }) {
   const [educators, setEducators] = useState<DirectoryEducator[]>([])
-  const [visiblePhones, setVisiblePhones] = useState<Record<string, boolean>>({})
   const [isPhoneDevice, setIsPhoneDevice] = useState(false)
   const [draft, setDraft] = useState<Draft>(blank)
   const [open, setOpen] = useState(false)
@@ -197,14 +196,13 @@ export function EducatorDirectory({
       ) : (
         <>
           {isSearching && searchTitle && <h2 className="font-bold text-primary">{searchTitle}</h2>}
-          <ul className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <ul className="mt-4 grid gap-4 sm:mt-3 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
             {allCards.map((educator: DirectoryEducator) => {
               const isOwn = currentEducator && (educator.id === ownDirectoryEntry?.id || educator.id === 'me-auto-entry')
-              const isPhoneOpen = Boolean(visiblePhones[educator.id])
               return (
                 <li
                   key={educator.id}
-                  className="rounded-2xl border-2 border-[#172554]/15 bg-card p-3.5 shadow-sm transition-all hover:border-[#172554]/40 hover:shadow-md"
+                  className="rounded-2xl border-2 border-[#172554]/15 bg-card p-4 shadow-sm transition-all hover:border-[#172554]/40 hover:shadow-md sm:p-3.5"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
@@ -280,33 +278,12 @@ export function EducatorDirectory({
                   </div>
 
                   {educator.phone ? (
-                    <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-accent/40 bg-muted/40 p-2">
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => setVisiblePhones((current) => ({ ...current, [educator.id]: !current[educator.id] }))}
-                          aria-expanded={isPhoneOpen}
-                          aria-label={`${isPhoneOpen ? 'Masquer' : 'Afficher'} le téléphone de ${educator.name}`}
-                          className={`inline-flex min-h-9 items-center gap-2 rounded-xl border px-2.5 text-xs font-bold transition shadow-sm ${
-                            isPhoneOpen
-                              ? 'border-primary/60 bg-primary/10 text-primary'
-                              : 'border-accent/50 bg-card text-primary hover:bg-primary/5 hover:shadow-md'
-                          }`}
-                        >
-                          <Phone aria-hidden="true" className="size-3.5" />
-                          <span>Téléphone</span>
-                        </button>
-                        {isPhoneOpen && (
-                          <span className="font-mono text-sm font-bold text-primary whitespace-nowrap">{educator.phone}</span>
-                        )}
-                      </div>
-                      {isPhoneOpen && (
-                        <PhoneActionButtons
-                          phone={educator.phone}
-                          label="le numéro"
-                          playerName={educator.name}
-                        />
-                      )}
+                    <div className="mt-4 flex items-center gap-3 rounded-xl border border-accent/40 bg-muted/40 p-3 sm:mt-3 sm:p-2">
+                      <PhoneActionButtons
+                        phone={educator.phone}
+                        label="le téléphone"
+                        playerName={educator.name}
+                      />
                     </div>
                   ) : isOwn ? (
                     <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-dashed border-accent/60 bg-muted/20 p-2 text-xs text-muted-foreground">

@@ -436,7 +436,7 @@ export function EducatorRoster({
                 Aucun joueur ne correspond à votre recherche.
               </p>
             ) : (
-              <ul className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              <ul className="grid gap-4 sm:grid-cols-2 sm:gap-3 xl:grid-cols-3">
                 {matchingPlayers.map((player) => {
                   const phone = phones[player.number]
                   const licenseNumber = player.licenseNumber
@@ -461,7 +461,7 @@ export function EducatorRoster({
                   return (
                     <li
                       key={player.number}
-                      className="rounded-2xl border-2 border-[#172554]/15 bg-card p-3.5 shadow-sm transition-all hover:border-[#172554]/40 hover:shadow-md"
+                      className="rounded-2xl border-2 border-[#172554]/15 bg-card p-4 shadow-sm transition-all hover:border-[#172554]/40 hover:shadow-md sm:p-3.5"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2.5 min-w-0">
@@ -497,7 +497,7 @@ export function EducatorRoster({
                           </div>
                         </div>
                       </div>
-                      <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-accent/40 bg-muted/40 p-2">
+                      <div className="mt-4 flex flex-col items-stretch gap-2 rounded-xl border border-accent/40 bg-muted/40 p-3 sm:mt-3 sm:flex-row sm:flex-wrap sm:items-center sm:p-2">
                         {parentContact('father', phone?.fatherPhone ?? '')}
                         {parentContact('mother', phone?.motherPhone ?? '')}
                         {phone?.legacyPhone && (
@@ -588,7 +588,7 @@ export function EducatorRoster({
                   </span>
                 </button>
               </h3>
-              {isExpanded && <ul id={groupId} className="flex flex-col gap-3 p-3 bg-slate-100/60 dark:bg-slate-900/40">
+              {isExpanded && <ul id={groupId} className="flex flex-col gap-4 p-3 bg-slate-100/60 dark:bg-slate-900/40 sm:gap-3">
                 {list.map((player) => {
                   const licenseNumber = player.licenseNumber
                   const isCopied = licenseNumber && copiedId === licenseNumber
@@ -614,7 +614,7 @@ export function EducatorRoster({
                   return (
                     <li
                       key={player.number}
-                      className="rounded-2xl border-2 border-[#172554]/15 bg-card p-3.5 shadow-sm transition-all hover:border-[#172554]/40 hover:shadow-md"
+                      className="rounded-2xl border-2 border-[#172554]/15 bg-card p-4 shadow-sm transition-all hover:border-[#172554]/40 hover:shadow-md sm:p-3.5"
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2.5 min-w-0">
@@ -663,7 +663,7 @@ export function EducatorRoster({
                           </div>
                         </div>
                       </div>
-                      <div className="mt-3 flex flex-wrap items-center gap-2 rounded-xl border border-accent/40 bg-muted/40 p-2">
+                      <div className="mt-4 flex flex-col items-stretch gap-2 rounded-xl border border-accent/40 bg-muted/40 p-3 sm:mt-3 sm:flex-row sm:flex-wrap sm:items-center sm:p-2">
                         {parentContact('father', phone?.fatherPhone ?? '')}
                         {parentContact('mother', phone?.motherPhone ?? '')}
                         {phone?.legacyPhone && (

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/lib/educator-auth', () => ({
   getEducatorSession: vi.fn(),
@@ -25,9 +25,10 @@ vi.mock('@/lib/security-logger', () => ({
 }))
 
 import { getEducatorSession } from '@/lib/educator-auth'
-import { getEducatorAccounts } from '@/lib/educator-account-store'
-import { GET } from '@/app/api/educators/accounts/route'
+import { getEducatorAccounts, saveEducatorAccounts } from '@/lib/educator-account-store'
+import { DELETE, GET, PATCH, POST } from '@/app/api/educators/accounts/route'
 
+const previousVercelEnv = process.env.VERCEL_ENV
 const accounts = [{
   username: 'coach@example.com',
   displayName: 'Coach Example',
@@ -41,10 +42,27 @@ function request() {
   return new Request('http://localhost/api/educators/accounts')
 }
 
+function mutationRequest(method: string, body: object) {
+  return new Request('http://localhost/api/educators/accounts', {
+    method,
+    headers: {
+      origin: 'http://localhost',
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  })
+}
+
 describe('GET /api/educators/accounts', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    process.env.VERCEL_ENV = 'production'
     vi.mocked(getEducatorAccounts).mockResolvedValue(accounts)
+  })
+
+  afterEach(() => {
+    if (previousVercelEnv === undefined) delete process.env.VERCEL_ENV
+    else process.env.VERCEL_ENV = previousVercelEnv
   })
 
   it.each([
@@ -83,5 +101,33 @@ describe('GET /api/educators/accounts', () => {
       role: 'educator',
     }])
     expect(JSON.stringify(body)).not.toContain('secret-hash')
+  })
+
+  it.each([
+    ['public', null],
+    ['educator', { username: 'coach', displayName: 'Coach', role: 'educator' }],
+    ['reader', { username: 'reader', displayName: 'Reader', role: 'reader' }],
+  ] as const)('prevents %s from creating, editing, or deleting accounts', async (_label, session) => {
+    vi.mocked(getEducatorSession).mockResolvedValue(session)
+    const createBody = {
+      username: 'new@example.com',
+      firstName: 'New',
+      lastName: 'Coach',
+      password: 'a-secure-password-123',
+    }
+
+    const created = await POST(mutationRequest('POST', createBody))
+    const edited = await PATCH(mutationRequest('PATCH', { username: 'coach@example.com', role: 'admin' }))
+    const deleted = await DELETE(mutationRequest('DELETE', { username: 'coach@example.com' }))
+
+    expect(created).toBeDefined()
+    expect(edited).toBeDefined()
+    expect(deleted).toBeDefined()
+    if (!created || !edited || !deleted) throw new Error('Expected all account routes to return responses.')
+    expect(created.status).toBe(session ? 403 : 401)
+    expect(edited.status).toBe(session ? 403 : 401)
+    expect(deleted.status).toBe(session ? 403 : 401)
+    expect(getEducatorAccounts).not.toHaveBeenCalled()
+    expect(saveEducatorAccounts).not.toHaveBeenCalled()
   })
 })

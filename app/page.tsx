@@ -5,7 +5,7 @@ import { ScrollToTopButton } from '@/components/scroll-to-top-button'
 import Link from 'next/link'
 import { headers } from 'next/headers'
 import { getEducatorSession } from '@/lib/educator-auth'
-import { getRoster, type PublicPlayer, type Roster } from '@/lib/players'
+import { getRoster, isDateSuspicious, type PublicPlayer, type Roster } from '@/lib/players'
 import { getStats, type StatsData } from '@/lib/stats'
 import { getConvocations, type ConvocationsData } from '@/lib/convocations'
 import { getMatchResults, type TeamMatchResults } from '@/lib/match-results'
@@ -92,6 +92,12 @@ export default async function Page() {
     ...(matchResultsResult.error ? ['scores'] : []),
     ...(cohesionResult.error ? ['cohesion'] : []),
   ]
+  const dataQuality = {
+    missingBirthDates: roster.players.filter((player) => !player.birthDate).length,
+    suspiciousBirthDates: roster.players.filter((player) => isDateSuspicious(player)).length,
+    noPosition: roster.players.filter((player) => !player.position).length,
+    noTransfer: roster.players.filter((player) => !player.transferStatus).length,
+  }
 
   const updatedAt = new Intl.DateTimeFormat('fr-FR', {
     dateStyle: 'medium',
@@ -119,7 +125,7 @@ export default async function Page() {
         matchDataErrors={matchDataErrors}
         updatedAt={updatedAt}
       >
-        {educator && <DataQualityPanel players={roster.players} />}
+        {educator && <DataQualityPanel {...dataQuality} />}
       </DashboardTabs>
       <ScrollToTopButton />
       {educator && (

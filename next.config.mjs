@@ -41,11 +41,15 @@ const nextConfig = {
               // Pas d'objets Flash etc.
               "object-src 'none'",
               // Base URI restreinte
-              "base-uri 'self'",
+              "base-uri 'none'",
               // Form action restreinte
               "form-action 'self'",
+              // Interdire l’intégration de l’application dans une frame
+              "frame-ancestors 'none'",
             ].join('; '),
           },
+          { key: 'Cross-Origin-Opener-Policy', value: 'same-origin' },
+          { key: 'X-Permitted-Cross-Domain-Policies', value: 'none' },
           // Désactiver le cache sur les pages sensibles (overridé par les routes API)
           { key: 'X-DNS-Prefetch-Control', value: 'off' },
         ],

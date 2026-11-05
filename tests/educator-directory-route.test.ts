@@ -19,8 +19,12 @@ vi.mock('next/cache', () => ({
 }))
 
 import { getEducatorSession } from '@/lib/educator-auth'
-import { getEducatorDirectory, saveEducatorDirectoryEntry } from '@/lib/educator-directory'
-import { GET, POST } from '@/app/api/educators/directory/route'
+import {
+  deleteEducatorDirectoryEntry,
+  getEducatorDirectory,
+  saveEducatorDirectoryEntry,
+} from '@/lib/educator-directory'
+import { DELETE, GET, POST, PUT } from '@/app/api/educators/directory/route'
 
 const previousVercelEnv = process.env.VERCEL_ENV
 const educatorCard = { id: 'educator-id', name: 'Coach', licenseNumber: 'LICENCE', phone: '0600000000' }
@@ -110,5 +114,22 @@ describe('/api/educators/directory', () => {
       licenseNumber: '',
       phone: '',
     })
+  })
+
+  it.each([
+    ['public', null],
+    ['educator', { username: 'coach', displayName: 'Coach', role: 'educator' }],
+    ['reader', { username: 'reader', displayName: 'Reader', role: 'reader' }],
+  ] as const)('prevents %s from updating or deleting educator directory entries', async (_label, session) => {
+    vi.mocked(getEducatorSession).mockResolvedValue(session)
+    const body = { id: '00000000-0000-0000-0000-000000000001', name: 'Coach', licenseNumber: '', phone: '' }
+
+    const updated = await PUT(request('PUT', body))
+    const deleted = await DELETE(request('DELETE', { id: body.id }))
+
+    expect(updated.status).toBe(session ? 403 : 401)
+    expect(deleted.status).toBe(session ? 403 : 401)
+    expect(saveEducatorDirectoryEntry).not.toHaveBeenCalled()
+    expect(deleteEducatorDirectoryEntry).not.toHaveBeenCalled()
   })
 })

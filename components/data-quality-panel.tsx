@@ -1,11 +1,14 @@
-import { isDateSuspicious, type Player } from '@/lib/players'
-
-export function DataQualityPanel({ players }: { players: Player[] }) {
-  const missingBirthDates = players.filter((player) => !player.birthDate).length
-  const suspiciousBirthDates = players.filter((player) => isDateSuspicious(player)).length
-  const noPosition = players.filter((p) => !p.position).length
-  const noTransfer = players.filter((p) => !p.transferStatus).length
-
+export function DataQualityPanel({
+  missingBirthDates,
+  suspiciousBirthDates,
+  noPosition,
+  noTransfer,
+}: {
+  missingBirthDates: number
+  suspiciousBirthDates: number
+  noPosition: number
+  noTransfer: number
+}) {
   return (
     <section
       aria-label="Données à compléter"

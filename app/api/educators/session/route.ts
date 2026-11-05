@@ -8,31 +8,14 @@ import {
   verifyEducatorPassword,
 } from '@/lib/educator-auth'
 import { logSecurityEvent, getClientIp, getUserAgent } from '@/lib/security-logger'
+import {
+  clearLoginAccountAttempts,
+  getLoginAttemptCounts,
+  isLoginAttemptLimitReached,
+  recordLoginFailure,
+} from '@/lib/login-rate-limit'
 
 export const runtime = 'nodejs'
-
-const failedAttempts = new Map<string, { count: number; resetAt: number }>()
-const ATTEMPT_WINDOW_MS = 15 * 60 * 1000
-const MAX_USER_ATTEMPTS = 5
-const MAX_IP_ATTEMPTS = 15
-const MAX_TRACKED_KEYS = 5000
-
-function recordFailure(key: string, now: number) {
-  const current = failedAttempts.get(key)
-  if (!current && failedAttempts.size >= MAX_TRACKED_KEYS) {
-    for (const [trackedKey, value] of failedAttempts) {
-      if (value.resetAt <= now) failedAttempts.delete(trackedKey)
-    }
-    if (failedAttempts.size >= MAX_TRACKED_KEYS) {
-      const oldestKey = failedAttempts.keys().next().value
-      if (oldestKey) failedAttempts.delete(oldestKey)
-    }
-  }
-  failedAttempts.set(key, {
-    count: (current?.count ?? 0) + 1,
-    resetAt: current?.resetAt && current.resetAt > now ? current.resetAt : now + ATTEMPT_WINDOW_MS,
-  })
-}
 
 function jsonResponse(body: object, status = 200) {
   return NextResponse.json(body, {
@@ -75,27 +58,21 @@ export async function POST(request: Request) {
   }
 
   const username = credentials.username.trim()
-  const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? 'unknown'
-  const userKey = `user:${ip}:${username.toLocaleLowerCase('fr-FR')}`
-  const ipKey = `ip:${ip}`
-  const now = Date.now()
-
-  const attemptsUser = failedAttempts.get(userKey)
-  const attemptsIp = failedAttempts.get(ipKey)
-
-  if (attemptsUser && attemptsUser.resetAt <= now) failedAttempts.delete(userKey)
-  if (attemptsIp && attemptsIp.resetAt <= now) failedAttempts.delete(ipKey)
-
-  if (
-    (attemptsUser && attemptsUser.resetAt > now && attemptsUser.count >= MAX_USER_ATTEMPTS) ||
-    (attemptsIp && attemptsIp.resetAt > now && attemptsIp.count >= MAX_IP_ATTEMPTS)
-  ) {
+  const ip = getClientIp(request)
+  let attempts: Awaited<ReturnType<typeof getLoginAttemptCounts>>
+  try {
+    attempts = await getLoginAttemptCounts(request, username)
+  } catch (error) {
+    console.error('Service de limitation des connexions indisponible:', error)
+    return jsonResponse({ error: 'Le service de connexion est temporairement indisponible.' }, 503)
+  }
+  if (isLoginAttemptLimitReached(attempts)) {
     logSecurityEvent({
       event: 'login_blocked',
       username,
-      ip: getClientIp(request),
+      ip,
       userAgent: getUserAgent(request),
-      detail: `attempts_user=${attemptsUser?.count ?? 0} attempts_ip=${attemptsIp?.count ?? 0}`,
+      detail: `attempts_user=${attempts.account} attempts_ip=${attempts.ip}`,
     })
     return jsonResponse({ error: 'Trop de tentatives infructueuses. Veuillez patienter 15 minutes.' }, 429)
   }
@@ -120,19 +97,28 @@ export async function POST(request: Request) {
     }, 503)
   }
   if (!account || !validPassword) {
-    recordFailure(userKey, now)
-    recordFailure(ipKey, now)
+    try {
+      await recordLoginFailure(request, username)
+    } catch (error) {
+      console.error('Impossible d’enregistrer l’échec de connexion:', error)
+      return jsonResponse({ error: 'Le service de connexion est temporairement indisponible.' }, 503)
+    }
     logSecurityEvent({
       event: 'login_failure',
       username,
-      ip: getClientIp(request),
+      ip,
       userAgent: getUserAgent(request),
       detail: !account ? 'compte_inconnu' : 'mot_de_passe_incorrect',
     })
     return jsonResponse({ error: 'Identifiant ou mot de passe invalide.' }, 401)
   }
 
-  failedAttempts.delete(userKey)
+  try {
+    await clearLoginAccountAttempts(username)
+  } catch (error) {
+    console.error('Impossible de réinitialiser les tentatives de connexion:', error)
+    return jsonResponse({ error: 'Le service de connexion est temporairement indisponible.' }, 503)
+  }
   let session: ReturnType<typeof createEducatorSession>
   try {
     session = createEducatorSession(account, Boolean(credentials.rememberMe))

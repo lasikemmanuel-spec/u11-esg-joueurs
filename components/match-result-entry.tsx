@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { useRouter } from 'next/navigation'
 import { Check, Pencil, Plus, Save, Sparkles, UsersRound } from 'lucide-react'
 import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
-import { MatchLineupPlanner } from '@/components/match-lineup-planner'
+import { MatchLineupEntry, MatchLineupPlanner, useMatchLineups } from '@/components/match-lineup-planner'
 import { ClubCrest } from '@/components/club-crest'
 import type { MatchSheetEntry } from '@/lib/match-results'
 import type { Convocation } from '@/lib/convocations'
@@ -146,6 +146,7 @@ export function MatchResultEntry({
       )),
   ), [convocationDates, convocations, players])
   const canManage = Boolean(status?.enabled && (status.role === 'educator' || status.role === 'admin'))
+  const matchLineups = useMatchLineups(canManage)
 
   const startNew = () => {
     setEditingSlot(null)
@@ -355,6 +356,12 @@ export function MatchResultEntry({
         </form>
       )}
 
+      {canManage && matchLineups.error && (
+        <p role="alert" className="mt-3 text-sm font-medium text-destructive">{matchLineups.error}</p>
+      )}
+      {canManage && matchLineups.notice && (
+        <p role="status" className="mt-3 text-sm font-medium text-emerald-700">{matchLineups.notice}</p>
+      )}
       <div className="mt-4 flex flex-col gap-2">
         {dayEntries.length === 0 ? (
           <p className="rounded-lg bg-muted px-3 py-4 text-center text-sm text-muted-foreground">
@@ -447,7 +454,7 @@ export function MatchResultEntry({
                             ESG – Équipe {isE1 ? '1' : '2'}
                           </span>
                         </div>
-                        {canManage && (
+                        {canManage && entry.resultLabel !== 'Annulé' && dateInputValue(entry.date) >= localToday() && (
                           <button
                             type="button"
                             onClick={() => startEdit(entry)}
@@ -488,6 +495,22 @@ export function MatchResultEntry({
                           </span>
                         </div>
                       </div>
+                      {canManage && (
+                        <div className="px-3 pb-3">
+                          {matchLineups.loading ? (
+                            <p className="py-2 text-xs text-muted-foreground">Chargement de la feuille…</p>
+                          ) : (
+                            <MatchLineupEntry
+                              match={entry}
+                              players={players}
+                              convocations={convocations}
+                              lineups={matchLineups.lineups}
+                              pendingKey={matchLineups.pendingKey}
+                              saveLineup={matchLineups.saveLineup}
+                            />
+                          )}
+                        </div>
+                      )}
                     </div>
                   )
                 })}
@@ -517,6 +540,8 @@ export function MatchResultEntry({
           entries={entries}
           players={players}
           convocations={convocations}
+          lineups={matchLineups.lineups}
+          loading={matchLineups.loading}
         />
       )}
 

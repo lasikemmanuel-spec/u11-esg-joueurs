@@ -23,7 +23,7 @@ export async function GET(request: Request) {
   if (!educator) return response({ error: 'Connexion requise.' }, 401)
   if (!hasEducatorAccess(educator)) return response({ error: 'Accès réservé aux éducateurs.' }, 403)
   try {
-    return response({ educators: await getEducatorDirectory() })
+    return response(await getEducatorDirectory())
   } catch (error) {
     console.error('Erreur de lecture de l’annuaire des éducateurs:', error)
     return response({ error: 'Impossible de charger l’annuaire des éducateurs.' }, 500)

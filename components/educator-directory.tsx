@@ -34,6 +34,8 @@ export function EducatorDirectory({
   const [editingOwn, setEditingOwn] = useState(false)
   const [pending, setPending] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [phoneDataUnavailable, setPhoneDataUnavailable] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
   const isSearching = Boolean(searchQuery?.trim())
@@ -65,10 +67,17 @@ export function EducatorDirectory({
   }, [currentEducator, filteredEducators, isSearching, ownDirectoryEntry])
 
   const load = useCallback(async () => {
-    const response = await fetch('/api/educators/directory', { cache: 'no-store' })
-    const data = await response.json()
-    if (!response.ok) throw new Error(data.error ?? 'Impossible de charger l’annuaire.')
-    setEducators(data.educators as DirectoryEducator[])
+    setIsLoading(true)
+    setError('')
+    try {
+      const response = await fetch('/api/educators/directory', { cache: 'no-store' })
+      const data = await response.json()
+      if (!response.ok) throw new Error(data.error ?? 'Impossible de charger l’annuaire.')
+      setEducators(data.educators as DirectoryEducator[])
+      setPhoneDataUnavailable(Boolean(data.phoneDataUnavailable))
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
   useEffect(() => { void load().catch((reason) => setError(reason instanceof Error ? reason.message : 'Impossible de charger l’annuaire.')) }, [load])
@@ -184,8 +193,26 @@ export function EducatorDirectory({
       </div>
       )}
       {notice && <p role="status" className="mt-3 text-sm font-medium text-emerald-700">{notice}</p>}
-      {error && !open && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
-      {educators.length === 0 ? (
+      {phoneDataUnavailable && (
+        <p role="alert" className="mt-3 rounded-lg border border-amber-500/40 bg-amber-50 px-3 py-2 text-sm text-amber-950">
+          Les fiches sont chargées, mais certains téléphones sont illisibles. Les noms et licences restent disponibles ; ne modifie pas les cellules du classeur avant d’avoir retrouvé la clé de chiffrement.
+        </p>
+      )}
+      {error && !open && (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2">
+          <p role="alert" className="text-sm text-destructive">{error}</p>
+          <button
+            type="button"
+            onClick={() => { void load().catch((reason) => setError(reason instanceof Error ? reason.message : 'Impossible de charger l’annuaire.')) }}
+            className="text-sm font-semibold text-destructive underline underline-offset-2"
+          >
+            Réessayer
+          </button>
+        </div>
+      )}
+      {isLoading ? (
+        <p role="status" className="mt-3 text-center text-sm text-muted-foreground">Chargement de l’annuaire…</p>
+      ) : error ? null : educators.length === 0 ? (
         isSearching ? null : (
           <p className="mt-3 rounded-lg bg-muted px-3 py-4 text-center text-sm text-muted-foreground">
             L’annuaire est vide. {canEdit ? 'Ajoute la première fiche pour créer son onglet dédié dans le Sheet.' : 'Un administrateur pourra ajouter les fiches.'}

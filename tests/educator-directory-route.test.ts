@@ -44,7 +44,10 @@ describe('/api/educators/directory', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     process.env.VERCEL_ENV = 'production'
-    vi.mocked(getEducatorDirectory).mockResolvedValue([educatorCard])
+    vi.mocked(getEducatorDirectory).mockResolvedValue({
+      educators: [educatorCard],
+      phoneDataUnavailable: false,
+    })
     vi.mocked(saveEducatorDirectoryEntry).mockResolvedValue({ id: 'educator-id' })
   })
 
@@ -76,6 +79,7 @@ describe('/api/educators/directory', () => {
 
     expect(response.status).toBe(200)
     expect(body.educators).toEqual([educatorCard])
+    expect(body.phoneDataUnavailable).toBe(false)
   })
 
   it.each([

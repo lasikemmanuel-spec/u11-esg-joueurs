@@ -42,25 +42,39 @@ async function readSheet(create = false) {
   return sheet
 }
 
-export async function getEducatorDirectory(): Promise<DirectoryEducator[]> {
+export async function getEducatorDirectory(): Promise<{
+  educators: DirectoryEducator[]
+  phoneDataUnavailable: boolean
+}> {
   let sheet: Awaited<ReturnType<typeof readSheet>>
   try {
     sheet = await readSheet()
   } catch (error) {
-    if (error instanceof Error && error.message === 'Aucun onglet Google Sheets trouvé.') return []
+    if (error instanceof Error && error.message === 'Aucun onglet Google Sheets trouvé.') {
+      return { educators: [], phoneDataUnavailable: false }
+    }
     throw error
   }
-  return sheet.rows.slice(1).flatMap((row) => {
+  let phoneDataUnavailable = false
+  const educators = sheet.rows.slice(1).flatMap((row) => {
     const id = row[0]?.trim() ?? ''
     const name = row[1]?.trim() ?? ''
     if (!id || !name) return []
+    let phone = ''
+    try {
+      phone = decryptPhone(row[3]?.trim() ?? '').trim()
+    } catch (error) {
+      phoneDataUnavailable = true
+      console.error(`Impossible de déchiffrer le téléphone de la fiche éducateur ${id}:`, error)
+    }
     return [{
       id,
       name,
       licenseNumber: row[2]?.trim() ?? '',
-      phone: decryptPhone(row[3]?.trim() ?? '').trim(),
+      phone,
     }]
   }).sort((a, b) => a.name.localeCompare(b.name, 'fr', { sensitivity: 'base' }))
+  return { educators, phoneDataUnavailable }
 }
 
 export async function saveEducatorDirectoryEntry(input: {

@@ -100,7 +100,6 @@ export function EducatorRoster({
         setPhones({})
         setPhoneEditor(null)
         setMigrationRequired(true)
-        await loadPrivatePlayers()
         return
       }
       if (!response.ok) throw new Error(result.error ?? 'Impossible de charger les coordonnées.')
@@ -113,18 +112,17 @@ export function EducatorRoster({
       onEducatorChange?.(result.educator)
       setPhones(nextPhones)
       setMigrationRequired(false)
-      await loadPrivatePlayers()
     } catch (error) {
       onSessionStatusChange?.(initialEducator ? 'authenticated' : 'unavailable')
       const message = error instanceof Error ? error.message : 'Impossible de charger les coordonnées.'
       setAuthError(initialEducator
-        ? `Votre session reste active, mais les données éducateurs ne sont pas disponibles. Réessayez sans vous reconnecter. (${message})`
+        ? `Votre session reste active, mais les téléphones ne sont pas disponibles. Les données des joueurs sont chargées séparément. (${message})`
         : message)
     } finally {
       setRequestPending(false)
       setSessionChecked(true)
     }
-  }, [initialEducator, loadPrivatePlayers, onEducatorChange, onSessionStatusChange])
+  }, [initialEducator, onEducatorChange, onSessionStatusChange])
 
   useEffect(() => {
     if (initialEducator) {
@@ -132,8 +130,12 @@ export function EducatorRoster({
       setSessionChecked(true)
     }
     void loadPhoneContacts()
+    void loadPrivatePlayers().catch((error) => {
+      const message = error instanceof Error ? error.message : 'Impossible de charger les données des joueurs.'
+      setAuthError(message)
+    })
     setIsPhoneDevice(/iPhone|iPod|Android.*Mobile|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(navigator.userAgent))
-  }, [initialEducator, loadPhoneContacts])
+  }, [initialEducator, loadPhoneContacts, loadPrivatePlayers])
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -152,6 +154,9 @@ export function EducatorRoster({
       setPassword('')
       window.dispatchEvent(new Event('educator-session-changed'))
       await loadPhoneContacts()
+      void loadPrivatePlayers().catch((error) => {
+        setAuthError(error instanceof Error ? error.message : 'Impossible de charger les données des joueurs.')
+      })
       onLoginSuccess?.()
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Connexion impossible.')

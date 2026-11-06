@@ -311,6 +311,11 @@ export function MatchLineupPlanner({
                       <p className="mt-2 text-xs text-muted-foreground">
                         {starters.length}/8 au départ · {substitutes.length} sur le banc
                       </p>
+                      {starters.length >= 8 && (
+                        <p role="status" className="mt-1 text-xs font-medium text-amber-800">
+                          Les 8 places de titulaires sont prises. Retire d’abord un titulaire avec le bouton × pour en choisir un autre.
+                        </p>
+                      )}
                     </>
                   )}
                   {pendingKey === key && (

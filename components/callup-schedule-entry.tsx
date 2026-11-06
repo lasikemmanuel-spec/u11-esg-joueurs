@@ -217,6 +217,15 @@ export function CallupScheduleEntry({
   const teamOneCount = Object.values(selections).filter((value) => value === '✅ Convoqué E1').length
   const teamTwoCount = Object.values(selections).filter((value) => value === '✅ Convoqué E2').length
   const existingDate = savedDates.has(date)
+  const saveDisabledReason = !savingStatusChecked
+    ? 'Vérification de la disponibilité de la saisie…'
+    : !savingEnabled
+      ? 'La saisie est disponible uniquement sur le site officiel.'
+      : players.length === 0
+        ? 'Aucun joueur à enregistrer.'
+        : dates.length === 0
+          ? 'Aucun match programmé. Ajoute d’abord un match dans la rubrique « Matchs ».'
+          : ''
 
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -438,14 +447,21 @@ export function CallupScheduleEntry({
         {error && <p role="alert" className="text-sm font-medium text-destructive">{error}</p>}
         {notice && <p role="status" className="text-sm font-medium text-emerald-700 dark:text-emerald-300">{notice}</p>}
         <div className="fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center px-3 py-1 xl:inset-x-auto xl:right-24 xl:bottom-6 xl:justify-end xl:px-0">
-          <button
-            type="submit"
-            disabled={!savingEnabled || pending || players.length === 0 || dates.length === 0}
-            className="inline-flex min-h-10 w-auto max-w-full items-center justify-center gap-2 rounded-lg bg-[#172554] px-5 text-sm font-bold text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <Save aria-hidden="true" className="size-4" />
-            {pending ? 'Enregistrement…' : 'Enregistrer'}
-          </button>
+          <div className="flex max-w-full flex-col items-center gap-1">
+            {saveDisabledReason && !pending && (
+              <p role="status" className="max-w-full rounded-lg bg-white px-3 py-1 text-center text-xs font-semibold text-[#172554] shadow">
+                {saveDisabledReason}
+              </p>
+            )}
+            <button
+              type="submit"
+              disabled={!savingEnabled || pending || players.length === 0 || dates.length === 0}
+              className="inline-flex min-h-10 w-auto max-w-full items-center justify-center gap-2 rounded-lg bg-[#172554] px-5 text-sm font-bold text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Save aria-hidden="true" className="size-4" />
+              {pending ? 'Enregistrement…' : 'Enregistrer'}
+            </button>
+          </div>
         </div>
         <p className="text-xs text-muted-foreground">
           Les statuts sont enregistrés dans l’onglet « 📣 Convocations Matchs ». Une date déjà saisie sera mise à jour.

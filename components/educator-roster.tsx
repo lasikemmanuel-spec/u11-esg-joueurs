@@ -567,13 +567,13 @@ export function EducatorRoster({
                                   disabled={requestPending}
                                   aria-label={`Modifier les téléphones de ${player.firstName} ${player.lastName}`}
                                   title="Modifier les numéros"
-                                  className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-accent/40 bg-card text-muted-foreground transition hover:bg-accent/40 hover:text-foreground disabled:opacity-50"
+                                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-accent/40 bg-card text-muted-foreground transition hover:bg-accent/40 hover:text-foreground disabled:opacity-50 sm:size-7 sm:rounded-md"
                                 >
-                                  <Pencil aria-hidden="true" className="size-3" />
+                                  <Pencil aria-hidden="true" className="size-4 sm:size-3" />
                                 </button>
                               )}
                             </div>
-                            <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
+                            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
                               <span>Poste : <strong className="text-foreground">{player.position ?? 'Non renseigné'}</strong></span>
                               <span>·</span>
                               <span>Licence : <span className="font-mono font-medium">{licenseNumber ?? 'non renseignée'}</span></span>
@@ -720,19 +720,19 @@ export function EducatorRoster({
                                   disabled={requestPending}
                                   aria-label={`Modifier les téléphones pour ${player.firstName} ${player.lastName}`}
                                   title="Modifier les numéros"
-                                  className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-accent/40 bg-card text-muted-foreground transition hover:bg-accent/40 hover:text-foreground disabled:opacity-50"
+                                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-accent/40 bg-card text-muted-foreground transition hover:bg-accent/40 hover:text-foreground disabled:opacity-50 sm:size-7 sm:rounded-md"
                                 >
-                                  <Pencil aria-hidden="true" className="size-3" />
+                                  <Pencil aria-hidden="true" className="size-4 sm:size-3" />
                                 </button>
                               )}
                             </div>
-                            <div className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
-                              <span>Licence FFF : <span className="font-mono font-medium">{licenseNumber ?? 'non renseigné'}</span></span>
+                            <div className="mt-1 flex flex-wrap items-center gap-x-1 gap-y-1 text-xs text-muted-foreground">
+                              <span className="break-all">Licence FFF : <span className="font-mono font-medium">{licenseNumber ?? 'non renseigné'}</span></span>
                               {licenseNumber && (
                                 <button
                                   type="button"
                                   onClick={() => handleCopy(licenseNumber)}
-                                  className={`inline-flex size-5 shrink-0 items-center justify-center rounded transition ${
+                                  className={`inline-flex size-11 shrink-0 items-center justify-center rounded-lg transition sm:size-7 sm:rounded ${
                                     isCopied
                                       ? 'bg-emerald-600 text-white'
                                       : 'text-muted-foreground hover:bg-accent/40 hover:text-foreground'

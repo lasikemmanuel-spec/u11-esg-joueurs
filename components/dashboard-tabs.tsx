@@ -67,6 +67,7 @@ export function DashboardTabs({
   const [loginPassword, setLoginPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(true)
   const [loginError, setLoginError] = useState('')
+  const [loginRetryAvailable, setLoginRetryAvailable] = useState(false)
   const [loginPending, setLoginPending] = useState(false)
   const [logoutPending, setLogoutPending] = useState(false)
   const [logoutError, setLogoutError] = useState('')
@@ -105,6 +106,8 @@ export function DashboardTabs({
     event.preventDefault()
     setLoginPending(true)
     setLoginError('')
+    setLoginRetryAvailable(false)
+    let serviceUnavailable = false
     try {
       const response = await fetch('/api/educators/session', {
         method: 'POST',
@@ -112,6 +115,7 @@ export function DashboardTabs({
         body: JSON.stringify({ username: loginUsername, password: loginPassword, rememberMe }),
       })
       const result = await response.json()
+      serviceUnavailable = response.status >= 500
       if (!response.ok) throw new Error(result.error ?? 'Connexion impossible.')
       const identity = result.educator as EducatorIdentity
       setEducatorIdentity(identity)
@@ -123,6 +127,7 @@ export function DashboardTabs({
       router.refresh()
     } catch (error) {
       setLoginError(error instanceof Error ? error.message : 'Connexion impossible.')
+      setLoginRetryAvailable(serviceUnavailable || error instanceof TypeError)
     } finally {
       setLoginPending(false)
     }
@@ -285,12 +290,17 @@ export function DashboardTabs({
                     <span>Rester connecté sur cet appareil (30 jours)</span>
                   </label>
                   {loginError && <p role="alert" className="text-sm font-medium text-destructive">{loginError}</p>}
+                  {loginRetryAvailable && (
+                    <p className="text-xs text-muted-foreground">
+                      Tes identifiants sont conservés. Réessaie quand le service sera de nouveau disponible.
+                    </p>
+                  )}
                   <button
                     type="submit"
                     disabled={loginPending}
                     className="mt-2 min-h-11 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:brightness-105 active:scale-95 px-4 text-sm font-black text-blue-950 shadow-md transition-all disabled:opacity-50"
                   >
-                    {loginPending ? 'Connexion…' : 'Se connecter'}
+                    {loginPending ? 'Connexion…' : loginRetryAvailable ? 'Réessayer' : 'Se connecter'}
                   </button>
                 </form>
               )}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { Armchair, ChevronDown, X } from 'lucide-react'
+import { ClubCrest } from '@/components/club-crest'
 import type { Convocation } from '@/lib/convocations'
 import type { MatchSheetEntry } from '@/lib/match-results'
 import type { PublicPlayer } from '@/lib/players'
@@ -89,9 +90,9 @@ function isCalledForTeam(convocation: Convocation | undefined, date: string, tea
 export function useMatchLineups(enabled: boolean) {
   const [lineups, setLineups] = useState<MatchLineup[]>([])
   const [loading, setLoading] = useState(true)
-  const [pendingKey, setPendingKey] = useState('')
+  const [pendingKeys, setPendingKeys] = useState<Set<string>>(() => new Set())
+  const [savedKey, setSavedKey] = useState('')
   const [error, setError] = useState('')
-  const [notice, setNotice] = useState('')
 
   useEffect(() => {
     if (!enabled) {
@@ -126,9 +127,9 @@ export function useMatchLineups(enabled: boolean) {
     substitutes: number[],
   ) => {
     const key = matchKey(match)
-    setPendingKey(key)
+    setPendingKeys((current) => new Set(current).add(key))
     setError('')
-    setNotice('')
+    setSavedKey('')
     try {
       const response = await fetch('/api/educators/match-lineups', {
         method: 'POST',
@@ -148,15 +149,19 @@ export function useMatchLineups(enabled: boolean) {
         ...current.filter((lineup) => matchKey(lineup) !== key),
         result.lineup,
       ])
-      setNotice('Feuille de match enregistrée.')
+      setSavedKey(key)
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Impossible d’enregistrer la feuille de match.')
     } finally {
-      setPendingKey('')
+      setPendingKeys((current) => {
+        const next = new Set(current)
+        next.delete(key)
+        return next
+      })
     }
   }, [])
 
-  return { lineups, loading, pendingKey, error, notice, saveLineup }
+  return { lineups, loading, pendingKeys, savedKey, error, saveLineup }
 }
 
 export function MatchLineupEntry({
@@ -164,14 +169,16 @@ export function MatchLineupEntry({
   players,
   convocations,
   lineups,
-  pendingKey,
+  pendingKeys,
+  savedKey,
   saveLineup,
 }: {
   match: MatchSheetEntry
   players: PublicPlayer[]
   convocations: Convocation[]
   lineups: MatchLineup[]
-  pendingKey: string
+  pendingKeys: Set<string>
+  savedKey: string
   saveLineup: (
     match: MatchSheetEntry & { date: string },
     starters: number[],
@@ -187,6 +194,7 @@ export function MatchLineupEntry({
   ))
   const starters = calledPlayers.filter((player) => assignments[player.number] === 'starter')
   const substitutes = calledPlayers.filter((player) => assignments[player.number] === 'substitute')
+  const pending = pendingKeys.has(key)
 
   const updateRole = (playerNumber: number, role: LineupRole | null) => {
     const nextAssignments = { ...assignments }
@@ -204,7 +212,10 @@ export function MatchLineupEntry({
   return (
     <details className="group mt-2 rounded-md border border-border">
       <summary className={`flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 border-l-4 px-3 py-2 text-sm font-semibold [&::-webkit-details-marker]:hidden ${match.team === 'E1' ? 'border-l-[#172554] bg-[#172554]/[0.04] text-[#172554]' : 'border-l-amber-400 bg-amber-400/[0.08] text-amber-950'}`}>
-        <span>Feuille de match</span>
+        <span className="flex items-center gap-2">
+          <ClubCrest className="size-6 ring-1 ring-[#d4af37]/70" />
+          Feuille de match
+        </span>
         <span className="flex items-center gap-2">
           <span className="text-xs font-normal text-muted-foreground">{calledPlayers.length} convoqué{calledPlayers.length === 1 ? '' : 's'}</span>
           <ChevronDown aria-hidden="true" className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
@@ -232,7 +243,7 @@ export function MatchLineupEntry({
                         title="Commence le match"
                         aria-label={`${currentRole === 'starter' ? 'Retirer : ' : 'Choisir : '}commence le match pour ${player.firstName} ${player.lastName}`}
                         aria-pressed={currentRole === 'starter'}
-                        disabled={pendingKey === key || (currentRole !== 'starter' && starters.length >= 8)}
+                        disabled={pending || (currentRole !== 'starter' && starters.length >= 8)}
                         onClick={() => updateRole(player.number, 'starter')}
                         className={`${buttonClass} ${currentRole === 'starter' ? 'border-primary bg-primary text-primary-foreground' : 'border-accent/50 bg-background text-foreground hover:bg-muted'}`}
                       >
@@ -243,7 +254,7 @@ export function MatchLineupEntry({
                         title="Peut entrer en cours de jeu"
                         aria-label={`${currentRole === 'substitute' ? 'Retirer : ' : 'Choisir : '}peut entrer en cours de jeu pour ${player.firstName} ${player.lastName}`}
                         aria-pressed={currentRole === 'substitute'}
-                        disabled={pendingKey === key}
+                        disabled={pending}
                         onClick={() => updateRole(player.number, 'substitute')}
                         className={`${buttonClass} ${currentRole === 'substitute' ? 'border-primary bg-primary text-primary-foreground' : 'border-accent/50 bg-background text-foreground hover:bg-muted'}`}
                       >
@@ -254,7 +265,7 @@ export function MatchLineupEntry({
                           type="button"
                           title="Retirer ce choix"
                           aria-label={`Retirer le choix pour ${player.firstName} ${player.lastName}`}
-                          disabled={pendingKey === key}
+                          disabled={pending}
                           onClick={() => updateRole(player.number, null)}
                           className={`${buttonClass} border-accent/50 bg-background text-muted-foreground hover:bg-muted`}
                         >
@@ -266,8 +277,9 @@ export function MatchLineupEntry({
                 )
               })}
             </ul>
-            <p className="mt-2 text-xs text-muted-foreground">
-              {starters.length}/8 au départ · {substitutes.length} sur le banc
+            <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <span className="font-semibold text-[#172554]">{starters.length}/8 titulaires</span>
+              <span>{substitutes.length} remplaçant{substitutes.length === 1 ? '' : 's'}</span>
             </p>
             {starters.length >= 8 && (
               <p role="status" className="mt-1 text-xs font-medium text-amber-800">
@@ -276,7 +288,11 @@ export function MatchLineupEntry({
             )}
           </>
         )}
-        {pendingKey === key && <p role="status" className="mt-2 text-xs text-muted-foreground">Enregistrement…</p>}
+        {pending ? (
+          <p role="status" className="mt-2 text-xs font-medium text-[#172554]">Enregistrement en cours…</p>
+        ) : savedKey === key ? (
+          <p role="status" className="mt-2 text-xs font-semibold text-emerald-700">Feuille enregistrée.</p>
+        ) : null}
       </div>
     </details>
   )

@@ -214,6 +214,7 @@ export function CallupScheduleEntry({
   }, [players, query])
 
   const selectedCount = Object.values(selections).filter(Boolean).length
+  const missingStatusCount = players.length - selectedCount
   const teamOneCount = Object.values(selections).filter((value) => value === '✅ Convoqué E1').length
   const teamTwoCount = Object.values(selections).filter((value) => value === '✅ Convoqué E2').length
   const existingDate = savedDates.has(date)
@@ -300,8 +301,16 @@ export function CallupScheduleEntry({
         )}
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-[#dbeafe] px-3 py-2 text-xs font-semibold text-[#172554]">
           <span className="inline-flex items-center gap-1.5"><UsersRound aria-hidden="true" className="size-4" /> {selectedCount}/{players.length} statuts renseignés</span>
-          <span>Équipe 1 : {teamOneCount} · Équipe 2 : {teamTwoCount}</span>
+          <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="inline-flex items-center gap-1"><ClubCrest className="size-4 ring-1 ring-[#d4af37]/60" /><span className="text-[#172554]">E1 : {teamOneCount}</span></span>
+            <span className="inline-flex items-center gap-1"><ClubCrest className="size-4 ring-1 ring-[#d4af37]/60" /><span className="text-amber-800">E2 : {teamTwoCount}</span></span>
+          </span>
         </div>
+        {missingStatusCount > 0 && (
+          <p role="status" className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">
+            {missingStatusCount} joueur{missingStatusCount === 1 ? '' : 's'} sans statut. Vérifie la liste avant d’enregistrer.
+          </p>
+        )}
 
         <div className="flex items-center gap-2">
           {initialDate ? (

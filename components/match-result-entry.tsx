@@ -359,9 +359,6 @@ export function MatchResultEntry({
       {canManage && matchLineups.error && (
         <p role="alert" className="mt-3 text-sm font-medium text-destructive">{matchLineups.error}</p>
       )}
-      {canManage && matchLineups.notice && (
-        <p role="status" className="mt-3 text-sm font-medium text-emerald-700">{matchLineups.notice}</p>
-      )}
       <div className="mt-4 flex flex-col gap-2">
         {dayEntries.length === 0 ? (
           <p className="rounded-lg bg-muted px-3 py-4 text-center text-sm text-muted-foreground">
@@ -505,7 +502,8 @@ export function MatchResultEntry({
                               players={players}
                               convocations={convocations}
                               lineups={matchLineups.lineups}
-                              pendingKey={matchLineups.pendingKey}
+                              pendingKeys={matchLineups.pendingKeys}
+                              savedKey={matchLineups.savedKey}
                               saveLineup={matchLineups.saveLineup}
                             />
                           )}

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { useRouter } from 'next/navigation'
 import { Check, Pencil, Plus, Save, Sparkles, UsersRound } from 'lucide-react'
 import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
-import { MatchLineupEntry, MatchLineupPlanner, useMatchLineups } from '@/components/match-lineup-planner'
+import { MatchLineupEntry, useMatchLineups } from '@/components/match-lineup-planner'
 import { ClubCrest } from '@/components/club-crest'
 import type { MatchSheetEntry } from '@/lib/match-results'
 import type { Convocation } from '@/lib/convocations'
@@ -534,16 +534,6 @@ export function MatchResultEntry({
           )
         })}
       </div>
-
-      {canManage && (
-        <MatchLineupPlanner
-          entries={entries}
-          players={players}
-          convocations={convocations}
-          lineups={matchLineups.lineups}
-          loading={matchLineups.loading}
-        />
-      )}
 
       </div>
     </section>

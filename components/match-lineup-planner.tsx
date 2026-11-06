@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Armchair, ChevronDown, X } from 'lucide-react'
 import type { Convocation } from '@/lib/convocations'
 import type { MatchSheetEntry } from '@/lib/match-results'
@@ -279,102 +279,5 @@ export function MatchLineupEntry({
         {pendingKey === key && <p role="status" className="mt-2 text-xs text-muted-foreground">Enregistrement…</p>}
       </div>
     </details>
-  )
-}
-
-export function MatchLineupPlanner({
-  entries,
-  convocations,
-  players,
-  lineups,
-  loading,
-}: {
-  entries: MatchSheetEntry[]
-  convocations: Convocation[]
-  players: PublicPlayer[]
-  lineups: MatchLineup[]
-  loading: boolean
-}) {
-  const previousMatches = useMemo(() => {
-    const today = localToday()
-    return entries
-      .filter((entry) => entry.resultLabel !== 'Annulé')
-      .map((entry) => ({ ...entry, date: dateKey(entry.date) }))
-      .filter((entry) => entry.date && entry.date < today)
-      .sort((a, b) => b.date.localeCompare(a.date) || a.slotColumn - b.slotColumn)
-  }, [entries])
-
-  if (loading || previousMatches.length === 0) return null
-
-  return (
-    <section aria-label="Feuilles de match précédentes" className="mt-4 rounded-xl border border-accent/50 bg-card p-4 shadow-sm">
-      <details className="rounded-lg border border-border">
-        <summary className="cursor-pointer rounded-lg bg-muted/50 px-3 py-3 text-sm font-bold text-primary">
-          Feuilles de match précédentes ({previousMatches.length})
-        </summary>
-        <div className="grid gap-2 p-3 lg:grid-cols-2">
-                {previousMatches.map((match) => {
-                  const key = matchKey(match)
-                  const assignments = assignmentsFromLineup(lineups.find((item) => matchKey(item) === key))
-                  const calledPlayers = players.filter((player) => isCalledForTeam(
-                    convocations.find((convocation) => convocation.number === player.number),
-                    match.date,
-                    match.team,
-                  ))
-
-                  return (
-                    <article key={key} className="min-w-0 rounded-lg border border-border bg-background p-3">
-                      <header className="mb-2">
-                        <h4 className="font-bold capitalize text-foreground">
-                          {new Date(`${match.date}T12:00:00`).toLocaleDateString('fr-FR', {
-                            weekday: 'long',
-                            day: 'numeric',
-                            month: 'long',
-                            year: 'numeric',
-                          })}
-                        </h4>
-                        <p className="text-xs text-muted-foreground">
-                          Équipe {match.team === 'E1' ? '1' : '2'} · {match.opponent || 'Adversaire à préciser'} · {match.competition}
-                        </p>
-                      </header>
-                      {calledPlayers.length === 0 ? (
-                        <p className="rounded-lg bg-muted px-3 py-3 text-center text-sm text-muted-foreground">
-                          Aucune convocation enregistrée pour cette équipe.
-                        </p>
-                      ) : (
-                        <ul className="divide-y divide-border rounded-lg border border-border">
-                          {calledPlayers.map((player) => {
-                            const role = assignments[player.number]
-                            return (
-                              <li key={player.number} className="flex min-w-0 flex-col gap-1 px-2 py-2 text-sm sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-                                <div className="min-w-0 flex-1">
-                                  <span className="min-w-0 whitespace-normal break-words font-medium">
-                                    {player.firstName} <span className="font-bold uppercase">{player.lastName}</span>
-                                  </span>
-                                </div>
-                                {role ? (
-                                  <span
-                                    title={role === 'starter' ? 'Commence le match' : 'Peut entrer en cours de jeu'}
-                                    aria-label={role === 'starter' ? 'Commence le match' : 'Peut entrer en cours de jeu'}
-                                    className="shrink-0 text-primary"
-                                  >
-                                    {role === 'starter'
-                                      ? <JerseyIcon number={player.number} />
-                                      : <Armchair aria-hidden="true" className="size-5" />}
-                                  </span>
-                                ) : (
-                                  <span className="shrink-0 text-xs text-muted-foreground">Action non définie</span>
-                                )}
-                              </li>
-                            )
-                          })}
-                        </ul>
-                      )}
-                    </article>
-                  )
-                })}
-        </div>
-      </details>
-    </section>
   )
 }

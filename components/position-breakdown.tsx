@@ -52,11 +52,11 @@ export function PositionBreakdown({
     if (b === 'Non renseigné') return -1
     return positionRank(a) - positionRank(b) || a.localeCompare(b, 'fr')
   })
-  const allGroupsExpanded = sorted.length > 0 && sorted.every(([position, list]) =>
+  const allGroupsExpanded = sorted.length > 0 && (Boolean(searchTerm) || sorted.every(([position, list]) =>
     expandedPositions.has(position) || list.some((player) => player.number === selectedNumber),
-  )
+  ))
   const hasExpandedVisibleGroup = sorted.some(([position, list]) =>
-    expandedPositions.has(position) || list.some((player) => player.number === selectedNumber),
+    Boolean(searchTerm) || expandedPositions.has(position) || list.some((player) => player.number === selectedNumber),
   )
   const selectedPlayer = players.find((player) => player.number === selectedNumber)
   const selectedStats = selectedPlayer
@@ -108,7 +108,7 @@ export function PositionBreakdown({
       className="flex flex-col gap-3 rounded-xl border border-accent/60 bg-gradient-to-br from-secondary/30 via-card to-card p-4 shadow-sm"
     >
       <div className="flex items-center gap-2">
-        {sorted.length > 0 && (
+        {sorted.length > 0 && !searchTerm && (
           <button
             type="button"
             onClick={() => {
@@ -161,7 +161,7 @@ export function PositionBreakdown({
             )}
             {sorted.map(([position, list], groupIndex) => {
               const isSelectedGroup = list.some((player) => player.number === selectedPlayer?.number)
-              const isExpanded = expandedPositions.has(position) || isSelectedGroup
+              const isExpanded = Boolean(searchTerm) || expandedPositions.has(position) || isSelectedGroup
               const groupId = `roster-position-${groupIndex}`
               return (
               <article key={position} className={`flex scroll-mt-4 flex-col overflow-hidden rounded-lg border border-accent/50 bg-card shadow-sm ${

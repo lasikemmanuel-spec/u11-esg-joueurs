@@ -211,7 +211,7 @@ export function MatchLineupPlanner({
           {notice && <p role="status" className="mb-3 text-sm font-medium text-emerald-700">{notice}</p>}
           {upcomingMatches.length > 0 && (
             <>
-              <div role="tablist" aria-label="Choisir une équipe pour la feuille de match" className="mb-3 grid grid-cols-2 gap-2">
+              <div role="tablist" aria-label="Choisir une équipe pour la feuille de match" className="mb-3 grid grid-cols-2 gap-1 rounded-lg bg-muted p-1">
                 {(['E1', 'E2'] as const).map((team) => {
                   const isE1 = team === 'E1'
                   const selected = team === activeTeam
@@ -226,19 +226,19 @@ export function MatchLineupPlanner({
                       disabled={upcomingTeamCounts[team] === 0}
                       onClick={() => setSelectedTeam(team)}
                       className={[
-                        'flex min-h-12 items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+                        'flex min-h-10 items-center justify-center gap-2 rounded-md px-2 py-1.5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-40',
                         selected
                           ? isE1
-                            ? 'border-[#172554] bg-[#172554] text-white shadow'
-                            : 'border-amber-400 bg-amber-400 text-blue-950 shadow'
+                            ? 'bg-[#172554] text-white'
+                            : 'bg-amber-400 text-blue-950'
                           : isE1
-                            ? 'border-[#172554]/25 bg-background text-[#172554] hover:bg-[#172554]/5'
-                            : 'border-amber-400/60 bg-background text-amber-900 hover:bg-amber-50',
+                            ? 'text-[#172554] hover:bg-background/70'
+                            : 'text-amber-900 hover:bg-background/70',
                       ].join(' ')}
                     >
-                      <span>Équipe {isE1 ? '1 · E1' : '2 · E2'}</span>
-                      <span className="text-xs font-semibold">
-                        {upcomingTeamCounts[team]} match{upcomingTeamCounts[team] === 1 ? '' : 's'}
+                      <span>Équipe {isE1 ? '1' : '2'}</span>
+                      <span className={`rounded-full px-1.5 text-xs ${selected ? 'bg-white/20' : 'bg-foreground/5'}`}>
+                        {upcomingTeamCounts[team]}
                       </span>
                     </button>
                   )
@@ -251,16 +251,16 @@ export function MatchLineupPlanner({
                   const teamIsE1 = activeTeam === 'E1'
 
                   return (
-                    <details key={date} open className="mb-3 rounded-lg border border-border">
-                      <summary className="cursor-pointer rounded-lg bg-muted/50 px-3 py-3 font-bold capitalize text-primary">
-                        Feuille de match du {new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', {
+                    <div key={date} className="mb-3">
+                      <p className="mb-2 border-b border-border px-1 pb-1 text-xs font-medium capitalize text-muted-foreground">
+                        {new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', {
                           weekday: 'long',
                           day: 'numeric',
                           month: 'long',
                           year: 'numeric',
                         })}
-                      </summary>
-                      <div className="grid gap-3 p-3">
+                      </p>
+                      <div className="grid gap-2">
                         {teamMatches.map((match) => {
                           const key = matchKey(match)
                           const lineup = lineups.find((item) => matchKey(item) === key)
@@ -272,32 +272,29 @@ export function MatchLineupPlanner({
                           ))
                           const starters = calledPlayers.filter((player) => assignments[player.number] === 'starter')
                           const substitutes = calledPlayers.filter((player) => assignments[player.number] === 'substitute')
-                          const headerClass = teamIsE1
-                            ? 'bg-[#172554] text-white'
-                            : 'bg-amber-400 text-blue-950'
+                          const accentClass = teamIsE1
+                            ? 'border-l-[#172554] bg-[#172554]/[0.04]'
+                            : 'border-l-amber-400 bg-amber-400/[0.08]'
 
                           return (
-                            <details key={key} className={`group min-w-0 overflow-hidden rounded-lg border ${teamIsE1 ? 'border-[#172554]/30' : 'border-amber-400/70'}`}>
-                              <summary className={`flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 ${headerClass} [&::-webkit-details-marker]:hidden`}>
+                            <details key={key} className={`group min-w-0 overflow-hidden rounded-md border border-l-4 ${teamIsE1 ? 'border-y-border border-r-border border-l-[#172554]' : 'border-y-border border-r-border border-l-amber-400'}`}>
+                              <summary className={`flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2.5 ${accentClass} [&::-webkit-details-marker]:hidden`}>
                                 <span className="flex min-w-0 items-center gap-2">
-                                  <span className="shrink-0 rounded-full bg-white/15 px-2 py-1 text-[11px] font-black uppercase tracking-wide">
-                                    {activeTeam}
-                                  </span>
                                   <span className="min-w-0">
-                                    <span className="block truncate text-sm font-bold">{match.opponent || 'Adversaire à préciser'}</span>
-                                    <span className={`block truncate text-xs ${teamIsE1 ? 'text-white/75' : 'text-blue-950/75'}`}>
+                                    <span className={`block truncate text-sm font-semibold ${teamIsE1 ? 'text-[#172554]' : 'text-amber-950'}`}>{match.opponent || 'Adversaire à préciser'}</span>
+                                    <span className="block truncate text-xs text-muted-foreground">
                                       {match.competition}
                                     </span>
                                   </span>
                                 </span>
                                 <span className="flex shrink-0 items-center gap-2">
-                                  <span className="text-xs font-semibold">
-                                    {calledPlayers.length} convoqué{calledPlayers.length === 1 ? '' : 's'}
+                                  <span className="rounded-full bg-background/80 px-2 py-0.5 text-xs text-muted-foreground">
+                                    {calledPlayers.length}
                                   </span>
-                                  <ChevronDown aria-hidden="true" className="size-5 transition-transform group-open:rotate-180" />
+                                  <ChevronDown aria-hidden="true" className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
                                 </span>
                               </summary>
-                              <div className="bg-background p-3">
+                              <div className="bg-background px-2 py-2">
                                 {calledPlayers.length === 0 ? (
                                   <p className="rounded-lg bg-muted px-3 py-4 text-center text-sm text-muted-foreground">
                                     La feuille sera alimentée dès l’enregistrement des convocations pour cette équipe.
@@ -386,7 +383,7 @@ export function MatchLineupPlanner({
                           )
                         })}
                       </div>
-                    </details>
+                    </div>
                   )
                 })}
               </div>

@@ -21,6 +21,16 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Droits insuffisants.' }, { status: 403 })
   }
 
+  let input: { backupConfirmed?: unknown }
+  try {
+    input = await request.json()
+  } catch {
+    return NextResponse.json({ error: 'Confirmez la sauvegarde du classeur avant la migration.' }, { status: 400 })
+  }
+  if (input.backupConfirmed !== true) {
+    return NextResponse.json({ error: 'Confirmez la sauvegarde du classeur avant la migration.' }, { status: 400 })
+  }
+
   try {
     const migratedCount = await migrateEducatorPhones()
     return NextResponse.json(

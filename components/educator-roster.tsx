@@ -28,6 +28,13 @@ type ParentKey = 'father' | 'mother'
 type PhoneEditor = { number: number; name: string; parent: ParentKey | null; value: string }
 type DirectoryView = 'educators' | 'players' | 'accounts'
 type EducatorSessionStatus = 'checking' | 'unauthenticated' | 'authenticated' | 'unavailable'
+type PhoneEncryptionDiagnostics = {
+  keyFormatValid: boolean
+  encryptedValues: number
+  unreadableValues: number
+  plaintextValues: number
+  missingTabs: string[]
+}
 
 import { PhoneActionButtons } from '@/components/phone-action-buttons'
 
@@ -57,8 +64,12 @@ export function EducatorRoster({
   const [isPhoneDevice, setIsPhoneDevice] = useState(false)
   const [phoneEditor, setPhoneEditor] = useState<PhoneEditor | null>(null)
   const [migrationRequired, setMigrationRequired] = useState(false)
+  const [migrationBackupConfirmed, setMigrationBackupConfirmed] = useState(false)
   const [sessionChecked, setSessionChecked] = useState(Boolean(initialEducator))
   const [requestPending, setRequestPending] = useState(false)
+  const [diagnosticPending, setDiagnosticPending] = useState(false)
+  const [diagnosticError, setDiagnosticError] = useState('')
+  const [phoneDiagnostics, setPhoneDiagnostics] = useState<PhoneEncryptionDiagnostics | null>(null)
   const [authError, setAuthError] = useState('')
   const [notice, setNotice] = useState('')
 
@@ -124,6 +135,21 @@ export function EducatorRoster({
     }
   }, [initialEducator, onEducatorChange, onSessionStatusChange])
 
+  const runPhoneDiagnostics = async () => {
+    setDiagnosticPending(true)
+    setDiagnosticError('')
+    try {
+      const response = await fetch('/api/educators/contacts/diagnostics', { cache: 'no-store' })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error ?? 'Diagnostic impossible.')
+      setPhoneDiagnostics(result as PhoneEncryptionDiagnostics)
+    } catch (error) {
+      setDiagnosticError(error instanceof Error ? error.message : 'Diagnostic impossible.')
+    } finally {
+      setDiagnosticPending(false)
+    }
+  }
+
   useEffect(() => {
     if (initialEducator) {
       setEducator(initialEducator)
@@ -169,7 +195,11 @@ export function EducatorRoster({
     setRequestPending(true)
     setAuthError('')
     try {
-      const response = await fetch('/api/educators/contacts/migrate', { method: 'POST' })
+      const response = await fetch('/api/educators/contacts/migrate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ backupConfirmed: migrationBackupConfirmed }),
+      })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error ?? 'Migration impossible.')
       setNotice(`Téléphones chiffrés et synchronisés dans les deux onglets. ${result.migratedCount} nouveau(x) numéro(s) importé(s).`)
@@ -314,6 +344,40 @@ export function EducatorRoster({
     )
   }
 
+  const phoneEncryptionDiagnosticPanel = educator.role === 'admin' && (
+    <div className="flex flex-col items-start gap-2 border-t border-border pt-3">
+      <button
+        type="button"
+        onClick={() => void runPhoneDiagnostics()}
+        disabled={diagnosticPending}
+        className="min-h-9 rounded-lg border border-accent/50 px-3 text-sm font-semibold text-primary disabled:opacity-50"
+      >
+        {diagnosticPending ? 'Vérification…' : 'Vérifier le chiffrement des téléphones'}
+      </button>
+      {diagnosticError && <p role="alert" className="text-sm text-destructive">{diagnosticError}</p>}
+      {phoneDiagnostics && (
+        <div role="status" className="w-full rounded-lg bg-muted/70 p-3 text-sm">
+          <p className="font-semibold">
+            {phoneDiagnostics.unreadableValues > 0
+              ? `${phoneDiagnostics.unreadableValues} téléphone(s) chiffré(s) illisible(s) sur ${phoneDiagnostics.encryptedValues}.`
+              : phoneDiagnostics.encryptedValues > 0
+                ? `${phoneDiagnostics.encryptedValues} téléphone(s) chiffré(s) lisible(s).`
+                : 'Aucun téléphone chiffré à vérifier.'}
+          </p>
+          <p className="mt-1 text-muted-foreground">
+            Format de clé : {phoneDiagnostics.keyFormatValid ? 'valide' : 'absente ou invalide'}.
+            {phoneDiagnostics.plaintextValues > 0 && ` ${phoneDiagnostics.plaintextValues} valeur(s) non chiffrée(s) détectée(s).`}
+          </p>
+          {phoneDiagnostics.missingTabs.length > 0 && (
+            <p className="mt-1 text-muted-foreground">
+              Onglets absents : {phoneDiagnostics.missingTabs.join(', ')}.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+
   if (migrationRequired) {
     return (
       <section aria-labelledby="phone-migration-title" className="mx-auto flex w-full max-w-xl flex-col gap-4 rounded-2xl border border-accent/60 bg-card p-5 shadow-sm">
@@ -322,6 +386,9 @@ export function EducatorRoster({
           <p className="mt-1 text-sm text-muted-foreground">
             L’onglet « Téléphones éducateurs » sera créé si nécessaire. Les numéros seront chiffrés dans « Joueurs » et « Téléphones éducateurs » ; l’application les déchiffrera uniquement côté serveur pour les éducateurs connectés. L’historique de Google Sheets peut conserver les anciennes valeurs en clair.
           </p>
+          <p className="mt-2 text-sm font-medium text-primary">
+            Avant de continuer, crée une copie du classeur avec Google Sheets : Fichier → Créer une copie.
+          </p>
         </div>
         <EducatorDirectory
           canEdit={educator.role === 'admin'}
@@ -329,15 +396,27 @@ export function EducatorRoster({
           currentEducator={educator}
           photoRevision={photoRevision}
         />
+        {educator.role === 'admin' && phoneEncryptionDiagnosticPanel}
         {educator.role === 'admin' ? (
-          <button
-            type="button"
-            onClick={handlePhoneMigration}
-            disabled={requestPending}
-            className="min-h-10 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60"
-          >
-            {requestPending ? 'Chiffrement en cours…' : 'Créer l’onglet et chiffrer les numéros'}
-          </button>
+          <>
+            <label className="flex items-start gap-2 rounded-lg border border-accent/40 bg-muted/50 p-3 text-sm">
+              <input
+                type="checkbox"
+                checked={migrationBackupConfirmed}
+                onChange={(event) => setMigrationBackupConfirmed(event.target.checked)}
+                className="mt-0.5 size-4 accent-primary"
+              />
+              <span>J’ai créé une copie de sauvegarde du classeur dans Google Sheets.</span>
+            </label>
+            <button
+              type="button"
+              onClick={handlePhoneMigration}
+              disabled={requestPending || !migrationBackupConfirmed}
+              className="min-h-10 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground disabled:opacity-60"
+            >
+              {requestPending ? 'Chiffrement en cours…' : 'Créer l’onglet et chiffrer les numéros'}
+            </button>
+          </>
         ) : (
           <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
             Demandez à un administrateur éducateur de créer l’onglet des téléphones.
@@ -413,6 +492,7 @@ export function EducatorRoster({
             )
           })}
         </nav>}
+        {!query.trim() && phoneEncryptionDiagnosticPanel}
       </div>
 
       {(directoryView === 'educators' || Boolean(query.trim())) && (

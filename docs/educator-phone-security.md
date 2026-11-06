@@ -4,6 +4,10 @@ L’onglet Éducateurs ne montre les téléphones qu’après une connexion indi
 
 Les dates de naissance et numéros de licence des joueurs ne sont pas inclus dans le rendu public. Les licences nécessaires à l’annuaire des joueurs sont chargées depuis une API réservée aux éducateurs connectés. L’action d’actualisation du classeur est également réservée aux éducateurs.
 
+Dans l’espace Éducateurs, un administrateur peut lancer **Vérifier le chiffrement des téléphones**. Le contrôle vérifie le format de la clé active et tente de déchiffrer les valeurs des onglets concernés. Il affiche uniquement des compteurs et les noms d’onglets absents, jamais les numéros ni la clé. Si aucune valeur chiffrée n’existe, le contrôle du format ne prouve pas qu’une ancienne clé a servi à chiffrer des données.
+
+Avant la migration des téléphones, l’administrateur doit créer manuellement une copie du classeur dans Google Sheets et confirmer cette sauvegarde dans l’application. La migration est refusée par l’API sans cette confirmation. Cette confirmation ne remplace pas la vérification que la copie existe réellement.
+
 ## Configuration du serveur
 
 La connexion Google Sheets réutilise le compte de service GCP et les variables déjà configurées dans Vercel. Ne remplacez pas les identifiants GCP, la clé privée ni les autres variables Google. Le compte de service doit pouvoir modifier le classeur. Ajoutez `EDUCATOR_PHONE_ENCRYPTION_KEY` comme variable secrète de production dans Vercel. Générez une clé avec `node -p "require('node:crypto').randomBytes(32).toString('base64url')"`, puis collez-la dans Vercel sans la mettre dans le dépôt ou dans le Sheet. Conservez cette clé : la perdre ou la remplacer sans rechiffrer les cellules rendrait les téléphones illisibles.

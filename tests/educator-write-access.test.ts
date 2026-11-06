@@ -165,7 +165,7 @@ describe('write and read access boundaries', () => {
     const response = await migrateContacts(request(
       '/api/educators/contacts/migrate',
       'POST',
-      {},
+      { backupConfirmed: true },
     ))
 
     expect(response.status).toBe(status)
@@ -178,10 +178,23 @@ describe('write and read access boundaries', () => {
     const response = await migrateContacts(request(
       '/api/educators/contacts/migrate',
       'POST',
-      {},
+      { backupConfirmed: true },
     ))
 
     expect(response.status).toBe(200)
     expect(migrateEducatorPhones).toHaveBeenCalledOnce()
+  })
+
+  it('requires an administrator to confirm the spreadsheet backup before migration', async () => {
+    vi.mocked(getEducatorSession).mockResolvedValue(admin)
+
+    const response = await migrateContacts(request(
+      '/api/educators/contacts/migrate',
+      'POST',
+      {},
+    ))
+
+    expect(response.status).toBe(400)
+    expect(migrateEducatorPhones).not.toHaveBeenCalled()
   })
 })

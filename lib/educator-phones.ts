@@ -82,6 +82,83 @@ export async function getEducatorPhones() {
   return phones
 }
 
+export async function diagnoseEducatorPhoneEncryption() {
+  const result = {
+    keyFormatValid: false,
+    encryptedValues: 0,
+    unreadableValues: 0,
+    plaintextValues: 0,
+    missingTabs: [] as string[],
+  }
+  const probe = 'educator-phone-encryption-check'
+  try {
+    result.keyFormatValid = decryptPhone(encryptPhone(probe)) === probe
+  } catch {
+    result.keyFormatValid = false
+  }
+
+  const inspectValues = (rows: string[][], columns: number[], firstDataRow: number) => {
+    for (const row of rows.slice(firstDataRow)) {
+      for (const column of columns) {
+        const value = row[column]?.trim() ?? ''
+        if (!value) continue
+        if (!isEncryptedPhone(value)) {
+          result.plaintextValues += 1
+          continue
+        }
+        result.encryptedValues += 1
+        try {
+          decryptPhone(value)
+        } catch {
+          result.unreadableValues += 1
+        }
+      }
+    }
+  }
+
+  let source: Awaited<ReturnType<typeof getAuthenticatedSheetRows>> | undefined
+  try {
+    source = await getAuthenticatedSheetRows('Joueurs')
+    const layout = getPhoneSheetLayout(source.rows)
+    const { fatherIndex, motherIndex } = getParentPhoneColumns(source.rows, layout.headerIndex)
+    inspectValues(source.rows, [layout.phoneIndex, fatherIndex, motherIndex], layout.headerIndex + 1)
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Aucun onglet Google Sheets trouvé.') {
+      result.missingTabs.push('Joueurs')
+    } else {
+      throw error
+    }
+  }
+
+  try {
+    const sheet = await getPhoneTabRows()
+    if (sheet.rows.length === 0) {
+      result.missingTabs.push(PHONE_TAB)
+    } else {
+      inspectValues(sheet.rows, [1, 2, 3], 1)
+    }
+  } catch (error) {
+    if (error instanceof PhoneMigrationRequiredError) {
+      result.missingTabs.push(PHONE_TAB)
+    } else {
+      throw error
+    }
+  }
+
+  try {
+    const sheet = await getAuthenticatedSheetRows('Annuaire éducateurs')
+    inspectValues(sheet.rows, [3], 1)
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Aucun onglet Google Sheets trouvé.') {
+      result.missingTabs.push('Annuaire éducateurs')
+    } else {
+      throw error
+    }
+  }
+
+  return result
+}
+
 export async function migrateEducatorPhones() {
   const source = await getAuthenticatedSheetRows('Joueurs')
   const { rows: sourceRows, sheetTitle: sourceSheetTitle } = source

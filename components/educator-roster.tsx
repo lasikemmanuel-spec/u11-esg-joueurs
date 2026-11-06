@@ -416,7 +416,6 @@ export function EducatorRoster({
             canEdit={educator.role === 'admin'}
             searchQuery={query}
             searchTitle={query.trim() ? 'Résultats éducateurs' : undefined}
-            showAddButton={false}
             currentEducator={educator}
             photoRevision={photoRevision}
           />

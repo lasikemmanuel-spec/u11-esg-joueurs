@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { Armchair, Save, X } from 'lucide-react'
+import { Armchair, ChevronDown, Save, X } from 'lucide-react'
 import type { Convocation } from '@/lib/convocations'
 import type { MatchSheetEntry } from '@/lib/match-results'
 import type { PublicPlayer } from '@/lib/players'
@@ -98,6 +98,7 @@ export function MatchLineupPlanner({
   const [lineups, setLineups] = useState<MatchLineup[]>([])
   const [loading, setLoading] = useState(true)
   const [pendingKey, setPendingKey] = useState('')
+  const [selectedTeam, setSelectedTeam] = useState<'E1' | 'E2'>('E1')
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
 
@@ -131,6 +132,15 @@ export function MatchLineupPlanner({
       .filter((entry) => entry.date && entry.date < today)
       .sort((a, b) => b.date.localeCompare(a.date) || a.slotColumn - b.slotColumn)
   }, [entries])
+  const upcomingTeamCounts = {
+    E1: upcomingMatches.filter((match) => match.team === 'E1').length,
+    E2: upcomingMatches.filter((match) => match.team === 'E2').length,
+  }
+  const activeTeam = upcomingTeamCounts[selectedTeam] > 0
+    ? selectedTeam
+    : selectedTeam === 'E1' && upcomingTeamCounts.E2 > 0
+      ? 'E2'
+      : 'E1'
 
   useEffect(() => {
     let active = true
@@ -199,134 +209,189 @@ export function MatchLineupPlanner({
         <>
           {error && <p role="alert" className="mb-3 text-sm font-medium text-destructive">{error}</p>}
           {notice && <p role="status" className="mb-3 text-sm font-medium text-emerald-700">{notice}</p>}
-          {upcomingDateGroups.map(({ date, matches }) => (
-            <details key={date} open className="mb-3 rounded-lg border border-border">
-              <summary className="cursor-pointer rounded-lg bg-muted/50 px-3 py-3 font-bold capitalize text-primary">
-                Feuille de match du {new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', {
-                  weekday: 'long',
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric',
+          {upcomingMatches.length > 0 && (
+            <>
+              <div role="tablist" aria-label="Choisir une équipe pour la feuille de match" className="mb-3 grid grid-cols-2 gap-2">
+                {(['E1', 'E2'] as const).map((team) => {
+                  const isE1 = team === 'E1'
+                  const selected = team === activeTeam
+                  return (
+                    <button
+                      key={team}
+                      id={`lineup-tab-${team}`}
+                      type="button"
+                      role="tab"
+                      aria-selected={selected}
+                      aria-controls="upcoming-lineups-panel"
+                      disabled={upcomingTeamCounts[team] === 0}
+                      onClick={() => setSelectedTeam(team)}
+                      className={[
+                        'flex min-h-12 items-center justify-between gap-2 rounded-lg border px-3 py-2 text-left text-sm font-bold transition-colors disabled:cursor-not-allowed disabled:opacity-40',
+                        selected
+                          ? isE1
+                            ? 'border-[#172554] bg-[#172554] text-white shadow'
+                            : 'border-amber-400 bg-amber-400 text-blue-950 shadow'
+                          : isE1
+                            ? 'border-[#172554]/25 bg-background text-[#172554] hover:bg-[#172554]/5'
+                            : 'border-amber-400/60 bg-background text-amber-900 hover:bg-amber-50',
+                      ].join(' ')}
+                    >
+                      <span>Équipe {isE1 ? '1 · E1' : '2 · E2'}</span>
+                      <span className="text-xs font-semibold">
+                        {upcomingTeamCounts[team]} match{upcomingTeamCounts[team] === 1 ? '' : 's'}
+                      </span>
+                    </button>
+                  )
                 })}
-              </summary>
-              <div className="grid gap-3 p-3 lg:grid-cols-2">
-                {matches.map((match) => {
-              const key = matchKey(match)
-              const lineup = lineups.find((item) => matchKey(item) === key)
-              const assignments = assignmentsFromLineup(lineup)
-              const calledPlayers = players.filter((player) => isCalledForTeam(
-                convocations.find((convocation) => convocation.number === player.number),
-                match.date,
-                match.team,
-              ))
-              const starters = calledPlayers.filter((player) => assignments[player.number] === 'starter')
-              const substitutes = calledPlayers.filter((player) => assignments[player.number] === 'substitute')
+              </div>
+              <div id="upcoming-lineups-panel" role="tabpanel" aria-labelledby={`lineup-tab-${activeTeam}`}>
+                {upcomingDateGroups.map(({ date, matches }) => {
+                  const teamMatches = matches.filter((match) => match.team === activeTeam)
+                  if (teamMatches.length === 0) return null
+                  const teamIsE1 = activeTeam === 'E1'
 
-              return (
-                <article key={key} className="min-w-0 rounded-lg border border-border bg-background p-3">
-                  <header className="mb-3 flex flex-wrap items-start justify-between gap-2">
-                    <div>
-                      <h4 className="font-bold text-foreground">
-                        Équipe {match.team === 'E1' ? '1' : '2'}
-                      </h4>
-                      <p className="text-xs text-muted-foreground">
-                        {match.opponent || 'Adversaire à préciser'} · {match.competition}
-                      </p>
-                    </div>
-                    <span className="rounded-full bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground">
-                      {calledPlayers.length} convoqué{calledPlayers.length === 1 ? '' : 's'}
-                    </span>
-                  </header>
-
-                  {calledPlayers.length === 0 ? (
-                    <p className="rounded-lg bg-muted px-3 py-4 text-center text-sm text-muted-foreground">
-                      La feuille sera alimentée dès l’enregistrement des convocations pour cette équipe.
-                    </p>
-                  ) : (
-                    <>
-                      <ul className="divide-y divide-border rounded-lg border border-border">
-                        {calledPlayers.map((player) => {
-                          const currentRole = assignments[player.number]
-                          const updateRole = (role: LineupRole | null) => {
-                            const nextAssignments = { ...assignments }
-                            if (role === currentRole || role === null) delete nextAssignments[player.number]
-                            else nextAssignments[player.number] = role
-                            const nextStarters = Object.entries(nextAssignments)
-                              .filter(([, assignment]) => assignment === 'starter')
-                              .map(([number]) => Number(number))
-                            const nextSubstitutes = Object.entries(nextAssignments)
-                              .filter(([, assignment]) => assignment === 'substitute')
-                              .map(([number]) => Number(number))
-                            void saveLineup(match, nextStarters, nextSubstitutes)
-                          }
-                          const buttonClass = 'inline-flex size-10 items-center justify-center rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+                  return (
+                    <details key={date} open className="mb-3 rounded-lg border border-border">
+                      <summary className="cursor-pointer rounded-lg bg-muted/50 px-3 py-3 font-bold capitalize text-primary">
+                        Feuille de match du {new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', {
+                          weekday: 'long',
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                      </summary>
+                      <div className="grid gap-3 p-3">
+                        {teamMatches.map((match) => {
+                          const key = matchKey(match)
+                          const lineup = lineups.find((item) => matchKey(item) === key)
+                          const assignments = assignmentsFromLineup(lineup)
+                          const calledPlayers = players.filter((player) => isCalledForTeam(
+                            convocations.find((convocation) => convocation.number === player.number),
+                            match.date,
+                            match.team,
+                          ))
+                          const starters = calledPlayers.filter((player) => assignments[player.number] === 'starter')
+                          const substitutes = calledPlayers.filter((player) => assignments[player.number] === 'substitute')
+                          const headerClass = teamIsE1
+                            ? 'bg-[#172554] text-white'
+                            : 'bg-amber-400 text-blue-950'
 
                           return (
-                            <li key={player.number} className="flex min-w-0 flex-col items-stretch gap-2 px-2 py-2 sm:flex-row sm:items-center sm:justify-between">
-                              <div className="min-w-0 flex-1">
-                                <span className="min-w-0 whitespace-normal break-words text-sm font-medium">
-                                  {player.firstName} <span className="font-bold uppercase">{player.lastName}</span>
+                            <details key={key} className={`group min-w-0 overflow-hidden rounded-lg border ${teamIsE1 ? 'border-[#172554]/30' : 'border-amber-400/70'}`}>
+                              <summary className={`flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-3 ${headerClass} [&::-webkit-details-marker]:hidden`}>
+                                <span className="flex min-w-0 items-center gap-2">
+                                  <span className="shrink-0 rounded-full bg-white/15 px-2 py-1 text-[11px] font-black uppercase tracking-wide">
+                                    {activeTeam}
+                                  </span>
+                                  <span className="min-w-0">
+                                    <span className="block truncate text-sm font-bold">{match.opponent || 'Adversaire à préciser'}</span>
+                                    <span className={`block truncate text-xs ${teamIsE1 ? 'text-white/75' : 'text-blue-950/75'}`}>
+                                      {match.competition}
+                                    </span>
+                                  </span>
                                 </span>
-                              </div>
-                              <div role="group" aria-label={`Action pour ${player.firstName} ${player.lastName}`} className="flex shrink-0 items-center gap-2">
-                                <button
-                                  type="button"
-                                  title="Commence le match"
-                                  aria-label={`${currentRole === 'starter' ? 'Retirer : ' : 'Choisir : '}commence le match pour ${player.firstName} ${player.lastName}`}
-                                  aria-pressed={currentRole === 'starter'}
-                                  disabled={pendingKey === key || (currentRole !== 'starter' && starters.length >= 8)}
-                                  onClick={() => updateRole('starter')}
-                                  className={`${buttonClass} ${currentRole === 'starter' ? 'border-primary bg-primary text-primary-foreground' : 'border-accent/50 bg-background text-foreground hover:bg-muted'}`}
-                                >
-                                  <JerseyIcon number={player.number} />
-                                </button>
-                                <button
-                                  type="button"
-                                  title="Peut entrer en cours de jeu"
-                                  aria-label={`${currentRole === 'substitute' ? 'Retirer : ' : 'Choisir : '}peut entrer en cours de jeu pour ${player.firstName} ${player.lastName}`}
-                                  aria-pressed={currentRole === 'substitute'}
-                                  disabled={pendingKey === key}
-                                  onClick={() => updateRole('substitute')}
-                                  className={`${buttonClass} ${currentRole === 'substitute' ? 'border-primary bg-primary text-primary-foreground' : 'border-accent/50 bg-background text-foreground hover:bg-muted'}`}
-                                >
-                                  <Armchair aria-hidden="true" className="size-5" />
-                                </button>
-                                {currentRole && (
-                                  <button
-                                    type="button"
-                                    title="Retirer ce choix"
-                                    aria-label={`Retirer le choix pour ${player.firstName} ${player.lastName}`}
-                                    disabled={pendingKey === key}
-                                    onClick={() => updateRole(null)}
-                                    className={`${buttonClass} border-accent/50 bg-background text-muted-foreground hover:bg-muted`}
-                                  >
-                                    <X aria-hidden="true" className="size-5" />
-                                  </button>
+                                <span className="flex shrink-0 items-center gap-2">
+                                  <span className="text-xs font-semibold">
+                                    {calledPlayers.length} convoqué{calledPlayers.length === 1 ? '' : 's'}
+                                  </span>
+                                  <ChevronDown aria-hidden="true" className="size-5 transition-transform group-open:rotate-180" />
+                                </span>
+                              </summary>
+                              <div className="bg-background p-3">
+                                {calledPlayers.length === 0 ? (
+                                  <p className="rounded-lg bg-muted px-3 py-4 text-center text-sm text-muted-foreground">
+                                    La feuille sera alimentée dès l’enregistrement des convocations pour cette équipe.
+                                  </p>
+                                ) : (
+                                  <>
+                                    <ul className="divide-y divide-border rounded-lg border border-border">
+                                      {calledPlayers.map((player) => {
+                                        const currentRole = assignments[player.number]
+                                        const updateRole = (role: LineupRole | null) => {
+                                          const nextAssignments = { ...assignments }
+                                          if (role === currentRole || role === null) delete nextAssignments[player.number]
+                                          else nextAssignments[player.number] = role
+                                          const nextStarters = Object.entries(nextAssignments)
+                                            .filter(([, assignment]) => assignment === 'starter')
+                                            .map(([number]) => Number(number))
+                                          const nextSubstitutes = Object.entries(nextAssignments)
+                                            .filter(([, assignment]) => assignment === 'substitute')
+                                            .map(([number]) => Number(number))
+                                          void saveLineup(match, nextStarters, nextSubstitutes)
+                                        }
+                                        const buttonClass = 'inline-flex size-10 items-center justify-center rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+
+                                        return (
+                                          <li key={player.number} className="flex min-w-0 flex-col items-stretch gap-2 px-2 py-2 sm:flex-row sm:items-center sm:justify-between">
+                                            <div className="min-w-0 flex-1">
+                                              <span className="min-w-0 whitespace-normal break-words text-sm font-medium">
+                                                {player.firstName} <span className="font-bold uppercase">{player.lastName}</span>
+                                              </span>
+                                            </div>
+                                            <div role="group" aria-label={`Action pour ${player.firstName} ${player.lastName}`} className="flex shrink-0 items-center gap-2">
+                                              <button
+                                                type="button"
+                                                title="Commence le match"
+                                                aria-label={`${currentRole === 'starter' ? 'Retirer : ' : 'Choisir : '}commence le match pour ${player.firstName} ${player.lastName}`}
+                                                aria-pressed={currentRole === 'starter'}
+                                                disabled={pendingKey === key || (currentRole !== 'starter' && starters.length >= 8)}
+                                                onClick={() => updateRole('starter')}
+                                                className={`${buttonClass} ${currentRole === 'starter' ? 'border-primary bg-primary text-primary-foreground' : 'border-accent/50 bg-background text-foreground hover:bg-muted'}`}
+                                              >
+                                                <JerseyIcon number={player.number} />
+                                              </button>
+                                              <button
+                                                type="button"
+                                                title="Peut entrer en cours de jeu"
+                                                aria-label={`${currentRole === 'substitute' ? 'Retirer : ' : 'Choisir : '}peut entrer en cours de jeu pour ${player.firstName} ${player.lastName}`}
+                                                aria-pressed={currentRole === 'substitute'}
+                                                disabled={pendingKey === key}
+                                                onClick={() => updateRole('substitute')}
+                                                className={`${buttonClass} ${currentRole === 'substitute' ? 'border-primary bg-primary text-primary-foreground' : 'border-accent/50 bg-background text-foreground hover:bg-muted'}`}
+                                              >
+                                                <Armchair aria-hidden="true" className="size-5" />
+                                              </button>
+                                              {currentRole && (
+                                                <button
+                                                  type="button"
+                                                  title="Retirer ce choix"
+                                                  aria-label={`Retirer le choix pour ${player.firstName} ${player.lastName}`}
+                                                  disabled={pendingKey === key}
+                                                  onClick={() => updateRole(null)}
+                                                  className={`${buttonClass} border-accent/50 bg-background text-muted-foreground hover:bg-muted`}
+                                                >
+                                                  <X aria-hidden="true" className="size-5" />
+                                                </button>
+                                              )}
+                                            </div>
+                                          </li>
+                                        )
+                                      })}
+                                    </ul>
+                                    <p className="mt-2 text-xs text-muted-foreground">
+                                      {starters.length}/8 au départ · {substitutes.length} sur le banc
+                                    </p>
+                                    {starters.length >= 8 && (
+                                      <p role="status" className="mt-1 text-xs font-medium text-amber-800">
+                                        Les 8 places de titulaires sont prises. Retire d’abord un titulaire avec le bouton × pour en choisir un autre.
+                                      </p>
+                                    )}
+                                  </>
+                                )}
+                                {pendingKey === key && (
+                                  <p role="status" className="mt-2 text-xs text-muted-foreground">Enregistrement…</p>
                                 )}
                               </div>
-                            </li>
+                            </details>
                           )
                         })}
-                      </ul>
-                      <p className="mt-2 text-xs text-muted-foreground">
-                        {starters.length}/8 au départ · {substitutes.length} sur le banc
-                      </p>
-                      {starters.length >= 8 && (
-                        <p role="status" className="mt-1 text-xs font-medium text-amber-800">
-                          Les 8 places de titulaires sont prises. Retire d’abord un titulaire avec le bouton × pour en choisir un autre.
-                        </p>
-                      )}
-                    </>
-                  )}
-                  {pendingKey === key && (
-                    <p role="status" className="mt-2 text-xs text-muted-foreground">Enregistrement…</p>
-                  )}
-                </article>
-              )
-            })}
+                      </div>
+                    </details>
+                  )
+                })}
               </div>
-            </details>
-          ))}
+            </>
+          )}
           {previousMatches.length > 0 && (
             <details className="mt-4 rounded-lg border border-border">
               <summary className="cursor-pointer rounded-lg bg-muted/50 px-3 py-3 text-sm font-bold text-primary">

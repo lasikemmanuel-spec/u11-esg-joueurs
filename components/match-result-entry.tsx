@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, CalendarPlus, Check, ChevronDown, Clock3, Pencil, Plus, Save, Sparkles, Trash2, UsersRound } from 'lucide-react'
+import { CalendarDays, CalendarPlus, Check, ChevronDown, Clock3, Pencil, Plus, Save, Sparkles, Trash2, UsersRound, X } from 'lucide-react'
 import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
 import { MatchLineupEntry, useMatchLineups } from '@/components/match-lineup-planner'
 import { ClubCrest } from '@/components/club-crest'
@@ -340,9 +340,31 @@ export function MatchResultEntry({
 
       {open && canManage && (
         <form onSubmit={save} className="mt-4 grid min-w-0 grid-cols-2 gap-3 border-t border-border pt-4">
-          <h3 className="col-span-2 text-base font-black text-[#172554]">
-            {editingSlot === null ? 'Planifier un match' : 'Modifier ce match'}
-          </h3>
+          <div className="col-span-2 flex min-w-0 items-center justify-between gap-2 rounded-xl border border-[#d4af37]/40 bg-gradient-to-r from-[#172554]/5 to-amber-50/80 p-2">
+            <h3 className="min-w-0 text-sm font-black text-[#172554] sm:text-base">
+              {editingSlot === null ? 'Planifier un match' : 'Modifier ce match'}
+            </h3>
+            <div className="flex shrink-0 items-center gap-1.5">
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => { setOpen(false); setEditingSlot(null) }}
+                className="inline-flex min-h-9 items-center justify-center gap-1 rounded-lg border border-[#172554]/15 bg-white px-2.5 text-xs font-bold text-[#172554] transition hover:bg-slate-50 disabled:opacity-50"
+              >
+                <X aria-hidden="true" className="size-3.5" />
+                Fermer
+              </button>
+              <button
+                type="submit"
+                disabled={pending || pendingDeletion !== null}
+                aria-label={pending ? 'Enregistrement en cours' : 'Enregistrer le match'}
+                className="inline-flex min-h-9 items-center justify-center gap-1 rounded-lg bg-[#172554] px-2.5 text-xs font-black text-white shadow-sm transition hover:bg-blue-900 disabled:opacity-50"
+              >
+                <Save aria-hidden="true" className="size-3.5 text-[#d4af37]" />
+                {pending ? '…' : 'Enregistrer'}
+              </button>
+            </div>
+          </div>
           <label className="flex min-w-0 flex-col gap-1 text-sm font-semibold">
             Équipe
             <select disabled={editingSlot !== null} value={draft.team} onChange={(event) => setDraft({ ...draft, team: event.target.value as Draft['team'] })} className={inputClass}>
@@ -462,21 +484,22 @@ export function MatchResultEntry({
                   </span>
                 </button>
                 {(canScheduleCallup || canManage) && (
-                  <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row">
+                  <div className="flex w-full shrink-0 flex-row flex-wrap justify-end gap-1.5 sm:w-auto sm:flex-nowrap sm:gap-2">
                     {canScheduleCallup && (
                       <button
                         type="button"
                         aria-expanded={openCallupDate === date}
                         onClick={() => setOpenCallupDate((current) => current === date ? '' : date)}
                         className={[
-                          'inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl px-4 text-xs font-black transition-colors sm:w-auto sm:text-sm',
+                          'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg px-2.5 text-[11px] font-black transition-colors sm:gap-2 sm:rounded-xl sm:px-3 sm:text-sm',
                           hasConvocations
-                            ? 'min-h-9 border border-white/25 bg-white/10 px-3 text-white/85 shadow-none hover:bg-white/15'
+                            ? 'border border-white/25 bg-white/10 text-white/85 shadow-none hover:bg-white/15'
                             : 'bg-[#d4af37] text-blue-950 shadow hover:bg-amber-300',
                         ].join(' ')}
                       >
-                        {hasConvocations ? <Check aria-hidden="true" className="size-4" /> : <UsersRound aria-hidden="true" className="size-4" />}
-                        {hasConvocations ? 'Voir les convocations' : 'Convocations à saisir'}
+                        {hasConvocations ? <Check aria-hidden="true" className="size-3.5 sm:size-4" /> : <UsersRound aria-hidden="true" className="size-3.5 sm:size-4" />}
+                        <span className="sm:hidden">{hasConvocations ? 'Convocations' : 'À convoquer'}</span>
+                        <span className="hidden sm:inline">{hasConvocations ? 'Voir les convocations' : 'Convocations à saisir'}</span>
                       </button>
                     )}
                     {canManage &&
@@ -488,10 +511,11 @@ export function MatchResultEntry({
                         type="button"
                         disabled={pending || pendingDeletion !== null}
                         onClick={() => removeMatch(date)}
-                        className="inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-xl border border-red-200/50 bg-red-500/10 px-3 text-xs font-bold text-white/90 transition hover:bg-red-500/25 disabled:opacity-50 sm:w-auto"
+                        className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-red-200/50 bg-red-500/10 px-2.5 text-[11px] font-bold text-white/90 transition hover:bg-red-500/25 disabled:opacity-50 sm:gap-2 sm:rounded-xl sm:px-3 sm:text-xs"
                       >
-                        <Trash2 aria-hidden="true" className="size-4" />
-                        {pendingDeletion === `day-${date}` ? 'Suppression…' : 'Supprimer la journée'}
+                        <Trash2 aria-hidden="true" className="size-3.5 sm:size-4" />
+                        <span className="sm:hidden">{pendingDeletion === `day-${date}` ? '…' : 'Supprimer'}</span>
+                        <span className="hidden sm:inline">{pendingDeletion === `day-${date}` ? 'Suppression…' : 'Supprimer la journée'}</span>
                       </button>
                     )}
                   </div>

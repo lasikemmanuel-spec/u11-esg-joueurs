@@ -365,6 +365,7 @@ export function DashboardTabs({
             stats={players}
             convocations={convocations}
             matchesPlayed={matchesPlayed}
+            matchResults={matchResults}
           />
         )}
         {activeTab === 'educator' && (

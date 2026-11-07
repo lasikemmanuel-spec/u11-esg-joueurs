@@ -4,7 +4,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { ChevronDown, ChevronUp, Search } from 'lucide-react'
 import { PlayerCard } from '@/components/player-stats'
 import { ClubCrest } from '@/components/club-crest'
+import { countCancelledCallupsForPlayer } from '@/lib/cancelled-match-callups'
 import type { Convocation } from '@/lib/convocations'
+import type { TeamMatchResults } from '@/lib/match-results'
 import type { PublicPlayer } from '@/lib/players'
 import type { PlayerStats } from '@/lib/stats'
 
@@ -24,11 +26,13 @@ export function PositionBreakdown({
   stats,
   convocations,
   matchesPlayed,
+  matchResults,
 }: {
   players: PublicPlayer[]
   stats: PlayerStats[]
   convocations: Convocation[]
   matchesPlayed: number
+  matchResults: TeamMatchResults
 }) {
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null)
   const [query, setQuery] = useState('')
@@ -245,6 +249,11 @@ export function PositionBreakdown({
               player={selectedPlayer}
               convocation={convocations.find((convocation) => convocation.number === selectedPlayer.number)}
               matchesPlayed={matchesPlayed}
+              cancelledMatchesForPlayer={countCancelledCallupsForPlayer(
+                selectedPlayer.number,
+                convocations,
+                matchResults.entries,
+              )}
             />
           </div>
         )}

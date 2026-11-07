@@ -127,11 +127,13 @@ export function PlayerCard({
   convocation,
   player,
   matchesPlayed,
+  cancelledMatchesForPlayer = 0,
 }: {
   stats: Stats
   convocation?: Convocation
   player?: PublicPlayer
   matchesPlayed: number
+  cancelledMatchesForPlayer?: number
 }) {
   const status = IRE_STYLES[ireStatus(stats)]
   const matchPresenceRate = convocation?.presentRate ?? null
@@ -167,12 +169,15 @@ export function PlayerCard({
           title: 'On continue les efforts !',
           message: 'Chaque présence compte.',
         }
-  const minutesPerMatch = stats.matchesCalled ? Math.round((stats.minutes ?? 0) / stats.matchesCalled) : null
+  const countedMatches = stats.matchesCalled === null
+    ? null
+    : Math.max(0, stats.matchesCalled - cancelledMatchesForPlayer)
+  const minutesPerMatch = countedMatches ? Math.round((stats.minutes ?? 0) / countedMatches) : null
   const tiles = [
     { label: 'Titulaire', value: display(stats.starts) },
     { label: 'Remplaçant', value: display(stats.subs) },
     { label: 'Minutes jouées', value: display(stats.minutes) },
-    { label: 'Minutes / match', value: display(minutesPerMatch) },
+    { label: 'Minutes / match joué', value: display(minutesPerMatch) },
     { label: 'Buts', value: display(stats.goals) },
     { label: 'Passes décisives', value: display(stats.assists) },
   ]

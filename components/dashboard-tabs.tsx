@@ -21,7 +21,7 @@ import type { TrainingAttendanceSession } from '@/lib/training-attendance'
 import type { CohesionDay } from '@/lib/cohesion'
 import type { PlayerStats as PlayerStat } from '@/lib/stats'
 
-type TabKey = 'roster' | 'educator' | 'players' | 'matches'
+type TabKey = 'roster' | 'educator' | 'players' | 'matches' | 'matchStats'
 type EducatorAccess = 'checking' | 'unauthenticated' | 'authenticated' | 'unavailable'
 type AccountRole = 'educator' | 'admin' | 'reader'
 type EducatorIdentity = { username: string; displayName: string; role: AccountRole }
@@ -173,6 +173,7 @@ export function DashboardTabs({
     { key: 'roster', label: 'Effectifs' },
     { key: 'players', label: 'Stats Joueurs' },
     { key: 'matches', label: 'Matchs' },
+    { key: 'matchStats', label: 'Stats Matchs' },
     ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
       ? [{ key: 'educator' as const, label: 'Annuaire' }]
       : []),
@@ -366,22 +367,17 @@ export function DashboardTabs({
                 }}
               />
             </div>
-            <details className="group overflow-hidden rounded-2xl border border-[#d4af37]/35 bg-card">
-              <summary className="cursor-pointer list-none bg-muted/50 px-4 py-3 text-sm font-bold text-primary marker:hidden">
-                Statistiques des matchs
-              </summary>
-              <div className="border-t border-border p-3 sm:p-4">
-                <MatchCallupBreakdown
-                  convocations={convocations}
-                  presentCounts={presentCounts}
-                  matchResults={matchResults}
-                  cohesionDays={cohesionDays}
-                  invitedCount={rosterPlayers.length}
-                  dataErrors={matchDataErrors}
-                />
-              </div>
-            </details>
           </div>
+        )}
+        {activeTab === 'matchStats' && (
+          <MatchCallupBreakdown
+            convocations={convocations}
+            presentCounts={presentCounts}
+            matchResults={matchResults}
+            cohesionDays={cohesionDays}
+            invitedCount={rosterPlayers.length}
+            dataErrors={matchDataErrors}
+          />
         )}
         {activeTab === 'roster' && (
           <PositionBreakdown

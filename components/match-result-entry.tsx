@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, Pencil, Plus, Save, Sparkles, UsersRound } from 'lucide-react'
+import { Check, ChevronDown, Pencil, Plus, Save, Sparkles, UsersRound } from 'lucide-react'
 import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
 import { MatchLineupEntry, useMatchLineups } from '@/components/match-lineup-planner'
 import { ClubCrest } from '@/components/club-crest'
@@ -98,6 +98,7 @@ export function MatchResultEntry({
   const [month, setMonth] = useState(clampToMatchSeason(localToday()).slice(0, 7))
   const [editingSlot, setEditingSlot] = useState<number | null>(null)
   const [openCallupDate, setOpenCallupDate] = useState('')
+  const [expandedDayDates, setExpandedDayDates] = useState<Set<string> | null>(null)
   const [open, setOpen] = useState(false)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
@@ -132,7 +133,7 @@ export function MatchResultEntry({
       grouped.set(date, [...(grouped.get(date) ?? []), entry])
     }
     return [...grouped.entries()]
-      .sort(([dateA], [dateB]) => dateA.localeCompare(dateB))
+      .sort(([dateA], [dateB]) => dateB.localeCompare(dateA))
       .map(([date, matches]) => ({ date, matches }))
   }, [monthEntries])
   const completedConvocationDates = useMemo(() => new Set(
@@ -244,7 +245,10 @@ export function MatchResultEntry({
             <select
               aria-label="Mois"
               value={month}
-              onChange={(event) => setMonth(event.target.value)}
+              onChange={(event) => {
+                setMonth(event.target.value)
+                setExpandedDayDates(null)
+              }}
               className="h-9 min-w-36 rounded-lg border border-white/20 bg-white/10 px-2 text-sm font-semibold text-white backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-[#d4af37] sm:min-w-40"
             >
               {MATCH_SEASON_MONTHS.map(({ value, label }) => (
@@ -368,23 +372,42 @@ export function MatchResultEntry({
           const isSaturday = new Date(`${date}T12:00:00`).getDay() === 6
           const canScheduleCallup = canManage && isSaturday && matches.some((entry) => entry.resultLabel !== 'Annulé')
           const hasConvocations = completedConvocationDates.has(date)
+          const isExpanded = expandedDayDates === null
+            ? date === dayEntries[0].date
+            : expandedDayDates.has(date)
+          const dayContentId = `match-day-${date}`
           return (
             <article key={date} className="overflow-visible rounded-2xl border border-[#172554]/15 bg-background shadow-sm">
-              <header className="flex flex-wrap items-center justify-between gap-2 rounded-t-2xl bg-gradient-to-r from-[#172554]/8 to-transparent px-4 py-3">
-                <div>
-                  <h3 className="text-sm font-black capitalize text-[#172554] dark:text-blue-200 sm:text-base">
-                    {new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', {
-                      weekday: 'long',
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                    })}
-                  </h3>
-                  <p className="mt-0.5 text-xs font-semibold text-muted-foreground">
-                    <span className="inline-flex size-4 items-center justify-center rounded-full bg-[#172554] text-[9px] font-black text-white">{matches.length}</span>
-                    {' '}rencontre{matches.length === 1 ? '' : 's'}
-                  </p>
-                </div>
+              <header className={`flex flex-wrap items-center justify-between gap-2 border-b border-[#d4af37]/50 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-4 py-3 ${isExpanded ? 'rounded-t-2xl' : 'rounded-2xl'}`}>
+                <button
+                  type="button"
+                  aria-expanded={isExpanded}
+                  aria-controls={dayContentId}
+                  onClick={() => setExpandedDayDates((current) => {
+                    const next = new Set(current ?? (dayEntries.length > 0 ? [dayEntries[0].date] : []))
+                    if (next.has(date)) next.delete(date)
+                    else next.add(date)
+                    return next
+                  })}
+                  className="flex min-w-0 flex-1 items-center gap-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d4af37]"
+                >
+                  <ChevronDown aria-hidden="true" className={`size-4 shrink-0 text-[#d4af37] transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
+                  <ClubCrest className="size-8 shrink-0 rounded-full ring-2 ring-[#d4af37]/80 shadow-sm" />
+                  <span className="min-w-0">
+                    <span className="block text-sm font-black capitalize text-white sm:text-base">
+                      {new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', {
+                        weekday: 'long',
+                        day: 'numeric',
+                        month: 'long',
+                        year: 'numeric',
+                      })}
+                    </span>
+                    <span className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-white/75">
+                      <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#d4af37] px-1.5 py-0.5 text-[10px] font-black text-blue-950">{matches.length}</span>
+                      rencontre{matches.length === 1 ? '' : 's'}
+                    </span>
+                  </span>
+                </button>
                 {canScheduleCallup && (
                   <button
                     type="button"
@@ -394,7 +417,7 @@ export function MatchResultEntry({
                       'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 text-xs font-black sm:text-sm',
                       hasConvocations
                         ? 'bg-emerald-500 text-white shadow'
-                        : 'bg-[#172554] text-white shadow',
+                        : 'bg-[#d4af37] text-blue-950 shadow hover:bg-amber-300',
                     ].join(' ')}
                   >
                     {hasConvocations ? <Check aria-hidden="true" className="size-4" /> : <UsersRound aria-hidden="true" className="size-4" />}
@@ -402,7 +425,7 @@ export function MatchResultEntry({
                   </button>
                 )}
               </header>
-              <div className="grid gap-3 p-3 sm:grid-cols-2">
+              {isExpanded && <div id={dayContentId} className="grid gap-3 p-3 sm:grid-cols-2">
                 {matches.map((entry) => {
                   const isE1 = entry.team === 'E1'
                   const isPlayed = entry.goalsFor !== null && entry.goalsAgainst !== null && entry.resultLabel !== 'Annulé'
@@ -512,7 +535,7 @@ export function MatchResultEntry({
                     </div>
                   )
                 })}
-              </div>
+              </div>}
               {openCallupDate === date && canScheduleCallup && (
                 <div className="p-2 pt-0 sm:p-3 sm:pt-0">
                   <CallupScheduleEntry

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, Check, ChevronDown, Pencil, Plus, Save, Sparkles, UsersRound } from 'lucide-react'
+import { CalendarDays, CalendarPlus, Check, ChevronDown, Pencil, Plus, Save, Sparkles, UsersRound } from 'lucide-react'
 import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
 import { MatchLineupEntry, useMatchLineups } from '@/components/match-lineup-planner'
 import { ClubCrest } from '@/components/club-crest'
@@ -268,10 +268,11 @@ export function MatchResultEntry({
               <button
                 type="button"
                 onClick={startNew}
-                className="inline-flex min-h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl bg-[#d4af37] px-3 text-xs font-black text-blue-950 shadow hover:bg-amber-300 sm:px-4 sm:text-sm"
+                className="group inline-flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl border border-amber-200/70 bg-gradient-to-r from-[#f4d45e] via-[#d4af37] to-[#f4d45e] px-3.5 text-xs font-black text-blue-950 shadow-md transition duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#172554] active:translate-y-0 sm:min-h-11 sm:px-5 sm:text-sm"
               >
-                <Plus aria-hidden="true" className="size-4" />
-                Ajouter un match
+                <CalendarPlus aria-hidden="true" className="size-4 transition-transform duration-200 group-hover:rotate-[-8deg] sm:size-[18px]" />
+                <span>Planifier un match</span>
+                <Sparkles aria-hidden="true" className="size-3.5 text-blue-950/70 transition-transform duration-200 group-hover:scale-125 sm:size-4" />
               </button>
             )}
           </div>
@@ -419,14 +420,14 @@ export function MatchResultEntry({
                     aria-expanded={openCallupDate === date}
                     onClick={() => setOpenCallupDate((current) => current === date ? '' : date)}
                     className={[
-                      'inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-xs font-black sm:w-auto sm:text-sm',
+                      'inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-xs font-black transition-colors sm:w-auto sm:text-sm',
                       hasConvocations
-                        ? 'bg-emerald-500 text-white shadow'
+                        ? 'min-h-9 border border-white/25 bg-white/10 px-3 text-white/85 shadow-none hover:bg-white/15'
                         : 'bg-[#d4af37] text-blue-950 shadow hover:bg-amber-300',
                     ].join(' ')}
                   >
                     {hasConvocations ? <Check aria-hidden="true" className="size-4" /> : <UsersRound aria-hidden="true" className="size-4" />}
-                    {hasConvocations ? 'Convocations saisies' : 'Convocation à saisir'}
+                    {hasConvocations ? 'Voir les convocations' : 'Convocations à saisir'}
                   </button>
                 )}
               </header>

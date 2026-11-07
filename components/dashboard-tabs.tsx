@@ -174,7 +174,7 @@ export function DashboardTabs({
     { key: 'players', label: 'Stats Joueurs' },
     { key: 'matches', label: 'Matchs' },
     ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
-      ? [{ key: 'educator' as const, label: 'Éducateurs' }]
+      ? [{ key: 'educator' as const, label: 'Annuaire' }]
       : []),
   ]
   const mainHeader = (

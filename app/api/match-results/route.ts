@@ -72,6 +72,7 @@ async function save(request: Request, editing: boolean) {
   const opponent = typeof input.opponent === 'string' ? input.opponent.trim() : ''
   const competition = input.competition
   const homeAway = input.homeAway
+  const kickoffTime = input.kickoffTime ?? ''
   const resultLabel = input.resultLabel
   const goalsFor = input.goalsFor
   const goalsAgainst = input.goalsAgainst
@@ -112,6 +113,7 @@ async function save(request: Request, editing: boolean) {
     opponent.length > 80 ||
     !['Championnat', 'Amical', 'Tournoi', 'Plateau'].includes(String(competition)) ||
     !['Domicile', 'Extérieur', 'Terrain neutre'].includes(String(homeAway)) ||
+    (typeof kickoffTime !== 'string' || (kickoffTime !== '' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(kickoffTime))) ||
     (!hasNoScore && !hasValidScore) ||
     !validResultAndScore ||
     (editing && (typeof slotColumn !== 'number' || !Number.isSafeInteger(slotColumn))) ||
@@ -128,6 +130,7 @@ async function save(request: Request, editing: boolean) {
       opponent,
       competition: String(competition),
       homeAway: String(homeAway),
+      kickoffTime: String(kickoffTime),
       resultLabel: resultLabel as '' | typeof MATCH_RESULT_STATUSES[number],
       goalsFor: hasNoScore ? null : goalsFor as number,
       goalsAgainst: hasNoScore ? null : goalsAgainst as number,

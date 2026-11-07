@@ -1,17 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { getAuthenticatedSheetRows, updateAuthenticatedSheetValues } = vi.hoisted(() => ({
+const { ensureAuthenticatedSheetColumnCount, getAuthenticatedSheetRows, updateAuthenticatedSheetValues } = vi.hoisted(() => ({
+  ensureAuthenticatedSheetColumnCount: vi.fn(),
   getAuthenticatedSheetRows: vi.fn(),
   updateAuthenticatedSheetValues: vi.fn(),
 }))
 
 vi.mock('server-only', () => ({}))
 vi.mock('@/lib/google-sheets', () => ({
+  ensureAuthenticatedSheetColumnCount,
   getAuthenticatedSheetRows,
   updateAuthenticatedSheetValues,
 }))
 
-import { deleteMatchDay, deleteMatchResult, MATCH_TABS } from '@/lib/match-results'
+import { deleteMatchDay, deleteMatchResult, getMatchResults, MATCH_TABS, writeMatchResult } from '@/lib/match-results'
 
 function sheetRows(entries: Array<{ column: number; date: string; opponent: string }>) {
   const rows = Array.from({ length: 10 }, () => Array(40).fill(''))
@@ -35,7 +37,46 @@ function sheetRows(entries: Array<{ column: number; date: string; opponent: stri
 describe('match deletion', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    ensureAuthenticatedSheetColumnCount.mockResolvedValue(undefined)
     updateAuthenticatedSheetValues.mockResolvedValue(undefined)
+  })
+
+  it('stores match time alongside venue and exposes it separately when reading', async () => {
+    const rows = sheetRows([{ column: 2, date: '14/11/2026', opponent: 'Club' }])
+    rows[4][2] = 'Domicile · 10:30'
+    getAuthenticatedSheetRows
+      .mockResolvedValueOnce({ sheetTitle: MATCH_TABS.E1, rows })
+      .mockResolvedValueOnce({
+        sheetTitle: MATCH_TABS.E2,
+        rows: sheetRows([{ column: 2, date: '14/11/2026', opponent: 'Autre club' }]),
+      })
+
+    const results = await getMatchResults()
+    expect(results.entries.find((entry) => entry.team === 'E1' && entry.slotColumn === 2)).toMatchObject({
+      homeAway: 'Domicile',
+      kickoffTime: '10:30',
+    })
+    expect(results.E1).toEqual([])
+
+    getAuthenticatedSheetRows.mockResolvedValue({
+      sheetTitle: MATCH_TABS.E1,
+      rows: sheetRows([{ column: 2, date: '21/11/2026', opponent: 'Club existant' }]),
+    })
+    await writeMatchResult({
+      team: 'E1',
+      date: '2026-11-14',
+      opponent: 'Nouveau club',
+      competition: 'Championnat',
+      homeAway: 'Domicile',
+      kickoffTime: '10:30',
+      resultLabel: '',
+      goalsFor: null,
+      goalsAgainst: null,
+    })
+    expect(updateAuthenticatedSheetValues.mock.calls[0][0]).toContainEqual({
+      range: "'⚽ Feuille de Match Equipe 1'!G5",
+      values: [['Domicile · 10:30']],
+    })
   })
 
   it('clears match data and player roles from one slot', async () => {

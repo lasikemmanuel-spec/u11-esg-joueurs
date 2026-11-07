@@ -29,6 +29,7 @@ export type MatchSheetEntry = {
   opponent: string
   competition: string
   homeAway: string
+  kickoffTime: string
   resultLabel: string
   goalsFor: number | null
   goalsAgainst: number | null
@@ -76,6 +77,13 @@ function matchOpponent(row: string[] | undefined, column: number) {
   return normalizeOpponent(value) === 'adversaire' ? '' : value
 }
 
+function parseVenue(value: string) {
+  const match = value.match(/^(Domicile|Extérieur|Terrain neutre)(?: · (\d{2}:\d{2}))?$/)
+  return match
+    ? { homeAway: match[1], kickoffTime: match[2] ?? '' }
+    : { homeAway: value, kickoffTime: '' }
+}
+
 async function getTeamResults(tab: string, team: 'E1' | 'E2'): Promise<{
   results: MatchResult[]
   matchTypes: MatchType[]
@@ -106,7 +114,7 @@ async function getTeamResults(tab: string, team: 'E1' | 'E2'): Promise<{
     const date = cell(dates, column)
     const opponent = matchOpponent(headers, column)
     const competition = cell(competitions, column)
-    const venue = cell(homeAway, column)
+    const venue = parseVenue(cell(homeAway, column))
     const resultLabelValue = cell(resultLabels, column)
     const resultLabel = resultLabelValue.toLocaleLowerCase('fr-FR')
     const goalsFor = toScore(cell(goalsForRow, column))
@@ -121,7 +129,8 @@ async function getTeamResults(tab: string, team: 'E1' | 'E2'): Promise<{
         date,
         opponent,
         competition,
-        homeAway: venue,
+        homeAway: venue.homeAway,
+        kickoffTime: venue.kickoffTime,
         resultLabel: resultLabelValue,
         goalsFor,
         goalsAgainst,
@@ -142,7 +151,7 @@ async function getTeamResults(tab: string, team: 'E1' | 'E2'): Promise<{
       date,
       opponent: opponent || null,
       competition: competition || null,
-      homeAway: venue || null,
+      homeAway: venue.homeAway || null,
       goalsFor,
       goalsAgainst,
       outcome: goalsFor > goalsAgainst ? 'win' : goalsFor < goalsAgainst ? 'loss' : 'draw',
@@ -161,6 +170,7 @@ export type MatchResultInput = {
   opponent: string
   competition: string
   homeAway: string
+  kickoffTime: string
   resultLabel: MatchResultStatus | ''
   goalsFor: number | null
   goalsAgainst: number | null
@@ -331,7 +341,10 @@ export async function writeMatchResult(input: MatchResultInput) {
     { range: cellRange(targetColumn, headerRowIndex), values: [[input.opponent]] },
     { range: cellRange(targetColumn, dateRowIndex), values: [[displayDate]] },
     { range: cellRange(targetColumn, competitionRowIndex), values: [[input.competition]] },
-    { range: cellRange(targetColumn, homeAwayRowIndex), values: [[input.homeAway]] },
+    {
+      range: cellRange(targetColumn, homeAwayRowIndex),
+      values: [[input.kickoffTime ? `${input.homeAway} · ${input.kickoffTime}` : input.homeAway]],
+    },
     { range: cellRange(targetColumn, resultRowIndex), values: [[input.resultLabel]] },
     { range: cellRange(targetColumn, goalsForRowIndex), values: [[hasScore ? String(input.goalsFor) : '']] },
     { range: cellRange(targetColumn, goalsAgainstRowIndex), values: [[hasScore ? String(input.goalsAgainst) : '']] },

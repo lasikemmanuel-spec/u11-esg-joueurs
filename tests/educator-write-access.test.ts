@@ -49,7 +49,7 @@ import { migrateEducatorPhones } from '@/lib/educator-phones'
 import { GET as getLineups } from '@/app/api/educators/match-lineups/route'
 import { POST as saveCallups } from '@/app/api/educators/callups/route'
 import { DELETE as deleteMatch, POST as saveMatchResult } from '@/app/api/match-results/route'
-import { deleteMatchDay, deleteMatchResult } from '@/lib/match-results'
+import { deleteMatchDay, deleteMatchResult, writeMatchResult } from '@/lib/match-results'
 import { PUT as saveOwnDirectoryEntry } from '@/app/api/educators/directory/me/route'
 import { POST as migrateContacts } from '@/app/api/educators/contacts/migrate/route'
 
@@ -123,6 +123,25 @@ describe('write and read access boundaries', () => {
     )
 
     expect(response.status).toBe(403)
+  })
+
+  it('validates the planned match time before saving', async () => {
+    vi.mocked(getEducatorSession).mockResolvedValue(educator)
+
+    const response = await saveMatchResult(request('/api/match-results', 'POST', {
+      team: 'E1',
+      date: '2026-11-14',
+      opponent: 'Club',
+      competition: 'Championnat',
+      homeAway: 'Domicile',
+      kickoffTime: '25:70',
+      resultLabel: '',
+      goalsFor: null,
+      goalsAgainst: null,
+    }))
+
+    expect(response.status).toBe(400)
+    expect(writeMatchResult).not.toHaveBeenCalled()
   })
 
   it.each([

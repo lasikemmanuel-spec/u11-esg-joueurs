@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, CalendarPlus, Check, ChevronDown, Pencil, Plus, Save, Sparkles, Trash2, UsersRound } from 'lucide-react'
+import { CalendarDays, CalendarPlus, Check, ChevronDown, Clock3, Pencil, Plus, Save, Sparkles, Trash2, UsersRound } from 'lucide-react'
 import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
 import { MatchLineupEntry, useMatchLineups } from '@/components/match-lineup-planner'
 import { ClubCrest } from '@/components/club-crest'
@@ -32,6 +32,7 @@ type Draft = {
   opponent: string
   competition: string
   homeAway: string
+  kickoffTime: string
   resultLabel: string
   goalsFor: string
   goalsAgainst: string
@@ -58,6 +59,7 @@ function createDraft(): Draft {
     opponent: '',
     competition: 'Championnat',
     homeAway: 'Domicile',
+    kickoffTime: '',
     resultLabel: '',
     goalsFor: '',
     goalsAgainst: '',
@@ -72,7 +74,8 @@ function getEditableResult(entry: MatchSheetEntry) {
   return 'Nul'
 }
 
-const inputClass = 'h-10 w-full rounded-lg border border-accent/50 bg-background px-3 text-sm font-normal outline-none focus-visible:ring-2 focus-visible:ring-ring'
+const inputClass = 'h-10 min-w-0 w-full max-w-full rounded-lg border border-accent/50 bg-background px-3 text-sm font-normal outline-none focus-visible:ring-2 focus-visible:ring-ring'
+const dateTimeInputClass = 'h-9 min-w-0 w-full max-w-full appearance-none rounded-lg border border-[#d4af37]/60 bg-white px-2 text-sm font-bold text-[#172554] outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37] [color-scheme:light]'
 
 export function MatchResultEntry({
   entries,
@@ -100,6 +103,7 @@ export function MatchResultEntry({
   const [editingSlot, setEditingSlot] = useState<number | null>(null)
   const [openCallupDate, setOpenCallupDate] = useState('')
   const [expandedDayDate, setExpandedDayDate] = useState<string | null>(null)
+  const [collapsedMatchKeys, setCollapsedMatchKeys] = useState<Set<string>>(() => new Set())
   const [open, setOpen] = useState(false)
   const [pending, setPending] = useState(false)
   const [pendingDeletion, setPendingDeletion] = useState<string | null>(null)
@@ -171,6 +175,7 @@ export function MatchResultEntry({
       opponent: entry.opponent,
       competition: entry.competition || 'Championnat',
       homeAway: entry.homeAway || 'Domicile',
+      kickoffTime: entry.kickoffTime,
       resultLabel: getEditableResult(entry),
       goalsFor: entry.goalsFor === null ? '' : String(entry.goalsFor),
       goalsAgainst: entry.goalsAgainst === null ? '' : String(entry.goalsAgainst),
@@ -334,19 +339,19 @@ export function MatchResultEntry({
       {error && <p role="alert" className="mt-3 text-sm font-semibold text-destructive">{error}</p>}
 
       {open && canManage && (
-        <form onSubmit={save} className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-2">
-          <h3 className="text-base font-bold text-primary sm:col-span-2">
+        <form onSubmit={save} className="mt-4 grid min-w-0 grid-cols-2 gap-3 border-t border-border pt-4">
+          <h3 className="col-span-2 text-base font-black text-[#172554]">
             {editingSlot === null ? 'Planifier un match' : 'Modifier ce match'}
           </h3>
-          <label className="flex flex-col gap-1 text-sm font-semibold">
+          <label className="flex min-w-0 flex-col gap-1 text-sm font-semibold">
             Équipe
             <select disabled={editingSlot !== null} value={draft.team} onChange={(event) => setDraft({ ...draft, team: event.target.value as Draft['team'] })} className={inputClass}>
               <option value="E1">Équipe 1</option>
               <option value="E2">Équipe 2</option>
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-sm font-semibold">
-            Date
+          <label className="flex min-w-0 flex-col gap-1 rounded-xl border border-[#d4af37]/60 bg-gradient-to-br from-amber-50 to-white p-2 text-xs font-black uppercase tracking-wide text-[#172554]">
+            <span className="flex items-center gap-1.5"><CalendarDays aria-hidden="true" className="size-3.5 text-[#b58b00]" /> Date du match</span>
             <input
               type="date"
               required
@@ -354,27 +359,36 @@ export function MatchResultEntry({
               max={MATCH_SEASON_END}
               value={draft.date}
               onChange={(event) => setDraft({ ...draft, date: event.target.value })}
-              className={inputClass}
+              className={dateTimeInputClass}
             />
           </label>
-          <label className="flex flex-col gap-1 text-sm font-semibold">
+          <label className="flex min-w-0 flex-col gap-1 rounded-xl border border-[#172554]/15 bg-[#172554]/5 p-2 text-xs font-black uppercase tracking-wide text-[#172554]">
+            <span className="flex items-center gap-1.5"><Clock3 aria-hidden="true" className="size-3.5 text-[#b58b00]" /> Heure</span>
+            <input
+              type="time"
+              value={draft.kickoffTime}
+              onChange={(event) => setDraft({ ...draft, kickoffTime: event.target.value })}
+              className={dateTimeInputClass}
+            />
+          </label>
+          <label className="col-span-2 flex min-w-0 flex-col gap-1 text-sm font-semibold">
             Adversaire
             <input required maxLength={80} value={draft.opponent} onChange={(event) => setDraft({ ...draft, opponent: event.target.value })} className={inputClass} />
           </label>
-          <label className="flex flex-col gap-1 text-sm font-semibold">
+          <label className="flex min-w-0 flex-col gap-1 text-sm font-semibold">
             Type de match
             <select value={draft.competition} onChange={(event) => setDraft({ ...draft, competition: event.target.value })} className={inputClass}>
               <option>Championnat</option><option>Amical</option><option>Tournoi</option><option>Plateau</option>
             </select>
           </label>
-          <label className="flex flex-col gap-1 text-sm font-semibold">
+          <label className="flex min-w-0 flex-col gap-1 text-sm font-semibold">
             Lieu
             <select value={draft.homeAway} onChange={(event) => setDraft({ ...draft, homeAway: event.target.value })} className={inputClass}>
               <option value="Domicile">Domicile</option><option value="Extérieur">Extérieur</option><option value="Terrain neutre">Terrain neutre</option>
             </select>
           </label>
-          <div className="grid grid-cols-2 gap-3">
-            <label className="flex flex-col gap-1 text-sm font-semibold">
+          <div className="col-span-2 grid grid-cols-2 gap-3">
+            <label className="flex min-w-0 flex-col gap-1 text-sm font-semibold">
               Buts ESG
               <input type="number" min="0" max="50" step="1" value={draft.goalsFor} onChange={(event) => setDraft({ ...draft, goalsFor: event.target.value })} className={inputClass} />
             </label>
@@ -383,17 +397,17 @@ export function MatchResultEntry({
               <input type="number" min="0" max="50" step="1" value={draft.goalsAgainst} onChange={(event) => setDraft({ ...draft, goalsAgainst: event.target.value })} className={inputClass} />
             </label>
           </div>
-          <label className="flex flex-col gap-1 text-sm font-semibold">
+          <label className="col-span-2 flex min-w-0 flex-col gap-1 text-sm font-semibold">
             Résultat à inscrire dans le Sheet
             <select value={draft.resultLabel} onChange={(event) => setDraft({ ...draft, resultLabel: event.target.value })} className={inputClass}>
               <option value="">À jouer / aucun résultat</option>
               {MATCH_RESULT_STATUSES.map((label) => <option key={label} value={label}>{label}</option>)}
             </select>
           </label>
-          <p className="text-xs text-muted-foreground sm:col-span-2">
+          <p className="col-span-2 text-xs text-muted-foreground">
             Saisis les deux scores et choisis Gagné, Nul ou Perdu. Pour un match à venir, laisse score et résultat vides.
           </p>
-          <div className="flex flex-wrap gap-2 sm:col-span-2">
+          <div className="col-span-2 flex flex-wrap gap-2">
             <button type="submit" disabled={pending || pendingDeletion !== null} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-60">
               <Save aria-hidden="true" className="size-4" />
               {pending ? 'Enregistrement…' : editingSlot === null ? 'Ajouter au calendrier' : 'Enregistrer les modifications'}
@@ -495,6 +509,9 @@ export function MatchResultEntry({
                       ? 'À jouer'
                       : entry.goalsFor + ' – ' + entry.goalsAgainst
                   const resultLabel = isPlayed && result ? result : null
+                  const matchKey = entry.team + '-' + entry.slotColumn
+                  const matchPanelId = `match-details-${date}-${entry.team}-${entry.slotColumn}`
+                  const isMatchExpanded = !collapsedMatchKeys.has(matchKey)
                   const scoreBg = result === 'Gagné'
                     ? 'bg-emerald-500 text-white'
                     : result === 'Perdu'
@@ -517,23 +534,45 @@ export function MatchResultEntry({
                           : 'border-amber-400/35 bg-gradient-to-b from-amber-400/8 to-amber-400/3',
                       ].join(' ')}
                     >
-                      {/* En-tête coloré */}
                       <div
                         className={[
-                          'flex items-center justify-between px-3 py-2',
+                          'flex min-w-0 items-center justify-between gap-2 px-3 py-2',
                           isE1
                             ? 'bg-[#172554] text-white'
                             : 'bg-amber-400 text-blue-950',
                         ].join(' ')}
                       >
-                        <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          aria-expanded={isMatchExpanded}
+                          aria-controls={matchPanelId}
+                          onClick={() => setCollapsedMatchKeys((current) => {
+                            const next = new Set(current)
+                            if (next.has(matchKey)) next.delete(matchKey)
+                            else next.add(matchKey)
+                            return next
+                          })}
+                          className="flex min-w-0 flex-1 items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d4af37]"
+                        >
+                          <ChevronDown
+                            aria-hidden="true"
+                            className={`size-4 shrink-0 transition-transform ${isMatchExpanded ? '' : '-rotate-90'}`}
+                          />
                           <ClubCrest className={['size-6 shrink-0 rounded-full ring-2', isE1 ? 'ring-white/40' : 'ring-blue-950/30'].join(' ')} />
-                          <span className="text-[11px] font-black uppercase tracking-widest">
-                            ESG – Équipe {isE1 ? '1' : '2'}
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-[9px] font-black uppercase tracking-widest opacity-80">
+                              ESG – Équipe {isE1 ? '1' : '2'}
+                            </span>
+                            <span className="block truncate text-sm font-black">
+                              {entry.opponent || 'Adversaire à préciser'}
+                            </span>
                           </span>
-                        </div>
+                          <span className={['shrink-0 rounded-lg px-2 py-1 font-mono text-xs font-black', scoreBg].join(' ')}>
+                            {scoreLabel}
+                          </span>
+                        </button>
                         {canManage && (
-                          <div className="flex items-center gap-1">
+                          <div className="flex shrink-0 items-center gap-1">
                             {entry.resultLabel !== 'Annulé' && dateInputValue(entry.date) >= localToday() && (
                               <button
                                 type="button"
@@ -568,47 +607,43 @@ export function MatchResultEntry({
                           </div>
                         )}
                       </div>
-                      {/* Corps */}
-                      <div className="flex flex-col gap-2 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
-                        {/* Gauche : nom + pills */}
-                        <div className="min-w-0 flex-1">
-                          <h4 className="break-words text-base font-black leading-tight text-foreground">
-                            {entry.opponent || 'À préciser'}
-                          </h4>
-                          <div className="mt-1 flex flex-wrap gap-1">
-                            <span className="inline-flex items-center rounded-full border border-border bg-background px-2 py-px text-[10px] font-semibold text-foreground">
-                              {entry.competition || 'Type ?'}
-                            </span>
-                            <span className="inline-flex items-center gap-0.5 rounded-full border border-border bg-background px-2 py-px text-[10px] font-semibold text-foreground">
-                              <span>{homeAwayIcon}</span>
-                              <span>{entry.homeAway || 'Lieu ?'}</span>
-                            </span>
+                      {isMatchExpanded && (
+                        <div id={matchPanelId}>
+                          <div className="px-3 py-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="mt-1 flex flex-wrap gap-1">
+                                <span className="inline-flex items-center rounded-full border border-border bg-background px-2 py-px text-[10px] font-semibold text-foreground">
+                                  {entry.competition || 'Type ?'}
+                                </span>
+                                <span className="inline-flex items-center gap-0.5 rounded-full border border-border bg-background px-2 py-px text-[10px] font-semibold text-foreground">
+                                  <span>{homeAwayIcon}</span>
+                                  <span>{entry.homeAway || 'Lieu ?'}</span>
+                                </span>
+                                {entry.kickoffTime && (
+                                  <span className="inline-flex items-center gap-1 rounded-full border border-[#d4af37]/50 bg-amber-50 px-2 py-px text-[10px] font-black text-[#172554]">
+                                    <Clock3 aria-hidden="true" className="size-3" />
+                                    {entry.kickoffTime}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                        {/* Droite : score */}
-                        <div className="flex shrink-0 flex-col items-end gap-0.5 self-end sm:self-auto">
-                          {resultLabel && (
-                            <span className="text-[10px] font-bold text-muted-foreground">{resultLabel}</span>
-                          )}
-                          <span className={['inline-flex items-center rounded-lg px-3 py-1 font-mono text-sm font-black', scoreBg].join(' ')}>
-                            {scoreLabel}
-                          </span>
-                        </div>
-                      </div>
-                      {canManage && (
-                        <div className="px-3 pb-3">
-                          {matchLineups.loading ? (
-                            <p className="py-2 text-xs text-muted-foreground">Chargement de la feuille…</p>
-                          ) : (
-                            <MatchLineupEntry
-                              match={entry}
-                              players={players}
-                              convocations={convocations}
-                              lineups={matchLineups.lineups}
-                              pendingKeys={matchLineups.pendingKeys}
-                              savedKey={matchLineups.savedKey}
-                              saveLineup={matchLineups.saveLineup}
-                            />
+                          {canManage && (
+                            <div className="px-3 pb-3">
+                              {matchLineups.loading ? (
+                                <p className="py-2 text-xs text-muted-foreground">Chargement de la feuille…</p>
+                              ) : (
+                                <MatchLineupEntry
+                                  match={entry}
+                                  players={players}
+                                  convocations={convocations}
+                                  lineups={matchLineups.lineups}
+                                  pendingKeys={matchLineups.pendingKeys}
+                                  savedKey={matchLineups.savedKey}
+                                  saveLineup={matchLineups.saveLineup}
+                                />
+                              )}
+                            </div>
                           )}
                         </div>
                       )}

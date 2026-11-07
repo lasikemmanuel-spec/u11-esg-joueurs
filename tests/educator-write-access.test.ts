@@ -23,6 +23,8 @@ vi.mock('@/lib/match-lineups', () => ({
   syncMatchLineupsWithCallups: vi.fn(),
 }))
 vi.mock('@/lib/match-results', () => ({
+  deleteMatchDay: vi.fn(),
+  deleteMatchResult: vi.fn(),
   getMatchResults: vi.fn(),
   writeMatchResult: vi.fn(),
 }))
@@ -46,7 +48,8 @@ import { saveOwnEducatorDirectoryEntry } from '@/lib/educator-directory'
 import { migrateEducatorPhones } from '@/lib/educator-phones'
 import { GET as getLineups } from '@/app/api/educators/match-lineups/route'
 import { POST as saveCallups } from '@/app/api/educators/callups/route'
-import { POST as saveMatchResult } from '@/app/api/match-results/route'
+import { DELETE as deleteMatch, POST as saveMatchResult } from '@/app/api/match-results/route'
+import { deleteMatchDay, deleteMatchResult } from '@/lib/match-results'
 import { PUT as saveOwnDirectoryEntry } from '@/app/api/educators/directory/me/route'
 import { POST as migrateContacts } from '@/app/api/educators/contacts/migrate/route'
 
@@ -120,6 +123,79 @@ describe('write and read access boundaries', () => {
     )
 
     expect(response.status).toBe(403)
+  })
+
+  it.each([
+    ['public', null, 401],
+    ['reader', reader, 403],
+  ] as const)('denies %s access to deleting matches', async (_label, session, status) => {
+    vi.mocked(getEducatorSession).mockResolvedValue(session)
+
+    const response = await deleteMatch(request('/api/match-results', 'DELETE', {
+      scope: 'day',
+      date: '2026-11-14',
+    }))
+
+    expect(response.status).toBe(status)
+    expect(deleteMatchDay).not.toHaveBeenCalled()
+    expect(deleteMatchResult).not.toHaveBeenCalled()
+  })
+
+  it('requires same-origin requests when deleting matches', async () => {
+    vi.mocked(getEducatorSession).mockResolvedValue(educator)
+
+    const response = await deleteMatch(request(
+      '/api/match-results',
+      'DELETE',
+      { scope: 'day', date: '2026-11-14' },
+      false,
+    ))
+
+    expect(response.status).toBe(403)
+    expect(deleteMatchDay).not.toHaveBeenCalled()
+  })
+
+  it('validates match deletion input before calling the sheet service', async () => {
+    vi.mocked(getEducatorSession).mockResolvedValue(educator)
+
+    const response = await deleteMatch(request('/api/match-results', 'DELETE', {
+      scope: 'match',
+      date: '2026-11-14',
+      team: 'E1',
+      slotColumn: 3,
+    }))
+
+    expect(response.status).toBe(400)
+    expect(deleteMatchResult).not.toHaveBeenCalled()
+  })
+
+  it('does not allow deleting a match day that has already passed', async () => {
+    vi.mocked(getEducatorSession).mockResolvedValue(educator)
+
+    const response = await deleteMatch(request('/api/match-results', 'DELETE', {
+      scope: 'day',
+      date: '2026-11-06',
+    }))
+
+    expect(response.status).toBe(400)
+    expect(await response.json()).toMatchObject({
+      error: 'Seuls les matchs à venir peuvent être supprimés.',
+    })
+    expect(deleteMatchDay).not.toHaveBeenCalled()
+  })
+
+  it('allows educators to delete a whole match day', async () => {
+    vi.mocked(getEducatorSession).mockResolvedValue(educator)
+    vi.mocked(deleteMatchDay).mockResolvedValue({ deletedMatches: 2 })
+
+    const response = await deleteMatch(request('/api/match-results', 'DELETE', {
+      scope: 'day',
+      date: '2026-11-14',
+    }))
+
+    expect(response.status).toBe(200)
+    expect(deleteMatchDay).toHaveBeenCalledWith('2026-11-14')
+    expect(await response.json()).toMatchObject({ ok: true, deletedMatches: 2 })
   })
 
   it.each([

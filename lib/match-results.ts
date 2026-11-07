@@ -166,6 +166,8 @@ export type MatchResultInput = {
   goalsAgainst: number | null
 }
 
+export type MatchResultDeletion = Pick<MatchSheetEntry, 'team' | 'date' | 'slotColumn'>
+
 function columnName(columnIndex: number) {
   let value = columnIndex + 1
   let column = ''
@@ -175,6 +177,76 @@ function columnName(columnIndex: number) {
     value = Math.floor((value - 1) / 26)
   }
   return column
+}
+
+function getMatchDateRowIndex(rows: string[][], tabName: string) {
+  const dateRowIndex = rows.findIndex((row) =>
+    row.some((value, column) => column >= 2 && isMatchDate(value.trim())),
+  )
+  if (dateRowIndex < 1) throw new Error('Ligne des dates introuvable dans l’onglet « ' + tabName + ' ».')
+  return dateRowIndex
+}
+
+function getMatchDeletionUpdates(
+  sheetTitle: string,
+  rows: string[][],
+  team: 'E1' | 'E2',
+  matches: MatchResultDeletion[],
+) {
+  const dateRowIndex = getMatchDateRowIndex(rows, MATCH_TABS[team])
+  const headerRowIndex = dateRowIndex - 1
+  const matchSlots = new Set<number>()
+
+  for (const match of matches) {
+    if (
+      match.team !== team ||
+      !Number.isSafeInteger(match.slotColumn) ||
+      match.slotColumn < 2 ||
+      (match.slotColumn - 2) % 4 !== 0 ||
+      matchDateKey(cell(rows[dateRowIndex], match.slotColumn)) !== matchDateKey(match.date)
+    ) {
+      throw new Error('Le match a changé dans la feuille. Actualise la page.')
+    }
+    if (!matchOpponent(rows[headerRowIndex], match.slotColumn) &&
+      !cell(rows[dateRowIndex + 1], match.slotColumn) &&
+      !cell(rows[dateRowIndex + 2], match.slotColumn) &&
+      !cell(rows[dateRowIndex + 3], match.slotColumn) &&
+      !cell(rows[dateRowIndex + 4], match.slotColumn) &&
+      !cell(rows[dateRowIndex + 5], match.slotColumn)
+    ) {
+      throw new Error('Ce match n’existe plus dans la feuille. Actualise la page.')
+    }
+    if (
+      cell(rows[dateRowIndex + 3], match.slotColumn) ||
+      cell(rows[dateRowIndex + 4], match.slotColumn) ||
+      cell(rows[dateRowIndex + 5], match.slotColumn)
+    ) {
+      throw new Error('Ce match n’est plus en planification et ne peut pas être supprimé.')
+    }
+    matchSlots.add(match.slotColumn)
+  }
+
+  const escapedTitle = sheetTitle.replace(/'/g, "''")
+  const updates: Array<{ range: string; values: string[][] }> = []
+  const cellRange = (column: number, rowIndex: number) =>
+    `'${escapedTitle}'!${columnName(column)}${rowIndex + 1}`
+
+  for (const slotColumn of matchSlots) {
+    updates.push(
+      { range: cellRange(slotColumn, headerRowIndex), values: [['Adversaire']] },
+      { range: cellRange(slotColumn, dateRowIndex), values: [['']] },
+      { range: cellRange(slotColumn, dateRowIndex + 1), values: [['']] },
+      { range: cellRange(slotColumn, dateRowIndex + 2), values: [['']] },
+      { range: cellRange(slotColumn, dateRowIndex + 3), values: [['']] },
+      { range: cellRange(slotColumn, dateRowIndex + 4), values: [['']] },
+      { range: cellRange(slotColumn, dateRowIndex + 5), values: [['']] },
+    )
+    for (let rowIndex = dateRowIndex + 6; rowIndex < rows.length; rowIndex += 1) {
+      if (!Number.isSafeInteger(Number.parseInt(rows[rowIndex][0] ?? '', 10)) || !cell(rows[rowIndex], 1)) continue
+      updates.push({ range: cellRange(slotColumn, rowIndex), values: [['']] })
+    }
+  }
+  return updates
 }
 
 /**
@@ -278,6 +350,43 @@ export async function writeMatchResult(input: MatchResultInput) {
   await updateAuthenticatedSheetValues(updates)
 
   return { sheetTitle, slotColumn: targetColumn, updatedExistingMatch: input.slotColumn !== undefined }
+}
+
+export async function deleteMatchResult(match: MatchResultDeletion) {
+  const { sheetTitle, rows } = await getAuthenticatedSheetRows(MATCH_TABS[match.team])
+  const updates = getMatchDeletionUpdates(sheetTitle, rows, match.team, [match])
+  await updateAuthenticatedSheetValues(updates)
+  return { sheetTitle, deletedMatches: 1 }
+}
+
+export async function deleteMatchDay(date: string) {
+  const teamSheets = await Promise.all(
+    (['E1', 'E2'] as const).map(async (team) => ({
+      team,
+      ...await getAuthenticatedSheetRows(MATCH_TABS[team]),
+    })),
+  )
+  const matches: MatchResultDeletion[] = []
+  for (const { team, rows } of teamSheets) {
+    const dateRowIndex = getMatchDateRowIndex(rows, MATCH_TABS[team])
+    for (let slotColumn = 2; slotColumn < rows[dateRowIndex].length; slotColumn += 4) {
+      if (matchDateKey(cell(rows[dateRowIndex], slotColumn)) === date) {
+        matches.push({ team, date, slotColumn })
+      }
+    }
+  }
+  if (matches.length === 0) throw new Error('Aucun match n’existe à cette date.')
+
+  const updates = teamSheets.flatMap(({ team, sheetTitle, rows }) =>
+    getMatchDeletionUpdates(
+      sheetTitle,
+      rows,
+      team,
+      matches.filter((match) => match.team === team),
+    ),
+  )
+  await updateAuthenticatedSheetValues(updates)
+  return { deletedMatches: matches.length }
 }
 
 export async function getMatchResults(): Promise<TeamMatchResults> {

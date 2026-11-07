@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, CalendarPlus, Check, ChevronDown, Pencil, Plus, Save, Sparkles, UsersRound } from 'lucide-react'
+import { CalendarDays, CalendarPlus, Check, ChevronDown, Pencil, Plus, Save, Sparkles, Trash2, UsersRound } from 'lucide-react'
 import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
 import { MatchLineupEntry, useMatchLineups } from '@/components/match-lineup-planner'
 import { ClubCrest } from '@/components/club-crest'
@@ -102,6 +102,7 @@ export function MatchResultEntry({
   const [expandedDayDate, setExpandedDayDate] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
   const [pending, setPending] = useState(false)
+  const [pendingDeletion, setPendingDeletion] = useState<string | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
 
@@ -231,6 +232,37 @@ export function MatchResultEntry({
     }
   }
 
+  const removeMatch = async (date: string, entry?: MatchSheetEntry) => {
+    const targetKey = entry ? `${entry.team}-${entry.slotColumn}` : `day-${date}`
+    const dateLabel = new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR')
+    const confirmation = entry
+      ? `Supprimer le match contre ${entry.opponent || 'cet adversaire'} du ${dateLabel} ? Son résultat et sa composition seront effacés. Les convocations de cette date seront conservées.`
+      : `Supprimer les ${dayEntries.find((day) => day.date === date)?.matches.length ?? 0} matchs du ${dateLabel} ? Les résultats et compositions seront effacés. Les convocations de cette date seront conservées.`
+    if (!window.confirm(confirmation)) return
+
+    setPendingDeletion(targetKey)
+    setError('')
+    setNotice('')
+    try {
+      const response = await fetch('/api/match-results', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(entry
+          ? { scope: 'match', date, team: entry.team, slotColumn: entry.slotColumn }
+          : { scope: 'day', date }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error ?? 'Impossible de supprimer le match.')
+      setNotice(entry ? 'Match supprimé du calendrier.' : 'Journée supprimée du calendrier.')
+      if (!entry && openCallupDate === date) setOpenCallupDate('')
+      router.refresh()
+    } catch (deleteError) {
+      setError(deleteError instanceof Error ? deleteError.message : 'Impossible de supprimer le match.')
+    } finally {
+      setPendingDeletion(null)
+    }
+  }
+
   if (!status) return null
 
   return (
@@ -267,6 +299,7 @@ export function MatchResultEntry({
             {canManage && (
               <button
                 type="button"
+                disabled={pending || pendingDeletion !== null}
                 onClick={startNew}
                 className="group inline-flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl border border-amber-200/70 bg-gradient-to-r from-[#f4d45e] via-[#d4af37] to-[#f4d45e] px-3.5 text-xs font-black text-blue-950 shadow-md transition duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#172554] active:translate-y-0 sm:min-h-11 sm:px-5 sm:text-sm"
               >
@@ -361,7 +394,7 @@ export function MatchResultEntry({
             Saisis les deux scores et choisis Gagné, Nul ou Perdu. Pour un match à venir, laisse score et résultat vides.
           </p>
           <div className="flex flex-wrap gap-2 sm:col-span-2">
-            <button type="submit" disabled={pending} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-60">
+            <button type="submit" disabled={pending || pendingDeletion !== null} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-60">
               <Save aria-hidden="true" className="size-4" />
               {pending ? 'Enregistrement…' : editingSlot === null ? 'Ajouter au calendrier' : 'Enregistrer les modifications'}
             </button>
@@ -414,21 +447,40 @@ export function MatchResultEntry({
                     </span>
                   </span>
                 </button>
-                {canScheduleCallup && (
-                  <button
-                    type="button"
-                    aria-expanded={openCallupDate === date}
-                    onClick={() => setOpenCallupDate((current) => current === date ? '' : date)}
-                    className={[
-                      'inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-xs font-black transition-colors sm:w-auto sm:text-sm',
-                      hasConvocations
-                        ? 'min-h-9 border border-white/25 bg-white/10 px-3 text-white/85 shadow-none hover:bg-white/15'
-                        : 'bg-[#d4af37] text-blue-950 shadow hover:bg-amber-300',
-                    ].join(' ')}
-                  >
-                    {hasConvocations ? <Check aria-hidden="true" className="size-4" /> : <UsersRound aria-hidden="true" className="size-4" />}
-                    {hasConvocations ? 'Voir les convocations' : 'Convocations à saisir'}
-                  </button>
+                {(canScheduleCallup || canManage) && (
+                  <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row">
+                    {canScheduleCallup && (
+                      <button
+                        type="button"
+                        aria-expanded={openCallupDate === date}
+                        onClick={() => setOpenCallupDate((current) => current === date ? '' : date)}
+                        className={[
+                          'inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-xl px-4 text-xs font-black transition-colors sm:w-auto sm:text-sm',
+                          hasConvocations
+                            ? 'min-h-9 border border-white/25 bg-white/10 px-3 text-white/85 shadow-none hover:bg-white/15'
+                            : 'bg-[#d4af37] text-blue-950 shadow hover:bg-amber-300',
+                        ].join(' ')}
+                      >
+                        {hasConvocations ? <Check aria-hidden="true" className="size-4" /> : <UsersRound aria-hidden="true" className="size-4" />}
+                        {hasConvocations ? 'Voir les convocations' : 'Convocations à saisir'}
+                      </button>
+                    )}
+                    {canManage &&
+                      date >= localToday() &&
+                      matches.every((entry) =>
+                        !entry.resultLabel && entry.goalsFor === null && entry.goalsAgainst === null,
+                      ) && (
+                      <button
+                        type="button"
+                        disabled={pending || pendingDeletion !== null}
+                        onClick={() => removeMatch(date)}
+                        className="inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-xl border border-red-200/50 bg-red-500/10 px-3 text-xs font-bold text-white/90 transition hover:bg-red-500/25 disabled:opacity-50 sm:w-auto"
+                      >
+                        <Trash2 aria-hidden="true" className="size-4" />
+                        {pendingDeletion === `day-${date}` ? 'Suppression…' : 'Supprimer la journée'}
+                      </button>
+                    )}
+                  </div>
                 )}
               </header>
               {isExpanded && <div id={dayContentId} className="grid gap-3 p-3 sm:grid-cols-2">
@@ -480,18 +532,40 @@ export function MatchResultEntry({
                             ESG – Équipe {isE1 ? '1' : '2'}
                           </span>
                         </div>
-                        {canManage && entry.resultLabel !== 'Annulé' && dateInputValue(entry.date) >= localToday() && (
-                          <button
-                            type="button"
-                            onClick={() => startEdit(entry)}
-                            aria-label={'Modifier le match contre ' + (entry.opponent || 'cet adversaire')}
-                            className={[
-                              'inline-flex size-6 items-center justify-center rounded-md opacity-80 hover:opacity-100',
-                              isE1 ? 'bg-white/15 hover:bg-white/25' : 'bg-blue-950/15 hover:bg-blue-950/25',
-                            ].join(' ')}
-                          >
-                            <Pencil aria-hidden="true" className="size-3" />
-                          </button>
+                        {canManage && (
+                          <div className="flex items-center gap-1">
+                            {entry.resultLabel !== 'Annulé' && dateInputValue(entry.date) >= localToday() && (
+                              <button
+                                type="button"
+                                disabled={pending || pendingDeletion !== null}
+                                onClick={() => startEdit(entry)}
+                                aria-label={'Modifier le match contre ' + (entry.opponent || 'cet adversaire')}
+                                className={[
+                                  'inline-flex size-7 items-center justify-center rounded-md opacity-80 hover:opacity-100 disabled:opacity-50',
+                                  isE1 ? 'bg-white/15 hover:bg-white/25' : 'bg-blue-950/15 hover:bg-blue-950/25',
+                                ].join(' ')}
+                              >
+                                <Pencil aria-hidden="true" className="size-3" />
+                              </button>
+                            )}
+                            {dateInputValue(entry.date) >= localToday() &&
+                              !entry.resultLabel &&
+                              entry.goalsFor === null &&
+                              entry.goalsAgainst === null && (
+                              <button
+                                type="button"
+                                disabled={pending || pendingDeletion !== null}
+                                onClick={() => removeMatch(date, entry)}
+                                aria-label={'Supprimer le match contre ' + (entry.opponent || 'cet adversaire')}
+                                className={[
+                                  'inline-flex size-7 items-center justify-center rounded-md opacity-85 transition hover:bg-red-500/30 hover:text-red-100 disabled:opacity-50',
+                                  isE1 ? 'bg-white/15' : 'bg-blue-950/15',
+                                ].join(' ')}
+                              >
+                                <Trash2 aria-hidden="true" className="size-3.5" />
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                       {/* Corps */}

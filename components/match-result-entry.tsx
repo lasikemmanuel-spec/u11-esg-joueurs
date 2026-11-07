@@ -187,9 +187,11 @@ export function MatchResultEntry({
       !dayEntries.some((day) => day.date === date)
     ) return
 
+    const matchSheetId = `match-sheet-${date}-${focusMatch.team}-${focusMatch.slotColumn}`
     const matchCardId = `match-card-${date}-${focusMatch.team}-${focusMatch.slotColumn}`
     const frame = window.requestAnimationFrame(() => {
-      document.getElementById(matchCardId)?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      const target = document.getElementById(matchSheetId) ?? document.getElementById(matchCardId)
+      target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     })
     return () => window.cancelAnimationFrame(frame)
   }, [dayEntries, expandedDayDate, expandedMatchKeys, focusMatch, month])
@@ -761,6 +763,12 @@ export function MatchResultEntry({
                                   pendingKeys={matchLineups.pendingKeys}
                                   savedKey={matchLineups.savedKey}
                                   saveLineup={matchLineups.saveLineup}
+                                  autoOpen={Boolean(
+                                    focusMatch &&
+                                    dateInputValue(focusMatch.date) === date &&
+                                    focusMatch.team === entry.team &&
+                                    focusMatch.slotColumn === entry.slotColumn,
+                                  )}
                                 />
                               )}
                             </div>

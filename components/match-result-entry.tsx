@@ -2,13 +2,14 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { Check, ChevronDown, Pencil, Plus, Save, Sparkles, UsersRound } from 'lucide-react'
+import { CalendarDays, Check, ChevronDown, Pencil, Plus, Save, Sparkles, UsersRound } from 'lucide-react'
 import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
 import { MatchLineupEntry, useMatchLineups } from '@/components/match-lineup-planner'
 import { ClubCrest } from '@/components/club-crest'
 import type { MatchSheetEntry } from '@/lib/match-results'
 import type { Convocation } from '@/lib/convocations'
 import { MATCH_RESULT_STATUSES } from '@/lib/match-result-options'
+import { getDefaultExpandedMatchDate } from '@/lib/match-day-display'
 import type { PublicPlayer } from '@/lib/players'
 import type { PlayerStats } from '@/lib/stats'
 import type { TrainingAttendanceSession } from '@/lib/training-attendance'
@@ -98,7 +99,7 @@ export function MatchResultEntry({
   const [month, setMonth] = useState(clampToMatchSeason(localToday()).slice(0, 7))
   const [editingSlot, setEditingSlot] = useState<number | null>(null)
   const [openCallupDate, setOpenCallupDate] = useState('')
-  const [expandedDayDates, setExpandedDayDates] = useState<Set<string> | null>(null)
+  const [expandedDayDate, setExpandedDayDate] = useState<string | null>(null)
   const [open, setOpen] = useState(false)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')
@@ -136,6 +137,10 @@ export function MatchResultEntry({
       .sort(([dateA], [dateB]) => dateB.localeCompare(dateA))
       .map(([date, matches]) => ({ date, matches }))
   }, [monthEntries])
+  const defaultExpandedDate = getDefaultExpandedMatchDate(
+    dayEntries.map((day) => day.date),
+    localToday(),
+  )
   const completedConvocationDates = useMemo(() => new Set(
     convocationDates
       .map(dateInputValue)
@@ -242,19 +247,23 @@ export function MatchResultEntry({
             </div>
           </div>
           <div className="flex shrink-0 items-center gap-2">
-            <select
-              aria-label="Mois"
-              value={month}
-              onChange={(event) => {
-                setMonth(event.target.value)
-                setExpandedDayDates(null)
-              }}
-              className="h-9 min-w-36 rounded-lg border border-white/20 bg-white/10 px-2 text-sm font-semibold text-white backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-[#d4af37] sm:min-w-40"
-            >
-              {MATCH_SEASON_MONTHS.map(({ value, label }) => (
-                <option key={value} value={value} className="bg-[#172554] text-white">{label}</option>
-              ))}
-            </select>
+            <label className="relative flex min-h-11 items-center rounded-xl border-2 border-[#d4af37] bg-white/10 shadow-sm transition hover:bg-white/15 focus-within:ring-2 focus-within:ring-[#d4af37]/60">
+              <CalendarDays aria-hidden="true" className="pointer-events-none absolute left-3 size-4 text-[#d4af37]" />
+              <select
+                aria-label="Mois"
+                value={month}
+                onChange={(event) => {
+                  setMonth(event.target.value)
+                  setExpandedDayDate(null)
+                }}
+                className="h-10 min-w-36 appearance-none bg-transparent py-1 pl-9 pr-9 text-sm font-black text-white outline-none sm:min-w-40"
+              >
+                {MATCH_SEASON_MONTHS.map(({ value, label }) => (
+                  <option key={value} value={value} className="bg-[#172554] text-white">{label}</option>
+                ))}
+              </select>
+              <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 size-4 text-[#d4af37]" />
+            </label>
             {canManage && (
               <button
                 type="button"
@@ -372,9 +381,7 @@ export function MatchResultEntry({
           const isSaturday = new Date(`${date}T12:00:00`).getDay() === 6
           const canScheduleCallup = canManage && isSaturday && matches.some((entry) => entry.resultLabel !== 'Annulé')
           const hasConvocations = completedConvocationDates.has(date)
-          const isExpanded = expandedDayDates === null
-            ? date === dayEntries[0].date
-            : expandedDayDates.has(date)
+          const isExpanded = (expandedDayDate ?? defaultExpandedDate) === date
           const dayContentId = `match-day-${date}`
           return (
             <article key={date} className="overflow-visible rounded-2xl border border-[#172554]/15 bg-background shadow-sm">
@@ -383,11 +390,9 @@ export function MatchResultEntry({
                   type="button"
                   aria-expanded={isExpanded}
                   aria-controls={dayContentId}
-                  onClick={() => setExpandedDayDates((current) => {
-                    const next = new Set(current ?? (dayEntries.length > 0 ? [dayEntries[0].date] : []))
-                    if (next.has(date)) next.delete(date)
-                    else next.add(date)
-                    return next
+                  onClick={() => setExpandedDayDate((current) => {
+                    const currentExpandedDate = current ?? defaultExpandedDate
+                    return currentExpandedDate === date ? '' : date
                   })}
                   className="flex w-full min-w-0 flex-1 items-center gap-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d4af37]"
                 >

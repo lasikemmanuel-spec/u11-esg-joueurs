@@ -524,7 +524,7 @@ export function MatchResultEntry({
           const dayContentId = `match-day-${date}`
           return (
             <article key={date} className="overflow-visible rounded-2xl border border-[#172554]/15 bg-background shadow-sm">
-              <header className={`flex flex-col gap-3 border-b border-[#d4af37]/50 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${isExpanded ? 'rounded-t-2xl' : 'rounded-2xl'}`}>
+              <header className={`flex flex-col gap-2 border-b border-[#d4af37]/50 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-4 py-3 ${isExpanded ? 'rounded-t-2xl' : 'rounded-2xl'}`}>
                 <button
                   type="button"
                   aria-expanded={isExpanded}
@@ -533,7 +533,7 @@ export function MatchResultEntry({
                     const currentExpandedDate = current ?? defaultExpandedDate
                     return currentExpandedDate === date ? '' : date
                   })}
-                  className="flex w-full min-w-0 flex-1 items-center gap-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d4af37]"
+                  className="flex w-full min-w-0 items-center gap-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d4af37]"
                 >
                   <ChevronDown aria-hidden="true" className={`size-4 shrink-0 text-[#d4af37] transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
                   <ClubCrest className="size-8 shrink-0 rounded-full ring-2 ring-[#d4af37]/80 shadow-sm" />
@@ -546,36 +546,37 @@ export function MatchResultEntry({
                         year: 'numeric',
                       })}
                     </span>
-                    <span className="mt-0.5 flex items-center gap-1.5 text-xs font-semibold text-white/75">
-                      <span className="inline-flex min-w-5 items-center justify-center rounded-full bg-[#d4af37] px-1.5 py-0.5 text-[10px] font-black text-blue-950">{matches.length}</span>
-                      rencontre{matches.length === 1 ? '' : 's'}
-                    </span>
                   </span>
                 </button>
-                {(canScheduleCallup || canManage) && (
-                  <div className="flex w-full shrink-0 flex-row flex-wrap justify-end gap-1.5 sm:w-auto sm:flex-nowrap sm:gap-2">
-                    {canScheduleCallup && (
-                      <button
-                        type="button"
-                        aria-expanded={openCallupDate === date}
-                        onClick={() => setOpenCallupDate((current) => current === date ? '' : date)}
-                        className={[
-                          'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg px-2.5 text-[11px] font-black transition-colors sm:gap-2 sm:rounded-xl sm:px-3 sm:text-sm',
-                          hasConvocations
-                            ? 'border border-white/25 bg-white/10 text-white/85 shadow-none hover:bg-white/15'
-                            : 'bg-[#d4af37] text-blue-950 shadow hover:bg-amber-300',
-                        ].join(' ')}
-                      >
-                        {hasConvocations ? <Check aria-hidden="true" className="size-3.5 sm:size-4" /> : <UsersRound aria-hidden="true" className="size-3.5 sm:size-4" />}
-                        <span className="sm:hidden">{hasConvocations ? 'Convocations' : 'À convoquer'}</span>
-                        <span className="hidden sm:inline">{hasConvocations ? 'Voir les convocations' : 'Convocations à saisir'}</span>
-                      </button>
-                    )}
-                    {canManage &&
-                      date >= localToday() &&
-                      matches.every((entry) =>
-                        !entry.resultLabel && entry.goalsFor === null && entry.goalsAgainst === null,
-                      ) && (
+                <div className="flex w-full min-w-0 flex-wrap items-center gap-1.5 sm:gap-2">
+                  <span className="inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-white/10 py-1 pl-1 pr-2.5 text-[11px] font-semibold text-white/85">
+                    <span className="inline-flex size-6 items-center justify-center rounded-full bg-[#d4af37] text-[10px] font-black text-blue-950">
+                      {matches.length}
+                    </span>
+                    rencontre{matches.length === 1 ? '' : 's'}
+                  </span>
+                  {canScheduleCallup && (
+                    <button
+                      type="button"
+                      aria-expanded={openCallupDate === date}
+                      onClick={() => setOpenCallupDate((current) => current === date ? '' : date)}
+                      className={[
+                        'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg px-2.5 text-[11px] font-black transition-colors sm:gap-2 sm:rounded-xl sm:px-3 sm:text-sm',
+                        hasConvocations
+                          ? 'border border-white/25 bg-white/10 text-white/85 shadow-none hover:bg-white/15'
+                          : 'bg-[#d4af37] text-blue-950 shadow hover:bg-amber-300',
+                      ].join(' ')}
+                    >
+                      {hasConvocations ? <Check aria-hidden="true" className="size-3.5 sm:size-4" /> : <UsersRound aria-hidden="true" className="size-3.5 sm:size-4" />}
+                      <span className="sm:hidden">{hasConvocations ? 'Convocations' : 'À convoquer'}</span>
+                      <span className="hidden sm:inline">{hasConvocations ? 'Voir les convocations' : 'Convocations à saisir'}</span>
+                    </button>
+                  )}
+                  {canManage &&
+                    date >= localToday() &&
+                    matches.every((entry) =>
+                      !entry.resultLabel && entry.goalsFor === null && entry.goalsAgainst === null,
+                    ) && (
                       <button
                         type="button"
                         disabled={pending || pendingDeletion !== null}
@@ -588,8 +589,7 @@ export function MatchResultEntry({
                         <span className="hidden sm:inline">{pendingDeletion === `day-${date}` ? 'Suppression…' : 'Supprimer la journée'}</span>
                       </button>
                     )}
-                  </div>
-                )}
+                </div>
               </header>
               {isExpanded && <div id={dayContentId} className="grid gap-3 p-3 sm:grid-cols-2">
                 {matches.map((entry) => {

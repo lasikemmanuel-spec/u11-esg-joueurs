@@ -197,7 +197,7 @@ export function DashboardTabs({
               <RefreshSheetButton compact />
             </div>
             {educatorIdentity && (
-              <div className="flex min-w-0 basis-full items-center gap-1.5 rounded-xl border border-amber-400/30 bg-white/10 px-2 py-1 backdrop-blur-sm sm:gap-2 sm:px-2.5 sm:py-1.5 md:basis-auto">
+              <div className="flex min-w-0 items-center gap-1.5 rounded-xl border border-amber-400/30 bg-white/10 px-2 py-1 backdrop-blur-sm sm:gap-2 sm:px-2.5 sm:py-1.5">
                 <button
                   type="button"
                   onClick={() => setProfilePhotoOpen(true)}

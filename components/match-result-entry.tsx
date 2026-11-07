@@ -162,6 +162,12 @@ export function MatchResultEntry({
   const defaultExpandedDate = getDefaultExpandedMatchDate(
     dayEntries.map((day) => day.date),
     localToday(),
+    dayEntries
+      .filter(({ matches }) => matches.some((entry) =>
+        !entry.resultLabel && entry.goalsFor === null && entry.goalsAgainst === null,
+      ))
+      .map(({ date }) => date),
+    month,
   )
   const completedConvocationDates = useMemo(() => new Set(
     convocationDates
@@ -574,10 +580,11 @@ export function MatchResultEntry({
                         type="button"
                         disabled={pending || pendingDeletion !== null}
                         onClick={() => removeMatch(date)}
-                        className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-red-200/50 bg-red-500/10 px-2.5 text-[11px] font-bold text-white/90 transition hover:bg-red-500/25 disabled:opacity-50 sm:gap-2 sm:rounded-xl sm:px-3 sm:text-xs"
+                        aria-label="Supprimer la journée"
+                        title="Supprimer la journée"
+                        className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2.5 text-[11px] font-semibold text-white/65 transition hover:border-red-200/40 hover:bg-red-500/15 hover:text-white disabled:opacity-50 sm:gap-2 sm:rounded-xl sm:px-3 sm:text-xs"
                       >
-                        <Trash2 aria-hidden="true" className="size-3.5 sm:size-4" />
-                        <span className="sm:hidden">{pendingDeletion === `day-${date}` ? '…' : 'Supprimer'}</span>
+                        <Trash2 aria-hidden="true" className="size-3.5" />
                         <span className="hidden sm:inline">{pendingDeletion === `day-${date}` ? 'Suppression…' : 'Supprimer la journée'}</span>
                       </button>
                     )}

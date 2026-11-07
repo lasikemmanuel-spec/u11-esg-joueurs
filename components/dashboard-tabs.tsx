@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
 import { LogOut, X } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
@@ -60,6 +60,13 @@ export function DashboardTabs({
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabKey>('matches')
   const [statsSection, setStatsSection] = useState<StatsSection>('players')
+  const [matchFocus, setMatchFocus] = useState<{
+    date: string
+    team: 'E1' | 'E2'
+    slotColumn: number
+    requestId: number
+  } | null>(null)
+  const matchFocusSequence = useRef(0)
   const [returnToMatchesAfterLogin, setReturnToMatchesAfterLogin] = useState(false)
   const [educatorAccess, setEducatorAccess] = useState<EducatorAccess>('checking')
   const [educatorIdentity, setEducatorIdentity] = useState<EducatorIdentity | null>(null)
@@ -387,6 +394,12 @@ export function DashboardTabs({
               entries={matchResults.entries}
               convocations={convocations}
               convocationDates={convocationDates}
+              onSelectMatch={(entry) => setMatchFocus({
+                date: entry.date,
+                team: entry.team,
+                slotColumn: entry.slotColumn,
+                requestId: ++matchFocusSequence.current,
+              })}
             />
             <div id="match-calendar" className="scroll-mt-4">
               <MatchResultEntry
@@ -397,6 +410,7 @@ export function DashboardTabs({
                 convocationDates={convocationDates}
                 trainingAttendance={trainingAttendance}
                 trainingAttendanceError={trainingAttendanceError}
+                focusMatch={matchFocus}
                 onConnect={() => {
                   setReturnToMatchesAfterLogin(true)
                   setActiveTab('educator')

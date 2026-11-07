@@ -227,10 +227,12 @@ export function MatchDayHome({
   entries,
   convocations,
   convocationDates,
+  onSelectMatch,
 }: {
   entries: MatchSheetEntry[]
   convocations: Convocation[]
   convocationDates: string[]
+  onSelectMatch: (entry: MatchSheetEntry) => void
 }) {
   const today = localToday()
   const plannedDate = getNextPlannedMatchDate(entries, today)
@@ -287,10 +289,13 @@ export function MatchDayHome({
               </p>
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
                 {matchesOnPlannedDate.map((match) => (
-                  <div
+                  <button
                     key={`${match.team}-${match.slotColumn}`}
+                    type="button"
+                    onClick={() => onSelectMatch(match)}
+                    aria-label={`Ouvrir la feuille de match, équipe ${match.team === 'E1' ? '1' : '2'} contre ${match.opponent || 'adversaire à préciser'}`}
                     className={[
-                      'flex min-w-0 items-center gap-3 rounded-2xl border p-3 backdrop-blur-sm',
+                      'flex w-full min-w-0 items-center gap-3 rounded-2xl border p-3 text-left backdrop-blur-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
                       match.team === 'E1'
                         ? 'border-sky-300/40 bg-sky-400/15'
                         : 'border-amber-300/50 bg-amber-400/15',
@@ -324,7 +329,7 @@ export function MatchDayHome({
                         today={today}
                       />
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
               {hasCallups && (

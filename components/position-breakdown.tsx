@@ -149,7 +149,7 @@ export function PositionBreakdown({
       <div className={`roster-player-layout grid items-start gap-4 ${selectedPlayer ? 'has-selected-player' : ''}`}>
       <div className={`roster-player-groups ${
         allGroupsExpanded
-          ? 'columns-1 gap-3 sm:columns-2 xl:columns-3'
+          ? `columns-1 gap-3 ${selectedPlayer ? '' : 'sm:columns-2 xl:columns-3'}`
           : `grid grid-cols-1 items-start gap-3 sm:grid-cols-2 ${selectedPlayer ? '2xl:grid-cols-2' : 'xl:grid-cols-3'}`
       }`}>
             {matchingPlayers.length === 0 && (
@@ -193,7 +193,7 @@ export function PositionBreakdown({
                     <span className="flex min-w-0 items-center gap-2.5">
                       <ChevronDown aria-hidden="true" className={`size-4 shrink-0 text-amber-300 transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
                       <ClubCrest className="size-6 shrink-0 ring-1 ring-amber-400/80 shadow-sm" />
-                      <span className="truncate font-extrabold uppercase tracking-wide text-white text-sm">{position}</span>
+                      <span className="min-w-0 flex-1 break-words text-sm font-extrabold uppercase tracking-wide text-white">{position}</span>
                     </span>
                     <span className="rounded-full bg-amber-400 px-2.5 py-0.5 font-mono text-xs font-black text-blue-950 shadow-sm">
                       {list.length}
@@ -221,7 +221,7 @@ export function PositionBreakdown({
                             >
                               {player.number}
                             </span>
-                            <span className="truncate">
+                            <span className="min-w-0 flex-1 break-words">
                               <span className="font-extrabold uppercase tracking-wide text-foreground">{player.lastName}</span>{' '}
                               <span className="font-medium text-foreground/90">{player.firstName}</span>
                             </span>

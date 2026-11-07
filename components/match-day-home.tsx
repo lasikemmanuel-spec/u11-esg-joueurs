@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import {
-  CalendarDays,
   Check,
   Cloud,
   CloudFog,
@@ -12,7 +11,6 @@ import {
   CloudSun,
   MapPin,
   Sun,
-  UsersRound,
 } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import type { Convocation } from '@/lib/convocations'
@@ -258,7 +256,6 @@ export function MatchDayHome({
   const hasCallups = plannedDate !== null && convocationDates.some(
     (date) => normalizeMatchDate(date) === plannedDate,
   )
-  const matchCalendarId = 'match-calendar'
 
   return (
     <section
@@ -328,24 +325,14 @@ export function MatchDayHome({
                   </div>
                 ))}
               </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <a
-                  href={`#${matchCalendarId}`}
-                  className="inline-flex min-h-9 items-center gap-2 rounded-full bg-[#d4af37] px-3 text-xs font-black text-[#172554] shadow-sm transition hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                >
-                  {hasCallups ? <Check aria-hidden="true" className="size-4" /> : <UsersRound aria-hidden="true" className="size-4" />}
-                  {hasCallups
-                    ? `${calledCount} joueur${calledCount === 1 ? '' : 's'} convoqué${calledCount === 1 ? '' : 's'}`
-                    : 'Convocations à saisir si besoin'}
-                </a>
-                <a
-                  href={`#${matchCalendarId}`}
-                  className="inline-flex min-h-9 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 text-xs font-bold text-white/85 transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
-                >
-                  <CalendarDays aria-hidden="true" className="size-4 text-[#d4af37]" />
-                  Voir le calendrier
-                </a>
-              </div>
+              {hasCallups && (
+                <div className="mt-3">
+                  <span className="inline-flex min-h-9 items-center gap-2 rounded-full bg-[#d4af37] px-3 text-xs font-black text-[#172554] shadow-sm">
+                    <Check aria-hidden="true" className="size-4" />
+                    {`${calledCount} joueur${calledCount === 1 ? '' : 's'} convoqué${calledCount === 1 ? '' : 's'}`}
+                  </span>
+                </div>
+              )}
             </>
           ) : (
             <>
@@ -359,13 +346,6 @@ export function MatchDayHome({
                   })}.</>
                 )}
               </p>
-              <a
-                href={`#${matchCalendarId}`}
-                className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 text-xs font-bold text-white/85 transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
-              >
-                <CalendarDays aria-hidden="true" className="size-4 text-[#d4af37]" />
-                Voir le calendrier
-              </a>
             </>
           )}
         </div>

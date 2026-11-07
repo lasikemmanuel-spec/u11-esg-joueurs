@@ -21,7 +21,8 @@ import type { TrainingAttendanceSession } from '@/lib/training-attendance'
 import type { CohesionDay } from '@/lib/cohesion'
 import type { PlayerStats as PlayerStat } from '@/lib/stats'
 
-type TabKey = 'roster' | 'educator' | 'players' | 'matches' | 'matchStats'
+type TabKey = 'roster' | 'educator' | 'stats' | 'matches'
+type StatsSection = 'players' | 'matches'
 type EducatorAccess = 'checking' | 'unauthenticated' | 'authenticated' | 'unavailable'
 type AccountRole = 'educator' | 'admin' | 'reader'
 type EducatorIdentity = { username: string; displayName: string; role: AccountRole }
@@ -58,6 +59,7 @@ export function DashboardTabs({
 }) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabKey>('matches')
+  const [statsSection, setStatsSection] = useState<StatsSection>('players')
   const [returnToMatchesAfterLogin, setReturnToMatchesAfterLogin] = useState(false)
   const [educatorAccess, setEducatorAccess] = useState<EducatorAccess>('checking')
   const [educatorIdentity, setEducatorIdentity] = useState<EducatorIdentity | null>(null)
@@ -170,10 +172,9 @@ export function DashboardTabs({
   }, [])
 
   const tabs: { key: TabKey; label: string }[] = [
-    { key: 'roster', label: 'Effectifs' },
-    { key: 'players', label: 'Stats Joueurs' },
     { key: 'matches', label: 'Matchs' },
-    { key: 'matchStats', label: 'Stats Matchs' },
+    { key: 'roster', label: 'Effectifs' },
+    { key: 'stats', label: 'Stats' },
     ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
       ? [{ key: 'educator' as const, label: 'Annuaire' }]
       : []),
@@ -342,8 +343,43 @@ export function DashboardTabs({
       </nav>
 
       <div className="min-w-0 p-3 sm:p-4 md:p-5">
-        {activeTab === 'players' && (
-          <PlayerStats players={players} />
+        {activeTab === 'stats' && (
+          <div className="flex flex-col gap-4">
+            <nav aria-label="Statistiques" className="flex gap-2 rounded-xl border border-accent/50 bg-muted/50 p-1.5">
+              {([
+                { key: 'players' as const, label: 'Joueurs' },
+                { key: 'matches' as const, label: 'Matchs' },
+              ]).map(({ key, label }) => (
+                <button
+                  key={key}
+                  type="button"
+                  aria-pressed={statsSection === key}
+                  onClick={() => setStatsSection(key)}
+                  className={[
+                    'min-h-10 flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                    statsSection === key
+                      ? 'bg-primary text-primary-foreground shadow-sm'
+                      : 'text-muted-foreground hover:bg-card hover:text-primary',
+                  ].join(' ')}
+                >
+                  {label}
+                </button>
+              ))}
+            </nav>
+            {statsSection === 'players' ? (
+              <PlayerStats players={players} />
+            ) : (
+              <MatchCallupBreakdown
+                convocations={convocations}
+                presentCounts={presentCounts}
+                matchResults={matchResults}
+                cohesionDays={cohesionDays}
+                invitedCount={rosterPlayers.length}
+                dataErrors={matchDataErrors}
+              />
+            )}
+          </div>
         )}
         {activeTab === 'matches' && (
           <div className="flex flex-col gap-5">
@@ -368,16 +404,6 @@ export function DashboardTabs({
               />
             </div>
           </div>
-        )}
-        {activeTab === 'matchStats' && (
-          <MatchCallupBreakdown
-            convocations={convocations}
-            presentCounts={presentCounts}
-            matchResults={matchResults}
-            cohesionDays={cohesionDays}
-            invitedCount={rosterPlayers.length}
-            dataErrors={matchDataErrors}
-          />
         )}
         {activeTab === 'roster' && (
           <PositionBreakdown

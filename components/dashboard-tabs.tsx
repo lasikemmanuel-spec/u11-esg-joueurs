@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { LogOut, X } from 'lucide-react'
+import { LogOut, Radio, X } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import { MatchCallupBreakdown } from '@/components/match-callup-breakdown'
 import { PlayerStats } from '@/components/player-stats'
@@ -23,6 +23,12 @@ import type { PlayerStats as PlayerStat } from '@/lib/stats'
 
 type TabKey = 'roster' | 'educator' | 'stats' | 'matches'
 type StatsSection = 'players' | 'matches'
+type MatchFocus = {
+  date: string
+  team: 'E1' | 'E2'
+  slotColumn: number
+  requestId: number
+}
 type EducatorAccess = 'checking' | 'unauthenticated' | 'authenticated' | 'unavailable'
 type AccountRole = 'educator' | 'admin' | 'reader'
 type EducatorIdentity = { username: string; displayName: string; role: AccountRole }
@@ -60,12 +66,8 @@ export function DashboardTabs({
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabKey>('matches')
   const [statsSection, setStatsSection] = useState<StatsSection>('players')
-  const [matchFocus, setMatchFocus] = useState<{
-    date: string
-    team: 'E1' | 'E2'
-    slotColumn: number
-    requestId: number
-  } | null>(null)
+  const [matchFocuses, setMatchFocuses] = useState<Partial<Record<'E1' | 'E2', MatchFocus>>>({})
+  const [activeMatchTeam, setActiveMatchTeam] = useState<'E1' | 'E2' | null>(null)
   const matchFocusSequence = useRef(0)
   const [returnToMatchesAfterLogin, setReturnToMatchesAfterLogin] = useState(false)
   const [educatorAccess, setEducatorAccess] = useState<EducatorAccess>('checking')
@@ -186,6 +188,16 @@ export function DashboardTabs({
       ? [{ key: 'educator' as const, label: 'Annuaire' }]
       : []),
   ]
+  const quickMatches = (['E1', 'E2'] as const).flatMap((team) => {
+    const focus = matchFocuses[team]
+    if (!focus) return []
+    const entry = matchResults.entries.find((match) =>
+      match.date === focus.date &&
+      match.team === focus.team &&
+      match.slotColumn === focus.slotColumn,
+    )
+    return entry ? [{ entry, focus }] : []
+  })
   const mainHeader = (
     <header className="relative z-20 border-b-2 border-[#d4af37] bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] text-white shadow-md">
       <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:gap-4 sm:py-5 md:flex-row md:items-center md:justify-between md:px-6 md:py-5">
@@ -394,12 +406,16 @@ export function DashboardTabs({
               entries={matchResults.entries}
               convocations={convocations}
               convocationDates={convocationDates}
-              onSelectMatch={(entry) => setMatchFocus({
-                date: entry.date,
-                team: entry.team,
-                slotColumn: entry.slotColumn,
-                requestId: ++matchFocusSequence.current,
-              })}
+              onSelectMatch={(entry) => {
+                const focus = {
+                  date: entry.date,
+                  team: entry.team,
+                  slotColumn: entry.slotColumn,
+                  requestId: ++matchFocusSequence.current,
+                }
+                setMatchFocuses((current) => ({ ...current, [entry.team]: focus }))
+                setActiveMatchTeam(entry.team)
+              }}
             />
             <div id="match-calendar" className="scroll-mt-4">
               <MatchResultEntry
@@ -410,7 +426,7 @@ export function DashboardTabs({
                 convocationDates={convocationDates}
                 trainingAttendance={trainingAttendance}
                 trainingAttendanceError={trainingAttendanceError}
-                focusMatch={matchFocus}
+                focusMatch={activeMatchTeam ? matchFocuses[activeMatchTeam] ?? null : null}
                 onConnect={() => {
                   setReturnToMatchesAfterLogin(true)
                   setActiveTab('educator')
@@ -482,6 +498,50 @@ export function DashboardTabs({
           })}
         </div>
       </nav>
+
+      {quickMatches.length > 0 && activeTab !== 'matches' && (
+        <div className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-3 z-40 flex max-w-[calc(100vw-1.5rem)] flex-col items-end gap-2 xl:bottom-6">
+          {quickMatches.map(({ entry, focus }) => {
+            const isE1 = entry.team === 'E1'
+            return (
+              <button
+                key={`${entry.team}-${entry.slotColumn}`}
+                type="button"
+                onClick={() => {
+                  setActiveMatchTeam(entry.team)
+                  setMatchFocuses((current) => ({
+                    ...current,
+                    [entry.team]: { ...focus, requestId: ++matchFocusSequence.current },
+                  }))
+                  setActiveTab('matches')
+                }}
+                aria-label={`Retour au match de l’équipe ${isE1 ? '1' : '2'} contre ${entry.opponent || 'adversaire'}`}
+                className={[
+                  'inline-flex min-h-11 max-w-full items-center gap-2 rounded-full border px-3 py-2 text-left text-white shadow-xl transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
+                  isE1
+                    ? 'border-sky-300/60 bg-gradient-to-r from-sky-950 to-blue-900'
+                    : 'border-amber-300/60 bg-gradient-to-r from-amber-950 to-amber-800',
+                ].join(' ')}
+              >
+                <span className={[
+                  'flex size-7 shrink-0 items-center justify-center rounded-full',
+                  isE1 ? 'bg-sky-300/20 text-sky-200' : 'bg-amber-300/20 text-amber-200',
+                ].join(' ')}>
+                  <Radio aria-hidden="true" className="size-4" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[10px] font-black uppercase tracking-wide">
+                    Retour · Équipe {isE1 ? '1' : '2'}
+                  </span>
+                  <span className="block max-w-52 truncate text-[10px] font-semibold text-white/75">
+                    {entry.opponent || 'Feuille de match'}
+                  </span>
+                </span>
+              </button>
+            )
+          })}
+        </div>
+      )}
 
       {profilePhotoOpen && educatorIdentity && (
         <div

@@ -11,11 +11,12 @@ import {
   CloudSun,
   MapPin,
   Sun,
+  Trophy,
 } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import type { Convocation } from '@/lib/convocations'
 import type { MatchSheetEntry } from '@/lib/match-results'
-import { getNextPlannedMatchDate, normalizeMatchDate } from '@/lib/match-day-display'
+import { getLatestPlayedMatches, getNextPlannedMatchDate, normalizeMatchDate } from '@/lib/match-day-display'
 
 type WeatherResult = {
   temperature: number
@@ -233,6 +234,7 @@ export function MatchDayHome({
 }) {
   const today = localToday()
   const plannedDate = getNextPlannedMatchDate(entries, today)
+  const latestResults = getLatestPlayedMatches(entries, today)
   const matchesOnPlannedDate = useMemo(
     () => plannedDate
       ? entries.filter((entry) =>
@@ -347,6 +349,51 @@ export function MatchDayHome({
                 )}
               </p>
             </>
+          )}
+          {(latestResults.E1 || latestResults.E2) && (
+            <div className="mt-4">
+              <p className="mb-2 text-[10px] font-black uppercase tracking-[0.18em] text-white/65">
+                Derniers résultats
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {(['E1', 'E2'] as const).map((team) => {
+                  const result = latestResults[team]
+                  if (!result) return null
+                  const isWin = result.goalsFor > result.goalsAgainst
+                  const isDraw = result.goalsFor === result.goalsAgainst
+                  const outcome = isWin ? 'Victoire' : isDraw ? 'Match nul' : 'Défaite'
+                  const scoreStyle = isWin
+                    ? 'bg-emerald-300 text-emerald-950'
+                    : isDraw
+                      ? 'bg-amber-200 text-amber-950'
+                      : 'bg-rose-300 text-rose-950'
+
+                  return (
+                    <div
+                      key={team}
+                      className="flex min-w-0 items-center gap-3 rounded-2xl border border-white/15 bg-white/[0.08] p-3"
+                    >
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/10">
+                        {isWin
+                          ? <Trophy aria-hidden="true" className="size-4 text-amber-300" />
+                          : <ClubCrest className="size-8 rounded-full" />}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-white/60">
+                          Équipe {team === 'E1' ? '1' : '2'} · {new Date(`${result.normalizedDate}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                        </p>
+                        <p className="truncate text-sm font-bold text-white">
+                          {outcome} · {result.opponent || 'Adversaire'}
+                        </p>
+                      </div>
+                      <span className={`shrink-0 rounded-xl px-2.5 py-1 text-base font-black tabular-nums ${scoreStyle}`}>
+                        {result.goalsFor}–{result.goalsAgainst}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
           )}
         </div>
       </div>

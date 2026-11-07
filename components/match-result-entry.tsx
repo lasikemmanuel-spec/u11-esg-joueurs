@@ -646,23 +646,25 @@ export function MatchResultEntry({
                             else next.add(matchKey)
                             return next
                           })}
-                          className="flex min-w-0 flex-1 items-center gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d4af37]"
+                          className="flex min-w-0 flex-1 flex-col items-stretch gap-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d4af37]"
                         >
-                          <ChevronDown
-                            aria-hidden="true"
-                            className={`size-4 shrink-0 transition-transform ${isMatchExpanded ? '' : '-rotate-90'}`}
-                          />
-                          <ClubCrest className={['size-6 shrink-0 rounded-full ring-2', isE1 ? 'ring-white/40' : 'ring-blue-950/30'].join(' ')} />
-                          <span className="min-w-0 flex-1">
-                            <span className="block text-[9px] font-black uppercase tracking-widest opacity-80">
+                          <span className="flex min-w-0 items-center gap-2">
+                            <ChevronDown
+                              aria-hidden="true"
+                              className={`size-4 shrink-0 transition-transform ${isMatchExpanded ? '' : '-rotate-90'}`}
+                            />
+                            <ClubCrest className={['size-6 shrink-0 rounded-full ring-2', isE1 ? 'ring-white/40' : 'ring-blue-950/30'].join(' ')} />
+                            <span className="min-w-0 flex-1 text-[9px] font-black uppercase tracking-widest opacity-80">
                               ESG – Équipe {isE1 ? '1' : '2'}
                             </span>
-                            <span className="block truncate text-sm font-black">
-                              {entry.opponent || 'Adversaire à préciser'}
-                            </span>
+                            {(isPlayed || isCancelled) && (
+                              <span className={['shrink-0 rounded-lg px-2 py-1 font-mono text-xs font-black', scoreBg].join(' ')}>
+                                {scoreLabel}
+                              </span>
+                            )}
                           </span>
-                          <span className={['shrink-0 rounded-lg px-2 py-1 font-mono text-xs font-black', scoreBg].join(' ')}>
-                            {scoreLabel}
+                          <span className="block whitespace-normal break-words pl-6 text-base font-black leading-snug sm:pl-8 sm:text-lg">
+                            {entry.opponent || 'Adversaire à préciser'}
                           </span>
                         </button>
                         {canManage && (

@@ -9,6 +9,7 @@ import { PlayerStats } from '@/components/player-stats'
 import { PositionBreakdown } from '@/components/position-breakdown'
 import { EducatorRoster } from '@/components/educator-roster'
 import { MatchResultEntry } from '@/components/match-result-entry'
+import { MatchDayHome } from '@/components/match-day-home'
 import { EducatorAvatar } from '@/components/educator-avatar'
 import { EducatorProfilePhotoEditor } from '@/components/educator-profile-photo-editor'
 import { RefreshSheetButton } from '@/components/refresh-sheet-button'
@@ -57,7 +58,7 @@ export function DashboardTabs({
   children: ReactNode
 }) {
   const router = useRouter()
-  const [activeTab, setActiveTab] = useState<TabKey>('roster')
+  const [activeTab, setActiveTab] = useState<TabKey>('matches')
   const [educatorSection, setEducatorSection] = useState<EducatorSection>('matches')
   const [returnToMatchesAfterLogin, setReturnToMatchesAfterLogin] = useState(false)
   const [educatorAccess, setEducatorAccess] = useState<EducatorAccess>('checking')
@@ -174,7 +175,7 @@ export function DashboardTabs({
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'roster', label: 'Effectifs' },
     { key: 'players', label: 'Stats Joueurs' },
-    { key: 'matches', label: 'Stats Matchs' },
+    { key: 'matches', label: 'Matchs' },
     ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
       ? [{ key: 'educator' as const, label: 'Éducateurs' }]
       : []),
@@ -350,14 +351,44 @@ export function DashboardTabs({
           <PlayerStats players={players} />
         )}
         {activeTab === 'matches' && (
-          <MatchCallupBreakdown
-            convocations={convocations}
-            presentCounts={presentCounts}
-            matchResults={matchResults}
-            cohesionDays={cohesionDays}
-            invitedCount={rosterPlayers.length}
-            dataErrors={matchDataErrors}
-          />
+          <div className="flex flex-col gap-5">
+            <MatchDayHome
+              entries={matchResults.entries}
+              convocations={convocations}
+              convocationDates={convocationDates}
+              playerCount={rosterPlayers.length}
+            />
+            <div id="match-calendar" className="scroll-mt-4">
+              <MatchResultEntry
+                entries={matchResults.entries}
+                players={rosterPlayers}
+                playerStats={players}
+                convocations={convocations}
+                convocationDates={convocationDates}
+                trainingAttendance={trainingAttendance}
+                trainingAttendanceError={trainingAttendanceError}
+                onConnect={() => {
+                  setEducatorSection('directory')
+                  setActiveTab('educator')
+                }}
+              />
+            </div>
+            <details className="group overflow-hidden rounded-2xl border border-[#d4af37]/35 bg-card">
+              <summary className="cursor-pointer list-none bg-muted/50 px-4 py-3 text-sm font-bold text-primary marker:hidden">
+                Statistiques des matchs
+              </summary>
+              <div className="border-t border-border p-3 sm:p-4">
+                <MatchCallupBreakdown
+                  convocations={convocations}
+                  presentCounts={presentCounts}
+                  matchResults={matchResults}
+                  cohesionDays={cohesionDays}
+                  invitedCount={rosterPlayers.length}
+                  dataErrors={matchDataErrors}
+                />
+              </div>
+            </details>
+          </div>
         )}
         {activeTab === 'roster' && (
           <PositionBreakdown

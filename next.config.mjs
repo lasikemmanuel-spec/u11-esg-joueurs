@@ -34,8 +34,8 @@ const nextConfig = {
               "img-src 'self' data: blob:",
               // Fonts : polices locales uniquement
               "font-src 'self'",
-              // Connexions API : Google Sheets + Vercel analytics + soi-même
-              "connect-src 'self' https://sheets.googleapis.com https://oauth2.googleapis.com https://va.vercel-scripts.com",
+              // Connexions API : Google Sheets, Vercel analytics, Open-Meteo + soi-même
+              "connect-src 'self' https://sheets.googleapis.com https://oauth2.googleapis.com https://api.open-meteo.com https://va.vercel-scripts.com",
               // Pas de frames
               "frame-src 'none'",
               // Pas d'objets Flash etc.

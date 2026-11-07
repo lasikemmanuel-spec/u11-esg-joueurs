@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import {
-  ArrowDown,
   CalendarDays,
   Check,
   Cloud,
@@ -23,7 +22,7 @@ import { getNextPlannedMatchDate, normalizeMatchDate } from '@/lib/match-day-dis
 type WeatherResult = {
   temperature: number
   weatherCode: number
-  precipitationProbability: number | null
+  location: string
 }
 
 type WeatherState =
@@ -31,7 +30,6 @@ type WeatherState =
   | { status: 'ready'; weather: WeatherResult }
   | { status: 'unavailable' }
   | { status: 'tooEarly' }
-  | { status: 'noDate' }
 
 const weatherDescriptions: Record<number, string> = {
   0: 'Ensoleillé',
@@ -88,15 +86,10 @@ function WeatherIcon({ code, className }: { code: number; className?: string }) 
   return <Cloud aria-hidden="true" className={className} />
 }
 
-function useMatchWeather(date: string | null, today: string): WeatherState {
-  const [weather, setWeather] = useState<WeatherState>({ status: 'noDate' })
+function useMatchWeather(date: string, homeAway: string, opponent: string, today: string): WeatherState {
+  const [weather, setWeather] = useState<WeatherState>({ status: 'loading' })
 
   useEffect(() => {
-    if (!date) {
-      setWeather({ status: 'noDate' })
-      return
-    }
-
     if (daysFromToday(date, today) > 15) {
       setWeather({ status: 'tooEarly' })
       return
@@ -104,24 +97,66 @@ function useMatchWeather(date: string | null, today: string): WeatherState {
 
     const controller = new AbortController()
     setWeather({ status: 'loading' })
-    const params = new URLSearchParams({
-      latitude: '50.53',
-      longitude: '3.22',
-      daily: 'weather_code,temperature_2m_max,precipitation_probability_max',
-      timezone: 'Europe/Paris',
-      start_date: date,
-      end_date: date,
-    })
-    fetch(`https://api.open-meteo.com/v1/forecast?${params}`, { signal: controller.signal })
-      .then(async (response) => {
+    const loadWeather = async () => {
+      try {
+        let latitude = 50.53
+        let longitude = 3.22
+        let location = 'Genech'
+
+        if (homeAway === 'Extérieur') {
+          if (!opponent.trim()) throw new Error('Adversaire non renseigné pour la recherche météo.')
+          const ignoredClubWords = new Set(['as', 'es', 'us', 'fc', 'sc', 'rc', 'ol', 'ac', 'sa', 'football', 'club', 'sporting', 'olympique'])
+          const locationQueries = [
+            opponent.trim(),
+            ...opponent.trim().split(/\s+/).filter((word) =>
+              word.length >= 3 && !ignoredClubWords.has(word.toLocaleLowerCase('fr-FR')),
+            ),
+          ].slice(0, 5)
+          let place: { name: string; latitude: number; longitude: number } | undefined
+
+          for (const name of locationQueries) {
+            const geocodingParams = new URLSearchParams({
+              name,
+              count: '1',
+              language: 'fr',
+              countryCode: 'FR',
+              format: 'json',
+            })
+            const geocodingResponse = await fetch(
+              `https://geocoding-api.open-meteo.com/v1/search?${geocodingParams}`,
+              { signal: controller.signal },
+            )
+            if (!geocodingResponse.ok) {
+              throw new Error(`Recherche de la ville adverse indisponible (${geocodingResponse.status}).`)
+            }
+            const geocodingResult = await geocodingResponse.json() as {
+              results?: Array<{ name: string; latitude: number; longitude: number }>
+            }
+            place = geocodingResult.results?.[0]
+            if (place) break
+          }
+          if (!place) throw new Error(`Ville introuvable pour l’adversaire « ${opponent} ».`)
+          latitude = place.latitude
+          longitude = place.longitude
+          location = place.name
+        } else if (homeAway !== 'Domicile') {
+          throw new Error('Lieu du match non précisé pour la recherche météo.')
+        }
+
+        const params = new URLSearchParams({
+          latitude: String(latitude),
+          longitude: String(longitude),
+          daily: 'weather_code,temperature_2m_max',
+          timezone: 'Europe/Paris',
+          start_date: date,
+          end_date: date,
+        })
+        const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`, {
+          signal: controller.signal,
+        })
         if (!response.ok) throw new Error(`Prévisions météo indisponibles (${response.status}).`)
         const result = await response.json() as {
-          daily?: {
-            time?: string[]
-            weather_code?: number[]
-            temperature_2m_max?: number[]
-            precipitation_probability_max?: Array<number | null>
-          }
+          daily?: { time?: string[]; weather_code?: number[]; temperature_2m_max?: number[] }
         }
         const index = result.daily?.time?.indexOf(date) ?? -1
         const temperature = result.daily?.temperature_2m_max?.[index]
@@ -131,23 +166,53 @@ function useMatchWeather(date: string | null, today: string): WeatherState {
         }
         setWeather({
           status: 'ready',
-          weather: {
-            temperature,
-            weatherCode,
-            precipitationProbability: result.daily?.precipitation_probability_max?.[index] ?? null,
-          },
+          weather: { temperature, weatherCode, location },
         })
-      })
-      .catch((error: unknown) => {
+      } catch (error: unknown) {
         if (error instanceof Error && error.name === 'AbortError') return
-        console.error('Impossible de charger la météo du prochain match:', error)
+        console.error('Impossible de charger la météo de la rencontre:', error)
         setWeather({ status: 'unavailable' })
-      })
+      }
+    }
+
+    void loadWeather()
 
     return () => controller.abort()
-  }, [date, today])
+  }, [date, homeAway, opponent, today])
 
   return weather
+}
+
+function MatchWeather({
+  date,
+  homeAway,
+  opponent,
+  today,
+}: {
+  date: string
+  homeAway: string
+  opponent: string
+  today: string
+}) {
+  const weather = useMatchWeather(date, homeAway, opponent, today)
+
+  return (
+    <div aria-live="polite" className="mt-2 inline-flex min-h-7 max-w-full items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-bold text-white/85">
+      {weather.status === 'ready' ? (
+        <>
+          <WeatherIcon code={weather.weather.weatherCode} className="size-4 shrink-0 text-amber-300" />
+          <span className="truncate">Météo · {weather.weather.location}</span>
+          <span className="shrink-0 text-xs font-black text-white">{Math.round(weather.weather.temperature)}°</span>
+        </>
+      ) : weather.status === 'loading' ? (
+        <><CloudSun aria-hidden="true" className="size-4 shrink-0 animate-pulse text-amber-300" />Météo…</>
+      ) : weather.status === 'tooEarly' ? (
+        <><CloudSun aria-hidden="true" className="size-4 shrink-0 text-amber-300" />Prévisions à venir</>
+      ) : (
+        <><CloudSun aria-hidden="true" className="size-4 shrink-0 text-amber-300" />Météo indisponible</>
+      )}
+    </div>
+  )
 }
 
 function calledPlayerCount(convocations: Convocation[], date: string) {
@@ -189,13 +254,11 @@ export function MatchDayHome({
       .at(-1) ?? null,
     [entries, today],
   )
-  const weather = useMatchWeather(plannedDate, today)
   const calledCount = plannedDate ? calledPlayerCount(convocations, plannedDate) : 0
   const hasCallups = plannedDate !== null && convocationDates.some(
     (date) => normalizeMatchDate(date) === plannedDate,
   )
   const matchCalendarId = 'match-calendar'
-  const displayDate = plannedDate ?? lastMatchDate
 
   return (
     <section
@@ -255,40 +318,32 @@ export function MatchDayHome({
                         </span>
                         {match.kickoffTime && <span>· {match.kickoffTime}</span>}
                       </p>
+                      <MatchWeather
+                        date={plannedDate}
+                        homeAway={match.homeAway}
+                        opponent={match.opponent}
+                        today={today}
+                      />
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <div className="mt-3 flex flex-wrap items-center gap-2">
                 <a
                   href={`#${matchCalendarId}`}
-                  className="group flex min-h-16 items-center gap-3 rounded-2xl bg-[#d4af37] px-4 py-3 text-[#172554] shadow-md transition hover:-translate-y-0.5 hover:bg-amber-300 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  className="inline-flex min-h-9 items-center gap-2 rounded-full bg-[#d4af37] px-3 text-xs font-black text-[#172554] shadow-sm transition hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 >
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#172554]/10">
-                    {hasCallups ? <Check aria-hidden="true" className="size-5" /> : <UsersRound aria-hidden="true" className="size-5" />}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-black">
-                      {hasCallups ? `${calledCount} joueur${calledCount === 1 ? '' : 's'} convoqué${calledCount === 1 ? '' : 's'}` : 'On prépare l’équipe ?'}
-                    </span>
-                    <span className="mt-0.5 block text-[11px] font-bold text-[#172554]/75">
-                      {hasCallups ? 'Gérer les convocations' : 'Lancer les convocations'}
-                    </span>
-                  </span>
-                  <ArrowDown aria-hidden="true" className="size-4 shrink-0 transition-transform group-hover:translate-y-0.5" />
+                  {hasCallups ? <Check aria-hidden="true" className="size-4" /> : <UsersRound aria-hidden="true" className="size-4" />}
+                  {hasCallups
+                    ? `${calledCount} joueur${calledCount === 1 ? '' : 's'} convoqué${calledCount === 1 ? '' : 's'}`
+                    : 'Convocations à saisir si besoin'}
                 </a>
                 <a
                   href={`#${matchCalendarId}`}
-                  className="group flex min-h-16 items-center gap-3 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+                  className="inline-flex min-h-9 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 text-xs font-bold text-white/85 transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
                 >
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-[#d4af37]">
-                    <CalendarDays aria-hidden="true" className="size-5" />
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-black">Le programme du match</span>
-                    <span className="mt-0.5 block text-[11px] font-semibold text-white/70">Voir le calendrier</span>
-                  </span>
-                  <ArrowDown aria-hidden="true" className="size-4 shrink-0 text-white/70 transition-transform group-hover:translate-y-0.5" />
+                  <CalendarDays aria-hidden="true" className="size-4 text-[#d4af37]" />
+                  Voir le calendrier
                 </a>
               </div>
             </>
@@ -306,66 +361,13 @@ export function MatchDayHome({
               </p>
               <a
                 href={`#${matchCalendarId}`}
-                className="group mt-4 inline-flex min-h-16 items-center gap-3 self-start rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+                className="mt-3 inline-flex min-h-9 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 text-xs font-bold text-white/85 transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
               >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-[#d4af37]">
-                  <CalendarDays aria-hidden="true" className="size-5" />
-                </span>
-                <span>
-                  <span className="block text-sm font-black">Le programme du match</span>
-                  <span className="mt-0.5 block text-[11px] font-semibold text-white/70">Voir le calendrier</span>
-                </span>
-                <ArrowDown aria-hidden="true" className="size-4 transition-transform group-hover:translate-y-0.5" />
+                <CalendarDays aria-hidden="true" className="size-4 text-[#d4af37]" />
+                Voir le calendrier
               </a>
             </>
           )}
-          <div className="mt-3">
-            {plannedDate && (
-              <div
-                aria-live="polite"
-                className="relative min-w-0 overflow-hidden rounded-2xl border border-white/20 bg-gradient-to-br from-sky-300/20 via-white/10 to-indigo-300/20 p-3 shadow-inner backdrop-blur-sm sm:flex-1"
-              >
-                <div aria-hidden="true" className="pointer-events-none absolute -right-7 -top-9 size-28 rounded-full bg-sky-200/10 blur-2xl" />
-                <div className="relative flex min-w-0 items-center gap-3">
-                  <div className="flex size-12 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 shadow-inner">
-                    {weather.status === 'ready' ? (
-                      <WeatherIcon code={weather.weather.weatherCode} className="size-7 text-amber-300 drop-shadow-[0_0_8px_rgba(253,224,71,0.65)]" />
-                    ) : (
-                      <CloudSun aria-hidden="true" className={`size-7 text-amber-300 ${weather.status === 'loading' ? 'animate-pulse' : ''}`} />
-                    )}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[9px] font-black uppercase tracking-[0.18em] text-sky-100/80">
-                      Météo du match · Genech
-                    </p>
-                    <p className="mt-0.5 truncate text-sm font-extrabold text-white">
-                      {weather.status === 'ready'
-                        ? weatherDescriptions[weather.weather.weatherCode] ?? 'Météo variable'
-                        : weather.status === 'loading'
-                          ? 'Le ciel se prépare…'
-                          : weather.status === 'tooEarly'
-                            ? 'Prévisions à venir'
-                            : 'Prévisions indisponibles'}
-                    </p>
-                    {weather.status === 'ready' && weather.weather.precipitationProbability !== null && (
-                      <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-sky-950/25 px-2 py-0.5 text-[10px] font-bold text-sky-50/90">
-                        <CloudRain aria-hidden="true" className="size-3" />
-                        Pluie {weather.weather.precipitationProbability}%
-                      </p>
-                    )}
-                  </div>
-                  {weather.status === 'ready' && (
-                    <div className="shrink-0 border-l border-white/20 pl-3 text-right">
-                      <p className="text-3xl font-black leading-none tracking-tight text-white">
-                        {Math.round(weather.weather.temperature)}°
-                      </p>
-                      <p className="mt-1 text-[9px] font-bold uppercase tracking-wider text-sky-100/70">max</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </div>
     </section>

@@ -22,5 +22,6 @@ describe('application security headers', () => {
     expect(csp).toContain("frame-ancestors 'none'")
     expect(csp).toContain("form-action 'self'")
     expect(csp).toContain('https://api.open-meteo.com')
+    expect(csp).toContain('https://geocoding-api.open-meteo.com')
   })
 })

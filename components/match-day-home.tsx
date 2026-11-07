@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import {
+  ArrowDown,
   CalendarDays,
   Check,
   Cloud,
@@ -162,12 +163,10 @@ export function MatchDayHome({
   entries,
   convocations,
   convocationDates,
-  playerCount,
 }: {
   entries: MatchSheetEntry[]
   convocations: Convocation[]
   convocationDates: string[]
-  playerCount: number
 }) {
   const today = localToday()
   const plannedDate = getNextPlannedMatchDate(entries, today)
@@ -228,11 +227,22 @@ export function MatchDayHome({
                 {matchesOnPlannedDate.map((match) => (
                   <div
                     key={`${match.team}-${match.slotColumn}`}
-                    className="flex min-w-0 items-center gap-3 rounded-2xl border border-white/15 bg-white/10 p-3 backdrop-blur-sm"
+                    className={[
+                      'flex min-w-0 items-center gap-3 rounded-2xl border p-3 backdrop-blur-sm',
+                      match.team === 'E1'
+                        ? 'border-sky-300/40 bg-sky-400/15'
+                        : 'border-amber-300/50 bg-amber-400/15',
+                    ].join(' ')}
                   >
-                    <ClubCrest className="size-10 shrink-0 rounded-full ring-2 ring-[#d4af37]" />
+                    <ClubCrest className={[
+                      'size-10 shrink-0 rounded-full ring-2',
+                      match.team === 'E1' ? 'ring-sky-300' : 'ring-amber-300',
+                    ].join(' ')} />
                     <div className="min-w-0">
-                      <p className="text-[9px] font-black uppercase tracking-widest text-[#d4af37]">
+                      <p className={[
+                        'text-[9px] font-black uppercase tracking-widest',
+                        match.team === 'E1' ? 'text-sky-200' : 'text-amber-200',
+                      ].join(' ')}>
                         Équipe {match.team === 'E1' ? '1' : '2'}
                       </p>
                       <p className="break-words text-base font-black leading-tight">
@@ -249,53 +259,110 @@ export function MatchDayHome({
                   </div>
                 ))}
               </div>
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="inline-flex min-h-9 items-center gap-2 rounded-full bg-[#d4af37] px-3 text-xs font-black text-[#172554]">
-                  {hasCallups ? <Check aria-hidden="true" className="size-4" /> : <UsersRound aria-hidden="true" className="size-4" />}
-                  {hasCallups ? `${calledCount} joueur${calledCount === 1 ? '' : 's'} convoqué${calledCount === 1 ? '' : 's'}` : 'Convocations à préparer'}
-                </span>
-                <span className="text-xs font-semibold text-white/75">
-                  {playerCount} joueurs dans l’effectif
-                </span>
+              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                <a
+                  href={`#${matchCalendarId}`}
+                  className="group flex min-h-16 items-center gap-3 rounded-2xl bg-[#d4af37] px-4 py-3 text-[#172554] shadow-md transition hover:-translate-y-0.5 hover:bg-amber-300 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                >
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-[#172554]/10">
+                    {hasCallups ? <Check aria-hidden="true" className="size-5" /> : <UsersRound aria-hidden="true" className="size-5" />}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-black">
+                      {hasCallups ? `${calledCount} joueur${calledCount === 1 ? '' : 's'} convoqué${calledCount === 1 ? '' : 's'}` : 'On prépare l’équipe ?'}
+                    </span>
+                    <span className="mt-0.5 block text-[11px] font-bold text-[#172554]/75">
+                      {hasCallups ? 'Gérer les convocations' : 'Lancer les convocations'}
+                    </span>
+                  </span>
+                  <ArrowDown aria-hidden="true" className="size-4 shrink-0 transition-transform group-hover:translate-y-0.5" />
+                </a>
+                <a
+                  href={`#${matchCalendarId}`}
+                  className="group flex min-h-16 items-center gap-3 rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+                >
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-[#d4af37]">
+                    <CalendarDays aria-hidden="true" className="size-5" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-sm font-black">Le programme du match</span>
+                    <span className="mt-0.5 block text-[11px] font-semibold text-white/70">Voir le calendrier</span>
+                  </span>
+                  <ArrowDown aria-hidden="true" className="size-4 shrink-0 text-white/70 transition-transform group-hover:translate-y-0.5" />
+                </a>
               </div>
             </>
           ) : (
-            <p className="mt-2 max-w-xl text-sm text-white/80">
-              Aucun match à venir n’est planifié.
-              {lastMatchDate && (
-                <> Dernière journée : {new Date(`${lastMatchDate}T12:00:00`).toLocaleDateString('fr-FR', {
-                  day: 'numeric',
-                  month: 'long',
-                  year: 'numeric',
-                })}.</>
-              )}
-            </p>
-          )}
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <a
-              href={`#${matchCalendarId}`}
-              className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#d4af37] px-4 text-sm font-black text-[#172554] shadow transition hover:bg-amber-300"
-            >
-              <CalendarDays aria-hidden="true" className="size-4" />
-              Voir le calendrier
-            </a>
-            {plannedDate && (
-              <div className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-3 text-xs font-semibold text-white/80">
-                {weather.status === 'ready' ? (
-                  <>
-                    <WeatherIcon code={weather.weather.weatherCode} className="size-5 text-[#d4af37]" />
-                    <span>Genech · {weatherDescriptions[weather.weather.weatherCode] ?? 'Météo variable'} · {Math.round(weather.weather.temperature)}°C</span>
-                    {weather.weather.precipitationProbability !== null && (
-                      <span className="text-white/60">· pluie {weather.weather.precipitationProbability}%</span>
-                    )}
-                  </>
-                ) : weather.status === 'loading' ? (
-                  <><CloudSun aria-hidden="true" className="size-5 text-[#d4af37]" /> Météo à Genech…</>
-                ) : weather.status === 'tooEarly' ? (
-                  <><CloudSun aria-hidden="true" className="size-5 text-[#d4af37]" /> Prévisions météo à venir</>
-                ) : (
-                  <><CloudSun aria-hidden="true" className="size-5 text-[#d4af37]" /> Météo temporairement indisponible</>
+            <>
+              <p className="mt-2 max-w-xl text-sm text-white/80">
+                Aucun match à venir n’est planifié.
+                {lastMatchDate && (
+                  <> Dernière journée : {new Date(`${lastMatchDate}T12:00:00`).toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'long',
+                    year: 'numeric',
+                  })}.</>
                 )}
+              </p>
+              <a
+                href={`#${matchCalendarId}`}
+                className="group mt-4 inline-flex min-h-16 items-center gap-3 self-start rounded-2xl border border-white/20 bg-white/10 px-4 py-3 text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-white/15 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+              >
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white/10 text-[#d4af37]">
+                  <CalendarDays aria-hidden="true" className="size-5" />
+                </span>
+                <span>
+                  <span className="block text-sm font-black">Le programme du match</span>
+                  <span className="mt-0.5 block text-[11px] font-semibold text-white/70">Voir le calendrier</span>
+                </span>
+                <ArrowDown aria-hidden="true" className="size-4 transition-transform group-hover:translate-y-0.5" />
+              </a>
+            </>
+          )}
+          <div className="mt-3">
+            {plannedDate && (
+              <div
+                aria-live="polite"
+                className="relative min-w-0 overflow-hidden rounded-2xl border border-white/20 bg-gradient-to-br from-sky-300/20 via-white/10 to-indigo-300/20 p-3 shadow-inner backdrop-blur-sm sm:flex-1"
+              >
+                <div aria-hidden="true" className="pointer-events-none absolute -right-7 -top-9 size-28 rounded-full bg-sky-200/10 blur-2xl" />
+                <div className="relative flex min-w-0 items-center gap-3">
+                  <div className="flex size-12 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 shadow-inner">
+                    {weather.status === 'ready' ? (
+                      <WeatherIcon code={weather.weather.weatherCode} className="size-7 text-amber-300 drop-shadow-[0_0_8px_rgba(253,224,71,0.65)]" />
+                    ) : (
+                      <CloudSun aria-hidden="true" className={`size-7 text-amber-300 ${weather.status === 'loading' ? 'animate-pulse' : ''}`} />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[9px] font-black uppercase tracking-[0.18em] text-sky-100/80">
+                      Météo du match · Genech
+                    </p>
+                    <p className="mt-0.5 truncate text-sm font-extrabold text-white">
+                      {weather.status === 'ready'
+                        ? weatherDescriptions[weather.weather.weatherCode] ?? 'Météo variable'
+                        : weather.status === 'loading'
+                          ? 'Le ciel se prépare…'
+                          : weather.status === 'tooEarly'
+                            ? 'Prévisions à venir'
+                            : 'Prévisions indisponibles'}
+                    </p>
+                    {weather.status === 'ready' && weather.weather.precipitationProbability !== null && (
+                      <p className="mt-1 inline-flex items-center gap-1 rounded-full bg-sky-950/25 px-2 py-0.5 text-[10px] font-bold text-sky-50/90">
+                        <CloudRain aria-hidden="true" className="size-3" />
+                        Pluie {weather.weather.precipitationProbability}%
+                      </p>
+                    )}
+                  </div>
+                  {weather.status === 'ready' && (
+                    <div className="shrink-0 border-l border-white/20 pl-3 text-right">
+                      <p className="text-3xl font-black leading-none tracking-tight text-white">
+                        {Math.round(weather.weather.temperature)}°
+                      </p>
+                      <p className="mt-1 text-[9px] font-bold uppercase tracking-wider text-sky-100/70">max</p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, ContactRound, LogOut, X } from 'lucide-react'
+import { LogOut, X } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import { MatchCallupBreakdown } from '@/components/match-callup-breakdown'
 import { PlayerStats } from '@/components/player-stats'
@@ -22,7 +22,6 @@ import type { CohesionDay } from '@/lib/cohesion'
 import type { PlayerStats as PlayerStat } from '@/lib/stats'
 
 type TabKey = 'roster' | 'educator' | 'players' | 'matches'
-type EducatorSection = 'matches' | 'directory'
 type EducatorAccess = 'checking' | 'unauthenticated' | 'authenticated' | 'unavailable'
 type AccountRole = 'educator' | 'admin' | 'reader'
 type EducatorIdentity = { username: string; displayName: string; role: AccountRole }
@@ -59,7 +58,6 @@ export function DashboardTabs({
 }) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabKey>('matches')
-  const [educatorSection, setEducatorSection] = useState<EducatorSection>('matches')
   const [returnToMatchesAfterLogin, setReturnToMatchesAfterLogin] = useState(false)
   const [educatorAccess, setEducatorAccess] = useState<EducatorAccess>('checking')
   const [educatorIdentity, setEducatorIdentity] = useState<EducatorIdentity | null>(null)
@@ -145,7 +143,6 @@ export function DashboardTabs({
       setApplicationSession('unauthenticated')
       setEducatorAccess('unauthenticated')
       setReturnToMatchesAfterLogin(false)
-      setEducatorSection('matches')
       window.dispatchEvent(new Event('educator-session-changed'))
       router.refresh()
     } catch (error) {
@@ -316,9 +313,6 @@ export function DashboardTabs({
     <>
     {mainHeader}
     <main className="relative z-20 mx-auto flex max-w-7xl flex-col gap-4 px-4 pt-6 pb-24 md:gap-6 md:px-6 md:pt-8 md:pb-24 xl:pb-8">
-    <p className="text-center text-xs text-muted-foreground">
-      Effectifs, convocations et statistiques de l’équipe, selon votre rôle.
-    </p>
     <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm xl:grid xl:grid-cols-[220px_minmax(0,1fr)]">
       <nav aria-label="Statistiques" className="hidden border-b border-border bg-card p-2 xl:block xl:border-r xl:border-b-0 xl:p-3">
         <div className="mx-auto flex max-w-3xl gap-2 rounded-full bg-muted p-1 xl:flex-col xl:rounded-xl">
@@ -356,7 +350,6 @@ export function DashboardTabs({
               entries={matchResults.entries}
               convocations={convocations}
               convocationDates={convocationDates}
-              playerCount={rosterPlayers.length}
             />
             <div id="match-calendar" className="scroll-mt-4">
               <MatchResultEntry
@@ -368,7 +361,7 @@ export function DashboardTabs({
                 trainingAttendance={trainingAttendance}
                 trainingAttendanceError={trainingAttendanceError}
                 onConnect={() => {
-                  setEducatorSection('directory')
+                  setReturnToMatchesAfterLogin(true)
                   setActiveTab('educator')
                 }}
               />
@@ -402,59 +395,12 @@ export function DashboardTabs({
         {activeTab === 'educator' && (
           <div className="flex flex-col gap-4">
             {educatorAccess === 'authenticated' ? (
-              <>
-                <nav aria-label="Rubriques éducateurs" className="grid grid-cols-2 gap-2 rounded-xl border border-accent/50 bg-muted/50 p-1.5">
-                  {([
-                    { key: 'matches' as const, label: 'Matchs', Icon: CalendarDays },
-                    { key: 'directory' as const, label: 'Annuaire & licences', Icon: ContactRound },
-                  ]).map(({ key, label, Icon }) => {
-                    const isActive = educatorSection === key
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        aria-pressed={isActive}
-                        onClick={() => {
-                          setReturnToMatchesAfterLogin(false)
-                          setEducatorSection(key)
-                        }}
-                        className={[
-                          'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
-                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                          isActive
-                            ? 'bg-primary text-primary-foreground shadow-sm'
-                            : 'text-muted-foreground hover:bg-card hover:text-primary',
-                        ].join(' ')}
-                      >
-                        <Icon aria-hidden="true" className="size-4 shrink-0" />
-                        <span>{label}</span>
-                      </button>
-                    )
-                  })}
-                </nav>
-                {educatorSection === 'matches' ? (
-                  <MatchResultEntry
-                    entries={matchResults.entries}
-                    players={rosterPlayers}
-                    playerStats={players}
-                    convocations={convocations}
-                    convocationDates={convocationDates}
-                    trainingAttendance={trainingAttendance}
-                    trainingAttendanceError={trainingAttendanceError}
-                    onConnect={() => {
-                      setReturnToMatchesAfterLogin(true)
-                      setEducatorSection('directory')
-                    }}
-                  />
-                ) : (
-                  <EducatorRoster
-                    initialEducator={educatorIdentity}
-                    photoRevision={profilePhotoRevision}
-                    onSessionStatusChange={handleEducatorAccessChange}
-                    onEducatorChange={handleEducatorChange}
-                  />
-                )}
-              </>
+              <EducatorRoster
+                initialEducator={educatorIdentity}
+                photoRevision={profilePhotoRevision}
+                onSessionStatusChange={handleEducatorAccessChange}
+                onEducatorChange={handleEducatorChange}
+              />
             ) : (
               <EducatorRoster
                 initialEducator={educatorIdentity}
@@ -464,7 +410,7 @@ export function DashboardTabs({
                 onLoginSuccess={() => {
                   if (!returnToMatchesAfterLogin) return
                   setReturnToMatchesAfterLogin(false)
-                  setEducatorSection('matches')
+                  setActiveTab('matches')
                 }}
               />
             )}

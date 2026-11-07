@@ -127,6 +127,23 @@ export function MatchResultEntry({
     return () => window.removeEventListener('educator-session-changed', onSessionChange)
   }, [refreshStatus])
 
+  useEffect(() => {
+    if (!open) return
+    const previousOverflow = document.body.style.overflow
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !pending) {
+        setOpen(false)
+        setEditingSlot(null)
+      }
+    }
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [open, pending])
+
   const monthEntries = useMemo(
     () => entries.filter((entry) => dateInputValue(entry.date).slice(0, 7) === month),
     [entries, month],
@@ -283,8 +300,8 @@ export function MatchResultEntry({
               <h2 id="match-entry-title" className="text-sm font-black text-white sm:text-base">Calendrier &amp; résultats</h2>
             </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2">
-            <label className="relative flex min-h-11 items-center rounded-xl border-2 border-[#d4af37] bg-white/10 shadow-sm transition hover:bg-white/15 focus-within:ring-2 focus-within:ring-[#d4af37]/60">
+          <div className="flex w-full min-w-0 items-center gap-2 sm:w-auto sm:shrink-0">
+            <label className="relative flex min-h-10 min-w-0 flex-1 items-center rounded-xl border-2 border-[#d4af37] bg-white/10 shadow-sm transition hover:bg-white/15 focus-within:ring-2 focus-within:ring-[#d4af37]/60 sm:min-h-11 sm:flex-none">
               <CalendarDays aria-hidden="true" className="pointer-events-none absolute left-3 size-4 text-[#d4af37]" />
               <select
                 aria-label="Mois"
@@ -293,7 +310,7 @@ export function MatchResultEntry({
                   setMonth(event.target.value)
                   setExpandedDayDate(null)
                 }}
-                className="h-10 min-w-36 appearance-none bg-transparent py-1 pl-9 pr-9 text-sm font-black text-white outline-none sm:min-w-40"
+                className="h-9 min-w-0 w-full appearance-none bg-transparent py-1 pl-9 pr-8 text-xs font-black text-white outline-none sm:h-10 sm:min-w-40 sm:w-auto sm:pr-9 sm:text-sm"
               >
                 {MATCH_SEASON_MONTHS.map(({ value, label }) => (
                   <option key={value} value={value} className="bg-[#172554] text-white">{label}</option>
@@ -306,11 +323,12 @@ export function MatchResultEntry({
                 type="button"
                 disabled={pending || pendingDeletion !== null}
                 onClick={startNew}
-                className="group inline-flex min-h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-xl border border-amber-200/70 bg-gradient-to-r from-[#f4d45e] via-[#d4af37] to-[#f4d45e] px-3.5 text-xs font-black text-blue-950 shadow-md transition duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#172554] active:translate-y-0 sm:min-h-11 sm:px-5 sm:text-sm"
+                className="group inline-flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl border border-amber-200/70 bg-gradient-to-r from-[#f4d45e] via-[#d4af37] to-[#f4d45e] px-2.5 text-[11px] font-black text-blue-950 shadow-md transition duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#172554] active:translate-y-0 sm:min-h-11 sm:gap-2 sm:px-5 sm:text-sm"
               >
                 <CalendarPlus aria-hidden="true" className="size-4 transition-transform duration-200 group-hover:rotate-[-8deg] sm:size-[18px]" />
-                <span>Planifier un match</span>
-                <Sparkles aria-hidden="true" className="size-3.5 text-blue-950/70 transition-transform duration-200 group-hover:scale-125 sm:size-4" />
+                <span className="sm:hidden">Planifier</span>
+                <span className="hidden sm:inline">Planifier un match</span>
+                <Sparkles aria-hidden="true" className="hidden size-3.5 text-blue-950/70 transition-transform duration-200 group-hover:scale-125 sm:inline sm:size-4" />
               </button>
             )}
           </div>
@@ -339,104 +357,149 @@ export function MatchResultEntry({
       {error && <p role="alert" className="mt-3 text-sm font-semibold text-destructive">{error}</p>}
 
       {open && canManage && (
-        <form onSubmit={save} className="mt-4 grid min-w-0 grid-cols-2 gap-3 border-t border-border pt-4">
-          <div className="col-span-2 flex min-w-0 items-center justify-between gap-2 rounded-xl border border-[#d4af37]/40 bg-gradient-to-r from-[#172554]/5 to-amber-50/80 p-2">
-            <h3 className="min-w-0 text-sm font-black text-[#172554] sm:text-base">
-              {editingSlot === null ? 'Planifier un match' : 'Modifier ce match'}
-            </h3>
-            <div className="flex shrink-0 items-center gap-1.5">
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-[#08132f]/65 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !pending) {
+              setOpen(false)
+              setEditingSlot(null)
+            }
+          }}
+        >
+          <form
+            onSubmit={save}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="match-form-title"
+            className="flex max-h-[94dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-3xl border border-[#d4af37]/60 bg-card shadow-2xl sm:rounded-3xl"
+          >
+            <header className="flex shrink-0 items-center justify-between gap-3 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-4 py-3 text-white">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <ClubCrest className="size-9 shrink-0 ring-2 ring-[#d4af37]" />
+                <div className="min-w-0">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-[#d4af37]">ES Genech · U11</p>
+                  <h3 id="match-form-title" className="truncate text-sm font-black sm:text-base">
+                    {editingSlot === null ? 'Planifier un match' : 'Modifier ce match'}
+                  </h3>
+                </div>
+              </div>
               <button
                 type="button"
                 disabled={pending}
                 onClick={() => { setOpen(false); setEditingSlot(null) }}
-                className="inline-flex min-h-9 items-center justify-center gap-1 rounded-lg border border-[#172554]/15 bg-white px-2.5 text-xs font-bold text-[#172554] transition hover:bg-slate-50 disabled:opacity-50"
+                aria-label="Fermer la fenêtre"
+                className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 transition hover:bg-white/20 disabled:opacity-50"
               >
-                <X aria-hidden="true" className="size-3.5" />
-                Fermer
+                <X aria-hidden="true" className="size-5" />
+              </button>
+            </header>
+            <div className="grid min-h-0 grid-cols-2 gap-3 overflow-y-auto p-4">
+              <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554]">
+                Équipe
+                <select disabled={editingSlot !== null} value={draft.team} onChange={(event) => setDraft({ ...draft, team: event.target.value as Draft['team'] })} className={inputClass}>
+                  <option value="E1">Équipe 1</option>
+                  <option value="E2">Équipe 2</option>
+                </select>
+              </label>
+              <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554]">
+                <span className="flex items-center gap-1"><CalendarDays aria-hidden="true" className="size-3.5 text-[#b58b00]" /> Date</span>
+                <input
+                  type="date"
+                  required
+                  min={MATCH_SEASON_START}
+                  max={MATCH_SEASON_END}
+                  value={draft.date}
+                  onChange={(event) => setDraft({ ...draft, date: event.target.value })}
+                  className={dateTimeInputClass}
+                />
+              </label>
+              <label className="col-span-2 flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554]">
+                Adversaire
+                <input required maxLength={80} value={draft.opponent} onChange={(event) => setDraft({ ...draft, opponent: event.target.value })} className={inputClass} />
+              </label>
+              <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554]">
+                Type de match
+                <select value={draft.competition} onChange={(event) => setDraft({ ...draft, competition: event.target.value })} className={inputClass}>
+                  <option>Championnat</option><option>Amical</option><option>Tournoi</option><option>Plateau</option>
+                </select>
+              </label>
+              <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554]">
+                Lieu
+                <select value={draft.homeAway} onChange={(event) => setDraft({ ...draft, homeAway: event.target.value })} className={inputClass}>
+                  <option value="Domicile">Domicile</option><option value="Extérieur">Extérieur</option><option value="Terrain neutre">Terrain neutre</option>
+                </select>
+              </label>
+              <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554]">
+                <span className="flex items-center gap-1"><Clock3 aria-hidden="true" className="size-3.5 text-[#b58b00]" /> Heure (facultative)</span>
+                <input
+                  type="time"
+                  value={draft.kickoffTime}
+                  onChange={(event) => setDraft({ ...draft, kickoffTime: event.target.value })}
+                  className={dateTimeInputClass}
+                />
+              </label>
+              <fieldset className="col-span-2 flex min-w-0 items-end gap-3">
+                <legend className="mb-1 text-xs font-bold text-[#172554]">Score (facultatif)</legend>
+                <label className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-xl border border-[#172554]/15 bg-[#172554]/5 px-3 py-2 text-xs font-semibold text-[#172554]">
+                  ESG
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]{1,2}"
+                    maxLength={2}
+                    value={draft.goalsFor}
+                    onChange={(event) => setDraft({ ...draft, goalsFor: event.target.value.replace(/\D/g, '').slice(0, 2) })}
+                    aria-label="Buts ESG"
+                    className="h-10 w-14 rounded-lg border border-[#d4af37]/60 bg-white text-center font-mono text-lg font-black text-[#172554] outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+                  />
+                </label>
+                <span className="pb-3 font-black text-[#d4af37]">–</span>
+                <label className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-xl border border-amber-400/30 bg-amber-50 px-3 py-2 text-xs font-semibold text-[#172554]">
+                  ADV
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]{1,2}"
+                    maxLength={2}
+                    value={draft.goalsAgainst}
+                    onChange={(event) => setDraft({ ...draft, goalsAgainst: event.target.value.replace(/\D/g, '').slice(0, 2) })}
+                    aria-label="Buts adversaire"
+                    className="h-10 w-14 rounded-lg border border-[#d4af37]/60 bg-white text-center font-mono text-lg font-black text-[#172554] outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+                  />
+                </label>
+              </fieldset>
+              <label className="col-span-2 flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554]">
+                Résultat
+                <select value={draft.resultLabel} onChange={(event) => setDraft({ ...draft, resultLabel: event.target.value })} className={inputClass}>
+                  <option value="">À jouer / aucun résultat</option>
+                  {MATCH_RESULT_STATUSES.map((label) => <option key={label} value={label}>{label}</option>)}
+                </select>
+              </label>
+              <div className="col-span-2 space-y-2">
+                {error && <p role="alert" className="text-xs font-semibold text-destructive">{error}</p>}
+                <p className="text-[11px] text-muted-foreground">Pour planifier : laisse le score et le résultat vides.</p>
+              </div>
+            </div>
+            <footer className="flex shrink-0 gap-2 border-t border-[#172554]/10 bg-background/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => { setOpen(false); setEditingSlot(null) }}
+                className="min-h-11 flex-1 rounded-xl border border-[#172554]/15 px-4 text-sm font-bold text-[#172554] disabled:opacity-50"
+              >
+                Annuler
               </button>
               <button
                 type="submit"
                 disabled={pending || pendingDeletion !== null}
-                aria-label={pending ? 'Enregistrement en cours' : 'Enregistrer le match'}
-                className="inline-flex min-h-9 items-center justify-center gap-1 rounded-lg bg-[#172554] px-2.5 text-xs font-black text-white shadow-sm transition hover:bg-blue-900 disabled:opacity-50"
+                className="inline-flex min-h-11 flex-[1.5] items-center justify-center gap-2 rounded-xl bg-[#172554] px-4 text-sm font-black text-white shadow-md transition hover:bg-blue-900 disabled:opacity-50"
               >
-                <Save aria-hidden="true" className="size-3.5 text-[#d4af37]" />
-                {pending ? '…' : 'Enregistrer'}
+                <Save aria-hidden="true" className="size-4 text-[#d4af37]" />
+                {pending ? 'Enregistrement…' : editingSlot === null ? 'Planifier' : 'Enregistrer'}
               </button>
-            </div>
-          </div>
-          <label className="flex min-w-0 flex-col gap-1 text-sm font-semibold">
-            Équipe
-            <select disabled={editingSlot !== null} value={draft.team} onChange={(event) => setDraft({ ...draft, team: event.target.value as Draft['team'] })} className={inputClass}>
-              <option value="E1">Équipe 1</option>
-              <option value="E2">Équipe 2</option>
-            </select>
-          </label>
-          <label className="flex min-w-0 flex-col gap-1 rounded-xl border border-[#d4af37]/60 bg-gradient-to-br from-amber-50 to-white p-2 text-xs font-black uppercase tracking-wide text-[#172554]">
-            <span className="flex items-center gap-1.5"><CalendarDays aria-hidden="true" className="size-3.5 text-[#b58b00]" /> Date du match</span>
-            <input
-              type="date"
-              required
-              min={MATCH_SEASON_START}
-              max={MATCH_SEASON_END}
-              value={draft.date}
-              onChange={(event) => setDraft({ ...draft, date: event.target.value })}
-              className={dateTimeInputClass}
-            />
-          </label>
-          <label className="flex min-w-0 flex-col gap-1 rounded-xl border border-[#172554]/15 bg-[#172554]/5 p-2 text-xs font-black uppercase tracking-wide text-[#172554]">
-            <span className="flex items-center gap-1.5"><Clock3 aria-hidden="true" className="size-3.5 text-[#b58b00]" /> Heure</span>
-            <input
-              type="time"
-              value={draft.kickoffTime}
-              onChange={(event) => setDraft({ ...draft, kickoffTime: event.target.value })}
-              className={dateTimeInputClass}
-            />
-          </label>
-          <label className="col-span-2 flex min-w-0 flex-col gap-1 text-sm font-semibold">
-            Adversaire
-            <input required maxLength={80} value={draft.opponent} onChange={(event) => setDraft({ ...draft, opponent: event.target.value })} className={inputClass} />
-          </label>
-          <label className="flex min-w-0 flex-col gap-1 text-sm font-semibold">
-            Type de match
-            <select value={draft.competition} onChange={(event) => setDraft({ ...draft, competition: event.target.value })} className={inputClass}>
-              <option>Championnat</option><option>Amical</option><option>Tournoi</option><option>Plateau</option>
-            </select>
-          </label>
-          <label className="flex min-w-0 flex-col gap-1 text-sm font-semibold">
-            Lieu
-            <select value={draft.homeAway} onChange={(event) => setDraft({ ...draft, homeAway: event.target.value })} className={inputClass}>
-              <option value="Domicile">Domicile</option><option value="Extérieur">Extérieur</option><option value="Terrain neutre">Terrain neutre</option>
-            </select>
-          </label>
-          <div className="col-span-2 grid grid-cols-2 gap-3">
-            <label className="flex min-w-0 flex-col gap-1 text-sm font-semibold">
-              Buts ESG
-              <input type="number" min="0" max="50" step="1" value={draft.goalsFor} onChange={(event) => setDraft({ ...draft, goalsFor: event.target.value })} className={inputClass} />
-            </label>
-            <label className="flex flex-col gap-1 text-sm font-semibold">
-              Buts adversaire
-              <input type="number" min="0" max="50" step="1" value={draft.goalsAgainst} onChange={(event) => setDraft({ ...draft, goalsAgainst: event.target.value })} className={inputClass} />
-            </label>
-          </div>
-          <label className="col-span-2 flex min-w-0 flex-col gap-1 text-sm font-semibold">
-            Résultat à inscrire dans le Sheet
-            <select value={draft.resultLabel} onChange={(event) => setDraft({ ...draft, resultLabel: event.target.value })} className={inputClass}>
-              <option value="">À jouer / aucun résultat</option>
-              {MATCH_RESULT_STATUSES.map((label) => <option key={label} value={label}>{label}</option>)}
-            </select>
-          </label>
-          <p className="col-span-2 text-xs text-muted-foreground">
-            Saisis les deux scores et choisis Gagné, Nul ou Perdu. Pour un match à venir, laisse score et résultat vides.
-          </p>
-          <div className="col-span-2 flex flex-wrap gap-2">
-            <button type="submit" disabled={pending || pendingDeletion !== null} className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-60">
-              <Save aria-hidden="true" className="size-4" />
-              {pending ? 'Enregistrement…' : editingSlot === null ? 'Ajouter au calendrier' : 'Enregistrer les modifications'}
-            </button>
-            <button type="button" disabled={pending} onClick={() => { setOpen(false); setEditingSlot(null) }} className="min-h-10 rounded-xl px-3 text-sm font-semibold text-muted-foreground">Annuler</button>
-          </div>
-        </form>
+            </footer>
+          </form>
+        </div>
       )}
 
       {canManage && matchLineups.error && (

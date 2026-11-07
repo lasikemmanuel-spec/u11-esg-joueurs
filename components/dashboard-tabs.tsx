@@ -14,9 +14,10 @@ import { EducatorAvatar } from '@/components/educator-avatar'
 import { EducatorProfilePhotoEditor } from '@/components/educator-profile-photo-editor'
 import { RefreshSheetButton } from '@/components/refresh-sheet-button'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { LiveMatchConsole } from '@/components/live-match-console'
 import type { Convocation } from '@/lib/convocations'
 import type { PublicPlayer } from '@/lib/players'
-import type { TeamMatchResults } from '@/lib/match-results'
+import type { MatchSheetEntry, TeamMatchResults } from '@/lib/match-results'
 import type { TrainingAttendanceSession } from '@/lib/training-attendance'
 import type { CohesionDay } from '@/lib/cohesion'
 import type { PlayerStats as PlayerStat } from '@/lib/stats'
@@ -33,6 +34,35 @@ type EducatorAccess = 'checking' | 'unauthenticated' | 'authenticated' | 'unavai
 type AccountRole = 'educator' | 'admin' | 'reader'
 type EducatorIdentity = { username: string; displayName: string; role: AccountRole }
 type ApplicationSession = 'checking' | 'unauthenticated' | 'authenticated' | 'unavailable'
+type ActiveLiveMatch = {
+  match: MatchSheetEntry
+  phase: 'firstHalf' | 'halftime' | 'secondHalf' | 'finished'
+}
+
+const EMPTY_PLAYER_NUMBERS: number[] = []
+
+function isMatchSheetEntry(value: unknown): value is MatchSheetEntry {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
+  const entry = value as Record<string, unknown>
+  return (entry.team === 'E1' || entry.team === 'E2') &&
+    typeof entry.date === 'string' &&
+    typeof entry.slotColumn === 'number' &&
+    Number.isSafeInteger(entry.slotColumn) &&
+    typeof entry.opponent === 'string' &&
+    typeof entry.competition === 'string' &&
+    typeof entry.homeAway === 'string' &&
+    typeof entry.kickoffTime === 'string' &&
+    typeof entry.resultLabel === 'string' &&
+    (typeof entry.goalsFor === 'number' || entry.goalsFor === null) &&
+    (typeof entry.goalsAgainst === 'number' || entry.goalsAgainst === null)
+}
+
+function isActiveLiveMatch(value: unknown): value is ActiveLiveMatch {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
+  const liveMatch = value as Record<string, unknown>
+  return isMatchSheetEntry(liveMatch.match) &&
+    ['firstHalf', 'halftime', 'secondHalf', 'finished'].includes(String(liveMatch.phase))
+}
 
 export function DashboardTabs({
   players,
@@ -68,6 +98,9 @@ export function DashboardTabs({
   const [statsSection, setStatsSection] = useState<StatsSection>('players')
   const [matchFocuses, setMatchFocuses] = useState<Partial<Record<'E1' | 'E2', MatchFocus>>>({})
   const [activeMatchTeam, setActiveMatchTeam] = useState<'E1' | 'E2' | null>(null)
+  const [liveMatches, setLiveMatches] = useState<ActiveLiveMatch[]>([])
+  const [liveMatchToOpen, setLiveMatchToOpen] = useState<MatchSheetEntry | null>(null)
+  const [liveMatchError, setLiveMatchError] = useState('')
   const matchFocusSequence = useRef(0)
   const [returnToMatchesAfterLogin, setReturnToMatchesAfterLogin] = useState(false)
   const [educatorAccess, setEducatorAccess] = useState<EducatorAccess>('checking')
@@ -111,6 +144,41 @@ export function DashboardTabs({
       })
     return () => { active = false }
   }, [])
+
+  useEffect(() => {
+    if (educatorAccess !== 'authenticated') {
+      setLiveMatches([])
+      setLiveMatchError('')
+      return
+    }
+
+    let active = true
+    const loadLiveMatches = () => {
+      fetch('/api/educators/live-match?active=1', { cache: 'no-store' })
+        .then(async (response) => {
+          const result = await response.json() as { error?: string; matches?: unknown }
+          if (!response.ok) throw new Error(result.error ?? 'Impossible de charger les matchs en direct.')
+          if (!Array.isArray(result.matches) || !result.matches.every(isActiveLiveMatch)) {
+            throw new Error('La liste des matchs en direct reçue est invalide.')
+          }
+          if (active) {
+            setLiveMatches(result.matches)
+            setLiveMatchError('')
+          }
+        })
+        .catch((error: unknown) => {
+          if (!active) return
+          setLiveMatchError(error instanceof Error ? error.message : 'Impossible de charger les matchs en direct.')
+        })
+    }
+
+    loadLiveMatches()
+    const interval = window.setInterval(loadLiveMatches, 30_000)
+    return () => {
+      active = false
+      window.clearInterval(interval)
+    }
+  }, [educatorAccess])
 
   const handleLogin = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -499,9 +567,47 @@ export function DashboardTabs({
         </div>
       </nav>
 
-      {quickMatches.length > 0 && activeTab !== 'matches' && (
+      {(liveMatches.length > 0 || quickMatches.length > 0 && activeTab !== 'matches') && (
         <div className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-3 z-40 flex max-w-[calc(100vw-1.5rem)] flex-col items-end gap-2 xl:bottom-6">
-          {quickMatches.map(({ entry, focus }) => {
+          {liveMatches.map(({ match, phase }) => {
+            const entry = match
+            const isE1 = entry.team === 'E1'
+            const phaseLabel = phase === 'finished'
+              ? 'Récapitulatif à valider'
+              : phase === 'halftime'
+                ? 'Reprendre après la mi-temps'
+                : 'Reprendre le direct'
+            return (
+              <button
+                key={`live-${entry.team}-${entry.slotColumn}-${entry.date}`}
+                type="button"
+                onClick={() => setLiveMatchToOpen(entry)}
+                aria-label={`${phaseLabel} · Équipe ${isE1 ? '1' : '2'} contre ${entry.opponent || 'adversaire'}`}
+                className={[
+                  'inline-flex min-h-11 max-w-full items-center gap-2 rounded-full border px-3 py-2 text-left text-white shadow-xl transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
+                  isE1
+                    ? 'border-sky-300/70 bg-gradient-to-r from-[#172554] to-blue-900'
+                    : 'border-amber-300/70 bg-gradient-to-r from-[#422006] to-amber-800',
+                ].join(' ')}
+              >
+                <span className={[
+                  'flex size-7 shrink-0 items-center justify-center rounded-full',
+                  isE1 ? 'bg-sky-300/20 text-sky-200' : 'bg-amber-300/20 text-amber-200',
+                ].join(' ')}>
+                  <Radio aria-hidden="true" className="size-4" />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[10px] font-black uppercase tracking-wide">
+                    Direct · Équipe {isE1 ? '1' : '2'}
+                  </span>
+                  <span className="block max-w-52 truncate text-[10px] font-semibold text-white/75">
+                    {entry.opponent || 'Adversaire'} · {phaseLabel}
+                  </span>
+                </span>
+              </button>
+            )
+          })}
+          {activeTab !== 'matches' && quickMatches.map(({ entry, focus }) => {
             const isE1 = entry.team === 'E1'
             return (
               <button
@@ -541,6 +647,29 @@ export function DashboardTabs({
             )
           })}
         </div>
+      )}
+      {liveMatchError && educatorAccess === 'authenticated' && (
+        <p role="status" className="fixed right-3 bottom-[calc(9rem+env(safe-area-inset-bottom))] z-40 max-w-[calc(100vw-1.5rem)] rounded-lg bg-rose-950 px-3 py-2 text-xs font-semibold text-white shadow-lg xl:bottom-20">
+          {liveMatchError}
+        </p>
+      )}
+      {liveMatchToOpen && (
+        <LiveMatchConsole
+          match={liveMatchToOpen}
+          players={rosterPlayers}
+          starters={EMPTY_PLAYER_NUMBERS}
+          substitutes={EMPTY_PLAYER_NUMBERS}
+          onClose={() => setLiveMatchToOpen(null)}
+          onFinalized={() => {
+            setLiveMatches((current) => current.filter((entry) =>
+              entry.match.team !== liveMatchToOpen.team ||
+              entry.match.slotColumn !== liveMatchToOpen.slotColumn ||
+              entry.match.date !== liveMatchToOpen.date,
+            ))
+            setLiveMatchToOpen(null)
+            router.refresh()
+          }}
+        />
       )}
 
       {profilePhotoOpen && educatorIdentity && (

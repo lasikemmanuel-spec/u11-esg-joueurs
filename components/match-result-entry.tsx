@@ -378,7 +378,7 @@ export function MatchResultEntry({
           const dayContentId = `match-day-${date}`
           return (
             <article key={date} className="overflow-visible rounded-2xl border border-[#172554]/15 bg-background shadow-sm">
-              <header className={`flex flex-wrap items-center justify-between gap-2 border-b border-[#d4af37]/50 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-4 py-3 ${isExpanded ? 'rounded-t-2xl' : 'rounded-2xl'}`}>
+              <header className={`flex flex-col gap-3 border-b border-[#d4af37]/50 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-4 py-3 sm:flex-row sm:items-center sm:justify-between ${isExpanded ? 'rounded-t-2xl' : 'rounded-2xl'}`}>
                 <button
                   type="button"
                   aria-expanded={isExpanded}
@@ -389,7 +389,7 @@ export function MatchResultEntry({
                     else next.add(date)
                     return next
                   })}
-                  className="flex min-w-0 flex-1 items-center gap-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d4af37]"
+                  className="flex w-full min-w-0 flex-1 items-center gap-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d4af37]"
                 >
                   <ChevronDown aria-hidden="true" className={`size-4 shrink-0 text-[#d4af37] transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
                   <ClubCrest className="size-8 shrink-0 rounded-full ring-2 ring-[#d4af37]/80 shadow-sm" />
@@ -414,7 +414,7 @@ export function MatchResultEntry({
                     aria-expanded={openCallupDate === date}
                     onClick={() => setOpenCallupDate((current) => current === date ? '' : date)}
                     className={[
-                      'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl px-4 text-xs font-black sm:text-sm',
+                      'inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-xs font-black sm:w-auto sm:text-sm',
                       hasConvocations
                         ? 'bg-emerald-500 text-white shadow'
                         : 'bg-[#d4af37] text-blue-950 shadow hover:bg-amber-300',
@@ -489,24 +489,24 @@ export function MatchResultEntry({
                         )}
                       </div>
                       {/* Corps */}
-                      <div className="flex items-center justify-between gap-2 px-3 py-2">
+                      <div className="flex flex-col gap-2 px-3 py-2 sm:flex-row sm:items-center sm:justify-between">
                         {/* Gauche : nom + pills */}
                         <div className="min-w-0 flex-1">
-                          <h4 className="truncate text-base font-black leading-tight text-foreground">
+                          <h4 className="break-words text-base font-black leading-tight text-foreground">
                             {entry.opponent || 'À préciser'}
                           </h4>
-                          <div className="mt-1 flex flex-nowrap gap-1 overflow-hidden">
-                            <span className="inline-flex shrink-0 items-center rounded-full border border-border bg-background px-2 py-px text-[10px] font-semibold text-foreground">
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            <span className="inline-flex items-center rounded-full border border-border bg-background px-2 py-px text-[10px] font-semibold text-foreground">
                               {entry.competition || 'Type ?'}
                             </span>
-                            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-border bg-background px-2 py-px text-[10px] font-semibold text-foreground">
+                            <span className="inline-flex items-center gap-0.5 rounded-full border border-border bg-background px-2 py-px text-[10px] font-semibold text-foreground">
                               <span>{homeAwayIcon}</span>
                               <span>{entry.homeAway || 'Lieu ?'}</span>
                             </span>
                           </div>
                         </div>
                         {/* Droite : score */}
-                        <div className="flex shrink-0 flex-col items-end gap-0.5">
+                        <div className="flex shrink-0 flex-col items-end gap-0.5 self-end sm:self-auto">
                           {resultLabel && (
                             <span className="text-[10px] font-bold text-muted-foreground">{resultLabel}</span>
                           )}

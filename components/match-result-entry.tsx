@@ -436,7 +436,7 @@ export function MatchResultEntry({
                 </select>
               </label>
               <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554]">
-                <span className="flex items-center gap-1"><Clock3 aria-hidden="true" className="size-3.5 text-[#b58b00]" /> Heure (facultative)</span>
+                <span className="flex items-center gap-1"><Clock3 aria-hidden="true" className="size-3.5 text-[#b58b00]" /> Heure</span>
                 <input
                   type="time"
                   value={draft.kickoffTime}
@@ -445,7 +445,7 @@ export function MatchResultEntry({
                 />
               </label>
               <fieldset className="col-span-2 flex min-w-0 items-end gap-3">
-                <legend className="mb-1 text-xs font-bold text-[#172554]">Score (facultatif)</legend>
+                <legend className="mb-1 text-xs font-bold text-[#172554]">Score</legend>
                 <label className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-xl border border-[#172554]/15 bg-[#172554]/5 px-3 py-2 text-xs font-semibold text-[#172554]">
                   ESG
                   <input
@@ -460,8 +460,8 @@ export function MatchResultEntry({
                   />
                 </label>
                 <span className="pb-3 font-black text-[#d4af37]">–</span>
-                <label className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-xl border border-amber-400/30 bg-amber-50 px-3 py-2 text-xs font-semibold text-[#172554]">
-                  ADV
+                <label className="flex min-w-0 flex-1 items-center justify-between gap-1.5 rounded-xl border border-amber-400/30 bg-amber-50 px-2.5 py-2 text-[11px] font-semibold text-[#172554] sm:gap-2 sm:px-3 sm:text-xs">
+                  Adversaire
                   <input
                     type="text"
                     inputMode="numeric"

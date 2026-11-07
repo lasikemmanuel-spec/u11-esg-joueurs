@@ -9,7 +9,6 @@ import { ClubCrest } from '@/components/club-crest'
 import type { MatchSheetEntry } from '@/lib/match-results'
 import type { Convocation } from '@/lib/convocations'
 import { MATCH_RESULT_STATUSES } from '@/lib/match-result-options'
-import { getDefaultExpandedMatchDate } from '@/lib/match-day-display'
 import type { PublicPlayer } from '@/lib/players'
 import type { PlayerStats } from '@/lib/stats'
 import type { TrainingAttendanceSession } from '@/lib/training-attendance'
@@ -103,7 +102,7 @@ export function MatchResultEntry({
   const [editingSlot, setEditingSlot] = useState<number | null>(null)
   const [openCallupDate, setOpenCallupDate] = useState('')
   const [expandedDayDate, setExpandedDayDate] = useState<string | null>(null)
-  const [collapsedMatchKeys, setCollapsedMatchKeys] = useState<Set<string>>(() => new Set())
+  const [expandedMatchKeys, setExpandedMatchKeys] = useState<Set<string>>(() => new Set())
   const [open, setOpen] = useState(false)
   const [pending, setPending] = useState(false)
   const [pendingDeletion, setPendingDeletion] = useState<string | null>(null)
@@ -159,16 +158,6 @@ export function MatchResultEntry({
       .sort(([dateA], [dateB]) => dateB.localeCompare(dateA))
       .map(([date, matches]) => ({ date, matches }))
   }, [monthEntries])
-  const defaultExpandedDate = getDefaultExpandedMatchDate(
-    dayEntries.map((day) => day.date),
-    localToday(),
-    dayEntries
-      .filter(({ matches }) => matches.some((entry) =>
-        !entry.resultLabel && entry.goalsFor === null && entry.goalsAgainst === null,
-      ))
-      .map(({ date }) => date),
-    month,
-  )
   const completedConvocationDates = useMemo(() => new Set(
     convocationDates
       .map(dateInputValue)
@@ -520,7 +509,7 @@ export function MatchResultEntry({
           const isSaturday = new Date(`${date}T12:00:00`).getDay() === 6
           const canScheduleCallup = canManage && isSaturday && matches.some((entry) => entry.resultLabel !== 'Annulé')
           const hasConvocations = completedConvocationDates.has(date)
-          const isExpanded = (expandedDayDate ?? defaultExpandedDate) === date
+          const isExpanded = expandedDayDate === date
           const dayContentId = `match-day-${date}`
           return (
             <article key={date} className="overflow-visible rounded-2xl border border-[#172554]/15 bg-background shadow-sm">
@@ -530,8 +519,7 @@ export function MatchResultEntry({
                   aria-expanded={isExpanded}
                   aria-controls={dayContentId}
                   onClick={() => setExpandedDayDate((current) => {
-                    const currentExpandedDate = current ?? defaultExpandedDate
-                    return currentExpandedDate === date ? '' : date
+                    return current === date ? null : date
                   })}
                   className="flex w-full min-w-0 items-center gap-2.5 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d4af37]"
                 >
@@ -605,7 +593,7 @@ export function MatchResultEntry({
                   const resultLabel = isPlayed && result ? result : null
                   const matchKey = entry.team + '-' + entry.slotColumn
                   const matchPanelId = `match-details-${date}-${entry.team}-${entry.slotColumn}`
-                  const isMatchExpanded = !collapsedMatchKeys.has(matchKey)
+                  const isMatchExpanded = expandedMatchKeys.has(matchKey)
                   const scoreBg = result === 'Gagné'
                     ? 'bg-emerald-500 text-white'
                     : result === 'Perdu'
@@ -640,7 +628,7 @@ export function MatchResultEntry({
                           type="button"
                           aria-expanded={isMatchExpanded}
                           aria-controls={matchPanelId}
-                          onClick={() => setCollapsedMatchKeys((current) => {
+                          onClick={() => setExpandedMatchKeys((current) => {
                             const next = new Set(current)
                             if (next.has(matchKey)) next.delete(matchKey)
                             else next.add(matchKey)

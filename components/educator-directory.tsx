@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Pencil, Plus, Save, Trash2, UserRoundPlus, X } from 'lucide-react'
+import { Pencil, Save, Trash2, X } from 'lucide-react'
 import { EducatorAvatar } from '@/components/educator-avatar'
 import { ClubCrest } from '@/components/club-crest'
 import { PhoneActionButtons } from '@/components/phone-action-buttons'
@@ -17,7 +17,7 @@ export function EducatorDirectory({
   canAdd = canEdit,
   searchQuery,
   searchTitle,
-  showAddButton = true,
+  addRequest = 0,
   currentEducator,
   photoRevision = 0,
 }: {
@@ -25,7 +25,7 @@ export function EducatorDirectory({
   canAdd?: boolean
   searchQuery?: string
   searchTitle?: string
-  showAddButton?: boolean
+  addRequest?: number
   currentEducator?: { username: string; displayName: string; role: 'educator' | 'admin' | 'reader' }
   photoRevision?: number
 }) {
@@ -83,6 +83,15 @@ export function EducatorDirectory({
   }, [])
 
   useEffect(() => { void load().catch((reason) => setError(reason instanceof Error ? reason.message : 'Impossible de charger l’annuaire.')) }, [load])
+
+  useEffect(() => {
+    if (addRequest > 0 && canAdd) {
+      setDraft(blank)
+      setEditingOwn(false)
+      setError('')
+      setOpen(true)
+    }
+  }, [addRequest, canAdd])
 
   useEffect(() => {
     setIsPhoneDevice(/iPhone|iPod|Android.*Mobile|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(navigator.userAgent))
@@ -169,34 +178,17 @@ export function EducatorDirectory({
 
   return (
     <section
-      aria-labelledby={isSearching ? undefined : 'educator-directory-title'}
+      aria-label={isSearching ? undefined : 'Annuaire des éducateurs'}
       className={isSearching ? '' : 'rounded-2xl border border-accent/50 bg-card p-2.5 shadow-sm sm:p-4'}
     >
       {!isSearching && (
-      <div className="flex flex-wrap items-center justify-end gap-2 rounded-xl bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] p-2 text-white shadow-sm sm:justify-between sm:gap-3 sm:rounded-2xl sm:p-4">
+      <div className="hidden flex-wrap items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] p-4 text-white shadow-sm sm:flex">
         <div className="flex min-w-0 items-center gap-3">
-          <ClubCrest className="hidden size-10 shrink-0 ring-2 ring-amber-400/80 shadow-md sm:block" />
+          <ClubCrest className="size-10 shrink-0 ring-2 ring-amber-400/80 shadow-md" />
           <div>
-            <h2 id="educator-directory-title" className="sr-only text-lg font-black tracking-wide text-white sm:not-sr-only">Annuaire des éducateurs</h2>
-            <p className="mt-0.5 hidden text-xs text-blue-200 sm:block">Coordonnées et licences de l’encadrement ESG</p>
+            <h2 className="text-lg font-black tracking-wide text-white">Annuaire des éducateurs</h2>
+            <p className="mt-0.5 text-xs text-blue-200">Coordonnées et licences de l’encadrement ESG</p>
           </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {canAdd && showAddButton && (
-            <button
-              type="button"
-              onClick={() => { setDraft(blank); setEditingOwn(false); setError(''); setOpen(true) }}
-              aria-label="Ajouter un éducateur"
-              className="inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-xl bg-amber-400 px-3 text-xs font-black text-blue-950 shadow-sm transition hover:bg-amber-300 sm:min-h-10 sm:px-3.5"
-            >
-              <Plus aria-hidden="true" className="hidden size-4 sm:block" />
-              <span className="inline-flex items-center gap-1 sm:hidden">
-                <UserRoundPlus aria-hidden="true" className="size-3.5" />
-                Éducateur
-              </span>
-              <span className="hidden sm:inline">Ajouter un éducateur</span>
-            </button>
-          )}
         </div>
       </div>
       )}

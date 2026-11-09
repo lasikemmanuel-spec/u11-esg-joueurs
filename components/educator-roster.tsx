@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useLayoutEffect, useCallback, useRef, type FormEvent } from 'react'
-import { Search, Copy, Check, CheckCircle2, Award, Save, ChevronDown, ChevronUp, Pencil, X, ContactRound, UsersRound, KeyRound, LockKeyhole } from 'lucide-react'
+import { Search, Copy, Check, CheckCircle2, Award, Save, ChevronDown, ChevronUp, Pencil, Plus, X, ContactRound, UsersRound, KeyRound, LockKeyhole } from 'lucide-react'
 import type { Player, PublicPlayer } from '@/lib/players'
 import { matchesSearch } from '@/lib/search'
 import { ClubCrest } from '@/components/club-crest'
@@ -54,6 +54,9 @@ export function EducatorRoster({
   const [players, setPlayers] = useState<EducatorPlayer[]>([])
   const [query, setQuery] = useState('')
   const [directoryView, setDirectoryView] = useState<DirectoryView>('educators')
+  const [addProfileChooserOpen, setAddProfileChooserOpen] = useState(false)
+  const [educatorAddRequest, setEducatorAddRequest] = useState(0)
+  const [accountAddRequest, setAccountAddRequest] = useState(0)
   const [expandedPositions, setExpandedPositions] = useState<Set<string>>(() => new Set())
   const shouldScrollToTopAfterCollapse = useRef(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
@@ -220,6 +223,26 @@ export function EducatorRoster({
       value: '',
     })
     setAuthError('')
+  }
+
+  const requestAddProfile = () => {
+    if (educator?.role === 'admin') {
+      setAddProfileChooserOpen(true)
+      return
+    }
+    if (educator?.role === 'educator') {
+      setQuery('')
+      setDirectoryView('educators')
+      setEducatorAddRequest((request) => request + 1)
+    }
+  }
+
+  const chooseAddProfile = (type: 'educators' | 'accounts') => {
+    setAddProfileChooserOpen(false)
+    setQuery('')
+    setDirectoryView(type)
+    if (type === 'educators') setEducatorAddRequest((request) => request + 1)
+    else setAccountAddRequest((request) => request + 1)
   }
 
   const selectPhoneParent = (parent: ParentKey) => {
@@ -410,7 +433,6 @@ export function EducatorRoster({
         </div>
         <EducatorDirectory
           canEdit={educator.role === 'admin'}
-          showAddButton={false}
           currentEducator={educator}
           photoRevision={photoRevision}
         />
@@ -476,6 +498,18 @@ export function EducatorRoster({
           <div className="flex shrink-0 items-center gap-1.5">
             {phoneEncryptionDiagnosticButton}
             {phoneDiagnostics && !phoneDiagnosticError && phoneEncryptionDiagnosticStatus}
+            {educator.role !== 'reader' && directoryView !== 'players' && !query.trim() && (
+              <button
+                type="button"
+                onClick={requestAddProfile}
+                aria-label="Ajouter un profil"
+                title="Ajouter un profil"
+                className="inline-flex size-9 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-bold text-primary-foreground shadow-sm transition hover:opacity-90 sm:w-auto sm:px-3"
+              >
+                <Plus aria-hidden="true" className="size-4" />
+                <span className="hidden sm:inline">Ajouter</span>
+              </button>
+            )}
           </div>
         </div>
         {phoneDiagnosticError && phoneEncryptionDiagnosticStatus}
@@ -526,6 +560,7 @@ export function EducatorRoster({
             canAdd={educator.role === 'admin' || educator.role === 'educator'}
             searchQuery={query}
             searchTitle={query.trim() ? 'Résultats éducateurs' : undefined}
+            addRequest={educatorAddRequest}
             currentEducator={educator}
             photoRevision={photoRevision}
           />
@@ -804,7 +839,52 @@ export function EducatorRoster({
         <EducatorAccountManagement
           currentUsername={educator.username}
           photoRevision={photoRevision}
+          addRequest={accountAddRequest}
         />
+      )}
+
+      {addProfileChooserOpen && educator.role === 'admin' && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-profile-title"
+          className="fixed inset-0 z-[60] grid place-items-center bg-[#172554]/60 p-4"
+        >
+          <section className="w-full max-w-sm rounded-2xl border border-accent/60 bg-card p-5 shadow-2xl">
+            <header className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Nouvelle fiche</p>
+                <h2 id="add-profile-title" className="mt-1 text-lg font-black text-primary">Que souhaitez-vous ajouter ?</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAddProfileChooserOpen(false)}
+                aria-label="Fermer"
+                className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"
+              >
+                <X aria-hidden="true" className="size-4" />
+              </button>
+            </header>
+            <div className="mt-4 grid gap-2">
+              <button
+                type="button"
+                onClick={() => chooseAddProfile('educators')}
+                className="flex min-h-12 items-center gap-3 rounded-xl border border-accent/50 bg-background px-3 text-left font-semibold text-primary transition hover:bg-accent/20"
+              >
+                <ContactRound aria-hidden="true" className="size-5 shrink-0" />
+                Fiche éducateur
+              </button>
+              <button
+                type="button"
+                onClick={() => chooseAddProfile('accounts')}
+                className="flex min-h-12 items-center gap-3 rounded-xl border border-accent/50 bg-background px-3 text-left font-semibold text-primary transition hover:bg-accent/20"
+              >
+                <KeyRound aria-hidden="true" className="size-5 shrink-0" />
+                Compte éducateur
+              </button>
+            </div>
+          </section>
+        </div>
       )}
 
       {phoneEditor && educator.role === 'admin' && (

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { ChevronDown, KeyRound, Pencil, Plus, Shield, Trash2, UserRound, X } from 'lucide-react'
+import { ChevronDown, KeyRound, Pencil, Shield, Trash2, UserRound, X } from 'lucide-react'
 import { EducatorAvatar } from '@/components/educator-avatar'
 
 type AccountRole = 'educator' | 'admin' | 'reader'
@@ -27,9 +27,11 @@ const emptyDraft: AccountDraft = { username: '', firstName: '', lastName: '', pa
 export function EducatorAccountManagement({
   currentUsername,
   photoRevision = 0,
+  addRequest = 0,
 }: {
   currentUsername: string
   photoRevision?: number
+  addRequest?: number
 }) {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [draft, setDraft] = useState<AccountDraft>(emptyDraft)
@@ -54,6 +56,14 @@ export function EducatorAccountManagement({
       .catch((cause) => setError(cause instanceof Error ? cause.message : 'Impossible de charger les comptes.'))
       .finally(() => setLoading(false))
   }, [load])
+
+  useEffect(() => {
+    if (addRequest > 0) {
+      setError('')
+      setDraft(emptyDraft)
+      setCreateOpen(true)
+    }
+  }, [addRequest])
 
   const retryLoad = async () => {
     setLoading(true)
@@ -196,21 +206,10 @@ export function EducatorAccountManagement({
 
   return (
     <section aria-labelledby="educator-accounts-title" className="rounded-2xl border border-accent/50 bg-card p-2.5 shadow-sm sm:p-4">
-      <header className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
+      <header className="flex flex-wrap items-center justify-end gap-2 sm:justify-between sm:gap-3">
         <div className="hidden sm:block">
           <h2 id="educator-accounts-title" className="text-base font-bold text-primary sm:text-lg">Comptes éducateurs</h2>
           <p className="mt-1 text-xs text-muted-foreground">Gérer les accès, les mots de passe et les rôles administrateur, éducateur ou lecteur.</p>
-        </div>
-        <div className="flex flex-wrap items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => { setError(''); setDraft(emptyDraft); setCreateOpen(true) }}
-            className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground sm:text-sm"
-          >
-            <Plus aria-hidden="true" className="size-4" />
-            <span className="sm:hidden">Ajouter</span>
-            <span className="hidden sm:inline">Ajouter un compte</span>
-          </button>
         </div>
       </header>
 

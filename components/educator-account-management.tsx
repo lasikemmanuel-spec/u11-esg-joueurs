@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { ChevronDown, KeyRound, Pencil, Shield, Trash2, UserRound, X } from 'lucide-react'
+import { Check, ChevronDown, Copy, Eye, EyeOff, KeyRound, Pencil, RefreshCw, Shield, Trash2, UserRound, X } from 'lucide-react'
 import { EducatorAvatar } from '@/components/educator-avatar'
 
 type AccountRole = 'educator' | 'admin' | 'reader'
@@ -23,15 +23,33 @@ type AccountDraft = {
 }
 
 const emptyDraft: AccountDraft = { username: '', firstName: '', lastName: '', password: '', role: 'educator' }
+const passwordCharacters = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%*-_'
+
+function generateSecurePassword() {
+  const passwordLength = 20
+  const maxValidByte = 256 - (256 % passwordCharacters.length)
+  let password = ''
+  while (password.length < passwordLength) {
+    const bytes = new Uint8Array(passwordLength - password.length)
+    window.crypto.getRandomValues(bytes)
+    for (const byte of bytes) {
+      if (byte < maxValidByte) password += passwordCharacters[byte % passwordCharacters.length]
+      if (password.length === passwordLength) break
+    }
+  }
+  return password
+}
 
 export function EducatorAccountManagement({
   currentUsername,
   photoRevision = 0,
   addRequest = 0,
+  onAddRequestHandled,
 }: {
   currentUsername: string
   photoRevision?: number
   addRequest?: number
+  onAddRequestHandled?: () => void
 }) {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [draft, setDraft] = useState<AccountDraft>(emptyDraft)
@@ -43,6 +61,9 @@ export function EducatorAccountManagement({
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [passwordVisible, setPasswordVisible] = useState(false)
+  const [passwordCopied, setPasswordCopied] = useState(false)
+  const currentPassword = createOpen ? draft.password : passwordDraft
 
   const load = useCallback(async () => {
     const response = await fetch('/api/educators/accounts', { cache: 'no-store' })
@@ -62,8 +83,49 @@ export function EducatorAccountManagement({
       setError('')
       setDraft(emptyDraft)
       setCreateOpen(true)
+      setPasswordVisible(false)
+      setPasswordCopied(false)
+      onAddRequestHandled?.()
     }
-  }, [addRequest])
+  }, [addRequest, onAddRequestHandled])
+
+  const generatePassword = () => {
+    try {
+      const generatedPassword = generateSecurePassword()
+      if (createOpen) setDraft((current) => ({ ...current, password: generatedPassword }))
+      else setPasswordDraft(generatedPassword)
+      setPasswordVisible(true)
+      setPasswordCopied(false)
+      setError('')
+    } catch (cause) {
+      setError(cause instanceof Error
+        ? `Impossible de générer un mot de passe sécurisé : ${cause.message}`
+        : 'Impossible de générer un mot de passe sécurisé.')
+    }
+  }
+
+  const closeModal = () => {
+    setCreateOpen(false)
+    setPasswordTarget(null)
+    setEditTarget(null)
+    setPasswordDraft('')
+    setDraft((current) => ({ ...current, password: '' }))
+    setPasswordVisible(false)
+    setPasswordCopied(false)
+    setError('')
+    onAddRequestHandled?.()
+  }
+
+  const copyPassword = async () => {
+    try {
+      await navigator.clipboard.writeText(currentPassword)
+      setPasswordCopied(true)
+    } catch (cause) {
+      setError(cause instanceof Error
+        ? `Impossible de copier le mot de passe : ${cause.message}`
+        : 'Impossible de copier le mot de passe.')
+    }
+  }
 
   const retryLoad = async () => {
     setLoading(true)
@@ -296,7 +358,13 @@ export function EducatorAccountManagement({
                       </label>
                       <button
                         type="button"
-                        onClick={() => { setPasswordDraft(''); setPasswordTarget(account); setError('') }}
+                        onClick={() => {
+                          setPasswordDraft('')
+                          setPasswordTarget(account)
+                          setPasswordVisible(false)
+                          setPasswordCopied(false)
+                          setError('')
+                        }}
                         disabled={pendingUsername !== null}
                         className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-lg border border-accent/50 px-2 text-xs font-semibold text-primary disabled:opacity-50 sm:min-h-8"
                       >
@@ -340,7 +408,7 @@ export function EducatorAccountManagement({
               </div>
               <button
                 type="button"
-                onClick={() => { setCreateOpen(false); setPasswordTarget(null); setEditTarget(null); setError('') }}
+                onClick={closeModal}
                 aria-label="Fermer"
                 className="inline-flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground"
               >
@@ -369,26 +437,66 @@ export function EducatorAccountManagement({
               </div>
             )}
             {!editTarget && (createOpen || passwordTarget) && (
-            <label className="mt-4 grid gap-1 text-sm font-semibold">
-              {createOpen ? 'Mot de passe initial' : 'Nouveau mot de passe'}
-              <input
-                required
-                minLength={12}
-                maxLength={256}
-                type="password"
-                autoComplete="new-password"
-                value={createOpen ? draft.password : passwordDraft}
-                onChange={(event) => createOpen
-                  ? setDraft({ ...draft, password: event.target.value })
-                  : setPasswordDraft(event.target.value)}
-                className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal"
-              />
-            </label>
+              <div className="mt-4 grid gap-2">
+                <label htmlFor="account-password" className="text-sm font-semibold">
+                  {createOpen ? 'Mot de passe initial' : 'Nouveau mot de passe'}
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="account-password"
+                    required
+                    minLength={12}
+                    maxLength={256}
+                    type={passwordVisible ? 'text' : 'password'}
+                    autoComplete="new-password"
+                    value={currentPassword}
+                    onChange={(event) => {
+                      if (createOpen) setDraft({ ...draft, password: event.target.value })
+                      else setPasswordDraft(event.target.value)
+                      setPasswordCopied(false)
+                    }}
+                    className="h-10 min-w-0 flex-1 rounded-lg border border-accent/50 bg-background px-3 font-normal"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { setPasswordVisible((visible) => !visible); setPasswordCopied(false) }}
+                    aria-label={passwordVisible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                    title={passwordVisible ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                    className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg border border-accent/50 text-primary"
+                  >
+                    {passwordVisible
+                      ? <EyeOff aria-hidden="true" className="size-4" />
+                      : <Eye aria-hidden="true" className="size-4" />}
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={generatePassword}
+                    className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-accent/50 px-3 text-xs font-semibold text-primary"
+                  >
+                    <RefreshCw aria-hidden="true" className="size-3.5" />
+                    Générer un mot de passe
+                  </button>
+                  {currentPassword && (
+                    <button
+                      type="button"
+                      onClick={() => void copyPassword()}
+                      className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-accent/50 px-3 text-xs font-semibold text-primary"
+                    >
+                      {passwordCopied
+                        ? <Check aria-hidden="true" className="size-3.5" />
+                        : <Copy aria-hidden="true" className="size-3.5" />}
+                      {passwordCopied ? 'Copié' : 'Copier'}
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground">12 caractères minimum. Vous pouvez l’afficher et le copier pour le transmettre à l’éducateur.</p>
+              </div>
             )}
-            {(createOpen || !editTarget) && <p className="mt-2 text-xs text-muted-foreground">12 caractères minimum. Le mot de passe n’est jamais affiché ni enregistré en clair.</p>}
             {error && <p role="alert" className="mt-3 text-sm text-destructive">{error}</p>}
             <div className="mt-4 flex justify-end gap-2">
-              <button type="button" onClick={() => { setCreateOpen(false); setPasswordTarget(null); setEditTarget(null) }} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-muted-foreground">Annuler</button>
+              <button type="button" onClick={closeModal} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-muted-foreground">Annuler</button>
               <button type="submit" disabled={pendingUsername !== null} className="min-h-10 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50">
                 {pendingUsername !== null ? 'Enregistrement…' : 'Enregistrer'}
               </button>

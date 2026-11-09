@@ -18,6 +18,7 @@ export function EducatorDirectory({
   searchQuery,
   searchTitle,
   addRequest = 0,
+  onAddRequestHandled,
   currentEducator,
   photoRevision = 0,
 }: {
@@ -26,6 +27,7 @@ export function EducatorDirectory({
   searchQuery?: string
   searchTitle?: string
   addRequest?: number
+  onAddRequestHandled?: () => void
   currentEducator?: { username: string; displayName: string; role: 'educator' | 'admin' | 'reader' }
   photoRevision?: number
 }) {
@@ -90,8 +92,9 @@ export function EducatorDirectory({
       setEditingOwn(false)
       setError('')
       setOpen(true)
+      onAddRequestHandled?.()
     }
-  }, [addRequest, canAdd])
+  }, [addRequest, canAdd, onAddRequestHandled])
 
   useEffect(() => {
     setIsPhoneDevice(/iPhone|iPod|Android.*Mobile|Windows Phone|IEMobile|BlackBerry|Opera Mini/i.test(navigator.userAgent))
@@ -102,6 +105,14 @@ export function EducatorDirectory({
     setEditingOwn(false)
     setError('')
     setOpen(true)
+  }
+
+  const closeForm = () => {
+    setOpen(false)
+    setEditingOwn(false)
+    setDraft(blank)
+    setError('')
+    onAddRequestHandled?.()
   }
 
   const save = async (event: FormEvent<HTMLFormElement>) => {
@@ -345,7 +356,7 @@ export function EducatorDirectory({
           <form onSubmit={editingOwn ? saveOwnProfile : save} className="w-full max-w-md rounded-2xl border border-accent/60 bg-card p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-3">
               <div><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Annuaire éducateurs</p><h3 id="directory-form-title" className="mt-1 text-lg font-black text-primary">{editingOwn ? 'Modifier ma fiche' : draft.id ? 'Modifier une fiche' : 'Ajouter un éducateur'}</h3></div>
-              <button type="button" onClick={() => { setOpen(false); setEditingOwn(false) }} aria-label="Fermer" className="inline-flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground"><X className="size-4" /></button>
+              <button type="button" onClick={closeForm} aria-label="Fermer" className="inline-flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground"><X className="size-4" /></button>
             </div>
             <div className="mt-4 grid gap-3">
               {!editingOwn && <label className="grid gap-1 text-sm font-semibold">Nom et prénom<input required minLength={2} maxLength={80} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>}
@@ -353,7 +364,7 @@ export function EducatorDirectory({
               <label className="grid gap-1 text-sm font-semibold">Téléphone<input type="tel" inputMode="tel" maxLength={80} value={draft.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
               <p className="text-xs text-muted-foreground">Le téléphone sera chiffré avant son enregistrement dans le Google Sheet.</p>
               {error && <p role="alert" className="text-sm text-destructive">{error}</p>}
-              <div className="flex justify-end gap-2"><button type="button" onClick={() => { setOpen(false); setEditingOwn(false) }} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-muted-foreground">Annuler</button><button type="submit" disabled={pending} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"><Save className="size-4" />{pending ? 'Enregistrement…' : 'Enregistrer'}</button></div>
+              <div className="flex justify-end gap-2"><button type="button" onClick={closeForm} className="min-h-10 rounded-lg px-3 text-sm font-semibold text-muted-foreground">Annuler</button><button type="submit" disabled={pending} className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"><Save className="size-4" />{pending ? 'Enregistrement…' : 'Enregistrer'}</button></div>
             </div>
           </form>
         </div>

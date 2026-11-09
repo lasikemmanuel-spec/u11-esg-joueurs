@@ -245,6 +245,9 @@ export function EducatorRoster({
     else setAccountAddRequest((request) => request + 1)
   }
 
+  const acknowledgeEducatorAddRequest = useCallback(() => setEducatorAddRequest(0), [])
+  const acknowledgeAccountAddRequest = useCallback(() => setAccountAddRequest(0), [])
+
   const selectPhoneParent = (parent: ParentKey) => {
     if (!phoneEditor) return
     const contacts = phones[phoneEditor.number]
@@ -538,7 +541,11 @@ export function EducatorRoster({
                 key={key}
                 type="button"
                 aria-pressed={isActive}
-                onClick={() => setDirectoryView(key)}
+                onClick={() => {
+                  setEducatorAddRequest(0)
+                  setAccountAddRequest(0)
+                  setDirectoryView(key)
+                }}
                 className={[
                   'inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition-colors',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
@@ -561,6 +568,7 @@ export function EducatorRoster({
             searchQuery={query}
             searchTitle={query.trim() ? 'Résultats éducateurs' : undefined}
             addRequest={educatorAddRequest}
+            onAddRequestHandled={acknowledgeEducatorAddRequest}
             currentEducator={educator}
             photoRevision={photoRevision}
           />
@@ -588,7 +596,7 @@ export function EducatorRoster({
                     if (!value) return null
                     const label = parent === 'father' ? 'Papa' : 'Maman'
                     return (
-                      <div key={parent} className="inline-flex flex-wrap items-center gap-2">
+                      <div key={parent} className="grid w-full grid-cols-[5rem_minmax(0,1fr)] items-center gap-2">
                         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
                           <ParentAvatar parent={parent} />
                           {label}
@@ -840,6 +848,7 @@ export function EducatorRoster({
           currentUsername={educator.username}
           photoRevision={photoRevision}
           addRequest={accountAddRequest}
+          onAddRequestHandled={acknowledgeAccountAddRequest}
         />
       )}
 

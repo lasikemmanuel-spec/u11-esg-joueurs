@@ -186,10 +186,11 @@ export function EducatorDirectory({
             <button
               type="button"
               onClick={() => { setDraft(blank); setEditingOwn(false); setError(''); setOpen(true) }}
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-amber-400 px-3 text-xs font-black text-blue-950 shadow-sm transition hover:bg-amber-300 sm:min-h-10 sm:px-3.5"
+              aria-label="Ajouter un éducateur"
+              className="inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-xl bg-amber-400 px-3 text-xs font-black text-blue-950 shadow-sm transition hover:bg-amber-300 sm:min-h-10 sm:px-3.5"
             >
               <Plus className="size-4" />
-              <span className="sm:hidden">Ajouter un éducateur</span>
+              <span className="sm:hidden">Ajouter</span>
               <span className="hidden sm:inline">Ajouter un éducateur</span>
             </button>
           )}

@@ -13,7 +13,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'La connexion éducateur n’est pas disponible.' }, { status: 503 })
   }
   if (!educator) return NextResponse.json({ error: 'Connexion requise.' }, { status: 401 })
-  if (educator.role !== 'admin') return NextResponse.json({ error: 'Droits insuffisants.' }, { status: 403 })
+  if (educator.role === 'reader') return NextResponse.json({ error: 'Accès réservé aux éducateurs.' }, { status: 403 })
 
   try {
     const diagnostics = await diagnoseEducatorPhoneEncryption()

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useLayoutEffect, useCallback, useRef, type FormEvent } from 'react'
-import { Search, Copy, Check, Award, Save, ChevronDown, ChevronUp, Pencil, X, ContactRound, UsersRound, KeyRound, LockKeyhole } from 'lucide-react'
+import { Search, Copy, Check, CheckCircle2, Award, Save, ChevronDown, ChevronUp, Pencil, X, ContactRound, UsersRound, KeyRound, LockKeyhole } from 'lucide-react'
 import type { Player, PublicPlayer } from '@/lib/players'
 import { matchesSearch } from '@/lib/search'
 import { ClubCrest } from '@/components/club-crest'
@@ -138,6 +138,7 @@ export function EducatorRoster({
   const runPhoneDiagnostics = async () => {
     setDiagnosticPending(true)
     setDiagnosticError('')
+    setPhoneDiagnostics(null)
     try {
       const response = await fetch('/api/educators/contacts/diagnostics', { cache: 'no-store' })
       const result = await response.json()
@@ -344,47 +345,51 @@ export function EducatorRoster({
     )
   }
 
-  const phoneEncryptionDiagnosticButton = educator.role === 'admin' && (
+  const canInspectPhoneEncryption = educator.role === 'admin' || educator.role === 'educator'
+  const phoneEncryptionDiagnosticButton = canInspectPhoneEncryption && (
       <button
         type="button"
         onClick={() => void runPhoneDiagnostics()}
         disabled={diagnosticPending}
         aria-label="Vérifier le chiffrement des téléphones"
         title="Vérifier le chiffrement des téléphones"
-        className="inline-flex min-h-8 items-center gap-1.5 whitespace-nowrap rounded-lg border border-accent/35 bg-background/70 px-2.5 text-xs font-medium text-muted-foreground transition hover:bg-accent/20 hover:text-primary disabled:opacity-50"
+        className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-accent/35 bg-background/70 text-xs font-medium text-muted-foreground transition hover:bg-accent/20 hover:text-primary disabled:opacity-50 sm:h-8 sm:w-auto sm:gap-1.5 sm:px-2.5"
       >
         <LockKeyhole aria-hidden="true" className="size-3.5 shrink-0" />
-        {diagnosticPending ? 'Vérification…' : 'Vérifier le chiffrement'}
+        <span className="sr-only sm:not-sr-only">{diagnosticPending ? 'Vérification…' : 'Vérifier le chiffrement'}</span>
       </button>
   )
 
-  const phoneEncryptionDiagnosticStatus = educator.role === 'admin' && (diagnosticError || phoneDiagnostics) && (
-    <div className="mt-2 flex flex-col items-start gap-2">
-      {diagnosticError && <p role="alert" className="text-sm text-destructive">{diagnosticError}</p>}
-      {phoneDiagnostics && (
-        <div role="status" className="w-full rounded-lg bg-muted/70 p-3 text-sm">
-          <p className="font-semibold">
-            {phoneDiagnostics.unreadableValues > 0
-              ? `${phoneDiagnostics.unreadableValues} téléphone(s) chiffré(s) illisible(s) sur ${phoneDiagnostics.encryptedValues}.`
-              : phoneDiagnostics.encryptedValues > 0
-                ? `${phoneDiagnostics.encryptedValues} téléphone(s) chiffré(s) lisible(s).`
-                : 'Aucun téléphone chiffré à vérifier.'}
-          </p>
-          <p className="mt-1 text-muted-foreground">
-            Format de clé : {phoneDiagnostics.keyFormatValid ? 'valide' : 'absente ou invalide'}.
-            {phoneDiagnostics.plaintextValues > 0 && ` ${phoneDiagnostics.plaintextValues} valeur(s) non chiffrée(s) détectée(s).`}
-          </p>
-          {phoneDiagnostics.missingTabs.length > 0 && (
-            <p className="mt-1 text-muted-foreground">
-              Onglets absents : {phoneDiagnostics.missingTabs.join(', ')}.
-            </p>
-          )}
-        </div>
-      )}
-    </div>
+  const phoneDiagnosticProblems = phoneDiagnostics ? [
+    ...(!phoneDiagnostics.keyFormatValid ? ['La clé de chiffrement est absente ou invalide.'] : []),
+    ...(phoneDiagnostics.unreadableValues > 0
+      ? [`${phoneDiagnostics.unreadableValues} téléphone(s) chiffré(s) illisible(s) sur ${phoneDiagnostics.encryptedValues}.`]
+      : []),
+    ...(phoneDiagnostics.plaintextValues > 0
+      ? [`${phoneDiagnostics.plaintextValues} téléphone(s) non chiffré(s) détecté(s).`]
+      : []),
+    ...(phoneDiagnostics.missingTabs.length > 0
+      ? [`Onglets manquants : ${phoneDiagnostics.missingTabs.join(', ')}.`]
+      : []),
+  ] : []
+
+  const phoneDiagnosticError = diagnosticError || phoneDiagnosticProblems.join(' ')
+  const phoneEncryptionDiagnosticStatus = canInspectPhoneEncryption && (
+    phoneDiagnosticError ? (
+      <p role="alert" className="mt-1 text-xs text-destructive">{phoneDiagnosticError}</p>
+    ) : phoneDiagnostics ? (
+      <span
+        role="status"
+        aria-label="Chiffrement des téléphones vérifié"
+        title="Chiffrement des téléphones vérifié"
+        className="inline-flex shrink-0 items-center"
+      >
+        <CheckCircle2 aria-hidden="true" className="size-5 text-emerald-600" />
+      </span>
+    ) : null
   )
 
-  const phoneEncryptionDiagnosticPanel = educator.role === 'admin' && (
+  const phoneEncryptionDiagnosticPanel = canInspectPhoneEncryption && (
     <div className="flex w-fit max-w-full flex-col items-start gap-2 self-start rounded-xl border border-accent/30 bg-white/60 p-2 dark:bg-card/70">
       {phoneEncryptionDiagnosticButton}
       {phoneEncryptionDiagnosticStatus}
@@ -409,7 +414,7 @@ export function EducatorRoster({
           currentEducator={educator}
           photoRevision={photoRevision}
         />
-        {educator.role === 'admin' && phoneEncryptionDiagnosticPanel}
+        {canInspectPhoneEncryption && phoneEncryptionDiagnosticPanel}
         {educator.role === 'admin' ? (
           <>
             <label className="flex items-start gap-2 rounded-lg border border-accent/40 bg-muted/50 p-3 text-sm">
@@ -466,11 +471,14 @@ export function EducatorRoster({
       {notice && <p role="status" className="text-sm font-medium text-emerald-700 dark:text-emerald-300">{notice}</p>}
 
       <div className="flex flex-col gap-3 rounded-xl border border-accent/50 bg-card p-3 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <label htmlFor="directory-search" className="text-sm font-semibold text-primary">Recherche joueur / éducateur</label>
-          {phoneEncryptionDiagnosticButton}
+        <div className="flex flex-nowrap items-center justify-between gap-2">
+          <label htmlFor="directory-search" className="min-w-0 text-xs font-semibold text-primary sm:text-sm">Recherche joueur / éducateur</label>
+          <div className="flex shrink-0 items-center gap-1.5">
+            {phoneEncryptionDiagnosticButton}
+            {phoneDiagnostics && !phoneDiagnosticError && phoneEncryptionDiagnosticStatus}
+          </div>
         </div>
-        {phoneEncryptionDiagnosticStatus}
+        {phoneDiagnosticError && phoneEncryptionDiagnosticStatus}
         <div className="relative">
           <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <input

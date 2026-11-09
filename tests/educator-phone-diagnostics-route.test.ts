@@ -30,7 +30,6 @@ describe('GET /api/educators/contacts/diagnostics', () => {
 
   it.each([
     ['no session', null, 401],
-    ['educator', { username: 'coach', displayName: 'Coach', role: 'educator' }, 403],
     ['reader', { username: 'reader', displayName: 'Reader', role: 'reader' }, 403],
   ] as const)('does not disclose diagnostics to %s', async (_label, session, status) => {
     vi.mocked(getEducatorSession).mockResolvedValue(session)
@@ -46,6 +45,27 @@ describe('GET /api/educators/contacts/diagnostics', () => {
       username: 'admin',
       displayName: 'Admin',
       role: 'admin',
+    })
+
+    const response = await GET(request())
+    const body = await response.json()
+
+    expect(response.status).toBe(200)
+    expect(body).toEqual({
+      keyFormatValid: true,
+      encryptedValues: 3,
+      unreadableValues: 0,
+      plaintextValues: 0,
+      missingTabs: [],
+    })
+    expect(JSON.stringify(body)).not.toContain('0600000000')
+  })
+
+  it('allows an educator to inspect encryption without returning phone values', async () => {
+    vi.mocked(getEducatorSession).mockResolvedValue({
+      username: 'coach',
+      displayName: 'Coach',
+      role: 'educator',
     })
 
     const response = await GET(request())

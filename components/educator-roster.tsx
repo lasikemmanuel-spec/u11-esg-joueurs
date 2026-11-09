@@ -674,8 +674,8 @@ export function EducatorRoster({
             )
           ) : (
             <>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <nav aria-label="Filtrer les joueurs par poste" className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1">
+      <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+        <nav aria-label="Filtrer les joueurs par poste" className="flex w-full min-w-0 gap-2 overflow-x-auto pb-1 sm:flex-1">
           <button
             type="button"
             aria-pressed={selectedPosition === null}
@@ -704,7 +704,7 @@ export function EducatorRoster({
             </button>
           ))}
         </nav>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           {visiblePlayers.length > 0 && (
             <button
               type="button"

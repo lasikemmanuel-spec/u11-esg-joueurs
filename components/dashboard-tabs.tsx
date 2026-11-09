@@ -96,6 +96,8 @@ export function DashboardTabs({
 }) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabKey>('matches')
+  const mobileTabsRef = useRef<HTMLDivElement>(null)
+  const mobileTabButtonRefs = useRef<Partial<Record<TabKey, HTMLButtonElement | null>>>({})
   const [statsSection, setStatsSection] = useState<StatsSection>('players')
   const [matchFocuses, setMatchFocuses] = useState<Partial<Record<'E1' | 'E2', MatchFocus>>>({})
   const [activeMatchTeam, setActiveMatchTeam] = useState<'E1' | 'E2' | null>(null)
@@ -117,6 +119,14 @@ export function DashboardTabs({
   const [logoutError, setLogoutError] = useState('')
   const [profilePhotoOpen, setProfilePhotoOpen] = useState(false)
   const [profilePhotoRevision, setProfilePhotoRevision] = useState(0)
+
+  useEffect(() => {
+    mobileTabButtonRefs.current[activeTab]?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'nearest',
+      inline: 'center',
+    })
+  }, [activeTab])
 
   useEffect(() => {
     let active = true
@@ -536,21 +546,26 @@ export function DashboardTabs({
       </div>
 
       <nav
-        aria-label="Navigation des statistiques"
-        className="fixed inset-x-0 bottom-0 z-50 border-t border-accent/60 bg-card/95 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.12)] backdrop-blur xl:hidden"
+        aria-label="Navigation principale"
+        className="fixed inset-x-0 bottom-0 z-50 overflow-hidden border-t border-accent/60 bg-card/95 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.12)] backdrop-blur xl:hidden"
       >
-        <div className="mx-auto flex max-w-lg gap-2 rounded-xl bg-muted p-1">
+        <div
+          ref={mobileTabsRef}
+          className="mx-auto flex w-full max-w-lg snap-x snap-mandatory gap-1 overflow-x-auto rounded-xl bg-muted p-1"
+        >
           {tabs.map((tab) => {
             const isActive = activeTab === tab.key
 
             return (
               <button
                 key={tab.key}
+                ref={(element) => { mobileTabButtonRefs.current[tab.key] = element }}
                 type="button"
                 aria-pressed={isActive}
+                aria-label={tab.label}
                 onClick={() => setActiveTab(tab.key)}
                 className={[
-                  'min-h-11 flex-1 rounded-lg px-2 py-2 text-xs transition-all sm:text-sm',
+                  'min-h-12 w-[76px] shrink-0 snap-center break-words rounded-lg px-1.5 py-2 text-[10px] leading-tight transition-all sm:w-[90px] sm:text-xs',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                   isActive
                     ? 'bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] text-amber-300 font-extrabold shadow-md border border-amber-400/40'

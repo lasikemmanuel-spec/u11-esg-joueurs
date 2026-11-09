@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useLayoutEffect, useCallback, useRef, type FormEvent } from 'react'
-import { Search, Copy, Check, CheckCircle2, Award, Save, ChevronDown, ChevronUp, Pencil, Plus, X, ContactRound, UsersRound, KeyRound, LockKeyhole } from 'lucide-react'
+import { Search, Copy, Check, CheckCircle2, Award, Save, ChevronDown, ChevronUp, ChevronRight, Pencil, Plus, X, ContactRound, UsersRound, KeyRound, LockKeyhole } from 'lucide-react'
 import type { Player, PublicPlayer } from '@/lib/players'
 import { matchesSearch } from '@/lib/search'
 import { ParentAvatar } from '@/components/parent-avatar'
@@ -58,6 +58,8 @@ export function EducatorRoster({
   const [accountAddRequest, setAccountAddRequest] = useState(0)
   const [expandedPlayers, setExpandedPlayers] = useState<Set<number>>(() => new Set())
   const [selectedPosition, setSelectedPosition] = useState<string | null>(null)
+  const positionFiltersRef = useRef<HTMLElement | null>(null)
+  const [hasMorePositions, setHasMorePositions] = useState(false)
   const shouldScrollToTopAfterCollapse = useRef(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [educator, setEducator] = useState<EducatorIdentity | null>(initialEducator)
@@ -306,6 +308,24 @@ export function EducatorRoster({
         list.sort((a, b) => a.lastName.localeCompare(b.lastName, 'fr') || a.firstName.localeCompare(b.firstName, 'fr')),
       ] as const)
   }, [players, query])
+
+  useEffect(() => {
+    const nav = positionFiltersRef.current
+    if (!nav) return
+
+    const updateScrollCue = () => {
+      setHasMorePositions(nav.scrollLeft + nav.clientWidth < nav.scrollWidth - 1)
+    }
+
+    updateScrollCue()
+    nav.addEventListener('scroll', updateScrollCue, { passive: true })
+    window.addEventListener('resize', updateScrollCue, { passive: true })
+
+    return () => {
+      nav.removeEventListener('scroll', updateScrollCue)
+      window.removeEventListener('resize', updateScrollCue)
+    }
+  }, [groups])
 
   const matchingPlayerCount = groups.reduce((count, [, list]) => count + list.length, 0)
   const missingLicenseCount = players.filter((player) => !player.licenseNumber?.trim()).length
@@ -675,7 +695,8 @@ export function EducatorRoster({
           ) : (
             <>
       <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-        <nav aria-label="Filtrer les joueurs par poste" className="flex w-full min-w-0 gap-2 overflow-x-auto pb-1 sm:flex-1">
+        <div className="relative w-full min-w-0 sm:flex-1">
+          <nav ref={positionFiltersRef} aria-label="Filtrer les joueurs par poste" className="flex w-full min-w-0 gap-2 overflow-x-auto pb-1">
           <button
             type="button"
             aria-pressed={selectedPosition === null}
@@ -703,7 +724,13 @@ export function EducatorRoster({
               {position} <span className="rounded-full bg-amber-400 px-1.5 py-0.5 text-[10px] font-black text-blue-950">{list.length}</span>
             </button>
           ))}
-        </nav>
+          </nav>
+          {hasMorePositions && (
+            <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 right-0 flex items-center bg-gradient-to-l from-background via-background/95 to-transparent pl-4 pr-1 text-muted-foreground">
+              <ChevronRight className="size-4" />
+            </span>
+          )}
+        </div>
         <div className="flex flex-wrap items-center gap-2">
           {visiblePlayers.length > 0 && (
             <button

@@ -155,7 +155,7 @@ export function EducatorAccountManagement({
       await load()
       setCreateOpen(false)
       setDraft(emptyDraft)
-      setNotice('Compte éducateur créé.')
+      setNotice('Compte utilisateur créé.')
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Impossible de créer le compte.')
     } finally {
@@ -270,7 +270,7 @@ export function EducatorAccountManagement({
     <section aria-labelledby="educator-accounts-title" className="rounded-2xl border border-accent/50 bg-card p-2.5 shadow-sm sm:p-4">
       <header className="flex flex-wrap items-center justify-end gap-2 sm:justify-between sm:gap-3">
         <div className="hidden sm:block">
-          <h2 id="educator-accounts-title" className="text-base font-bold text-primary sm:text-lg">Comptes éducateurs</h2>
+          <h2 id="educator-accounts-title" className="text-base font-bold text-primary sm:text-lg">Comptes (Admin/Éducateur/Lecteur)</h2>
           <p className="mt-1 text-xs text-muted-foreground">Gérer les accès, les mots de passe et les rôles administrateur, éducateur ou lecteur.</p>
         </div>
       </header>
@@ -291,7 +291,7 @@ export function EducatorAccountManagement({
           </button>
         </div>
       ) : accounts.length === 0 ? (
-        <p className="mt-4 rounded-lg bg-muted p-4 text-center text-sm text-muted-foreground">Aucun compte éducateur.</p>
+        <p className="mt-4 rounded-lg bg-muted p-4 text-center text-sm text-muted-foreground">Aucun compte utilisateur.</p>
       ) : (
         <ul className="mt-3 grid gap-2 sm:mt-4 sm:grid-cols-2">
           {accounts.map((account) => {
@@ -400,7 +400,7 @@ export function EducatorAccountManagement({
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Administration</p>
                 <h3 className="mt-1 text-lg font-black text-primary">
                   {createOpen
-                    ? 'Ajouter un compte éducateur'
+                    ? 'Créer un compte utilisateur'
                     : editTarget
                       ? `Modifier le compte de ${editTarget.displayName}`
                       : `Modifier le mot de passe de ${passwordTarget?.displayName}`}

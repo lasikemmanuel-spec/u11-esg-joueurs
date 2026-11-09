@@ -889,7 +889,7 @@ export function EducatorRoster({
                 className="flex min-h-12 items-center gap-3 rounded-xl border border-accent/50 bg-background px-3 text-left font-semibold text-primary transition hover:bg-accent/20"
               >
                 <KeyRound aria-hidden="true" className="size-5 shrink-0" />
-                Compte éducateur
+                Comptes (Admin/Éducateur/Lecteur)
               </button>
             </div>
           </section>

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Pencil, Save, Trash2, X } from 'lucide-react'
+import { ChevronDown, Pencil, Save, Trash2, X } from 'lucide-react'
 import { EducatorAvatar } from '@/components/educator-avatar'
 import { ClubCrest } from '@/components/club-crest'
 import { PhoneActionButtons } from '@/components/phone-action-buttons'
@@ -32,6 +32,7 @@ export function EducatorDirectory({
   photoRevision?: number
 }) {
   const [educators, setEducators] = useState<DirectoryEducator[]>([])
+  const [expandedEducators, setExpandedEducators] = useState<Set<string>>(() => new Set())
   const [isPhoneDevice, setIsPhoneDevice] = useState(false)
   const [draft, setDraft] = useState<Draft>(blank)
   const [open, setOpen] = useState(false)
@@ -234,116 +235,120 @@ export function EducatorDirectory({
       ) : (
         <>
           {isSearching && searchTitle && <h2 className="font-bold text-primary">{searchTitle}</h2>}
-          <ul className="mt-2 grid gap-2 sm:mt-3 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
+          <ul className="mt-2 grid grid-cols-1 items-start gap-3 sm:mt-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {allCards.map((educator: DirectoryEducator) => {
               const isOwn = currentEducator && (educator.id === ownDirectoryEntry?.id || educator.id === 'me-auto-entry')
+              const isExpanded = expandedEducators.has(educator.id)
+              const initials = educator.name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase('fr-FR')
               return (
                 <li
                   key={educator.id}
-                  className="rounded-xl border border-[#172554]/15 bg-card p-3 shadow-sm transition-all hover:border-[#172554]/40 hover:shadow-md sm:rounded-2xl sm:border-2 sm:p-3.5"
+                  className="min-w-0 overflow-hidden rounded-2xl border-2 border-[#172554]/15 bg-card shadow-sm transition hover:border-[#172554]/35 hover:shadow-md"
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      {isOwn ? (
-                        <div className="size-8 shrink-0 overflow-hidden rounded-xl ring-2 ring-amber-400/60 shadow-sm flex items-center justify-center bg-[#172554] sm:size-9">
-                          <EducatorAvatar username={currentEducator.username} revision={photoRevision} size="size-8 sm:size-9" />
-                        </div>
-                      ) : (
-                        <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-[#172554] text-xs font-black text-amber-300 ring-2 ring-amber-400/40 shadow-sm sm:size-9">
-                          {educator.name.split(' ').map((n: string) => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()}
-                        </span>
-                      )}
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <h3 className="truncate text-base font-bold text-foreground">
-                            {educator.name}
-                          </h3>
-                          {isOwn && (
-                            <span className="inline-flex rounded-full bg-[#172554] px-2 py-0.5 text-[10px] font-black text-amber-300 ring-1 ring-amber-400/40">
-                              {currentEducator.role === 'admin' ? 'Admin' : 'Moi'}
-                            </span>
-                          )}
-                          {isOwn ? (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setDraft({
-                                  name: currentEducator.displayName,
-                                  licenseNumber: ownDirectoryEntry?.licenseNumber ?? '',
-                                  phone: ownDirectoryEntry?.phone ?? '',
-                                })
-                                setEditingOwn(true)
-                                setError('')
-                                setOpen(true)
-                              }}
-                              aria-label="Modifier ma fiche"
-                              title="Modifier ma fiche"
-                              className="inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-accent/40 bg-card text-muted-foreground transition hover:bg-accent/40 hover:text-foreground sm:size-6"
-                            >
-                              <Pencil aria-hidden="true" className="size-3" />
-                            </button>
-                          ) : (
-                            canEdit && (
-                              <>
-                                <button
-                                  type="button"
-                                  onClick={() => edit(educator)}
-                                  aria-label={`Modifier ${educator.name}`}
-                                  title="Modifier la fiche"
-                                  className="inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-accent/40 bg-card text-muted-foreground transition hover:bg-accent/40 hover:text-foreground sm:size-6"
-                                >
-                                  <Pencil aria-hidden="true" className="size-3" />
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => void removeEducator(educator)}
-                                  disabled={deletingId !== null}
-                                  aria-label={`Supprimer la fiche de ${educator.name}`}
-                                  title="Supprimer la fiche"
-                                  className="inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-destructive/30 bg-card text-destructive transition hover:bg-destructive/10 disabled:opacity-50 sm:size-6"
-                                >
-                                  <Trash2 aria-hidden="true" className="size-3" />
-                                </button>
-                              </>
-                            )
-                          )}
-                        </div>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          Licence FFF : <span className="font-mono font-medium">{educator.licenseNumber || 'non renseignée'}</span>
-                        </p>
-                      </div>
+                  <div className="flex items-center gap-2.5 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-3 py-3 text-white">
+                    <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-amber-400 bg-[#172554] text-sm font-black text-amber-300 shadow-md">
+                      {isOwn && currentEducator
+                        ? <EducatorAvatar username={currentEducator.username} revision={photoRevision} size="size-10" />
+                        : initials}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="whitespace-normal break-words text-sm font-black leading-tight sm:text-base">{educator.name}</h3>
+                      <span className="mt-1 inline-flex max-w-full items-center truncate rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-200 ring-1 ring-white/15">
+                        {isOwn && currentEducator?.role === 'admin' ? 'Admin · Moi' : isOwn ? 'Moi' : 'Éducateur'}
+                      </span>
                     </div>
-                  </div>
-
-                  {educator.phone ? (
-                    <div className="mt-2 flex items-center gap-2 rounded-xl border border-accent/40 bg-muted/40 p-2 sm:mt-3 sm:gap-3">
-                      <PhoneActionButtons
-                        phone={educator.phone}
-                        label="le téléphone"
-                        playerName={educator.name}
-                      />
-                    </div>
-                  ) : isOwn ? (
-                    <div className="mt-3 flex items-center justify-between gap-2 rounded-xl border border-dashed border-accent/60 bg-muted/20 p-2 text-xs text-muted-foreground">
-                      <span>Aucun téléphone</span>
+                    {isOwn ? (
                       <button
                         type="button"
                         onClick={() => {
                           setDraft({
                             name: currentEducator.displayName,
                             licenseNumber: ownDirectoryEntry?.licenseNumber ?? '',
-                            phone: '',
+                            phone: ownDirectoryEntry?.phone ?? '',
                           })
                           setEditingOwn(true)
                           setError('')
                           setOpen(true)
                         }}
-                        className="font-bold text-primary hover:underline"
+                        aria-label="Modifier ma fiche"
+                        title="Modifier ma fiche"
+                        className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-white/20 text-blue-100 transition hover:bg-white/10"
                       >
-                        Ajouter
+                        <Pencil aria-hidden="true" className="size-4" />
                       </button>
+                    ) : canEdit ? (
+                      <div className="flex shrink-0 items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => edit(educator)}
+                          aria-label={`Modifier ${educator.name}`}
+                          title="Modifier la fiche"
+                          className="inline-flex size-9 items-center justify-center rounded-lg border border-white/20 text-blue-100 transition hover:bg-white/10"
+                        >
+                          <Pencil aria-hidden="true" className="size-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void removeEducator(educator)}
+                          disabled={deletingId !== null}
+                          aria-label={`Supprimer la fiche de ${educator.name}`}
+                          title="Supprimer la fiche"
+                          className="inline-flex size-9 items-center justify-center rounded-lg border border-white/20 text-rose-200 transition hover:bg-rose-400/15 disabled:opacity-50"
+                        >
+                          <Trash2 aria-hidden="true" className="size-4" />
+                        </button>
+                      </div>
+                    ) : null}
+                  </div>
+                  <div className="flex min-h-11 items-center gap-1.5 px-3 py-2 text-xs text-muted-foreground">
+                    <span className="min-w-0 flex-1 break-words">Licence FFF : <span className="font-mono font-semibold text-foreground">{educator.licenseNumber || 'non renseignée'}</span></span>
+                  </div>
+                  <details
+                    open={isExpanded}
+                    onToggle={(event) => {
+                      const nextOpen = event.currentTarget.open
+                      setExpandedEducators((current) => {
+                        if (current.has(educator.id) === nextOpen) return current
+                        const next = new Set(current)
+                        if (nextOpen) next.add(educator.id)
+                        else next.delete(educator.id)
+                        return next
+                      })
+                    }}
+                    className="group border-t border-accent/35"
+                  >
+                    <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 px-3 text-xs font-bold text-primary outline-none transition hover:bg-accent/20 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
+                      <span>{isExpanded ? 'Masquer le téléphone' : 'Voir le téléphone'}</span>
+                      <ChevronDown aria-hidden="true" className="size-4 shrink-0 transition-transform group-open:rotate-180" />
+                    </summary>
+                    <div className="grid gap-2 border-t border-accent/20 bg-muted/30 p-3">
+                      {educator.phone ? (
+                        <PhoneActionButtons phone={educator.phone} label="le téléphone" playerName={educator.name} />
+                      ) : isOwn ? (
+                        <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                          <span>Aucun téléphone renseigné.</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setDraft({
+                                name: currentEducator.displayName,
+                                licenseNumber: ownDirectoryEntry?.licenseNumber ?? '',
+                                phone: '',
+                              })
+                              setEditingOwn(true)
+                              setError('')
+                              setOpen(true)
+                            }}
+                            className="font-bold text-primary hover:underline"
+                          >
+                            Ajouter un téléphone
+                          </button>
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Aucun téléphone renseigné.</p>
+                      )}
                     </div>
-                  ) : null}
+                  </details>
                 </li>
               )
             })}

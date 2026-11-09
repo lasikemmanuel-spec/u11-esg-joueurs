@@ -293,12 +293,12 @@ export function EducatorAccountManagement({
       ) : accounts.length === 0 ? (
         <p className="mt-4 rounded-lg bg-muted p-4 text-center text-sm text-muted-foreground">Aucun compte utilisateur.</p>
       ) : (
-        <ul className="mt-3 grid items-start gap-2 sm:mt-4 sm:grid-cols-2">
+        <ul className="mt-3 columns-1 gap-3 sm:mt-4 sm:columns-2">
           {accounts.map((account) => {
             const isSelf = account.username.toLocaleLowerCase('fr-FR') === currentUsername.toLocaleLowerCase('fr-FR')
             const initials = account.displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase('fr-FR')
             return (
-              <li key={account.username} className="overflow-hidden rounded-2xl border-2 border-[#172554]/15 bg-background shadow-sm transition hover:border-[#172554]/35">
+              <li key={account.username} className="mb-3 inline-block w-full break-inside-avoid overflow-hidden rounded-2xl border-2 border-[#172554]/15 bg-background align-top shadow-sm transition hover:border-[#172554]/35">
                 <details className="group">
                   <summary className="flex cursor-pointer list-none items-center gap-3 bg-gradient-to-r from-[#172554] to-[#1e3a8a] px-3 py-3 text-white outline-none transition hover:from-[#1e3a8a] hover:to-[#274493] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-400 sm:px-4">
                     <EducatorAvatar

@@ -15,6 +15,7 @@ export type SecurityEventType =
   | 'contact_modified'
   | 'match_modified'
   | 'callup_saved'
+  | 'training_attendance_saved'
 
 export type SecurityEvent = {
   event: SecurityEventType
@@ -51,6 +52,7 @@ export function logSecurityEvent(event: Omit<SecurityEvent, 'timestamp'>) {
     contact_modified: '📞',
     match_modified: '⚽',
     callup_saved: '📋',
+    training_attendance_saved: '📅',
   }[event.event] ?? '📋'
 
   console.log(

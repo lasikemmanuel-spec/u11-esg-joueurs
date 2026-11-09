@@ -15,6 +15,7 @@ import { EducatorProfilePhotoEditor } from '@/components/educator-profile-photo-
 import { RefreshSheetButton } from '@/components/refresh-sheet-button'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { LiveMatchConsole } from '@/components/live-match-console'
+import { TrainingAttendanceManager } from '@/components/training-attendance-manager'
 import type { Convocation } from '@/lib/convocations'
 import type { PublicPlayer } from '@/lib/players'
 import type { MatchSheetEntry, TeamMatchResults } from '@/lib/match-results'
@@ -22,7 +23,7 @@ import type { TrainingAttendanceSession } from '@/lib/training-attendance'
 import type { CohesionDay } from '@/lib/cohesion'
 import type { PlayerStats as PlayerStat } from '@/lib/stats'
 
-type TabKey = 'roster' | 'educator' | 'stats' | 'matches'
+type TabKey = 'roster' | 'educator' | 'training' | 'stats' | 'matches'
 type StatsSection = 'players' | 'matches'
 type MatchFocus = {
   date: string
@@ -200,7 +201,7 @@ export function DashboardTabs({
       setEducatorAccess(identity.role === 'reader' ? 'unauthenticated' : 'authenticated')
       setApplicationSession('authenticated')
       setLoginPassword('')
-      if (identity.role === 'reader' && activeTab === 'educator') setActiveTab('roster')
+      if (identity.role === 'reader' && (activeTab === 'educator' || activeTab === 'training')) setActiveTab('roster')
       window.dispatchEvent(new Event('educator-session-changed'))
       router.refresh()
     } catch (error) {
@@ -254,6 +255,9 @@ export function DashboardTabs({
     { key: 'stats', label: 'Statistiques U11' },
     ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
       ? [{ key: 'educator' as const, label: 'Annuaire' }]
+      : []),
+    ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
+      ? [{ key: 'training' as const, label: 'Entraînements' }]
       : []),
   ]
   const mainHeader = (
@@ -501,6 +505,9 @@ export function DashboardTabs({
             matchesPlayed={matchesPlayed}
             matchResults={matchResults}
           />
+        )}
+        {activeTab === 'training' && educatorAccess === 'authenticated' && educatorIdentity && (
+          <TrainingAttendanceManager players={rosterPlayers} sessions={trainingAttendance} loadError={trainingAttendanceError} />
         )}
         {activeTab === 'educator' && (
           <div className="flex flex-col gap-4">

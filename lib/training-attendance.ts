@@ -1,13 +1,16 @@
 import 'server-only'
-import { getSheetRows } from '@/lib/google-sheets'
+import {
+  ensureAuthenticatedSheetColumnCount,
+  getAuthenticatedSheetRows,
+  getSheetRows,
+  updateAuthenticatedSheetValues,
+} from '@/lib/google-sheets'
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
+import type { TrainingAttendanceEntry, TrainingAttendanceSession } from '@/lib/training-attendance-shared'
+
+export type { TrainingAttendanceEntry, TrainingAttendanceSession } from '@/lib/training-attendance-shared'
 
 const TAB = '📅 Présences Entraînement'
-
-export type TrainingAttendanceSession = {
-  date: string
-  playerStatuses: Record<number, string>
-}
 
 function sessionDate(value: string) {
   const date = value.match(/\((\d{1,2})\/(\d{1,2})(?:\/(\d{2,4}))?\)/)
@@ -64,4 +67,79 @@ export async function getTrainingAttendance(): Promise<TrainingAttendanceSession
   }
 
   return [...sessionsByDate.values()].sort((a, b) => a.date.localeCompare(b.date))
+}
+
+function columnName(columnIndex: number) {
+  let value = columnIndex + 1
+  let column = ''
+  while (value > 0) {
+    const remainder = (value - 1) % 26
+    column = String.fromCharCode(65 + remainder) + column
+    value = Math.floor((value - 1) / 26)
+  }
+  return column
+}
+
+function trainingSessionHeader(date: string) {
+  const [year, month, day] = date.split('-')
+  return `Séance (${day}/${month}/${year})`
+}
+
+export async function saveTrainingAttendance(
+  date: string,
+  entries: TrainingAttendanceEntry[],
+) {
+  const { sheetTitle, rows } = await getAuthenticatedSheetRows(TAB)
+  const headerRowIndex = rows.findIndex((row) => row.some((value) => /séance/i.test(value) && sessionDate(value)))
+  if (headerRowIndex < 0) {
+    throw new Error(`Ligne des séances introuvable dans l’onglet « ${TAB} ».`)
+  }
+
+  const dateColumns = new Map<string, number>()
+  rows[headerRowIndex].forEach((header, column) => {
+    const currentDate = sessionDate(header)
+    if (!currentDate) return
+    if (dateColumns.has(currentDate)) {
+      throw new Error(`La date ${currentDate} apparaît plusieurs fois dans l’onglet « ${TAB} ».`)
+    }
+    dateColumns.set(currentDate, column)
+  })
+
+  const playerRows = new Map<number, number>()
+  rows.forEach((row, rowIndex) => {
+    if (rowIndex <= headerRowIndex) return
+    const number = Number.parseInt(row[1] ?? '', 10)
+    if (!Number.isSafeInteger(number)) return
+    if (playerRows.has(number)) throw new Error(`Le joueur n°${number} apparaît plusieurs fois dans l’onglet « ${TAB} ».`)
+    playerRows.set(number, rowIndex)
+  })
+
+  const existingColumn = dateColumns.get(date)
+  let targetColumn = existingColumn
+  if (targetColumn === undefined) {
+    targetColumn = Math.max(-1, ...dateColumns.values()) + 1
+    while (rows.some((row) => (row[targetColumn!] ?? '').trim() !== '')) targetColumn += 1
+  }
+
+  const escapedTitle = sheetTitle.replace(/'/g, "''")
+  await ensureAuthenticatedSheetColumnCount(sheetTitle, targetColumn + 1)
+  const column = columnName(targetColumn)
+  const updates: Array<{ range: string; values: string[][] }> = []
+  if (existingColumn === undefined) {
+    updates.push({
+      range: `'${escapedTitle}'!${column}${headerRowIndex + 1}`,
+      values: [[trainingSessionHeader(date)]],
+    })
+  }
+  for (const entry of entries) {
+    const rowIndex = playerRows.get(entry.number)
+    if (rowIndex === undefined) throw new Error(`Le joueur n°${entry.number} est introuvable dans l’onglet « ${TAB} ».`)
+    updates.push({
+      range: `'${escapedTitle}'!${column}${rowIndex + 1}`,
+      values: [[entry.status]],
+    })
+  }
+
+  await updateAuthenticatedSheetValues(updates)
+  return { date, playersSaved: entries.length, created: existingColumn === undefined }
 }

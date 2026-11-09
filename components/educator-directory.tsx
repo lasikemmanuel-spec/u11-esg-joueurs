@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Pencil, Plus, Save, Trash2, X } from 'lucide-react'
+import { Pencil, Plus, Save, Trash2, UserRoundPlus, X } from 'lucide-react'
 import { EducatorAvatar } from '@/components/educator-avatar'
 import { ClubCrest } from '@/components/club-crest'
 import { PhoneActionButtons } from '@/components/phone-action-buttons'
@@ -189,8 +189,11 @@ export function EducatorDirectory({
               aria-label="Ajouter un éducateur"
               className="inline-flex min-h-9 items-center gap-1.5 whitespace-nowrap rounded-xl bg-amber-400 px-3 text-xs font-black text-blue-950 shadow-sm transition hover:bg-amber-300 sm:min-h-10 sm:px-3.5"
             >
-              <Plus className="size-4" />
-              <span className="sm:hidden">Ajouter</span>
+              <Plus aria-hidden="true" className="hidden size-4 sm:block" />
+              <span className="inline-flex items-center gap-1 sm:hidden">
+                <UserRoundPlus aria-hidden="true" className="size-3.5" />
+                Éducateur
+              </span>
               <span className="hidden sm:inline">Ajouter un éducateur</span>
             </button>
           )}

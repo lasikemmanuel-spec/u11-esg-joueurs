@@ -24,11 +24,37 @@ type GoogleSheetsRequestInit = RequestInit & {
   next?: { revalidate?: number | false; tags?: string[] }
 }
 
+const GOOGLE_REQUEST_TIMEOUT_MS = 15_000
+
+async function fetchWithTimeout(
+  url: string,
+  init: GoogleSheetsRequestInit,
+  timeoutMs = GOOGLE_REQUEST_TIMEOUT_MS,
+) {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), timeoutMs)
+  try {
+    return await fetch(url, { ...init, signal: controller.signal })
+  } catch (error) {
+    if (controller.signal.aborted) {
+      throw new Error('Délai dépassé lors de la communication avec Google. Réessayez dans quelques instants.')
+    }
+    throw error
+  } finally {
+    clearTimeout(timeout)
+  }
+}
+
 async function fetchGoogleSheetsApi(url: string, init: GoogleSheetsRequestInit = {}) {
   const canRetry = (init.method ?? 'GET').toUpperCase() === 'GET'
+  const deadline = Date.now() + GOOGLE_REQUEST_TIMEOUT_MS
 
   for (let attempt = 0; ; attempt += 1) {
-    const response = await fetch(url, init)
+    const remainingMs = deadline - Date.now()
+    if (remainingMs <= 0) {
+      throw new Error('Google Sheets ne répond pas. Réessayez dans quelques instants.')
+    }
+    const response = await fetchWithTimeout(url, init, remainingMs)
     if (response.status !== 429 || !canRetry || attempt >= 2) return response
     await response.body?.cancel()
 
@@ -43,6 +69,9 @@ async function fetchGoogleSheetsApi(url: string, init: GoogleSheetsRequestInit =
         ? retryAfterDate - Date.now()
         : 0
     const delayMs = Math.max(0, Math.min(retryAfterMs, 5000)) || 300 * 2 ** attempt
+    if (Date.now() + delayMs >= deadline) {
+      throw new Error('Google Sheets ne répond pas. Réessayez dans quelques instants.')
+    }
     await new Promise((resolve) => setTimeout(resolve, delayMs))
   }
 }
@@ -153,7 +182,7 @@ export async function getGoogleAccessToken(): Promise<string | null> {
   if (serviceAccountEmail && serviceAccountPrivateKey) {
     try {
       const assertion = getServiceAccountJwt(serviceAccountEmail, serviceAccountPrivateKey)
-      const res = await fetch('https://oauth2.googleapis.com/token', {
+      const res = await fetchWithTimeout('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
@@ -189,7 +218,7 @@ export async function getGoogleAccessToken(): Promise<string | null> {
 
   if (clientId && clientSecret && refreshToken) {
     try {
-      const res = await fetch('https://oauth2.googleapis.com/token', {
+      const res = await fetchWithTimeout('https://oauth2.googleapis.com/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: new URLSearchParams({
@@ -306,7 +335,7 @@ export async function getSheetRows(tabName?: string): Promise<string[][]> {
     headers.Authorization = `Bearer ${accessToken}`
   }
 
-  const res = await fetch(fallbackUrl, {
+  const res = await fetchWithTimeout(fallbackUrl, {
     headers,
     next: { revalidate: 300, tags: ['google-sheet'] },
   })

@@ -55,6 +55,18 @@ export function EducatorAccountManagement({
       .finally(() => setLoading(false))
   }, [load])
 
+  const retryLoad = async () => {
+    setLoading(true)
+    setError('')
+    try {
+      await load()
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Impossible de charger les comptes.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const saveAccount = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setPendingUsername('new')
@@ -206,6 +218,17 @@ export function EducatorAccountManagement({
       {notice && <p role="status" className="mt-3 text-sm font-medium text-emerald-700 dark:text-emerald-300">{notice}</p>}
       {loading ? (
         <p className="mt-4 text-sm text-muted-foreground">Chargement des comptes…</p>
+      ) : error && accounts.length === 0 ? (
+        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-destructive/25 bg-destructive/5 p-3">
+          <p className="text-sm text-muted-foreground">Les comptes n’ont pas pu être chargés.</p>
+          <button
+            type="button"
+            onClick={() => void retryLoad()}
+            className="min-h-9 rounded-lg border border-accent/50 px-3 text-sm font-semibold text-primary"
+          >
+            Réessayer
+          </button>
+        </div>
       ) : accounts.length === 0 ? (
         <p className="mt-4 rounded-lg bg-muted p-4 text-center text-sm text-muted-foreground">Aucun compte éducateur.</p>
       ) : (

@@ -250,7 +250,7 @@ export function DashboardTabs({
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'matches', label: 'Matchs' },
-    { key: 'roster', label: 'Effectifs' },
+    { key: 'roster', label: 'Fiches joueurs' },
     { key: 'stats', label: 'Stats' },
     ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
       ? [{ key: 'educator' as const, label: 'Annuaire' }]

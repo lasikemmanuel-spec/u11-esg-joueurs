@@ -351,10 +351,10 @@ export function EducatorRoster({
         disabled={diagnosticPending}
         aria-label="Vérifier le chiffrement des téléphones"
         title="Vérifier le chiffrement des téléphones"
-        className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-accent/35 bg-background/70 px-2 text-[11px] font-medium text-muted-foreground transition hover:bg-accent/20 hover:text-primary disabled:opacity-50"
+        className="inline-flex min-h-8 items-center gap-1.5 whitespace-nowrap rounded-lg border border-accent/35 bg-background/70 px-2.5 text-xs font-medium text-muted-foreground transition hover:bg-accent/20 hover:text-primary disabled:opacity-50"
       >
         <LockKeyhole aria-hidden="true" className="size-3.5 shrink-0" />
-        {diagnosticPending ? 'Vérification…' : 'Vérifier'}
+        {diagnosticPending ? 'Vérification…' : 'Vérifier le chiffrement'}
       </button>
   )
 
@@ -385,7 +385,7 @@ export function EducatorRoster({
   )
 
   const phoneEncryptionDiagnosticPanel = educator.role === 'admin' && (
-    <div className="flex flex-col items-start gap-2 rounded-xl border border-accent/30 bg-white/60 p-2 dark:bg-card/70">
+    <div className="flex w-fit max-w-full flex-col items-start gap-2 self-start rounded-xl border border-accent/30 bg-white/60 p-2 dark:bg-card/70">
       {phoneEncryptionDiagnosticButton}
       {phoneEncryptionDiagnosticStatus}
     </div>
@@ -506,7 +506,7 @@ export function EducatorRoster({
           })}
         </nav>}
         {!query.trim() && (
-          <div className={directoryView === 'accounts' ? 'hidden sm:flex' : ''}>
+          <div className={`w-fit max-w-full ${directoryView === 'accounts' ? 'hidden sm:flex' : ''}`}>
             {phoneEncryptionDiagnosticPanel}
           </div>
         )}

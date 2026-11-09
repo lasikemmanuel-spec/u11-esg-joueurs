@@ -176,19 +176,20 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
   }
 
   return (
-    <section aria-labelledby="educator-accounts-title" className="rounded-2xl border border-accent/50 bg-card p-4 shadow-sm">
-      <header className="flex flex-wrap items-center justify-between gap-3">
+    <section aria-labelledby="educator-accounts-title" className="rounded-2xl border border-accent/50 bg-card p-2.5 shadow-sm sm:p-4">
+      <header className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
         <div>
-          <h2 id="educator-accounts-title" className="font-bold text-primary">Comptes éducateurs</h2>
-          <p className="mt-1 text-xs text-muted-foreground">Gérer les accès, les mots de passe et les rôles administrateur, éducateur ou lecteur.</p>
+          <h2 id="educator-accounts-title" className="text-base font-bold text-primary sm:text-lg">Comptes éducateurs</h2>
+          <p className="mt-1 hidden text-xs text-muted-foreground sm:block">Gérer les accès, les mots de passe et les rôles administrateur, éducateur ou lecteur.</p>
         </div>
         <button
           type="button"
           onClick={() => { setError(''); setDraft(emptyDraft); setCreateOpen(true) }}
-          className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-primary px-3 text-sm font-bold text-primary-foreground"
+          className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground sm:text-sm"
         >
           <Plus aria-hidden="true" className="size-4" />
-          Ajouter un compte
+          <span className="sm:hidden">Ajouter</span>
+          <span className="hidden sm:inline">Ajouter un compte</span>
         </button>
       </header>
 
@@ -199,16 +200,16 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
       ) : accounts.length === 0 ? (
         <p className="mt-4 rounded-lg bg-muted p-4 text-center text-sm text-muted-foreground">Aucun compte éducateur.</p>
       ) : (
-        <ul className="mt-4 grid gap-2 sm:grid-cols-2">
+        <ul className="mt-3 grid gap-2 sm:mt-4 sm:grid-cols-2">
           {accounts.map((account) => {
             const isSelf = account.username.toLocaleLowerCase('fr-FR') === currentUsername.toLocaleLowerCase('fr-FR')
             return (
-              <li key={account.username} className="rounded-xl border border-border bg-background p-3">
-                <div className="grid gap-3 sm:flex sm:items-start sm:justify-between sm:gap-2">
+              <li key={account.username} className="rounded-xl border border-border bg-background p-2.5 sm:p-3">
+                <div className="grid gap-2 sm:flex sm:items-start sm:justify-between sm:gap-2">
                   <div className="min-w-0">
                     <h3 className="break-words font-bold text-foreground sm:truncate">{account.displayName}{isSelf ? ' (vous)' : ''}</h3>
                     <p className="mt-1 break-all text-sm text-muted-foreground sm:truncate">{account.username}</p>
-                    <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs font-semibold">
+                    <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs font-semibold sm:mt-2">
                       {account.role === 'admin' ? <Shield aria-hidden="true" className="size-3.5" /> : <UserRound aria-hidden="true" className="size-3.5" />}
                       {account.role === 'admin' ? 'Administrateur' : account.role === 'reader' ? 'Lecteur' : 'Éducateur'}
                     </span>

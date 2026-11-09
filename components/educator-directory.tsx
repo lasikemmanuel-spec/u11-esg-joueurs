@@ -168,15 +168,15 @@ export function EducatorDirectory({
   return (
     <section
       aria-labelledby={isSearching ? undefined : 'educator-directory-title'}
-      className={isSearching ? '' : 'rounded-2xl border border-accent/50 bg-card p-4 shadow-sm'}
+      className={isSearching ? '' : 'rounded-2xl border border-accent/50 bg-card p-2.5 shadow-sm sm:p-4'}
     >
       {!isSearching && (
-      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] p-4 text-white shadow-sm">
-        <div className="flex items-center gap-3">
-          <ClubCrest className="size-10 shrink-0 ring-2 ring-amber-400/80 shadow-md" />
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] p-3 text-white shadow-sm sm:gap-3 sm:rounded-2xl sm:p-4">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+          <ClubCrest className="size-8 shrink-0 ring-2 ring-amber-400/80 shadow-md sm:size-10" />
           <div>
-            <h2 id="educator-directory-title" className="text-lg font-black tracking-wide text-white">Annuaire des éducateurs</h2>
-            <p className="mt-0.5 text-xs text-blue-200">Coordonnées et licences de l’encadrement ESG</p>
+            <h2 id="educator-directory-title" className="text-base font-black tracking-wide text-white sm:text-lg">Annuaire des éducateurs</h2>
+            <p className="mt-0.5 hidden text-xs text-blue-200 sm:block">Coordonnées et licences de l’encadrement ESG</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -184,9 +184,11 @@ export function EducatorDirectory({
             <button
               type="button"
               onClick={() => { setDraft(blank); setEditingOwn(false); setError(''); setOpen(true) }}
-              className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-amber-400 px-3.5 text-xs font-black text-blue-950 shadow-sm transition hover:bg-amber-300"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-amber-400 px-3 text-xs font-black text-blue-950 shadow-sm transition hover:bg-amber-300 sm:px-3.5"
             >
-              <Plus className="size-4" /> Ajouter un éducateur
+              <Plus className="size-4" />
+              <span className="sm:hidden">Ajouter</span>
+              <span className="hidden sm:inline">Ajouter un éducateur</span>
             </button>
           )}
         </div>
@@ -223,22 +225,22 @@ export function EducatorDirectory({
       ) : (
         <>
           {isSearching && searchTitle && <h2 className="font-bold text-primary">{searchTitle}</h2>}
-          <ul className="mt-4 grid gap-4 sm:mt-3 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
+          <ul className="mt-2 grid gap-2 sm:mt-3 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
             {allCards.map((educator: DirectoryEducator) => {
               const isOwn = currentEducator && (educator.id === ownDirectoryEntry?.id || educator.id === 'me-auto-entry')
               return (
                 <li
                   key={educator.id}
-                  className="rounded-2xl border-2 border-[#172554]/15 bg-card p-4 shadow-sm transition-all hover:border-[#172554]/40 hover:shadow-md sm:p-3.5"
+                  className="rounded-xl border border-[#172554]/15 bg-card p-3 shadow-sm transition-all hover:border-[#172554]/40 hover:shadow-md sm:rounded-2xl sm:border-2 sm:p-3.5"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex items-center gap-2.5 min-w-0">
                       {isOwn ? (
-                        <div className="size-9 shrink-0 overflow-hidden rounded-xl ring-2 ring-amber-400/60 shadow-sm flex items-center justify-center bg-[#172554]">
-                          <EducatorAvatar username={currentEducator.username} revision={photoRevision} size="size-9" />
+                        <div className="size-8 shrink-0 overflow-hidden rounded-xl ring-2 ring-amber-400/60 shadow-sm flex items-center justify-center bg-[#172554] sm:size-9">
+                          <EducatorAvatar username={currentEducator.username} revision={photoRevision} size="size-8 sm:size-9" />
                         </div>
                       ) : (
-                        <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-[#172554] text-xs font-black text-amber-300 ring-2 ring-amber-400/40 shadow-sm">
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-[#172554] text-xs font-black text-amber-300 ring-2 ring-amber-400/40 shadow-sm sm:size-9">
                           {educator.name.split(' ').map((n: string) => n[0]).filter(Boolean).slice(0, 2).join('').toUpperCase()}
                         </span>
                       )}
@@ -267,7 +269,7 @@ export function EducatorDirectory({
                               }}
                               aria-label="Modifier ma fiche"
                               title="Modifier ma fiche"
-                              className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-accent/40 bg-card text-muted-foreground transition hover:bg-accent/40 hover:text-foreground"
+                              className="inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-accent/40 bg-card text-muted-foreground transition hover:bg-accent/40 hover:text-foreground sm:size-6"
                             >
                               <Pencil aria-hidden="true" className="size-3" />
                             </button>
@@ -279,7 +281,7 @@ export function EducatorDirectory({
                                   onClick={() => edit(educator)}
                                   aria-label={`Modifier ${educator.name}`}
                                   title="Modifier la fiche"
-                                  className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-accent/40 bg-card text-muted-foreground transition hover:bg-accent/40 hover:text-foreground"
+                                  className="inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-accent/40 bg-card text-muted-foreground transition hover:bg-accent/40 hover:text-foreground sm:size-6"
                                 >
                                   <Pencil aria-hidden="true" className="size-3" />
                                 </button>
@@ -289,7 +291,7 @@ export function EducatorDirectory({
                                   disabled={deletingId !== null}
                                   aria-label={`Supprimer la fiche de ${educator.name}`}
                                   title="Supprimer la fiche"
-                                  className="inline-flex size-6 shrink-0 items-center justify-center rounded-md border border-destructive/30 bg-card text-destructive transition hover:bg-destructive/10 disabled:opacity-50"
+                                  className="inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-destructive/30 bg-card text-destructive transition hover:bg-destructive/10 disabled:opacity-50 sm:size-6"
                                 >
                                   <Trash2 aria-hidden="true" className="size-3" />
                                 </button>
@@ -305,7 +307,7 @@ export function EducatorDirectory({
                   </div>
 
                   {educator.phone ? (
-                    <div className="mt-4 flex items-center gap-3 rounded-xl border border-accent/40 bg-muted/40 p-3 sm:mt-3 sm:p-2">
+                    <div className="mt-2 flex items-center gap-2 rounded-xl border border-accent/40 bg-muted/40 p-2 sm:mt-3 sm:gap-3">
                       <PhoneActionButtons
                         phone={educator.phone}
                         label="le téléphone"

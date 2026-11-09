@@ -600,7 +600,7 @@ export function EducatorRoster({
                     if (!value) return null
                     const label = parent === 'father' ? 'Papa' : 'Maman'
                     return (
-                      <div key={parent} className="grid w-full grid-cols-[5rem_minmax(0,1fr)] items-center gap-2">
+                      <div key={parent} className="grid w-full grid-cols-[3.25rem_minmax(0,1fr)] items-center gap-1 md:grid-cols-[4.5rem_minmax(0,1fr)] md:gap-2">
                         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
                           <ParentAvatar parent={parent} />
                           {label}
@@ -732,7 +732,7 @@ export function EducatorRoster({
           Aucun joueur ne correspond à votre recherche.
         </p>
       ) : (
-        <div className="columns-1 gap-3 sm:columns-2 xl:columns-3 2xl:columns-4">
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {visiblePlayers.map((player) => {
             const licenseNumber = player.licenseNumber
             const isCopied = licenseNumber && copiedId === licenseNumber
@@ -744,7 +744,7 @@ export function EducatorRoster({
               if (!value) return null
               const label = parent === 'father' ? 'Papa' : 'Maman'
               return (
-                <div key={parent} className="grid w-full grid-cols-[5rem_minmax(0,1fr)] items-center gap-2">
+                <div key={parent} className="grid w-full grid-cols-[3.25rem_minmax(0,1fr)] items-center gap-1 md:grid-cols-[4.5rem_minmax(0,1fr)] md:gap-2">
                   <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
                     <ParentAvatar parent={parent} />
                     {label}
@@ -761,7 +761,7 @@ export function EducatorRoster({
             return (
               <article
                 key={player.number}
-                className="mb-3 inline-block w-full break-inside-avoid overflow-hidden rounded-2xl border-2 border-[#172554]/15 bg-card align-top shadow-sm transition hover:border-[#172554]/35 hover:shadow-md"
+                className="min-w-0 overflow-hidden rounded-2xl border-2 border-[#172554]/15 bg-card shadow-sm transition hover:border-[#172554]/35 hover:shadow-md"
               >
                 <div className="flex items-center gap-2.5 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-3 py-3 text-white">
                   <span
@@ -771,7 +771,7 @@ export function EducatorRoster({
                     {player.number}
                   </span>
                   <div className="min-w-0 flex-1">
-                    <h3 className="truncate text-sm font-black sm:text-base">
+                    <h3 className="whitespace-normal break-words text-sm font-black leading-tight sm:text-base">
                       {player.firstName} <span className="uppercase tracking-wide">{player.lastName}</span>
                     </h3>
                     <span className="mt-1 inline-flex max-w-full truncate rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-200 ring-1 ring-white/15">

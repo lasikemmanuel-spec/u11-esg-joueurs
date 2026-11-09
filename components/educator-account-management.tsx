@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { Check, ChevronDown, Copy, Eye, EyeOff, KeyRound, Pencil, RefreshCw, Shield, Trash2, UserRound, X } from 'lucide-react'
+import { Check, ChevronDown, Copy, Eye, EyeOff, KeyRound, Mail, Pencil, RefreshCw, Shield, Trash2, UserRound, X } from 'lucide-react'
 import { EducatorAvatar } from '@/components/educator-avatar'
 
 type AccountRole = 'educator' | 'admin' | 'reader'
@@ -293,7 +293,7 @@ export function EducatorAccountManagement({
       ) : accounts.length === 0 ? (
         <p className="mt-4 rounded-lg bg-muted p-4 text-center text-sm text-muted-foreground">Aucun compte utilisateur.</p>
       ) : (
-        <ul className="mt-3 grid gap-2 sm:mt-4 sm:grid-cols-2">
+        <ul className="mt-3 grid items-start gap-2 sm:mt-4 sm:grid-cols-2">
           {accounts.map((account) => {
             const isSelf = account.username.toLocaleLowerCase('fr-FR') === currentUsername.toLocaleLowerCase('fr-FR')
             const initials = account.displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase('fr-FR')
@@ -313,7 +313,6 @@ export function EducatorAccountManagement({
                     />
                     <span className="min-w-0 flex-1">
                       <h3 className="truncate text-sm font-black sm:text-base">{account.displayName}{isSelf ? ' (vous)' : ''}</h3>
-                      <span className="mt-0.5 block truncate text-xs text-blue-100">{account.username}</span>
                     </span>
                     <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-400/15 px-1.5 py-1 text-[10px] font-bold text-amber-200 ring-1 ring-amber-300/50 sm:px-2 sm:text-[11px]">
                       {account.role === 'admin' ? <Shield aria-hidden="true" className="size-3" /> : <UserRound aria-hidden="true" className="size-3" />}
@@ -321,8 +320,17 @@ export function EducatorAccountManagement({
                     </span>
                     <ChevronDown aria-hidden="true" className="size-5 shrink-0 text-amber-300 transition-transform group-open:rotate-180" />
                   </summary>
-                  <div className="grid gap-3 border-t border-amber-400/35 bg-gradient-to-b from-[#f7f8ff] to-background p-3 dark:from-[#202b4b] sm:p-4">
-                    <div className="grid grid-cols-2 gap-2">
+                  <div className="grid gap-3 border-t border-amber-400/40 bg-gradient-to-br from-[#eef2ff] via-[#f8faff] to-[#fffaf0] p-3 dark:from-[#1c294b] dark:via-[#202b4b] dark:to-[#302b40] sm:gap-4 sm:p-4">
+                    <div className="flex min-w-0 items-center gap-3 rounded-xl border border-[#1e3a8a]/10 bg-white/80 p-3 shadow-sm dark:border-white/10 dark:bg-white/5">
+                      <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#172554] text-amber-300 shadow-sm">
+                        <Mail aria-hidden="true" className="size-4" />
+                      </span>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Adresse e-mail</p>
+                        <p className="break-all text-sm font-semibold text-foreground">{account.username}</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
                       <button
                         type="button"
                         onClick={() => {
@@ -337,19 +345,19 @@ export function EducatorAccountManagement({
                           setError('')
                         }}
                         disabled={pendingUsername !== null}
-                        className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-lg border border-accent/50 px-2 text-xs font-semibold text-primary disabled:opacity-50 sm:min-h-8"
+                        className="inline-flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-xl border border-[#1e3a8a]/15 bg-white/85 px-2 text-xs font-bold text-[#172554] shadow-sm transition hover:border-[#1e3a8a]/40 hover:bg-white hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1e3a8a] disabled:opacity-50 dark:border-white/10 dark:bg-white/5 dark:text-blue-100 dark:hover:bg-white/10"
                       >
                         <Pencil aria-hidden="true" className="size-3.5" />
                         Identité
                       </button>
-                      <label className="col-span-2 grid min-w-0 gap-1 text-[11px] font-semibold text-muted-foreground sm:col-span-1">
-                        Rôle
+                      <label className="grid min-w-0 content-center gap-1 rounded-xl border border-[#1e3a8a]/15 bg-white/85 px-2.5 py-1.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground shadow-sm dark:border-white/10 dark:bg-white/5">
+                        <span>Rôle du compte</span>
                         <select
                           value={account.role}
                           onChange={(event) => void updateRole(account, event.target.value as AccountRole)}
                           disabled={pendingUsername !== null || (isSelf && account.role === 'admin')}
                           aria-label={`Rôle de ${account.displayName}`}
-                          className="h-10 w-full rounded-lg border border-accent/50 bg-background px-2 text-xs font-semibold text-primary disabled:opacity-50 sm:h-8 sm:w-auto"
+                          className="h-8 w-full min-w-0 rounded-lg border border-accent/40 bg-background px-2 text-xs font-bold normal-case tracking-normal text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
                         >
                           <option value="admin">Administrateur</option>
                           <option value="educator">Éducateur</option>
@@ -366,7 +374,7 @@ export function EducatorAccountManagement({
                           setError('')
                         }}
                         disabled={pendingUsername !== null}
-                        className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-lg border border-accent/50 px-2 text-xs font-semibold text-primary disabled:opacity-50 sm:min-h-8"
+                        className="inline-flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-xl border border-amber-500/30 bg-amber-50/80 px-2 text-xs font-bold text-[#172554] shadow-sm transition hover:border-amber-500/60 hover:bg-amber-100 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500 disabled:opacity-50 dark:bg-amber-400/10 dark:text-amber-100 dark:hover:bg-amber-400/20"
                       >
                         <KeyRound aria-hidden="true" className="size-3.5" />
                         Mot de passe
@@ -375,7 +383,7 @@ export function EducatorAccountManagement({
                         type="button"
                         onClick={() => void deleteAccount(account)}
                         disabled={pendingUsername !== null || isSelf}
-                        className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-lg border border-destructive/40 px-2 text-xs font-semibold text-destructive disabled:opacity-50 sm:min-h-8"
+                        className="inline-flex min-h-12 min-w-0 items-center justify-center gap-2 rounded-xl border border-rose-300/70 bg-rose-50/80 px-2 text-xs font-bold text-rose-700 shadow-sm transition hover:border-rose-400 hover:bg-rose-100 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 disabled:opacity-50 dark:border-rose-400/30 dark:bg-rose-400/10 dark:text-rose-200 dark:hover:bg-rose-400/20"
                       >
                         <Trash2 aria-hidden="true" className="size-3.5" />
                         Supprimer

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { ChevronDown, KeyRound, Pencil, Plus, Shield, Trash2, UserRound, X } from 'lucide-react'
+import type { ReactNode } from 'react'
 
 type AccountRole = 'educator' | 'admin' | 'reader'
 
@@ -23,7 +24,15 @@ type AccountDraft = {
 
 const emptyDraft: AccountDraft = { username: '', firstName: '', lastName: '', password: '', role: 'educator' }
 
-export function EducatorAccountManagement({ currentUsername }: { currentUsername: string }) {
+export function EducatorAccountManagement({
+  currentUsername,
+  encryptionControl,
+  encryptionStatus,
+}: {
+  currentUsername: string
+  encryptionControl?: ReactNode
+  encryptionStatus?: ReactNode
+}) {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [draft, setDraft] = useState<AccountDraft>(emptyDraft)
   const [passwordDraft, setPasswordDraft] = useState('')
@@ -178,21 +187,25 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
   return (
     <section aria-labelledby="educator-accounts-title" className="rounded-2xl border border-accent/50 bg-card p-2.5 shadow-sm sm:p-4">
       <header className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
-        <div>
+        <div className="hidden sm:block">
           <h2 id="educator-accounts-title" className="text-base font-bold text-primary sm:text-lg">Comptes éducateurs</h2>
-          <p className="mt-1 hidden text-xs text-muted-foreground sm:block">Gérer les accès, les mots de passe et les rôles administrateur, éducateur ou lecteur.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Gérer les accès, les mots de passe et les rôles administrateur, éducateur ou lecteur.</p>
         </div>
-        <button
-          type="button"
-          onClick={() => { setError(''); setDraft(emptyDraft); setCreateOpen(true) }}
-          className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground sm:text-sm"
-        >
-          <Plus aria-hidden="true" className="size-4" />
-          <span className="sm:hidden">Ajouter</span>
-          <span className="hidden sm:inline">Ajouter un compte</span>
-        </button>
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <div className="sm:hidden">{encryptionControl}</div>
+          <button
+            type="button"
+            onClick={() => { setError(''); setDraft(emptyDraft); setCreateOpen(true) }}
+            className="inline-flex min-h-10 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground sm:text-sm"
+          >
+            <Plus aria-hidden="true" className="size-4" />
+            <span className="sm:hidden">Ajouter</span>
+            <span className="hidden sm:inline">Ajouter un compte</span>
+          </button>
+        </div>
       </header>
 
+      <div className="sm:hidden">{encryptionStatus}</div>
       {error && <p role="alert" className="mt-3 text-sm font-medium text-destructive">{error}</p>}
       {notice && <p role="status" className="mt-3 text-sm font-medium text-emerald-700 dark:text-emerald-300">{notice}</p>}
       {loading ? (

@@ -344,19 +344,22 @@ export function EducatorRoster({
     )
   }
 
-  const phoneEncryptionDiagnosticPanel = educator.role === 'admin' && (
-    <div className="flex flex-col items-start gap-2 rounded-xl border border-accent/30 bg-white/60 p-2 dark:bg-card/70">
+  const phoneEncryptionDiagnosticButton = educator.role === 'admin' && (
       <button
         type="button"
         onClick={() => void runPhoneDiagnostics()}
         disabled={diagnosticPending}
         aria-label="Vérifier le chiffrement des téléphones"
-        className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-accent/35 bg-background/70 px-2.5 text-xs font-medium text-muted-foreground transition hover:bg-accent/20 hover:text-primary disabled:opacity-50"
+        title="Vérifier le chiffrement des téléphones"
+        className="inline-flex min-h-8 items-center gap-1 rounded-lg border border-accent/35 bg-background/70 px-2 text-[11px] font-medium text-muted-foreground transition hover:bg-accent/20 hover:text-primary disabled:opacity-50"
       >
         <LockKeyhole aria-hidden="true" className="size-3.5 shrink-0" />
-        {diagnosticPending ? 'Vérification…' : 'Vérifier le chiffrement'}
-        <span className="hidden sm:inline"> des téléphones</span>
+        {diagnosticPending ? 'Vérification…' : 'Vérifier'}
       </button>
+  )
+
+  const phoneEncryptionDiagnosticStatus = educator.role === 'admin' && (diagnosticError || phoneDiagnostics) && (
+    <div className="mt-2 flex flex-col items-start gap-2">
       {diagnosticError && <p role="alert" className="text-sm text-destructive">{diagnosticError}</p>}
       {phoneDiagnostics && (
         <div role="status" className="w-full rounded-lg bg-muted/70 p-3 text-sm">
@@ -378,6 +381,13 @@ export function EducatorRoster({
           )}
         </div>
       )}
+    </div>
+  )
+
+  const phoneEncryptionDiagnosticPanel = educator.role === 'admin' && (
+    <div className="flex flex-col items-start gap-2 rounded-xl border border-accent/30 bg-white/60 p-2 dark:bg-card/70">
+      {phoneEncryptionDiagnosticButton}
+      {phoneEncryptionDiagnosticStatus}
     </div>
   )
 
@@ -495,7 +505,11 @@ export function EducatorRoster({
             )
           })}
         </nav>}
-        {!query.trim() && phoneEncryptionDiagnosticPanel}
+        {!query.trim() && (
+          <div className={directoryView === 'accounts' ? 'hidden sm:flex' : ''}>
+            {phoneEncryptionDiagnosticPanel}
+          </div>
+        )}
       </div>
 
       {(directoryView === 'educators' || Boolean(query.trim())) && (
@@ -780,7 +794,11 @@ export function EducatorRoster({
       )}
 
       {directoryView === 'accounts' && educator.role === 'admin' && (
-        <EducatorAccountManagement currentUsername={educator.username} />
+        <EducatorAccountManagement
+          currentUsername={educator.username}
+          encryptionControl={phoneEncryptionDiagnosticButton}
+          encryptionStatus={phoneEncryptionDiagnosticStatus}
+        />
       )}
 
       {phoneEditor && educator.role === 'admin' && (

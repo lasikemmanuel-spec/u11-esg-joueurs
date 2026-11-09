@@ -2,11 +2,13 @@
 
 import { useEffect, useState } from 'react'
 import { UserRound } from 'lucide-react'
+import type { ReactNode } from 'react'
 
-export function EducatorAvatar({ username, revision = 0, size = 'size-16' }: {
+export function EducatorAvatar({ username, revision = 0, size = 'size-16', fallback }: {
   username: string
   revision?: number
   size?: string
+  fallback?: ReactNode
 }) {
   const [loadedUsername, setLoadedUsername] = useState('')
   const [previewUsername, setPreviewUsername] = useState('')
@@ -37,7 +39,7 @@ export function EducatorAvatar({ username, revision = 0, size = 'size-16' }: {
         />
       )}
       {(!normalizedUsername || loadedUsername !== normalizedUsername || previewUsername !== normalizedUsername) && (
-        <UserRound aria-hidden="true" className="absolute inset-0 m-auto size-1/2 text-muted-foreground" />
+        fallback ?? <UserRound aria-hidden="true" className="absolute inset-0 m-auto size-1/2 text-muted-foreground" />
       )}
     </div>
   )

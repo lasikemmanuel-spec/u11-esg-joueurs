@@ -796,6 +796,7 @@ export function EducatorRoster({
       {directoryView === 'accounts' && educator.role === 'admin' && (
         <EducatorAccountManagement
           currentUsername={educator.username}
+          photoRevision={photoRevision}
           encryptionControl={phoneEncryptionDiagnosticButton}
           encryptionStatus={phoneEncryptionDiagnosticStatus}
         />

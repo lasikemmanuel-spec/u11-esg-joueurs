@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { ChevronDown, KeyRound, Pencil, Plus, Shield, Trash2, UserRound, X } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { EducatorAvatar } from '@/components/educator-avatar'
 
 type AccountRole = 'educator' | 'admin' | 'reader'
 
@@ -26,10 +27,12 @@ const emptyDraft: AccountDraft = { username: '', firstName: '', lastName: '', pa
 
 export function EducatorAccountManagement({
   currentUsername,
+  photoRevision = 0,
   encryptionControl,
   encryptionStatus,
 }: {
   currentUsername: string
+  photoRevision?: number
   encryptionControl?: ReactNode
   encryptionStatus?: ReactNode
 }) {
@@ -221,9 +224,16 @@ export function EducatorAccountManagement({
               <li key={account.username} className="overflow-hidden rounded-2xl border-2 border-[#172554]/15 bg-background shadow-sm transition hover:border-[#172554]/35">
                 <details className="group">
                   <summary className="flex cursor-pointer list-none items-center gap-3 bg-gradient-to-r from-[#172554] to-[#1e3a8a] px-3 py-3 text-white outline-none transition hover:from-[#1e3a8a] hover:to-[#274493] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-400 sm:px-4">
-                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-400 text-sm font-black text-[#172554] ring-2 ring-white/30">
-                      {initials || <UserRound aria-hidden="true" className="size-5" />}
-                    </span>
+                    <EducatorAvatar
+                      username={account.username}
+                      revision={photoRevision}
+                      size="size-10 ring-2 ring-amber-400"
+                      fallback={
+                        <span className="absolute inset-0 flex items-center justify-center bg-[#172554] text-sm font-black text-amber-300">
+                          {initials || <UserRound aria-hidden="true" className="size-5" />}
+                        </span>
+                      }
+                    />
                     <span className="min-w-0 flex-1">
                       <h3 className="truncate text-sm font-black sm:text-base">{account.displayName}{isSelf ? ' (vous)' : ''}</h3>
                       <span className="mt-0.5 block truncate text-xs text-blue-100">{account.username}</span>

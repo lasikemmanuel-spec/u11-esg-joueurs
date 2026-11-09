@@ -12,6 +12,22 @@ import { matchesSearch } from '@/lib/search'
 type Draft = { id?: string; name: string; licenseNumber: string; phone: string }
 const blank: Draft = { name: '', licenseNumber: '', phone: '' }
 
+function splitEducatorName(name: string) {
+  const commaIndex = name.indexOf(',')
+  if (commaIndex >= 0) {
+    return {
+      lastName: name.slice(0, commaIndex).trim(),
+      firstName: name.slice(commaIndex + 1).trim(),
+    }
+  }
+  const [lastName = '', ...firstNameParts] = name.trim().split(/\s+/)
+  return { firstName: firstNameParts.join(' '), lastName }
+}
+
+function formatEducatorName(firstName: string, lastName: string) {
+  return `${lastName.trim()}, ${firstName.trim()}`
+}
+
 export function EducatorDirectory({
   canEdit,
   canAdd = canEdit,
@@ -53,7 +69,9 @@ export function EducatorDirectory({
     if (!currentEducator) return undefined
     const exactMatches = educators.filter((educator) => sameEducatorName(educator.name, currentEducator.displayName))
     if (currentEducator.displayName.trim().includes(' ')) return exactMatches.length === 1 ? exactMatches[0] : undefined
-    const suffixMatches = educators.filter((educator) => hasEducatorSurname(educator.name, currentEducator.displayName))
+    const suffixMatches = educators.filter((educator) =>
+      hasEducatorSurname(splitEducatorName(educator.name).lastName, currentEducator.displayName),
+    )
     if (suffixMatches.length > 1) return undefined
     return suffixMatches[0] ?? (exactMatches.length === 1 ? exactMatches[0] : undefined)
   })()
@@ -107,6 +125,9 @@ export function EducatorDirectory({
 
   const edit = (educator: DirectoryEducator) => {
     setDraft({ id: educator.id, name: educator.name, licenseNumber: educator.licenseNumber, phone: educator.phone })
+    const nameParts = splitEducatorName(educator.name)
+    setFirstName(nameParts.firstName)
+    setLastName(nameParts.lastName)
     setEditingOwn(false)
     setError('')
     setOpen(true)
@@ -133,7 +154,7 @@ export function EducatorDirectory({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...(draft.id ? { id: draft.id } : {}),
-          name: draft.id ? draft.name : `${firstName.trim()} ${lastName.trim()}`.trim(),
+          name: formatEducatorName(firstName, lastName),
           licenseNumber: draft.licenseNumber,
           phone: draft.phone,
         }),
@@ -249,7 +270,11 @@ export function EducatorDirectory({
             {allCards.map((educator: DirectoryEducator) => {
               const isOwn = currentEducator && (educator.id === ownDirectoryEntry?.id || educator.id === 'me-auto-entry')
               const isExpanded = expandedEducators.has(educator.id)
-              const initials = educator.name.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase('fr-FR')
+              const nameParts = splitEducatorName(educator.name)
+              const displayName = isOwn && currentEducator
+                ? currentEducator.displayName
+                : `${nameParts.firstName} ${nameParts.lastName}`.trim()
+              const initials = displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase('fr-FR')
               return (
                 <li
                   key={educator.id}
@@ -262,7 +287,11 @@ export function EducatorDirectory({
                         : initials}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <h3 className="whitespace-normal break-normal text-sm font-black leading-tight sm:text-base">{educator.name}</h3>
+                      <h3 className="whitespace-normal break-normal text-sm font-black leading-tight sm:text-base">
+                        {isOwn && currentEducator
+                          ? currentEducator.displayName
+                          : <>{nameParts.firstName} <span className="uppercase tracking-wide">{nameParts.lastName}</span></>}
+                      </h3>
                       <span className="mt-1 inline-flex max-w-full items-center whitespace-nowrap rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-200 ring-1 ring-white/15">
                         {isOwn && currentEducator?.role === 'admin' ? 'Admin · Moi' : isOwn ? 'Moi' : 'Éducateur'}
                       </span>
@@ -374,14 +403,12 @@ export function EducatorDirectory({
               <button type="button" onClick={closeForm} aria-label="Fermer" className="inline-flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground"><X className="size-4" /></button>
             </div>
             <div className="mt-4 grid gap-3">
-              {!editingOwn && (draft.id ? (
-                <label className="grid gap-1 text-sm font-semibold">Prénom et nom<input required minLength={2} maxLength={80} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
-              ) : (
+              {!editingOwn && (
                 <>
-                  <label className="grid gap-1 text-sm font-semibold">Prénom<input required maxLength={40} autoComplete="given-name" value={firstName} onChange={(event) => setFirstName(event.target.value)} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
-                  <label className="grid gap-1 text-sm font-semibold">Nom<input required maxLength={40} autoComplete="family-name" value={lastName} onChange={(event) => setLastName(event.target.value)} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
+                  <label className="grid gap-1 text-sm font-semibold">Prénom<input required maxLength={39} autoComplete="given-name" value={firstName} onChange={(event) => setFirstName(event.target.value)} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
+                  <label className="grid gap-1 text-sm font-semibold">Nom<input required maxLength={39} autoComplete="family-name" value={lastName} onChange={(event) => setLastName(event.target.value)} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
                 </>
-              ))}
+              )}
               <label className="grid gap-1 text-sm font-semibold">N° de licence FFF<input maxLength={40} value={draft.licenseNumber} onChange={(event) => setDraft({ ...draft, licenseNumber: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
               <label className="grid gap-1 text-sm font-semibold">Téléphone<input type="tel" inputMode="tel" maxLength={80} value={draft.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
               <p className="text-xs text-muted-foreground">Le téléphone sera chiffré avant son enregistrement dans le Google Sheet.</p>

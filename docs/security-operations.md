@@ -19,6 +19,7 @@ La valeur IP provient des en-têtes de proxy ; n’accepter cette configuration 
 - Restreindre le classeur aux comptes et au compte de service strictement nécessaires ; ne pas le rendre public.
 - Vérifier les permissions de partage du classeur, les accès OAuth et les journaux de partage directement dans Google Workspace.
 - Conserver les secrets de session, Google et Upstash uniquement dans le gestionnaire de variables d’environnement de l’hébergeur.
+- Le callback OAuth Google ne renvoie ni n’enregistre le jeton reçu. Utiliser le compte de service configuré côté serveur ; une valeur `GOOGLE_REFRESH_TOKEN` déjà configurée reste utilisable comme solution de repli.
 - Faire tourner tout secret qui aurait été exposé et vérifier les journaux de production après rotation.
 
 Les permissions effectives du projet Vercel, de Google Sheets et la configuration active des variables ne sont pas vérifiables depuis ce dépôt ; un administrateur doit les contrôler dans leurs consoles respectives.

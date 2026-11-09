@@ -94,44 +94,28 @@ export async function GET(request: Request) {
       return errorPage('Google n’a pas pu terminer l’autorisation. Vérifiez la configuration OAuth.', 502)
     }
 
-    const tokenData = await tokenResponse.json() as { refresh_token?: unknown }
-    const refreshToken =
-      typeof tokenData.refresh_token === 'string' && tokenData.refresh_token.length <= 4096
-        ? tokenData.refresh_token
-        : null
-    const tokenMessage = refreshToken
-      ? `<details class="token-details"><summary>Afficher le jeton Google</summary><div class="token-box">${escapeHtml(refreshToken)}</div><p>Ce jeton donne accès au classeur. Gardez-le secret et refermez cette section après l’avoir copié.</p><p>Copiez-le dans la variable secrète <code>GOOGLE_REFRESH_TOKEN</code> sur Vercel et dans votre environnement local.</p></details>`
-      : `<p style="color:#b45309;">Aucun nouveau jeton n’a été retourné. Si nécessaire, révoquez l’accès de l’application Google puis recommencez l’autorisation.</p>`
-
     return htmlResponse(
       `<!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="utf-8">
-  <title>Autorisation Google réussie - ES Genech</title>
+  <title>Autorisation Google - ES Genech</title>
   <style>
     body { font-family: system-ui, sans-serif; background: #f0fdf4; color: #0f172a; min-height: 100vh; margin: 0; padding: 40px 20px; display: grid; place-items: center; }
     .card { background: white; border-radius: 20px; padding: 36px; max-width: 680px; width: 100%; box-sizing: border-box; box-shadow: 0 10px 30px -5px rgba(0,0,0,.08); }
     h1 { color: #047857; font-size: 22px; }
     p { color: #334155; font-size: 15px; line-height: 1.6; }
-    .token-box { background: #f8fafc; border: 1.5px dashed #059669; border-radius: 12px; padding: 16px; font-family: ui-monospace, monospace; font-size: 13px; overflow-wrap: anywhere; margin: 18px 0; color: #0f766e; user-select: all; }
-    .token-details { margin: 18px 0; }
-    .token-details summary { color: #047857; cursor: pointer; font-weight: 650; }
     .instruction { background: #f0fdf4; border-left: 4px solid #10b981; padding: 16px; border-radius: 0 12px 12px 0; margin-top: 24px; font-size: 14px; line-height: 1.6; }
     code { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
   </style>
 </head>
 <body>
   <main class="card">
-    <h1>Autorisation Google réussie</h1>
-    <p>Votre application a été autorisée à accéder au Google Sheet.</p>
-    ${tokenMessage}
+    <h1>Autorisation Google terminée</h1>
+    <p>Google a confirmé l’autorisation. Pour protéger l’accès au classeur, cette application n’affiche ni ne conserve le jeton OAuth retourné.</p>
     <div class="instruction">
-      <strong>Étapes restantes :</strong>
-      <ol>
-        <li>Ajoutez <code>GOOGLE_REFRESH_TOKEN</code> comme variable secrète sur Vercel.</li>
-        <li>Ajoutez la même variable dans votre fichier local <code>.env.local</code>.</li>
-      </ol>
+      <strong>Configuration Google Sheets :</strong>
+      <p>Utilisez le compte de service Google configuré côté serveur (<code>GOOGLE_SERVICE_ACCOUNT_EMAIL</code> et <code>GOOGLE_PRIVATE_KEY</code>). Ne collez pas de jeton dans cette page.</p>
     </div>
     <p><a href="/">Retour à l'application ES Genech</a></p>
   </main>

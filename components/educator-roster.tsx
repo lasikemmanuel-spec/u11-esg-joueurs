@@ -466,7 +466,11 @@ export function EducatorRoster({
       {notice && <p role="status" className="text-sm font-medium text-emerald-700 dark:text-emerald-300">{notice}</p>}
 
       <div className="flex flex-col gap-3 rounded-xl border border-accent/50 bg-card p-3 shadow-sm">
-        <label htmlFor="directory-search" className="block text-sm font-semibold text-primary">Recherche joueur / éducateur</label>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <label htmlFor="directory-search" className="text-sm font-semibold text-primary">Recherche joueur / éducateur</label>
+          {phoneEncryptionDiagnosticButton}
+        </div>
+        {phoneEncryptionDiagnosticStatus}
         <div className="relative">
           <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
@@ -505,11 +509,6 @@ export function EducatorRoster({
             )
           })}
         </nav>}
-        {!query.trim() && (
-          <div className={`w-fit max-w-full ${directoryView === 'accounts' ? 'hidden sm:flex' : ''}`}>
-            {phoneEncryptionDiagnosticPanel}
-          </div>
-        )}
       </div>
 
       {(directoryView === 'educators' || Boolean(query.trim())) && (
@@ -797,8 +796,6 @@ export function EducatorRoster({
         <EducatorAccountManagement
           currentUsername={educator.username}
           photoRevision={photoRevision}
-          encryptionControl={phoneEncryptionDiagnosticButton}
-          encryptionStatus={phoneEncryptionDiagnosticStatus}
         />
       )}
 

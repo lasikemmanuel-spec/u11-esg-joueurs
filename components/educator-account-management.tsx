@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { ChevronDown, KeyRound, Pencil, Plus, Shield, Trash2, UserRound, X } from 'lucide-react'
-import type { ReactNode } from 'react'
 import { EducatorAvatar } from '@/components/educator-avatar'
 
 type AccountRole = 'educator' | 'admin' | 'reader'
@@ -28,13 +27,9 @@ const emptyDraft: AccountDraft = { username: '', firstName: '', lastName: '', pa
 export function EducatorAccountManagement({
   currentUsername,
   photoRevision = 0,
-  encryptionControl,
-  encryptionStatus,
 }: {
   currentUsername: string
   photoRevision?: number
-  encryptionControl?: ReactNode
-  encryptionStatus?: ReactNode
 }) {
   const [accounts, setAccounts] = useState<Account[]>([])
   const [draft, setDraft] = useState<AccountDraft>(emptyDraft)
@@ -195,7 +190,6 @@ export function EducatorAccountManagement({
           <p className="mt-1 text-xs text-muted-foreground">Gérer les accès, les mots de passe et les rôles administrateur, éducateur ou lecteur.</p>
         </div>
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <div className="sm:hidden">{encryptionControl}</div>
           <button
             type="button"
             onClick={() => { setError(''); setDraft(emptyDraft); setCreateOpen(true) }}
@@ -208,7 +202,6 @@ export function EducatorAccountManagement({
         </div>
       </header>
 
-      <div className="sm:hidden">{encryptionStatus}</div>
       {error && <p role="alert" className="mt-3 text-sm font-medium text-destructive">{error}</p>}
       {notice && <p role="status" className="mt-3 text-sm font-medium text-emerald-700 dark:text-emerald-300">{notice}</p>}
       {loading ? (

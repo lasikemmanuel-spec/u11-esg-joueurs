@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, Check, RefreshCw, Save } from 'lucide-react'
+import { CalendarDays, Check, RefreshCw, Save, Search } from 'lucide-react'
 import type { PublicPlayer } from '@/lib/players'
 import {
   TRAINING_ATTENDANCE_STATUSES,
@@ -24,6 +24,10 @@ function formatDate(date: string) {
   })
 }
 
+function normalizeSearch(value: string) {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr-FR').trim()
+}
+
 export function TrainingAttendanceManager({
   players,
   sessions,
@@ -35,6 +39,7 @@ export function TrainingAttendanceManager({
 }) {
   const router = useRouter()
   const [date, setDate] = useState('')
+  const [query, setQuery] = useState('')
   const [statuses, setStatuses] = useState<Record<number, TrainingAttendanceStatus | ''>>({})
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
@@ -68,6 +73,14 @@ export function TrainingAttendanceManager({
     }
     return { filled, present, missing: players.length - filled }
   }, [players.length, statuses])
+
+  const visiblePlayers = useMemo(() => {
+    const term = normalizeSearch(query)
+    if (!term) return players
+    return players.filter((player) =>
+      normalizeSearch(`${player.firstName} ${player.lastName} ${player.number}`).includes(term),
+    )
+  }, [players, query])
 
   const setAllPresent = () => {
     setStatuses(Object.fromEntries(players.map((player) => [player.number, 'P'])))
@@ -150,38 +163,55 @@ export function TrainingAttendanceManager({
             {savedSession && <span className="font-semibold text-primary">Séance déjà saisie · la sauvegarde remplacera ses valeurs.</span>}
           </div>
 
+          <label className="relative block">
+            <span className="sr-only">Rechercher un joueur par nom, prénom ou numéro</span>
+            <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              aria-label="Rechercher un joueur par nom, prénom ou numéro"
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Rechercher un joueur par nom, prénom ou numéro…"
+              className="h-11 w-full rounded-xl border border-accent/40 bg-background pr-3 pl-10 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </label>
+          {query && <p aria-live="polite" className="-mt-3 text-xs text-muted-foreground">{visiblePlayers.length} joueur{visiblePlayers.length === 1 ? '' : 's'} trouvé{visiblePlayers.length === 1 ? '' : 's'}</p>}
+
+          {visiblePlayers.length === 0 ? (
+            <p role="status" className="rounded-xl bg-muted p-4 text-sm">Aucun joueur ne correspond à « {query} ».</p>
+          ) : (
           <ul className="grid gap-2 md:grid-cols-2">
-            {players.map((player) => (
+            {visiblePlayers.map((player) => (
               <li key={player.number} className="rounded-xl border border-border bg-card p-3">
                 <div className="mb-2 flex items-baseline gap-2">
                   <span className="min-w-8 rounded-md bg-primary/10 px-1.5 py-0.5 text-center text-sm font-black text-primary">{player.number}</span>
                   <span className="truncate font-bold">{player.firstName} {player.lastName}</span>
                 </div>
-                <div className="grid grid-cols-5 gap-1.5">
-                  {TRAINING_ATTENDANCE_STATUSES.map((status) => {
-                    const selected = statuses[player.number] === status.value
-                    return (
-                      <button
-                        key={status.value}
-                        type="button"
-                        aria-pressed={selected}
-                        aria-label={`${player.firstName} ${player.lastName} : ${status.label}`}
-                        title={status.label}
-                        onClick={() => {
-                          setStatuses((current) => ({ ...current, [player.number]: status.value }))
-                          setMessage('')
-                          setError('')
-                        }}
-                        className={`min-h-10 rounded-lg border px-1 text-[11px] font-bold leading-tight transition ${selected ? 'border-primary bg-primary text-primary-foreground' : 'border-border bg-background text-muted-foreground hover:border-primary/50'}`}
-                      >
-                        {status.shortLabel}
-                      </button>
-                    )
-                  })}
-                </div>
+                <label className="grid gap-1 text-xs font-semibold text-muted-foreground">
+                  État de présence
+                  <select
+                    aria-label={`État de présence de ${player.firstName} ${player.lastName}`}
+                    value={statuses[player.number]}
+                    onChange={(event) => {
+                      setStatuses((current) => ({
+                        ...current,
+                        [player.number]: event.target.value as TrainingAttendanceStatus | '',
+                      }))
+                      setMessage('')
+                      setError('')
+                    }}
+                    className="min-h-11 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    <option value="">Choisir un état…</option>
+                    {TRAINING_ATTENDANCE_STATUSES.map((status) => (
+                      <option key={status.value} value={status.value}>{status.label}</option>
+                    ))}
+                  </select>
+                </label>
               </li>
             ))}
           </ul>
+          )}
 
           <footer className="sticky bottom-20 z-10 flex flex-col gap-2 rounded-2xl border border-accent/40 bg-card/95 p-3 shadow-lg backdrop-blur sm:flex-row sm:items-center sm:justify-between xl:bottom-3">
             <span className="text-sm text-muted-foreground">{date ? formatDate(date) : 'Choisis une date'}</span>

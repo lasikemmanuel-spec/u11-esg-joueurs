@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { Check, ChevronDown, Copy, Eye, EyeOff, KeyRound, Mail, Pencil, RefreshCw, Shield, Trash2, UserRound, X } from 'lucide-react'
+import { Check, ChevronDown, Copy, Eye, EyeOff, KeyRound, Mail, Pencil, RefreshCw, Shield, Trash2, UnlockKeyhole, UserRound, X } from 'lucide-react'
 import { EducatorAvatar } from '@/components/educator-avatar'
 
 type AccountRole = 'educator' | 'admin' | 'reader'
@@ -266,6 +266,30 @@ export function EducatorAccountManagement({
     }
   }
 
+  const unlockAccount = async (account: Account) => {
+    const confirmed = window.confirm(
+      `Débloquer le compte de ${account.displayName} ? Le compteur de tentatives de ce compte sera effacé. La limite par adresse IP restera active si elle est atteinte.`,
+    )
+    if (!confirmed) return
+    setPendingUsername(account.username)
+    setError('')
+    setNotice('')
+    try {
+      const response = await fetch('/api/educators/accounts/unlock', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username: account.username }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error ?? 'Impossible de débloquer le compte.')
+      setNotice(`Le compteur de tentatives du compte de ${account.displayName} a été réinitialisé.`)
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : 'Impossible de débloquer le compte.')
+    } finally {
+      setPendingUsername(null)
+    }
+  }
+
   return (
     <section aria-labelledby="educator-accounts-title" className="rounded-2xl border border-accent/50 bg-card p-2.5 shadow-sm sm:p-4">
       <header className="flex flex-wrap items-center justify-end gap-2 sm:justify-between sm:gap-3">
@@ -387,6 +411,15 @@ export function EducatorAccountManagement({
                       >
                         <Trash2 aria-hidden="true" className="size-3.5" />
                         Supprimer
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void unlockAccount(account)}
+                        disabled={pendingUsername !== null}
+                        className="col-span-2 inline-flex min-h-11 min-w-0 items-center justify-center gap-2 rounded-xl border border-emerald-500/30 bg-emerald-50/80 px-2 text-xs font-bold text-emerald-800 shadow-sm transition hover:border-emerald-500/60 hover:bg-emerald-100 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 disabled:opacity-50 dark:bg-emerald-400/10 dark:text-emerald-100 dark:hover:bg-emerald-400/20"
+                      >
+                        <UnlockKeyhole aria-hidden="true" className="size-3.5" />
+                        Débloquer le compte
                       </button>
                     </div>
                   </div>

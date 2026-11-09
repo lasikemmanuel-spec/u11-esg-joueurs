@@ -4,6 +4,7 @@ export type SecurityEventType =
   | 'login_success'
   | 'login_failure'
   | 'login_blocked'
+  | 'login_unlocked'
   | 'logout'
   | 'session_expired'
   | 'unauthorized_access'
@@ -39,6 +40,7 @@ export function logSecurityEvent(event: Omit<SecurityEvent, 'timestamp'>) {
     login_success: '✅',
     login_failure: '⚠️',
     login_blocked: '🚫',
+    login_unlocked: '🔓',
     logout: '👋',
     session_expired: '⏰',
     unauthorized_access: '🔴',

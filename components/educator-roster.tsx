@@ -701,12 +701,12 @@ export function EducatorRoster({
           Aucun joueur ne correspond à votre recherche.
         </p>
       ) : (
-        <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="columns-1 gap-3 sm:columns-2 xl:columns-3">
           {groups.map(([position, list], groupIndex) => {
             const isExpanded = expandedPositions.has(position)
             const groupId = `educator-position-${groupIndex}`
             return (
-            <section key={position} aria-label={`Poste : ${position}`} className="scroll-mt-4 overflow-hidden rounded-xl border border-accent/50 bg-card shadow-sm">
+            <section key={position} aria-label={`Poste : ${position}`} className="mb-3 inline-block w-full break-inside-avoid scroll-mt-4 overflow-hidden rounded-xl border border-accent/50 bg-card align-top shadow-sm">
               <h3>
                 <button
                   type="button"

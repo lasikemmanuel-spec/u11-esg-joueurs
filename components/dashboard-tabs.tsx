@@ -256,16 +256,6 @@ export function DashboardTabs({
       ? [{ key: 'educator' as const, label: 'Annuaire' }]
       : []),
   ]
-  const quickMatches = (['E1', 'E2'] as const).flatMap((team) => {
-    const focus = matchFocuses[team]
-    if (!focus) return []
-    const entry = matchResults.entries.find((match) =>
-      match.date === focus.date &&
-      match.team === focus.team &&
-      match.slotColumn === focus.slotColumn,
-    )
-    return entry ? [{ entry, focus }] : []
-  })
   const mainHeader = (
     <header className="relative z-20 border-b-2 border-[#d4af37] bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] text-white shadow-md">
       <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:gap-4 sm:py-5 md:flex-row md:items-center md:justify-between md:px-6 md:py-5">
@@ -567,7 +557,7 @@ export function DashboardTabs({
         </div>
       </nav>
 
-      {(liveMatches.length > 0 || quickMatches.length > 0 && activeTab !== 'matches') && (
+      {liveMatches.length > 0 && (
         <div className="fixed bottom-[calc(5.5rem+env(safe-area-inset-bottom))] right-3 z-40 flex max-w-[calc(100vw-1.5rem)] flex-col items-end gap-2 xl:bottom-6">
           {liveMatches.map(({ match, phase }) => {
             const entry = match
@@ -602,45 +592,6 @@ export function DashboardTabs({
                   </span>
                   <span className="block max-w-52 truncate text-[10px] font-semibold text-white/75">
                     {entry.opponent || 'Adversaire'} · {phaseLabel}
-                  </span>
-                </span>
-              </button>
-            )
-          })}
-          {activeTab !== 'matches' && quickMatches.map(({ entry, focus }) => {
-            const isE1 = entry.team === 'E1'
-            return (
-              <button
-                key={`${entry.team}-${entry.slotColumn}`}
-                type="button"
-                onClick={() => {
-                  setActiveMatchTeam(entry.team)
-                  setMatchFocuses((current) => ({
-                    ...current,
-                    [entry.team]: { ...focus, requestId: ++matchFocusSequence.current },
-                  }))
-                  setActiveTab('matches')
-                }}
-                aria-label={`Retour au match de l’équipe ${isE1 ? '1' : '2'} contre ${entry.opponent || 'adversaire'}`}
-                className={[
-                  'inline-flex min-h-11 max-w-full items-center gap-2 rounded-full border px-3 py-2 text-left text-white shadow-xl transition hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
-                  isE1
-                    ? 'border-sky-300/60 bg-gradient-to-r from-sky-950 to-blue-900'
-                    : 'border-amber-300/60 bg-gradient-to-r from-amber-950 to-amber-800',
-                ].join(' ')}
-              >
-                <span className={[
-                  'flex size-7 shrink-0 items-center justify-center rounded-full',
-                  isE1 ? 'bg-sky-300/20 text-sky-200' : 'bg-amber-300/20 text-amber-200',
-                ].join(' ')}>
-                  <Radio aria-hidden="true" className="size-4" />
-                </span>
-                <span className="min-w-0">
-                  <span className="block text-[10px] font-black uppercase tracking-wide">
-                    Retour · Équipe {isE1 ? '1' : '2'}
-                  </span>
-                  <span className="block max-w-52 truncate text-[10px] font-semibold text-white/75">
-                    {entry.opponent || 'Feuille de match'}
                   </span>
                 </span>
               </button>

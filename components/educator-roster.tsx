@@ -53,7 +53,7 @@ export function EducatorRoster({
 }) {
   const [players, setPlayers] = useState<EducatorPlayer[]>([])
   const [query, setQuery] = useState('')
-  const [directoryView, setDirectoryView] = useState<DirectoryView>('educators')
+  const [directoryView, setDirectoryView] = useState<DirectoryView>('players')
   const [addProfileChooserOpen, setAddProfileChooserOpen] = useState(false)
   const [educatorAddRequest, setEducatorAddRequest] = useState(0)
   const [accountAddRequest, setAccountAddRequest] = useState(0)
@@ -529,8 +529,8 @@ export function EducatorRoster({
         </div>
         {!query.trim() && <nav aria-label="Choisir un annuaire" className={`grid ${educator.role === 'admin' ? 'grid-cols-3' : 'grid-cols-2'} gap-2 rounded-lg bg-muted/70 p-1`}>
           {([
-            { key: 'educators' as const, label: 'Éducateurs', Icon: ContactRound },
             { key: 'players' as const, label: 'Joueurs', Icon: UsersRound },
+            { key: 'educators' as const, label: 'Éducateurs', Icon: ContactRound },
             ...(educator.role === 'admin'
               ? [{ key: 'accounts' as const, label: 'Comptes', Icon: KeyRound }]
               : []),

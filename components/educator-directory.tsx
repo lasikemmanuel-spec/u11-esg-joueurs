@@ -287,7 +287,7 @@ export function EducatorDirectory({
                         : initials}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <h3 className="whitespace-normal break-normal text-sm font-black leading-tight sm:text-base">
+                      <h3 className="line-clamp-2 min-h-[2.25rem] whitespace-normal break-normal text-sm font-black leading-tight sm:min-h-[2.5rem] sm:text-base">
                         {isOwn && currentEducator
                           ? currentEducator.displayName
                           : <>{nameParts.firstName} <span className="uppercase tracking-wide">{nameParts.lastName}</span></>}

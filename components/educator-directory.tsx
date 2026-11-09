@@ -235,7 +235,7 @@ export function EducatorDirectory({
       ) : (
         <>
           {isSearching && searchTitle && <h2 className="font-bold text-primary">{searchTitle}</h2>}
-          <ul className="mt-2 grid grid-cols-1 items-start gap-3 sm:mt-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          <ul className="mt-2 grid grid-cols-1 items-start gap-3 sm:mt-3 sm:grid-cols-2 xl:grid-cols-3">
             {allCards.map((educator: DirectoryEducator) => {
               const isOwn = currentEducator && (educator.id === ownDirectoryEntry?.id || educator.id === 'me-auto-entry')
               const isExpanded = expandedEducators.has(educator.id)
@@ -252,8 +252,8 @@ export function EducatorDirectory({
                         : initials}
                     </span>
                     <div className="min-w-0 flex-1">
-                      <h3 className="whitespace-normal break-words text-sm font-black leading-tight sm:text-base">{educator.name}</h3>
-                      <span className="mt-1 inline-flex max-w-full items-center truncate rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-200 ring-1 ring-white/15">
+                      <h3 className="whitespace-normal break-normal text-sm font-black leading-tight sm:text-base">{educator.name}</h3>
+                      <span className="mt-1 inline-flex max-w-full items-center whitespace-nowrap rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-200 ring-1 ring-white/15">
                         {isOwn && currentEducator?.role === 'admin' ? 'Admin · Moi' : isOwn ? 'Moi' : 'Éducateur'}
                       </span>
                     </div>

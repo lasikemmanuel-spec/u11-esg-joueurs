@@ -35,6 +35,8 @@ export function EducatorDirectory({
   const [expandedEducators, setExpandedEducators] = useState<Set<string>>(() => new Set())
   const [isPhoneDevice, setIsPhoneDevice] = useState(false)
   const [draft, setDraft] = useState<Draft>(blank)
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
   const [open, setOpen] = useState(false)
   const [editingOwn, setEditingOwn] = useState(false)
   const [pending, setPending] = useState(false)
@@ -90,6 +92,8 @@ export function EducatorDirectory({
   useEffect(() => {
     if (addRequest > 0 && canAdd) {
       setDraft(blank)
+      setFirstName('')
+      setLastName('')
       setEditingOwn(false)
       setError('')
       setOpen(true)
@@ -112,6 +116,8 @@ export function EducatorDirectory({
     setOpen(false)
     setEditingOwn(false)
     setDraft(blank)
+    setFirstName('')
+    setLastName('')
     setError('')
     onAddRequestHandled?.()
   }
@@ -127,7 +133,7 @@ export function EducatorDirectory({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...(draft.id ? { id: draft.id } : {}),
-          name: draft.name,
+          name: draft.id ? draft.name : `${firstName.trim()} ${lastName.trim()}`.trim(),
           licenseNumber: draft.licenseNumber,
           phone: draft.phone,
         }),
@@ -137,6 +143,8 @@ export function EducatorDirectory({
       await load()
       setOpen(false)
       setDraft(blank)
+      setFirstName('')
+      setLastName('')
       setNotice('Annuaire des éducateurs mis à jour. Le téléphone est chiffré dans le Sheet.')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Impossible d’enregistrer cette fiche.')
@@ -160,6 +168,8 @@ export function EducatorDirectory({
       setOpen(false)
       setEditingOwn(false)
       setDraft(blank)
+      setFirstName('')
+      setLastName('')
       setNotice('Votre fiche éducateur a été mise à jour.')
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Impossible d’enregistrer votre fiche.')
@@ -364,7 +374,14 @@ export function EducatorDirectory({
               <button type="button" onClick={closeForm} aria-label="Fermer" className="inline-flex size-8 items-center justify-center rounded-full bg-muted text-muted-foreground"><X className="size-4" /></button>
             </div>
             <div className="mt-4 grid gap-3">
-              {!editingOwn && <label className="grid gap-1 text-sm font-semibold">Nom et prénom<input required minLength={2} maxLength={80} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>}
+              {!editingOwn && (draft.id ? (
+                <label className="grid gap-1 text-sm font-semibold">Prénom et nom<input required minLength={2} maxLength={80} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
+              ) : (
+                <>
+                  <label className="grid gap-1 text-sm font-semibold">Prénom<input required maxLength={40} autoComplete="given-name" value={firstName} onChange={(event) => setFirstName(event.target.value)} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
+                  <label className="grid gap-1 text-sm font-semibold">Nom<input required maxLength={40} autoComplete="family-name" value={lastName} onChange={(event) => setLastName(event.target.value)} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
+                </>
+              ))}
               <label className="grid gap-1 text-sm font-semibold">N° de licence FFF<input maxLength={40} value={draft.licenseNumber} onChange={(event) => setDraft({ ...draft, licenseNumber: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
               <label className="grid gap-1 text-sm font-semibold">Téléphone<input type="tel" inputMode="tel" maxLength={80} value={draft.phone} onChange={(event) => setDraft({ ...draft, phone: event.target.value })} className="h-10 rounded-lg border border-accent/50 bg-background px-3 font-normal" /></label>
               <p className="text-xs text-muted-foreground">Le téléphone sera chiffré avant son enregistrement dans le Google Sheet.</p>

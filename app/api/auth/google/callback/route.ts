@@ -100,7 +100,7 @@ export async function GET(request: Request) {
         ? tokenData.refresh_token
         : null
     const tokenMessage = refreshToken
-      ? `<div class="token-box">${escapeHtml(refreshToken)}</div><p>Copiez ce jeton dans la variable secrète <code>GOOGLE_REFRESH_TOKEN</code> sur Vercel et dans votre environnement local.</p>`
+      ? `<details class="token-details"><summary>Afficher le jeton Google</summary><div class="token-box">${escapeHtml(refreshToken)}</div><p>Ce jeton donne accès au classeur. Gardez-le secret et refermez cette section après l’avoir copié.</p><p>Copiez-le dans la variable secrète <code>GOOGLE_REFRESH_TOKEN</code> sur Vercel et dans votre environnement local.</p></details>`
       : `<p style="color:#b45309;">Aucun nouveau jeton n’a été retourné. Si nécessaire, révoquez l’accès de l’application Google puis recommencez l’autorisation.</p>`
 
     return htmlResponse(
@@ -115,6 +115,8 @@ export async function GET(request: Request) {
     h1 { color: #047857; font-size: 22px; }
     p { color: #334155; font-size: 15px; line-height: 1.6; }
     .token-box { background: #f8fafc; border: 1.5px dashed #059669; border-radius: 12px; padding: 16px; font-family: ui-monospace, monospace; font-size: 13px; overflow-wrap: anywhere; margin: 18px 0; color: #0f766e; user-select: all; }
+    .token-details { margin: 18px 0; }
+    .token-details summary { color: #047857; cursor: pointer; font-weight: 650; }
     .instruction { background: #f0fdf4; border-left: 4px solid #10b981; padding: 16px; border-radius: 0 12px 12px 0; margin-top: 24px; font-size: 14px; line-height: 1.6; }
     code { background: #e2e8f0; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
   </style>

@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect, useLayoutEffect, useCallback, useRef, typ
 import { Search, Copy, Check, CheckCircle2, Award, Save, ChevronDown, ChevronUp, Pencil, Plus, X, ContactRound, UsersRound, KeyRound, LockKeyhole } from 'lucide-react'
 import type { Player, PublicPlayer } from '@/lib/players'
 import { matchesSearch } from '@/lib/search'
-import { ClubCrest } from '@/components/club-crest'
 import { ParentAvatar } from '@/components/parent-avatar'
 import { EducatorDirectory } from '@/components/educator-directory'
 import { EducatorAccountManagement } from '@/components/educator-account-management'
@@ -57,7 +56,8 @@ export function EducatorRoster({
   const [addProfileChooserOpen, setAddProfileChooserOpen] = useState(false)
   const [educatorAddRequest, setEducatorAddRequest] = useState(0)
   const [accountAddRequest, setAccountAddRequest] = useState(0)
-  const [expandedPositions, setExpandedPositions] = useState<Set<string>>(() => new Set())
+  const [expandedPlayers, setExpandedPlayers] = useState<Set<number>>(() => new Set())
+  const [selectedPosition, setSelectedPosition] = useState<string | null>(null)
   const shouldScrollToTopAfterCollapse = useRef(false)
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const [educator, setEducator] = useState<EducatorIdentity | null>(initialEducator)
@@ -310,18 +310,22 @@ export function EducatorRoster({
   const matchingPlayerCount = groups.reduce((count, [, list]) => count + list.length, 0)
   const missingLicenseCount = players.filter((player) => !player.licenseNumber?.trim()).length
   const matchingPlayers = groups.flatMap(([, list]) => list)
-  const allGroupsExpanded = groups.length > 0 && groups.every(([position]) => expandedPositions.has(position))
-  const hasExpandedVisibleGroup = groups.some(([position]) => expandedPositions.has(position))
-  const collapseAllPositions = () => {
+  const visiblePlayers = selectedPosition
+    ? groups.find(([position]) => position === selectedPosition)?.[1] ?? []
+    : matchingPlayers
+  const allVisiblePlayersExpanded = visiblePlayers.length > 0
+    && visiblePlayers.every((player) => expandedPlayers.has(player.number))
+  const hasExpandedVisiblePlayer = visiblePlayers.some((player) => expandedPlayers.has(player.number))
+  const collapseAllPlayers = () => {
     shouldScrollToTopAfterCollapse.current = true
-    setExpandedPositions(new Set())
+    setExpandedPlayers(new Set())
   }
 
   useLayoutEffect(() => {
     if (!shouldScrollToTopAfterCollapse.current) return
     shouldScrollToTopAfterCollapse.current = false
     window.scrollTo({ top: 0, behavior: 'instant' })
-  }, [expandedPositions])
+  }, [expandedPlayers])
 
   if (!sessionChecked) {
     return (
@@ -670,29 +674,56 @@ export function EducatorRoster({
             )
           ) : (
             <>
-      <div className="flex flex-wrap items-center justify-start gap-2">
-        {groups.length > 0 && (
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <nav aria-label="Filtrer les joueurs par poste" className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-1">
           <button
             type="button"
-            onClick={() => {
-              if (allGroupsExpanded) collapseAllPositions()
-              else setExpandedPositions(new Set(groups.map(([position]) => position)))
-            }}
-            aria-label={allGroupsExpanded ? "Fermer tous les postes" : "Ouvrir tous les postes"}
-            title={allGroupsExpanded ? "Fermer tous les postes" : "Ouvrir tous les postes"}
-            className="inline-flex h-10 shrink-0 items-center gap-1 rounded-lg border border-accent/40 bg-card px-2 text-xs font-semibold text-primary hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            aria-pressed={selectedPosition === null}
+            onClick={() => setSelectedPosition(null)}
+            className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-bold transition ${
+              selectedPosition === null
+                ? 'border-[#172554] bg-[#172554] text-white shadow-sm'
+                : 'border-accent/50 bg-card text-muted-foreground hover:border-primary/40 hover:text-primary'
+            }`}
           >
-            {allGroupsExpanded ? <ChevronUp aria-hidden="true" className="size-3.5" /> : <ChevronDown aria-hidden="true" className="size-3.5" />}
-            <span>{allGroupsExpanded ? "Tout −" : "Tout +"}</span>
+            Tous <span className="rounded-full bg-amber-400 px-1.5 py-0.5 text-[10px] font-black text-blue-950">{matchingPlayerCount}</span>
           </button>
-        )}
-        <div className="inline-flex items-center gap-1.5 rounded-full border border-accent/40 bg-card px-3 py-1.5 text-xs font-semibold">
-          <Award className="size-3.5 text-amber-600 dark:text-amber-400" />
-          <span>
-            <strong className="text-amber-700 dark:text-amber-300">{missingLicenseCount}</strong>
-            {' '}
-            {missingLicenseCount === 1 ? 'joueur sans licence' : 'joueurs sans licence'}
-          </span>
+          {groups.map(([position, list]) => (
+            <button
+              key={position}
+              type="button"
+              aria-pressed={selectedPosition === position}
+              onClick={() => setSelectedPosition(position)}
+              className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-bold transition ${
+                selectedPosition === position
+                  ? 'border-[#172554] bg-[#172554] text-white shadow-sm'
+                  : 'border-accent/50 bg-card text-muted-foreground hover:border-primary/40 hover:text-primary'
+              }`}
+            >
+              {position} <span className="rounded-full bg-amber-400 px-1.5 py-0.5 text-[10px] font-black text-blue-950">{list.length}</span>
+            </button>
+          ))}
+        </nav>
+        <div className="flex shrink-0 items-center gap-2">
+          {visiblePlayers.length > 0 && (
+            <button
+              type="button"
+              onClick={() => {
+                if (allVisiblePlayersExpanded) collapseAllPlayers()
+                else setExpandedPlayers(new Set(visiblePlayers.map((player) => player.number)))
+              }}
+              aria-label={allVisiblePlayersExpanded ? 'Replier toutes les fiches' : 'Déplier toutes les fiches'}
+              title={allVisiblePlayersExpanded ? 'Replier toutes les fiches' : 'Déplier toutes les fiches'}
+              className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border border-accent/50 bg-card px-3 text-xs font-bold text-primary shadow-sm transition hover:bg-primary/10"
+            >
+              {allVisiblePlayersExpanded ? <ChevronUp aria-hidden="true" className="size-3.5" /> : <ChevronDown aria-hidden="true" className="size-3.5" />}
+              {allVisiblePlayersExpanded ? 'Tout replier' : 'Tout déplier'}
+            </button>
+          )}
+          <div className="inline-flex min-h-9 items-center gap-1.5 rounded-full border border-accent/40 bg-card px-3 text-xs font-semibold">
+            <Award aria-hidden="true" className="size-3.5 text-amber-600 dark:text-amber-400" />
+            <span><strong className="text-amber-700 dark:text-amber-300">{missingLicenseCount}</strong> sans licence</span>
+          </div>
         </div>
       </div>
 
@@ -701,141 +732,118 @@ export function EducatorRoster({
           Aucun joueur ne correspond à votre recherche.
         </p>
       ) : (
-        <div className="columns-1 gap-3 sm:columns-2 xl:columns-3">
-          {groups.map(([position, list], groupIndex) => {
-            const isExpanded = expandedPositions.has(position)
-            const groupId = `educator-position-${groupIndex}`
+        <div className="columns-1 gap-3 sm:columns-2 xl:columns-3 2xl:columns-4">
+          {visiblePlayers.map((player) => {
+            const licenseNumber = player.licenseNumber
+            const isCopied = licenseNumber && copiedId === licenseNumber
+            const phone = phones[player.number]
+            const position = player.position ?? 'Non renseigné'
+            const hasParentContacts = Boolean(phone?.fatherPhone || phone?.motherPhone || phone?.legacyPhone)
+            const isExpanded = expandedPlayers.has(player.number)
+            const parentContact = (parent: ParentKey, value: string) => {
+              if (!value) return null
+              const label = parent === 'father' ? 'Papa' : 'Maman'
+              return (
+                <div key={parent} className="grid w-full grid-cols-[5rem_minmax(0,1fr)] items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+                    <ParentAvatar parent={parent} />
+                    {label}
+                  </span>
+                  <PhoneActionButtons
+                    phone={value}
+                    label={label}
+                    playerName={`${player.firstName} ${player.lastName}`}
+                  />
+                </div>
+              )
+            }
+
             return (
-            <section key={position} aria-label={`Poste : ${position}`} className="mb-3 inline-block w-full break-inside-avoid scroll-mt-4 overflow-hidden rounded-xl border border-accent/50 bg-card align-top shadow-sm">
-              <h3>
-                <button
-                  type="button"
-                  aria-expanded={isExpanded}
-                  aria-controls={isExpanded ? groupId : undefined}
-                  onClick={(event) => {
-                    const opening = !isExpanded
-                    setExpandedPositions((current) => {
+              <article
+                key={player.number}
+                className="mb-3 inline-block w-full break-inside-avoid overflow-hidden rounded-2xl border-2 border-[#172554]/15 bg-card align-top shadow-sm transition hover:border-[#172554]/35 hover:shadow-md"
+              >
+                <div className="flex items-center gap-2.5 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-3 py-3 text-white">
+                  <span
+                    title={`N°${player.number}`}
+                    className="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-amber-400 bg-[#172554] text-sm font-black text-amber-300 shadow-md"
+                  >
+                    {player.number}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <h3 className="truncate text-sm font-black sm:text-base">
+                      {player.firstName} <span className="uppercase tracking-wide">{player.lastName}</span>
+                    </h3>
+                    <span className="mt-1 inline-flex max-w-full truncate rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-200 ring-1 ring-white/15">
+                      {position}
+                    </span>
+                  </div>
+                  {educator.role === 'admin' && (
+                    <button
+                      type="button"
+                      onClick={() => openPhoneEditor(player)}
+                      disabled={requestPending}
+                      aria-label={`Modifier les téléphones de ${player.firstName} ${player.lastName}`}
+                      title="Modifier les numéros"
+                      className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-white/20 text-blue-100 transition hover:bg-white/10 disabled:opacity-50"
+                    >
+                      <Pencil aria-hidden="true" className="size-4" />
+                    </button>
+                  )}
+                </div>
+                <div className="flex min-h-11 items-center gap-1.5 px-3 py-2 text-xs text-muted-foreground">
+                  <span className="truncate">Licence FFF : <span className="font-mono font-semibold text-foreground">{licenseNumber ?? 'non renseignée'}</span></span>
+                  {licenseNumber && (
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(licenseNumber)}
+                      className={`inline-flex size-8 shrink-0 items-center justify-center rounded-lg transition ${
+                        isCopied ? 'bg-emerald-600 text-white' : 'text-muted-foreground hover:bg-accent/40 hover:text-foreground'
+                      }`}
+                      title="Copier le numéro de licence"
+                      aria-label={`Copier le numéro de licence de ${player.firstName} ${player.lastName}`}
+                    >
+                      {isCopied ? <Check aria-hidden="true" className="size-3.5" /> : <Copy aria-hidden="true" className="size-3.5" />}
+                    </button>
+                  )}
+                </div>
+                <details
+                  open={isExpanded}
+                  onToggle={(event) => {
+                    const nextOpen = event.currentTarget.open
+                    setExpandedPlayers((current) => {
+                      if (current.has(player.number) === nextOpen) return current
                       const next = new Set(current)
-                      if (next.has(position)) next.delete(position)
-                      else next.add(position)
+                      if (nextOpen) next.add(player.number)
+                      else next.delete(player.number)
                       return next
                     })
-                    if (opening && window.matchMedia('(max-width: 639px)').matches) {
-                      const target = event.currentTarget.closest('section')
-                      window.requestAnimationFrame(() => target?.scrollIntoView({
-                        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
-                        block: 'start',
-                      }))
-                    }
                   }}
-                  className="flex w-full items-center justify-between gap-2.5 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-3.5 py-3 text-left text-white shadow-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
+                  className="group border-t border-accent/35"
                 >
-                  <span className="flex min-w-0 items-center gap-2.5">
-                    <ChevronDown aria-hidden="true" className={`size-4 shrink-0 transition-transform ${isExpanded ? '' : '-rotate-90'}`} />
-                    <ClubCrest className="size-6 shrink-0 ring-2 ring-amber-400/80 shadow-md" />
-                    <span className="truncate text-sm font-bold tracking-wide uppercase text-white">{position}</span>
-                  </span>
-                  <span className="inline-flex items-center rounded-full bg-amber-400 px-2.5 py-0.5 font-mono text-xs font-black text-blue-950 shadow-sm">
-                    {list.length}
-                  </span>
-                </button>
-              </h3>
-              {isExpanded && <ul id={groupId} className="flex flex-col gap-4 p-3 bg-slate-100/60 dark:bg-slate-900/40 sm:gap-3">
-                {list.map((player) => {
-                  const licenseNumber = player.licenseNumber
-                  const isCopied = licenseNumber && copiedId === licenseNumber
-                  const phone = phones[player.number]
-                  const parentContact = (parent: ParentKey, value: string) => {
-                    if (!value) return null
-                    const label = parent === 'father' ? 'Papa' : 'Maman'
-                    return (
-                      <div key={parent} className="grid w-full grid-cols-[5rem_minmax(0,1fr)] items-center gap-2">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                          <ParentAvatar parent={parent} />
-                          {label}
-                        </span>
+                  <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 px-3 text-xs font-bold text-primary outline-none transition hover:bg-accent/20 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
+                    <span>{isExpanded ? 'Masquer les contacts' : 'Voir les contacts'}</span>
+                    <ChevronDown aria-hidden="true" className="size-4 shrink-0 transition-transform group-open:rotate-180" />
+                  </summary>
+                  <div className="grid gap-2 border-t border-accent/20 bg-muted/30 p-3">
+                    {parentContact('father', phone?.fatherPhone ?? '')}
+                    {parentContact('mother', phone?.motherPhone ?? '')}
+                    {phone?.legacyPhone && (
+                      <div className="inline-flex flex-wrap items-center gap-2">
+                        <span className="text-xs font-semibold text-muted-foreground">Autre contact</span>
                         <PhoneActionButtons
-                          phone={value}
-                          label={label}
+                          phone={phone.legacyPhone}
+                          label="l’autre contact"
                           playerName={`${player.firstName} ${player.lastName}`}
                         />
                       </div>
-                    )
-                  }
-
-                  return (
-                    <li
-                      key={player.number}
-                      className="rounded-2xl border-2 border-[#172554]/15 bg-card p-4 shadow-sm transition-all hover:border-[#172554]/40 hover:shadow-md sm:p-3.5"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-center gap-2.5 min-w-0">
-                          <span
-                            title={`N°${player.number}`}
-                            className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-[#172554] text-xs font-black text-amber-300 ring-2 ring-amber-400/50 shadow-sm"
-                          >
-                            {player.number}
-                          </span>
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-1.5">
-                              <p className="truncate text-base font-bold text-foreground">
-                                {player.firstName} <span className="font-black uppercase tracking-wide text-primary">{player.lastName}</span>
-                              </p>
-                              {educator.role === 'admin' && (
-                                <button
-                                  type="button"
-                                  onClick={() => openPhoneEditor(player)}
-                                  disabled={requestPending}
-                                  aria-label={`Modifier les téléphones pour ${player.firstName} ${player.lastName}`}
-                                  title="Modifier les numéros"
-                                  className="inline-flex size-11 shrink-0 items-center justify-center rounded-lg border border-accent/40 bg-card text-muted-foreground transition hover:bg-accent/40 hover:text-foreground disabled:opacity-50 sm:size-7 sm:rounded-md"
-                                >
-                                  <Pencil aria-hidden="true" className="size-4 sm:size-3" />
-                                </button>
-                              )}
-                            </div>
-                            <div className="mt-1 flex flex-wrap items-center gap-x-1 gap-y-1 text-xs text-muted-foreground">
-                              <span className="break-all">Licence FFF : <span className="font-mono font-medium">{licenseNumber ?? 'non renseigné'}</span></span>
-                              {licenseNumber && (
-                                <button
-                                  type="button"
-                                  onClick={() => handleCopy(licenseNumber)}
-                                  className={`inline-flex size-11 shrink-0 items-center justify-center rounded-lg transition sm:size-7 sm:rounded ${
-                                    isCopied
-                                      ? 'bg-emerald-600 text-white'
-                                      : 'text-muted-foreground hover:bg-accent/40 hover:text-foreground'
-                                  }`}
-                                  title="Copier le numéro de licence"
-                                  aria-label={`Copier le numéro de licence de ${player.firstName} ${player.lastName}`}
-                                >
-                                  {isCopied ? <Check className="size-3" /> : <Copy className="size-3" />}
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mt-4 flex flex-col items-stretch gap-2 rounded-xl border border-accent/40 bg-muted/40 p-3 sm:mt-3 sm:p-2">
-                        {parentContact('father', phone?.fatherPhone ?? '')}
-                        {parentContact('mother', phone?.motherPhone ?? '')}
-                        {phone?.legacyPhone && (
-                          <div className="inline-flex flex-wrap items-center gap-2">
-                            <span className="text-xs font-semibold text-muted-foreground">Autre contact</span>
-                              <PhoneActionButtons
-                                phone={phone.legacyPhone}
-                                label="l’autre contact"
-                                playerName={`${player.firstName} ${player.lastName}`}
-                              />
-                          </div>
-                        )}
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>}
-
-            </section>
-          )})}
+                    )}
+                    {!hasParentContacts && <p className="text-xs text-muted-foreground">Aucun téléphone renseigné.</p>}
+                  </div>
+                </details>
+              </article>
+            )
+          })}
         </div>
       )}
             </>
@@ -989,13 +997,13 @@ export function EducatorRoster({
           </section>
         </div>
       )}
-      {(directoryView === 'players' || Boolean(query.trim())) && !query.trim() && hasExpandedVisibleGroup && (
+      {(directoryView === 'players' || Boolean(query.trim())) && !query.trim() && hasExpandedVisiblePlayer && (
         <div className="pointer-events-none fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center sm:hidden">
           <button
             type="button"
-            onClick={collapseAllPositions}
-            aria-label="Replier tous les postes ouverts"
-            title="Replier tous les postes ouverts"
+            onClick={collapseAllPlayers}
+            aria-label="Replier toutes les fiches ouvertes"
+            title="Replier toutes les fiches ouvertes"
             className="pointer-events-auto inline-flex min-h-10 items-center gap-1.5 rounded-full border border-accent bg-primary px-4 text-xs font-bold text-primary-foreground shadow-lg"
           >
             <ChevronUp aria-hidden="true" className="size-4" />

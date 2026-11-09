@@ -47,9 +47,14 @@ const fallbackCohesionDays: CohesionDay[] = []
 const fallbackTrainingAttendance: TrainingAttendanceSession[] = []
 
 export default async function Page() {
-  const educator = await getEducatorSession(
-    new Request('https://localhost', { headers: await headers() }),
-  )
+  let educator: Awaited<ReturnType<typeof getEducatorSession>> = null
+  try {
+    educator = await getEducatorSession(
+      new Request('https://localhost', { headers: await headers() }),
+    )
+  } catch (error) {
+    console.error('Impossible de vérifier la session éducateur:', error)
+  }
   const [roster, stats, convocationsResult, matchResultsResult, cohesionResult, trainingAttendanceResult] = await Promise.all([
     educator ? getRoster().catch((error) => {
       console.error('Impossible de charger l’effectif:', error)

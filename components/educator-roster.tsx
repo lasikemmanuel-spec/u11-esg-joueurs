@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useLayoutEffect, useCallback, useRef, type FormEvent } from 'react'
-import { Search, Copy, Check, Award, Save, ChevronDown, ChevronUp, Pencil, X, ContactRound, UsersRound, KeyRound } from 'lucide-react'
+import { Search, Copy, Check, Award, Save, ChevronDown, ChevronUp, Pencil, X, ContactRound, UsersRound, KeyRound, LockKeyhole } from 'lucide-react'
 import type { Player, PublicPlayer } from '@/lib/players'
 import { matchesSearch } from '@/lib/search'
 import { ClubCrest } from '@/components/club-crest'
@@ -345,14 +345,17 @@ export function EducatorRoster({
   }
 
   const phoneEncryptionDiagnosticPanel = educator.role === 'admin' && (
-    <div className="flex flex-col items-start gap-2 border-t border-border pt-3">
+    <div className="flex flex-col items-start gap-2 rounded-xl border border-accent/30 bg-white/60 p-2 dark:bg-card/70">
       <button
         type="button"
         onClick={() => void runPhoneDiagnostics()}
         disabled={diagnosticPending}
-        className="min-h-9 rounded-lg border border-accent/50 px-3 text-sm font-semibold text-primary disabled:opacity-50"
+        aria-label="Vérifier le chiffrement des téléphones"
+        className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-accent/35 bg-background/70 px-2.5 text-xs font-medium text-muted-foreground transition hover:bg-accent/20 hover:text-primary disabled:opacity-50"
       >
-        {diagnosticPending ? 'Vérification…' : 'Vérifier le chiffrement des téléphones'}
+        <LockKeyhole aria-hidden="true" className="size-3.5 shrink-0" />
+        {diagnosticPending ? 'Vérification…' : 'Vérifier le chiffrement'}
+        <span className="hidden sm:inline"> des téléphones</span>
       </button>
       {diagnosticError && <p role="alert" className="text-sm text-destructive">{diagnosticError}</p>}
       {phoneDiagnostics && (
@@ -499,6 +502,7 @@ export function EducatorRoster({
         <div className="flex flex-col gap-2">
           <EducatorDirectory
             canEdit={educator.role === 'admin'}
+            canAdd={educator.role === 'admin' || educator.role === 'educator'}
             searchQuery={query}
             searchTitle={query.trim() ? 'Résultats éducateurs' : undefined}
             currentEducator={educator}

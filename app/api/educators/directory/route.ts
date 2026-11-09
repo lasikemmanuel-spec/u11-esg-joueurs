@@ -41,7 +41,8 @@ async function save(request: Request, editing: boolean) {
     return response({ error: 'La connexion éducateur n’est pas disponible.' }, 503)
   }
   if (!educator) return response({ error: 'Connexion requise.' }, 401)
-  if (educator.role !== 'admin') return response({ error: 'Seul l’administrateur peut modifier l’annuaire.' }, 403)
+  if (editing && educator.role !== 'admin') return response({ error: 'Seul l’administrateur peut modifier une fiche existante.' }, 403)
+  if (!editing && educator.role === 'reader') return response({ error: 'Accès réservé aux éducateurs.' }, 403)
   if (Number(request.headers.get('content-length') ?? 0) > 4096) return response({ error: 'Requête trop volumineuse.' }, 413)
 
   let input: Record<string, unknown>

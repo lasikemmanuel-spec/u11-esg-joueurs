@@ -85,8 +85,7 @@ describe('/api/educators/directory', () => {
   it.each([
     ['no session', null],
     ['reader', { username: 'reader', displayName: 'Lecteur', role: 'reader' }],
-    ['educator', { username: 'coach', displayName: 'Coach', role: 'educator' }],
-  ] as const)('prevents %s from editing the educator directory', async (_label, session) => {
+  ] as const)('prevents %s from adding an educator directory entry', async (_label, session) => {
     vi.mocked(getEducatorSession).mockResolvedValue(session)
 
     const response = await POST(request('POST', {
@@ -104,6 +103,27 @@ describe('/api/educators/directory', () => {
       username: 'admin',
       displayName: 'Admin',
       role: 'admin',
+    })
+
+    const response = await POST(request('POST', {
+      name: 'New Coach',
+      licenseNumber: '',
+      phone: '',
+    }))
+
+    expect(response.status).toBe(200)
+    expect(saveEducatorDirectoryEntry).toHaveBeenCalledWith({
+      name: 'New Coach',
+      licenseNumber: '',
+      phone: '',
+    })
+  })
+
+  it('allows an educator to add an educator directory entry', async () => {
+    vi.mocked(getEducatorSession).mockResolvedValue({
+      username: 'coach',
+      displayName: 'Coach',
+      role: 'educator',
     })
 
     const response = await POST(request('POST', {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
-import { KeyRound, Pencil, Plus, Shield, Trash2, UserRound, X } from 'lucide-react'
+import { ChevronDown, KeyRound, Pencil, Plus, Shield, Trash2, UserRound, X } from 'lucide-react'
 
 type AccountRole = 'educator' | 'admin' | 'reader'
 
@@ -203,71 +203,80 @@ export function EducatorAccountManagement({ currentUsername }: { currentUsername
         <ul className="mt-3 grid gap-2 sm:mt-4 sm:grid-cols-2">
           {accounts.map((account) => {
             const isSelf = account.username.toLocaleLowerCase('fr-FR') === currentUsername.toLocaleLowerCase('fr-FR')
+            const initials = account.displayName.split(/\s+/).filter(Boolean).slice(0, 2).map((part) => part[0]).join('').toLocaleUpperCase('fr-FR')
             return (
-              <li key={account.username} className="rounded-xl border border-border bg-background p-2.5 sm:p-3">
-                <div className="grid gap-2 sm:flex sm:items-start sm:justify-between sm:gap-2">
-                  <div className="min-w-0">
-                    <h3 className="break-words font-bold text-foreground sm:truncate">{account.displayName}{isSelf ? ' (vous)' : ''}</h3>
-                    <p className="mt-1 break-all text-sm text-muted-foreground sm:truncate">{account.username}</p>
-                    <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-1 text-xs font-semibold sm:mt-2">
-                      {account.role === 'admin' ? <Shield aria-hidden="true" className="size-3.5" /> : <UserRound aria-hidden="true" className="size-3.5" />}
-                      {account.role === 'admin' ? 'Administrateur' : account.role === 'reader' ? 'Lecteur' : 'Éducateur'}
+              <li key={account.username} className="overflow-hidden rounded-2xl border-2 border-[#172554]/15 bg-background shadow-sm transition hover:border-[#172554]/35">
+                <details className="group">
+                  <summary className="flex cursor-pointer list-none items-center gap-3 bg-gradient-to-r from-[#172554] to-[#1e3a8a] px-3 py-3 text-white outline-none transition hover:from-[#1e3a8a] hover:to-[#274493] focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-amber-400 sm:px-4">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-amber-400 text-sm font-black text-[#172554] ring-2 ring-white/30">
+                      {initials || <UserRound aria-hidden="true" className="size-5" />}
                     </span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-2 sm:flex sm:shrink-0 sm:flex-col sm:gap-1.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setDraft({
-                          username: account.username,
-                          firstName: account.firstName,
-                          lastName: account.lastName,
-                          password: '',
-                          role: account.role,
-                        })
-                        setEditTarget(account)
-                        setError('')
-                      }}
-                      disabled={pendingUsername !== null}
-                      className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-lg border border-accent/50 px-2 text-xs font-semibold text-primary disabled:opacity-50 sm:min-h-8"
-                    >
-                      <Pencil aria-hidden="true" className="size-3.5" />
-                      Identité
-                    </button>
-                    <label className="col-span-2 grid min-w-0 gap-1 text-[11px] font-semibold text-muted-foreground sm:col-span-1">
-                      Rôle
-                      <select
-                        value={account.role}
-                        onChange={(event) => void updateRole(account, event.target.value as AccountRole)}
-                        disabled={pendingUsername !== null || (isSelf && account.role === 'admin')}
-                        aria-label={`Rôle de ${account.displayName}`}
-                        className="h-10 w-full rounded-lg border border-accent/50 bg-background px-2 text-xs font-semibold text-primary disabled:opacity-50 sm:h-8 sm:w-auto"
+                    <span className="min-w-0 flex-1">
+                      <h3 className="truncate text-sm font-black sm:text-base">{account.displayName}{isSelf ? ' (vous)' : ''}</h3>
+                      <span className="mt-0.5 block truncate text-xs text-blue-100">{account.username}</span>
+                    </span>
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-400/15 px-1.5 py-1 text-[10px] font-bold text-amber-200 ring-1 ring-amber-300/50 sm:px-2 sm:text-[11px]">
+                      {account.role === 'admin' ? <Shield aria-hidden="true" className="size-3" /> : <UserRound aria-hidden="true" className="size-3" />}
+                      {account.role === 'admin' ? 'Admin' : account.role === 'reader' ? 'Lecteur' : 'Éducateur'}
+                    </span>
+                    <ChevronDown aria-hidden="true" className="size-5 shrink-0 text-amber-300 transition-transform group-open:rotate-180" />
+                  </summary>
+                  <div className="grid gap-3 border-t border-amber-400/35 bg-gradient-to-b from-[#f7f8ff] to-background p-3 dark:from-[#202b4b] sm:p-4">
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setDraft({
+                            username: account.username,
+                            firstName: account.firstName,
+                            lastName: account.lastName,
+                            password: '',
+                            role: account.role,
+                          })
+                          setEditTarget(account)
+                          setError('')
+                        }}
+                        disabled={pendingUsername !== null}
+                        className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-lg border border-accent/50 px-2 text-xs font-semibold text-primary disabled:opacity-50 sm:min-h-8"
                       >
-                        <option value="admin">Administrateur</option>
-                        <option value="educator">Éducateur</option>
-                        <option value="reader">Lecteur</option>
-                      </select>
-                    </label>
-                    <button
-                      type="button"
-                      onClick={() => { setPasswordDraft(''); setPasswordTarget(account); setError('') }}
-                      disabled={pendingUsername !== null}
-                      className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-lg border border-accent/50 px-2 text-xs font-semibold text-primary disabled:opacity-50 sm:min-h-8"
-                    >
-                      <KeyRound aria-hidden="true" className="size-3.5" />
-                      Mot de passe
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void deleteAccount(account)}
-                      disabled={pendingUsername !== null || isSelf}
-                      className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-lg border border-destructive/40 px-2 text-xs font-semibold text-destructive disabled:opacity-50 sm:min-h-8"
-                    >
-                      <Trash2 aria-hidden="true" className="size-3.5" />
-                      Supprimer
-                    </button>
+                        <Pencil aria-hidden="true" className="size-3.5" />
+                        Identité
+                      </button>
+                      <label className="col-span-2 grid min-w-0 gap-1 text-[11px] font-semibold text-muted-foreground sm:col-span-1">
+                        Rôle
+                        <select
+                          value={account.role}
+                          onChange={(event) => void updateRole(account, event.target.value as AccountRole)}
+                          disabled={pendingUsername !== null || (isSelf && account.role === 'admin')}
+                          aria-label={`Rôle de ${account.displayName}`}
+                          className="h-10 w-full rounded-lg border border-accent/50 bg-background px-2 text-xs font-semibold text-primary disabled:opacity-50 sm:h-8 sm:w-auto"
+                        >
+                          <option value="admin">Administrateur</option>
+                          <option value="educator">Éducateur</option>
+                          <option value="reader">Lecteur</option>
+                        </select>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => { setPasswordDraft(''); setPasswordTarget(account); setError('') }}
+                        disabled={pendingUsername !== null}
+                        className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-lg border border-accent/50 px-2 text-xs font-semibold text-primary disabled:opacity-50 sm:min-h-8"
+                      >
+                        <KeyRound aria-hidden="true" className="size-3.5" />
+                        Mot de passe
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void deleteAccount(account)}
+                        disabled={pendingUsername !== null || isSelf}
+                        className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-lg border border-destructive/40 px-2 text-xs font-semibold text-destructive disabled:opacity-50 sm:min-h-8"
+                      >
+                        <Trash2 aria-hidden="true" className="size-3.5" />
+                        Supprimer
+                      </button>
+                    </div>
                   </div>
-                </div>
+                </details>
               </li>
             )
           })}

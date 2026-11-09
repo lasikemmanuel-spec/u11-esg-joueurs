@@ -14,6 +14,7 @@ const blank: Draft = { name: '', licenseNumber: '', phone: '' }
 
 export function EducatorDirectory({
   canEdit,
+  canAdd = canEdit,
   searchQuery,
   searchTitle,
   showAddButton = true,
@@ -21,6 +22,7 @@ export function EducatorDirectory({
   photoRevision = 0,
 }: {
   canEdit: boolean
+  canAdd?: boolean
   searchQuery?: string
   searchTitle?: string
   showAddButton?: boolean
@@ -171,23 +173,23 @@ export function EducatorDirectory({
       className={isSearching ? '' : 'rounded-2xl border border-accent/50 bg-card p-2.5 shadow-sm sm:p-4'}
     >
       {!isSearching && (
-      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] p-3 text-white shadow-sm sm:gap-3 sm:rounded-2xl sm:p-4">
-        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-          <ClubCrest className="size-8 shrink-0 ring-2 ring-amber-400/80 shadow-md sm:size-10" />
+      <div className="flex flex-wrap items-center justify-end gap-2 rounded-xl bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] p-2 text-white shadow-sm sm:justify-between sm:gap-3 sm:rounded-2xl sm:p-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <ClubCrest className="hidden size-10 shrink-0 ring-2 ring-amber-400/80 shadow-md sm:block" />
           <div>
-            <h2 id="educator-directory-title" className="text-base font-black tracking-wide text-white sm:text-lg">Annuaire des éducateurs</h2>
+            <h2 id="educator-directory-title" className="sr-only text-lg font-black tracking-wide text-white sm:not-sr-only">Annuaire des éducateurs</h2>
             <p className="mt-0.5 hidden text-xs text-blue-200 sm:block">Coordonnées et licences de l’encadrement ESG</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">
-          {canEdit && showAddButton && (
+          {canAdd && showAddButton && (
             <button
               type="button"
               onClick={() => { setDraft(blank); setEditingOwn(false); setError(''); setOpen(true) }}
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-amber-400 px-3 text-xs font-black text-blue-950 shadow-sm transition hover:bg-amber-300 sm:px-3.5"
+              className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-amber-400 px-3 text-xs font-black text-blue-950 shadow-sm transition hover:bg-amber-300 sm:min-h-10 sm:px-3.5"
             >
               <Plus className="size-4" />
-              <span className="sm:hidden">Ajouter</span>
+              <span className="sm:hidden">Ajouter un éducateur</span>
               <span className="hidden sm:inline">Ajouter un éducateur</span>
             </button>
           )}
@@ -342,7 +344,7 @@ export function EducatorDirectory({
         </>
       )}
       {!canEdit && !currentEducator && <p className="mt-3 text-xs text-muted-foreground">La modification des fiches est réservée à l’administrateur.</p>}
-      {open && (canEdit || editingOwn) && (
+      {open && (canEdit || (canAdd && !draft.id) || editingOwn) && (
         <div role="dialog" aria-modal="true" aria-labelledby="directory-form-title" className="fixed inset-0 z-[60] grid place-items-center bg-[#172554]/60 p-4">
           <form onSubmit={editingOwn ? saveOwnProfile : save} className="w-full max-w-md rounded-2xl border border-accent/60 bg-card p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-3">

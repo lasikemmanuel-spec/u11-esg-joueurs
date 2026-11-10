@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, CalendarPlus, Check, ChevronDown, Clock3, Pencil, Plus, Radio, Save, Sparkles, Trash2, UsersRound, X } from 'lucide-react'
+import { CalendarDays, CalendarPlus, Check, ChevronDown, Clock3, Pencil, Plus, Save, Sparkles, Trash2, UsersRound, X } from 'lucide-react'
 import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
 import { MatchLineupEntry, useMatchLineups } from '@/components/match-lineup-planner'
 import { LiveMatchConsole } from '@/components/live-match-console'
@@ -722,10 +722,16 @@ export function MatchResultEntry({
                                 })}
                                 aria-label={`Lancer le direct, équipe ${isE1 ? '1' : '2'} contre ${entry.opponent || 'adversaire'}`}
                                 title="Lancer le match en direct"
-                                className="group inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/35 bg-gradient-to-r from-rose-600 to-red-500 px-2.5 text-[10px] font-black uppercase tracking-wide text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-60 sm:hidden"
+                                className="group inline-flex min-h-11 items-center gap-2 rounded-2xl border-2 border-emerald-200 bg-gradient-to-r from-lime-300 via-emerald-400 to-emerald-500 px-3 text-emerald-950 shadow-lg ring-2 ring-emerald-300/50 transition hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-60 sm:hidden"
                               >
-                                <Radio aria-hidden="true" className="size-4 animate-pulse" />
-                                <span className="hidden sm:inline">Lancer le</span> Direct
+                                <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white text-lg shadow-inner motion-safe:animate-bounce">⚽</span>
+                                <span className="flex flex-col items-start leading-none">
+                                  <span className="text-[11px] font-black normal-case tracking-normal">Coup d’envoi !</span>
+                                  <span className="mt-1 inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-[0.16em]">
+                                    <span aria-hidden="true" className="size-1.5 rounded-full bg-rose-600 motion-safe:animate-pulse" />
+                                    Direct
+                                  </span>
+                                </span>
                               </button>
                             )}
                             {entry.resultLabel !== 'Annulé' && dateInputValue(entry.date) >= localToday() && (

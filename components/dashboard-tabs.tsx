@@ -617,7 +617,7 @@ export function DashboardTabs({
                 aria-controls={isMore ? 'mobile-more-menu' : undefined}
                 aria-expanded={isMore ? moreMenuOpen : undefined}
                 onClick={() => {
-                  if (isMore) {
+                  if (tab.key === 'more') {
                     setMoreMenuOpen((open) => !open)
                     return
                   }

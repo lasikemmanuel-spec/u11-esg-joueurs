@@ -310,14 +310,14 @@ export function LiveMatchConsole({
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">
                 {session.phase === 'halftime' ? 'Mi-temps' : session.phase === 'finished' ? 'Fin du match' : session.phase === 'secondHalf' ? '2e mi-temps' : '1re mi-temps'}
               </p>
-              <div className="mt-2 flex items-center justify-center gap-5">
-                <div className="min-w-0 flex-1 text-right">
-                  <p className="text-xs font-bold text-white/65">ESG</p>
+              <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-2">
+                <div className="min-w-0 text-center">
+                  <p className="min-h-8 text-xs font-bold leading-tight text-white/65">ESG</p>
                   <p className="text-5xl font-black tabular-nums">{summary?.goalsFor ?? 0}</p>
                 </div>
-                <span className="text-2xl font-black text-white/35">–</span>
-                <div className="min-w-0 flex-1 text-left">
-                  <p className="truncate text-xs font-bold text-white/65">{match.opponent || 'Adversaire'}</p>
+                <span className="pt-8 text-2xl font-black text-white/35">–</span>
+                <div className="min-w-0 text-center">
+                  <p className="min-h-8 break-words text-xs font-bold leading-tight text-white/65">{match.opponent || 'Adversaire'}</p>
                   <p className="text-5xl font-black tabular-nums">{summary?.goalsAgainst ?? 0}</p>
                 </div>
               </div>

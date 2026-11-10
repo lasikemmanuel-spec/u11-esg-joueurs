@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import { useRouter } from 'next/navigation'
-import { LogOut, Radio, X } from 'lucide-react'
+import { BarChart3, CalendarDays, Dumbbell, Ellipsis, LogOut, Radio, Shirt, UsersRound, X, type LucideIcon } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import { MatchCallupBreakdown } from '@/components/match-callup-breakdown'
 import { PlayerStats } from '@/components/player-stats'
@@ -96,8 +96,7 @@ export function DashboardTabs({
 }) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabKey>('matches')
-  const mobileTabsRef = useRef<HTMLDivElement>(null)
-  const mobileTabButtonRefs = useRef<Partial<Record<TabKey, HTMLButtonElement | null>>>({})
+  const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [statsSection, setStatsSection] = useState<StatsSection>('players')
   const [matchFocuses, setMatchFocuses] = useState<Partial<Record<'E1' | 'E2', MatchFocus>>>({})
   const [activeMatchTeam, setActiveMatchTeam] = useState<'E1' | 'E2' | null>(null)
@@ -121,12 +120,13 @@ export function DashboardTabs({
   const [profilePhotoRevision, setProfilePhotoRevision] = useState(0)
 
   useEffect(() => {
-    mobileTabButtonRefs.current[activeTab]?.scrollIntoView({
-      behavior: 'smooth',
-      block: 'nearest',
-      inline: 'center',
-    })
-  }, [activeTab])
+    if (!moreMenuOpen) return
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setMoreMenuOpen(false)
+    }
+    window.addEventListener('keydown', closeOnEscape)
+    return () => window.removeEventListener('keydown', closeOnEscape)
+  }, [moreMenuOpen])
 
   useEffect(() => {
     let active = true
@@ -270,6 +270,25 @@ export function DashboardTabs({
       ? [{ key: 'training' as const, label: 'Entraînements' }]
       : []),
   ]
+  const canAccessTraining = educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
+  const mobileMainTabs: Array<{ key: TabKey | 'more'; label: string; icon: LucideIcon }> = canAccessTraining
+    ? [
+        { key: 'matches', label: 'Matchs', icon: CalendarDays },
+        { key: 'training', label: 'Entraînements', icon: Dumbbell },
+        { key: 'roster', label: 'Joueurs', icon: Shirt },
+        { key: 'more', label: 'Plus', icon: Ellipsis },
+      ]
+    : [
+        { key: 'matches', label: 'Matchs', icon: CalendarDays },
+        { key: 'stats', label: 'Stats', icon: BarChart3 },
+        { key: 'roster', label: 'Joueurs', icon: Shirt },
+      ]
+  const moreMenuTabs = tabs.filter((tab) => !mobileMainTabs.some((mobileTab) => mobileTab.key === tab.key))
+  const moreMenuIcons: Partial<Record<TabKey, LucideIcon>> = {
+    stats: BarChart3,
+    educator: UsersRound,
+    training: Dumbbell,
+  }
   const mainHeader = (
     <header className="relative z-20 border-b-2 border-[#d4af37] bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] text-white shadow-md">
       <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:gap-4 sm:py-5 md:flex-row md:items-center md:justify-between md:px-6 md:py-5">
@@ -545,34 +564,76 @@ export function DashboardTabs({
         )}
       </div>
 
+      {moreMenuOpen && (
+        <button
+          type="button"
+          aria-label="Fermer le menu Plus"
+          onClick={() => setMoreMenuOpen(false)}
+          className="fixed inset-0 z-40 bg-[#07102a]/20 xl:hidden"
+        />
+      )}
       <nav
         aria-label="Navigation principale"
-        className="fixed inset-x-0 bottom-0 z-50 overflow-hidden border-t border-accent/60 bg-card/95 px-2 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-4px_16px_rgba(0,0,0,0.12)] backdrop-blur xl:hidden"
+        className="fixed inset-x-0 bottom-0 z-50 overflow-visible border-t border-accent/60 bg-card/90 px-3 pt-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] shadow-[0_-8px_28px_rgba(23,37,84,0.12)] backdrop-blur-xl xl:hidden"
       >
-        <div
-          ref={mobileTabsRef}
-          className="mx-auto flex w-full max-w-lg snap-x snap-mandatory gap-1 overflow-x-auto rounded-xl bg-muted p-1"
-        >
-          {tabs.map((tab) => {
-            const isActive = activeTab === tab.key
+        {moreMenuOpen && moreMenuTabs.length > 0 && (
+          <div
+            id="mobile-more-menu"
+            className="absolute right-3 bottom-[calc(100%+0.75rem)] z-10 w-56 rounded-2xl border border-[#d4af37]/40 bg-card/95 p-2 shadow-2xl backdrop-blur-xl"
+          >
+            {moreMenuTabs.map((tab) => {
+              const Icon = moreMenuIcons[tab.key] ?? UsersRound
+              return (
+                <button
+                  key={tab.key}
+                  type="button"
+                  onClick={() => {
+                    setActiveTab(tab.key)
+                    setMoreMenuOpen(false)
+                  }}
+                  className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-bold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <Icon aria-hidden="true" className="size-5 text-primary" />
+                  {tab.label}
+                </button>
+              )
+            })}
+          </div>
+        )}
+        <div className={`mx-auto grid w-full max-w-lg gap-1 rounded-2xl bg-muted/90 p-1 ${mobileMainTabs.length === 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
+          {mobileMainTabs.map((tab) => {
+            const Icon = tab.icon
+            const isMore = tab.key === 'more'
+            const isActive = isMore
+              ? moreMenuOpen || moreMenuTabs.some((menuTab) => menuTab.key === activeTab)
+              : activeTab === tab.key
 
             return (
               <button
                 key={tab.key}
-                ref={(element) => { mobileTabButtonRefs.current[tab.key] = element }}
                 type="button"
                 aria-pressed={isActive}
                 aria-label={tab.label}
-                onClick={() => setActiveTab(tab.key)}
+                aria-controls={isMore ? 'mobile-more-menu' : undefined}
+                aria-expanded={isMore ? moreMenuOpen : undefined}
+                onClick={() => {
+                  if (isMore) {
+                    setMoreMenuOpen((open) => !open)
+                    return
+                  }
+                  setMoreMenuOpen(false)
+                  setActiveTab(tab.key)
+                }}
                 className={[
-                  'min-h-12 w-[76px] shrink-0 snap-center break-words rounded-lg px-1.5 py-2 text-[10px] leading-tight transition-all sm:w-[90px] sm:text-xs',
+                  'flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[10px] leading-tight transition-all sm:text-[11px]',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                   isActive
-                    ? 'bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] text-amber-300 font-extrabold shadow-md border border-amber-400/40'
-                    : 'text-muted-foreground font-semibold hover:bg-background hover:text-foreground',
+                    ? 'border border-amber-400/45 bg-gradient-to-br from-[#172554] via-[#1e3a8a] to-[#172554] font-extrabold text-amber-300 shadow-md'
+                    : 'font-semibold text-muted-foreground hover:bg-background hover:text-foreground',
                 ].join(' ')}
               >
-                {tab.label}
+                <Icon aria-hidden="true" className="size-5 shrink-0" />
+                <span className="max-w-full truncate whitespace-nowrap">{tab.label}</span>
               </button>
             )
           })}

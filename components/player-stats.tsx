@@ -1,5 +1,6 @@
 'use client'
 
+import { X } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import { PlayerOffensiveRankings } from '@/components/player-offensive-rankings'
 import { ireStatus, type IreStatus, type PlayerStats as Stats } from '@/lib/stats-shared'
@@ -128,12 +129,14 @@ export function PlayerCard({
   player,
   matchesPlayed,
   cancelledMatchesForPlayer = 0,
+  onClose,
 }: {
   stats: Stats
   convocation?: Convocation
   player?: PublicPlayer
   matchesPlayed: number
   cancelledMatchesForPlayer?: number
+  onClose?: () => void
 }) {
   const status = IRE_STYLES[ireStatus(stats)]
   const matchPresenceRate = convocation?.presentRate ?? null
@@ -193,11 +196,21 @@ export function PlayerCard({
           <ClubCrest className="size-11 ring-2 ring-[oklch(0.8_0.08_85)]" />
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[oklch(0.8_0.08_85)]">ES Genech · U11</p>
-            <p className="mt-0.5 text-xs font-medium text-white/75">Fiche joueur</p>
+            <p id="selected-player-card-title" className="mt-0.5 text-xs font-medium text-white/75">Fiche joueur</p>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <span className={`rounded-md px-2 py-1 text-xs font-semibold ${status.className}`}>{status.label}</span>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Fermer la fiche joueur"
+              className="inline-flex size-9 items-center justify-center rounded-lg border border-white/25 text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+            >
+              <X aria-hidden="true" className="size-5" />
+            </button>
+          )}
         </div>
       </header>
 

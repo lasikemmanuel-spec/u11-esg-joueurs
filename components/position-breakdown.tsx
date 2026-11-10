@@ -37,7 +37,7 @@ export function PositionBreakdown({
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null)
   const [query, setQuery] = useState('')
   const [expandedPositions, setExpandedPositions] = useState<Set<string>>(() => new Set())
-  const playerCardRef = useRef<HTMLDivElement>(null)
+  const playerDialogRef = useRef<HTMLDialogElement>(null)
   const shouldScrollToTopAfterCollapse = useRef(false)
   const searchTerm = normalizeName(query.trim())
   const matchingPlayers = searchTerm
@@ -94,17 +94,11 @@ export function PositionBreakdown({
   }, [expandedPositions, selectedNumber])
 
   useEffect(() => {
-    if (selectedNumber === null) return
-
-    const frame = window.requestAnimationFrame(() => {
-      playerCardRef.current?.scrollIntoView({
-        behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
-        block: 'start',
-      })
-    })
-
-    return () => window.cancelAnimationFrame(frame)
-  }, [selectedNumber])
+    const dialog = playerDialogRef.current
+    if (!dialog) return
+    if (selectedPlayer && !dialog.open) dialog.showModal()
+    if (!selectedPlayer && dialog.open) dialog.close()
+  }, [selectedPlayer])
 
   return (
     <section
@@ -150,11 +144,10 @@ export function PositionBreakdown({
         </span>
       </div>
 
-      <div className={`roster-player-layout grid items-start gap-4 ${selectedPlayer ? 'has-selected-player' : ''}`}>
       <div className={`roster-player-groups ${
         allGroupsExpanded
-          ? `columns-1 gap-3 ${selectedPlayer ? '' : 'sm:columns-2 xl:columns-3'}`
-          : `grid grid-cols-1 items-start gap-3 sm:grid-cols-2 ${selectedPlayer ? '2xl:grid-cols-2' : 'xl:grid-cols-3'}`
+          ? 'columns-1 gap-3 sm:columns-2 xl:columns-3'
+          : 'grid grid-cols-1 items-start gap-3 sm:grid-cols-2 xl:grid-cols-3'
       }`}>
             {matchingPlayers.length === 0 && (
               <p className="break-inside-avoid rounded-lg border border-accent/40 bg-card p-3 text-sm text-muted-foreground">
@@ -242,11 +235,20 @@ export function PositionBreakdown({
               </article>
             )})}
           </div>
-        {selectedPlayer && selectedStats && (
-          <div ref={playerCardRef} className="roster-player-card scroll-mt-4 xl:sticky xl:top-6">
+      {selectedPlayer && selectedStats && (
+        <dialog
+          ref={playerDialogRef}
+          aria-labelledby="selected-player-card-title"
+          onClose={() => setSelectedNumber(null)}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) event.currentTarget.close()
+          }}
+          className="fixed inset-0 m-auto max-h-[calc(100dvh-1.5rem)] w-[min(42rem,calc(100vw-1.5rem))] overflow-y-auto overscroll-contain rounded-2xl border-0 bg-transparent p-0 shadow-2xl backdrop:bg-[#07102a]/65"
+        >
             <PlayerCard
               stats={selectedStats}
               player={selectedPlayer}
+              onClose={() => playerDialogRef.current?.close()}
               convocation={convocations.find((convocation) => convocation.number === selectedPlayer.number)}
               matchesPlayed={matchesPlayed}
               cancelledMatchesForPlayer={countCancelledCallupsForPlayer(
@@ -255,9 +257,8 @@ export function PositionBreakdown({
                 matchResults.entries,
               )}
             />
-          </div>
-        )}
-      </div>
+        </dialog>
+      )}
       {hasExpandedVisibleGroup && (
         <div className="pointer-events-none fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center sm:hidden">
           <button

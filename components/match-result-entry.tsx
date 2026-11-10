@@ -673,7 +673,7 @@ export function MatchResultEntry({
                     >
                       <div
                         className={[
-                          'flex min-w-0 items-center justify-between gap-2 px-3 py-2',
+                          'flex min-w-0 flex-col gap-2 px-3 py-2 lg:flex-row lg:items-center lg:justify-between',
                           isE1
                             ? 'bg-[#172554] text-white'
                             : 'bg-amber-400 text-blue-950',
@@ -711,7 +711,7 @@ export function MatchResultEntry({
                           </span>
                         </button>
                         {canManage && (
-                          <div className="flex shrink-0 items-center gap-1">
+                          <div className="flex w-full shrink-0 items-center justify-end gap-1 lg:w-auto">
                             {canStartLive && savedLineup && (
                               <button
                                 type="button"
@@ -722,7 +722,7 @@ export function MatchResultEntry({
                                 })}
                                 aria-label={`Lancer le direct, équipe ${isE1 ? '1' : '2'} contre ${entry.opponent || 'adversaire'}`}
                                 title="Lancer le match en direct"
-                                className="group inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/35 bg-gradient-to-r from-rose-600 to-red-500 px-2.5 text-[10px] font-black uppercase tracking-wide text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-60 sm:px-3 sm:text-xs"
+                                className="group inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/35 bg-gradient-to-r from-rose-600 to-red-500 px-2.5 text-[10px] font-black uppercase tracking-wide text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-60 sm:hidden"
                               >
                                 <Radio aria-hidden="true" className="size-4 animate-pulse" />
                                 <span className="hidden sm:inline">Lancer le</span> Direct

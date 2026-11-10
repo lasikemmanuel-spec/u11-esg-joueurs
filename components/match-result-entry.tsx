@@ -2,9 +2,10 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, CalendarPlus, Check, ChevronDown, Clock3, Pencil, Plus, Save, Sparkles, Trash2, UsersRound, X } from 'lucide-react'
+import { CalendarDays, CalendarPlus, Check, ChevronDown, Clock3, Pencil, Plus, Radio, Save, Sparkles, Trash2, UsersRound, X } from 'lucide-react'
 import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
 import { MatchLineupEntry, useMatchLineups } from '@/components/match-lineup-planner'
+import { LiveMatchConsole } from '@/components/live-match-console'
 import { ClubCrest } from '@/components/club-crest'
 import type { MatchSheetEntry } from '@/lib/match-results'
 import type { Convocation } from '@/lib/convocations'
@@ -12,6 +13,7 @@ import { MATCH_RESULT_STATUSES } from '@/lib/match-result-options'
 import type { PublicPlayer } from '@/lib/players'
 import type { PlayerStats } from '@/lib/stats'
 import type { TrainingAttendanceSession } from '@/lib/training-attendance'
+import type { MatchLineup } from '@/lib/match-lineups'
 import {
   clampToMatchSeason,
   MATCH_SEASON_END,
@@ -113,6 +115,10 @@ export function MatchResultEntry({
   const [open, setOpen] = useState(false)
   const [pending, setPending] = useState(false)
   const [pendingDeletion, setPendingDeletion] = useState<string | null>(null)
+  const [lineupToStartLive, setLineupToStartLive] = useState<{
+    match: MatchSheetEntry
+    lineup: MatchLineup
+  } | null>(null)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
 
@@ -629,6 +635,17 @@ export function MatchResultEntry({
                       : entry.goalsFor + ' – ' + entry.goalsAgainst
                   const resultLabel = isPlayed && result ? result : null
                   const matchKey = entry.team + '-' + entry.slotColumn
+                  const lineupSaveKey = `${date}-${entry.team}-${entry.slotColumn}`
+                  const savedLineup = matchLineups.lineups.find((lineup) =>
+                    lineup.team === entry.team &&
+                    lineup.slotColumn === entry.slotColumn &&
+                    lineup.date === date,
+                  )
+                  const canStartLive = canManage &&
+                    Boolean(savedLineup?.starters.length) &&
+                    !entry.resultLabel &&
+                    entry.goalsFor === null &&
+                    entry.goalsAgainst === null
                   const matchPanelId = `match-details-${date}-${entry.team}-${entry.slotColumn}`
                   const isMatchExpanded = expandedMatchKeys.has(matchKey)
                   const scoreBg = result === 'Gagné'
@@ -695,6 +712,22 @@ export function MatchResultEntry({
                         </button>
                         {canManage && (
                           <div className="flex shrink-0 items-center gap-1">
+                            {canStartLive && savedLineup && (
+                              <button
+                                type="button"
+                                disabled={matchLineups.pendingKeys.has(lineupSaveKey)}
+                                onClick={() => setLineupToStartLive({
+                                  match: { ...entry, date },
+                                  lineup: savedLineup,
+                                })}
+                                aria-label={`Lancer le direct, équipe ${isE1 ? '1' : '2'} contre ${entry.opponent || 'adversaire'}`}
+                                title="Lancer le match en direct"
+                                className="group inline-flex min-h-9 items-center gap-1.5 rounded-full border border-white/35 bg-gradient-to-r from-rose-600 to-red-500 px-2.5 text-[10px] font-black uppercase tracking-wide text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-60 sm:px-3 sm:text-xs"
+                              >
+                                <Radio aria-hidden="true" className="size-4 animate-pulse" />
+                                <span className="hidden sm:inline">Lancer le</span> Direct
+                              </button>
+                            )}
                             {entry.resultLabel !== 'Annulé' && dateInputValue(entry.date) >= localToday() && (
                               <button
                                 type="button"
@@ -799,6 +832,19 @@ export function MatchResultEntry({
         })}
       </div>
 
+      {lineupToStartLive && (
+        <LiveMatchConsole
+          match={lineupToStartLive.match}
+          players={players}
+          starters={lineupToStartLive.lineup.starters}
+          substitutes={lineupToStartLive.lineup.substitutes}
+          onClose={() => setLineupToStartLive(null)}
+          onFinalized={() => {
+            setLineupToStartLive(null)
+            router.refresh()
+          }}
+        />
+      )}
       </div>
     </section>
   )

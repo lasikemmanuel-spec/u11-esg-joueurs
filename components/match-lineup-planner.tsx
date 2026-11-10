@@ -1,10 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Armchair, ChevronDown, Radio, X } from 'lucide-react'
+import { Armchair, ChevronDown, X } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
-import { LiveMatchConsole } from '@/components/live-match-console'
 import type { Convocation } from '@/lib/convocations'
 import type { MatchSheetEntry } from '@/lib/match-results'
 import type { PublicPlayer } from '@/lib/players'
@@ -189,7 +187,6 @@ export function MatchLineupEntry({
   ) => Promise<void>
   autoOpen?: boolean
 }) {
-  const router = useRouter()
   const key = matchKey(match)
   const assignments = assignmentsFromLineup(lineups.find((item) => matchKey(item) === key))
   const calledPlayers = players.filter((player) => isCalledForTeam(
@@ -200,7 +197,6 @@ export function MatchLineupEntry({
   const starters = calledPlayers.filter((player) => assignments[player.number] === 'starter')
   const substitutes = calledPlayers.filter((player) => assignments[player.number] === 'substitute')
   const pending = pendingKeys.has(key)
-  const [liveOpen, setLiveOpen] = useState(false)
 
   const updateRole = (playerNumber: number, role: LineupRole | null) => {
     const nextAssignments = { ...assignments }
@@ -293,18 +289,6 @@ export function MatchLineupEntry({
                 Les 8 places de titulaires sont prises. Retire d’abord un titulaire avec le bouton × pour en choisir un autre.
               </p>
             )}
-            <button
-              type="button"
-              disabled={pending || starters.length === 0 || match.resultLabel === 'Annulé' || match.goalsFor !== null || match.goalsAgainst !== null}
-              onClick={() => setLiveOpen(true)}
-              className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#172554] to-[#1e3a8a] px-4 text-sm font-black text-white shadow-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-45"
-            >
-              <Radio aria-hidden="true" className="size-4 text-amber-300" />
-              Match en direct
-            </button>
-            {starters.length === 0 && (
-              <p className="mt-1 text-center text-xs text-muted-foreground">Choisis les titulaires avant de démarrer le direct.</p>
-            )}
           </>
         )}
         {pending ? (
@@ -314,19 +298,6 @@ export function MatchLineupEntry({
         ) : null}
       </div>
     </details>
-    {liveOpen && (
-      <LiveMatchConsole
-        match={{ ...match, date: dateKey(match.date) }}
-        players={calledPlayers}
-        starters={starters.map((player) => player.number)}
-        substitutes={substitutes.map((player) => player.number)}
-        onClose={() => setLiveOpen(false)}
-        onFinalized={() => {
-          setLiveOpen(false)
-          router.refresh()
-        }}
-      />
-    )}
     </>
   )
 }

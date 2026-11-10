@@ -172,7 +172,6 @@ export function MatchLineupEntry({
   pendingKeys,
   savedKey,
   saveLineup,
-  autoOpen = false,
 }: {
   match: MatchSheetEntry
   players: PublicPlayer[]
@@ -185,7 +184,6 @@ export function MatchLineupEntry({
     starters: number[],
     substitutes: number[],
   ) => Promise<void>
-  autoOpen?: boolean
 }) {
   const key = matchKey(match)
   const assignments = assignmentsFromLineup(lineups.find((item) => matchKey(item) === key))
@@ -213,7 +211,7 @@ export function MatchLineupEntry({
 
   return (
     <>
-    <details id={`match-sheet-${dateKey(match.date)}-${match.team}-${match.slotColumn}`} open={autoOpen} className="group mt-2 rounded-md border border-border">
+    <details id={`match-sheet-${dateKey(match.date)}-${match.team}-${match.slotColumn}`} className="group mt-2 rounded-md border border-border">
       <summary className={`flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 border-l-4 px-3 py-2 text-sm font-semibold [&::-webkit-details-marker]:hidden ${match.team === 'E1' ? 'border-l-[#172554] bg-[#172554]/[0.04] text-[#172554]' : 'border-l-amber-400 bg-amber-400/[0.08] text-amber-950'}`}>
         <span className="flex items-center gap-2">
           <ClubCrest className="size-6 ring-1 ring-[#d4af37]/70" />

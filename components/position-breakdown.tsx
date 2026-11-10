@@ -135,7 +135,7 @@ export function PositionBreakdown({
               setQuery(event.target.value)
               setSelectedNumber(null)
             }}
-            placeholder="Nom, prénom, numéro ou poste…"
+            placeholder="Nom, prénom"
             className="h-9 w-full rounded-lg border border-accent/40 bg-background pr-3 pl-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </label>

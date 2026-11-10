@@ -802,12 +802,6 @@ export function MatchResultEntry({
                                   pendingKeys={matchLineups.pendingKeys}
                                   savedKey={matchLineups.savedKey}
                                   saveLineup={matchLineups.saveLineup}
-                                  autoOpen={Boolean(
-                                    focusMatch &&
-                                    dateInputValue(focusMatch.date) === date &&
-                                    focusMatch.team === entry.team &&
-                                    focusMatch.slotColumn === entry.slotColumn,
-                                  )}
                                 />
                               )}
                             </div>

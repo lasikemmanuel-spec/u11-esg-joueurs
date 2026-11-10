@@ -236,7 +236,7 @@ export async function POST(request: Request) {
   } catch {
     return jsonResponse({ error: 'Requête invalide.' }, 400)
   }
-  if (!isRecord(body) || !isLiveSession(body.session) || !['save', 'finalize'].includes(String(body.action))) {
+  if (!isRecord(body) || !isLiveSession(body.session) || !['save', 'finalize', 'reset'].includes(String(body.action))) {
     return jsonResponse({ error: 'Les données du match en direct sont invalides.' }, 400)
   }
   const session = body.session
@@ -249,6 +249,20 @@ export async function POST(request: Request) {
     }
     if (existing && existing.completed) {
       return jsonResponse({ error: 'Ce match a déjà été validé dans la feuille.' }, 409)
+    }
+    if (body.action === 'reset') {
+      if (!existing) return jsonResponse({ error: 'Aucun direct sauvegardé à réinitialiser.' }, 409)
+      if (
+        session.phase !== 'ready' || session.elapsedSeconds !== 0 || session.runningSince !== null ||
+        session.events.length !== 0 || session.completed ||
+        !sameNumberSet(existing.starters, session.starters) ||
+        !sameNumberSet(existing.substitutes, session.substitutes)
+      ) {
+        return jsonResponse({ error: 'La demande de réinitialisation est invalide.' }, 400)
+      }
+      await saveLiveMatchSession(session)
+      revalidateTag('google-sheet', { expire: 0 })
+      return jsonResponse({ ok: true, session })
     }
     if (!existing && (match.resultLabel || match.goalsFor !== null || match.goalsAgainst !== null)) {
       return jsonResponse({ error: 'Un résultat existe déjà pour ce match. Le direct ne peut démarrer que sur un match à jouer.' }, 409)

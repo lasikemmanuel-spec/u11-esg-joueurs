@@ -69,7 +69,7 @@ export function LiveMatchConsole({
   const [showReview, setShowReview] = useState(false)
   const autoPauseRef = useRef(false)
 
-  const persistSession = useCallback(async (nextSession: LiveMatchSession, action: 'save' | 'finalize' = 'save') => {
+  const persistSession = useCallback(async (nextSession: LiveMatchSession, action: 'save' | 'finalize' | 'reset' = 'save') => {
     setSaving(true)
     setError('')
     try {
@@ -215,6 +215,23 @@ export function LiveMatchConsole({
     })
   }
 
+  const resetMatch = async () => {
+    if (!session || session.completed || !window.confirm('Réinitialiser ce direct ? Le chronomètre et toutes les actions seront effacés.')) return
+    const resetSession = createLiveMatchSession({
+      date: session.date,
+      team: session.team,
+      slotColumn: session.slotColumn,
+      starters: session.starters,
+      substitutes: session.substitutes,
+    })
+    await persistSession(resetSession, 'reset')
+    setEventMinuteOverride(null)
+    setScorerNumber('')
+    setAssistNumber('')
+    setPlayerOut('')
+    setPlayerIn('')
+  }
+
   useEffect(() => {
     if (!session?.runningSince || session.phase === 'finished') return
     const timer = window.setInterval(() => {
@@ -343,6 +360,12 @@ export function LiveMatchConsole({
                   <button type="button" disabled={saving} onClick={() => void finishMatch().catch(() => undefined)} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 text-sm font-bold disabled:opacity-50">
                     <Flag aria-hidden="true" className="size-4" />
                     Terminer
+                  </button>
+                )}
+                {!session.completed && session.phase !== 'ready' && (
+                  <button type="button" disabled={saving} onClick={() => void resetMatch().catch(() => undefined)} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-rose-200/25 bg-rose-300/10 px-4 text-sm font-bold text-rose-100 disabled:opacity-50">
+                    <RotateCcw aria-hidden="true" className="size-4" />
+                    Réinitialiser
                   </button>
                 )}
               </div>

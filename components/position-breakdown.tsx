@@ -42,7 +42,7 @@ export function PositionBreakdown({
   const searchTerm = normalizeName(query.trim())
   const matchingPlayers = searchTerm
     ? players.filter((player) =>
-        normalizeName(`${player.firstName} ${player.lastName}`).includes(searchTerm),
+        normalizeName(`${player.firstName} ${player.lastName} ${player.number} ${player.position ?? ''} ${player.transferStatus ?? ''}`).includes(searchTerm),
       )
     : players
   const groups = new Map<string, PublicPlayer[]>()
@@ -131,22 +131,22 @@ export function PositionBreakdown({
           </button>
         )}
         <label className="relative block min-w-0 flex-1">
-          <span className="sr-only">Recherche par joueurs</span>
+          <span className="sr-only">Rechercher un joueur par nom, numéro ou poste</span>
           <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <input
             type="search"
-            aria-label="Recherche par joueurs"
+            aria-label="Rechercher un joueur par nom, numéro ou poste"
             value={query}
             onChange={(event) => {
               setQuery(event.target.value)
               setSelectedNumber(null)
             }}
-            placeholder="Recherche par joueurs"
+            placeholder="Nom, prénom, numéro ou poste…"
             className="h-9 w-full rounded-lg border border-accent/40 bg-background pr-3 pl-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </label>
-        <span className="hidden shrink-0 text-xs text-muted-foreground lg:inline">
-          {matchingPlayers.length} joueurs · {sorted.length} postes
+        <span aria-live="polite" className="shrink-0 text-right text-[11px] leading-tight text-muted-foreground sm:text-xs">
+          {searchTerm ? `${matchingPlayers.length} résultat${matchingPlayers.length === 1 ? '' : 's'}` : `${matchingPlayers.length} joueurs · ${sorted.length} postes`}
         </span>
       </div>
 

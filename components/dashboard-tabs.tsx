@@ -621,7 +621,7 @@ export function DashboardTabs({
           })}
         </div>
       )}
-      {liveMatchError && educatorAccess === 'authenticated' && (
+      {liveMatchError && educatorAccess === 'authenticated' && !liveMatchToOpen && (
         <p role="status" className="fixed right-3 bottom-[calc(9rem+env(safe-area-inset-bottom))] z-40 max-w-[calc(100vw-1.5rem)] rounded-lg bg-rose-950 px-3 py-2 text-xs font-semibold text-white shadow-lg xl:bottom-20">
           {liveMatchError}
         </p>

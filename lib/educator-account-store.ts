@@ -1,5 +1,6 @@
 import 'server-only'
 import crypto from 'node:crypto'
+import { revalidateTag } from 'next/cache'
 import {
   ensureAuthenticatedSheetTab,
   getAuthenticatedSheetRows,
@@ -139,17 +140,17 @@ function readBootstrapAccounts(): EducatorAccount[] {
   return validateAccounts(parsed)
 }
 
-async function getAccountSheetRows() {
+async function getAccountSheetRows(options: { cacheForSeconds?: number } = {}) {
   let sheet: Awaited<ReturnType<typeof getAuthenticatedSheetRows>>
   try {
-    sheet = await getAuthenticatedSheetRows(ACCOUNT_TAB)
+    sheet = await getAuthenticatedSheetRows(ACCOUNT_TAB, options)
     if (sheet.sheetTitle === ACCOUNT_TAB) return sheet
   } catch (error) {
     if (!(error instanceof Error) || error.message !== 'Aucun onglet Google Sheets trouvé.') throw error
   }
 
   await ensureAuthenticatedSheetTab(ACCOUNT_TAB)
-  sheet = await getAuthenticatedSheetRows(ACCOUNT_TAB)
+  sheet = await getAuthenticatedSheetRows(ACCOUNT_TAB, options)
   if (sheet.sheetTitle !== ACCOUNT_TAB) {
     throw new Error(`Impossible de sélectionner l’onglet « ${ACCOUNT_TAB} » exact.`)
   }
@@ -179,13 +180,14 @@ export async function getEducatorAccounts(): Promise<EducatorAccount[]> {
 }
 
 async function readEducatorAccounts(): Promise<EducatorAccount[]> {
-  const sheet = await getAccountSheetRows()
+  const sheet = await getAccountSheetRows({ cacheForSeconds: 60 })
 
   if (sheet.rows.length === 0) {
     const accounts = readBootstrapAccounts()
     await updateAuthenticatedSheetValues([
       { range: `'${sheet.sheetTitle}'!A1:A2`, values: [[ACCOUNT_HEADER], [encryptAccounts(accounts)]] },
     ])
+    revalidateTag('google-sheet', { expire: 0 })
     return accounts
   }
 
@@ -198,6 +200,7 @@ async function readEducatorAccounts(): Promise<EducatorAccount[]> {
     await updateAuthenticatedSheetValues([
       { range: `'${sheet.sheetTitle}'!A2`, values: [[encryptAccounts(accounts)]] },
     ])
+    revalidateTag('google-sheet', { expire: 0 })
     return accounts
   }
   if (!encrypted.startsWith('accounts:v1:')) {
@@ -215,6 +218,7 @@ export async function saveEducatorAccounts(accounts: EducatorAccount[]) {
   await updateAuthenticatedSheetValues([
     { range: `'${sheet.sheetTitle.replace(/'/g, "''")}'!A2`, values: [[encryptAccounts(validatedAccounts)]] },
   ])
+  revalidateTag('google-sheet', { expire: 0 })
   cachedAccounts = null
   pendingAccountRead = null
 }

@@ -25,9 +25,9 @@ function sessionKey(session: Pick<LiveMatchSession, 'date' | 'team' | 'slotColum
   return `${dateKey(session.date)}-${session.team}-${session.slotColumn}`
 }
 
-async function getLiveRows() {
+async function getLiveRows(options: { cacheForSeconds?: number } = {}) {
   await ensureAuthenticatedSheetTab(LIVE_MATCH_TAB)
-  const { sheetTitle, rows } = await getAuthenticatedSheetRows(LIVE_MATCH_TAB)
+  const { sheetTitle, rows } = await getAuthenticatedSheetRows(LIVE_MATCH_TAB, options)
   if (rows.length === 0 || !rows[0].some(Boolean)) {
     await updateAuthenticatedSheetValues([{
       range: `'${sheetTitle.replace(/'/g, "''")}'!A1:E1`,
@@ -40,8 +40,9 @@ async function getLiveRows() {
 
 export async function getSavedLiveMatch(
   match: Pick<MatchSheetEntry, 'date' | 'team' | 'slotColumn'>,
+  options: { cacheForSeconds?: number } = {},
 ) {
-  const { rows } = await getLiveRows()
+  const { rows } = await getLiveRows(options)
   const key = sessionKey({ ...match, date: match.date })
   const row = rows.find((item, index) => index > 0 && item[0] === key)
   if (!row?.[4]) return null
@@ -53,8 +54,8 @@ export async function getSavedLiveMatch(
   }
 }
 
-export async function getSavedLiveMatches() {
-  const { rows } = await getLiveRows()
+export async function getSavedLiveMatches(options: { cacheForSeconds?: number } = {}) {
+  const { rows } = await getLiveRows(options)
   return rows.flatMap((row, index) => {
     if (index === 0 || !row[4]) return []
     try {

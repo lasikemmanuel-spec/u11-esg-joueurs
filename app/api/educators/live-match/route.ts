@@ -38,7 +38,14 @@ async function authorize(request: Request) {
     return { response: null }
   } catch (error) {
     console.error('Erreur de vérification de session pour le match en direct:', error)
-    return { response: jsonResponse({ error: 'La connexion éducateur n’est pas disponible.' }, 503) }
+    const rateLimited = error instanceof Error && error.message.includes('(429)')
+    return {
+      response: jsonResponse({
+        error: rateLimited
+          ? 'Google Sheets est temporairement saturé. Réessaie dans quelques instants.'
+          : 'La connexion éducateur n’est pas disponible.',
+      }, rateLimited ? 429 : 503),
+    }
   }
 }
 
@@ -161,7 +168,7 @@ export async function GET(request: Request) {
   if (params.get('active') === '1') {
     try {
       const results = await getMatchResults()
-      const sessions = await getSavedLiveMatches()
+      const sessions = await getSavedLiveMatches({ cacheForSeconds: 5 })
       const today = new Date().toISOString().slice(0, 10)
       const matches = sessions.flatMap((session) => {
         if (!isLiveSession(session)) throw new Error('Les données sauvegardées d’un match en direct sont invalides.')
@@ -191,8 +198,10 @@ export async function GET(request: Request) {
   }
 
   try {
-    const { match } = await findMatch({ date, team, slotColumn })
-    const session = await getSavedLiveMatch(match)
+    // The caller already has the scheduled match. Loading a saved live session
+    // only needs its stable key; the first write still validates the match and
+    // lineup against Google Sheets before accepting any changes.
+    const session = await getSavedLiveMatch({ date, team, slotColumn }, { cacheForSeconds: 5 })
     if (session && (!isLiveSession(session) || session.date !== date || session.team !== team || session.slotColumn !== slotColumn)) {
       throw new Error('Les données sauvegardées du match sont invalides.')
     }
@@ -200,7 +209,13 @@ export async function GET(request: Request) {
     return jsonResponse({ session })
   } catch (error) {
     console.error('Erreur de lecture du match en direct:', error)
-    return jsonResponse({ error: error instanceof Error ? error.message : 'Impossible de charger le match en direct.' }, 500)
+    const message = error instanceof Error ? error.message : ''
+    const rateLimited = message.includes('(429)')
+    return jsonResponse({
+      error: rateLimited
+        ? 'Google Sheets est temporairement saturé. Patiente quelques instants, puis rouvre le direct.'
+        : message || 'Impossible de charger le match en direct.',
+    }, rateLimited ? 429 : 500)
   }
 }
 
@@ -276,6 +291,7 @@ export async function POST(request: Request) {
         return jsonResponse({ error: 'Termine le chronomètre avant de valider le match.' }, 400)
       }
       await saveLiveMatchSession(session)
+      revalidateTag('google-sheet', { expire: 0 })
       return jsonResponse({ ok: true, session })
     }
 

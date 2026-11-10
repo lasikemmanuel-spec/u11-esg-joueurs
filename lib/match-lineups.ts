@@ -74,11 +74,14 @@ function matchKey(match: Pick<MatchLineup, 'date' | 'team' | 'slotColumn'>) {
   return `${match.date}-${match.team}-${match.slotColumn}`
 }
 
-export async function getMatchLineups(matches: MatchSheetEntry[]): Promise<MatchLineup[]> {
+export async function getMatchLineups(
+  matches: MatchSheetEntry[],
+  options: { cacheForSeconds?: number } = {},
+): Promise<MatchLineup[]> {
   const rowsByTeam = new Map<'E1' | 'E2', string[][]>()
   for (const team of ['E1', 'E2'] as const) {
     if (!matches.some((match) => match.team === team)) continue
-    const { rows } = await getAuthenticatedSheetRows(MATCH_TABS[team])
+    const { rows } = await getAuthenticatedSheetRows(MATCH_TABS[team], options)
     rowsByTeam.set(team, rows)
   }
 

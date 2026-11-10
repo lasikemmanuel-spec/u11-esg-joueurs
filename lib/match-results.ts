@@ -89,7 +89,7 @@ async function getTeamResults(tab: string, team: 'E1' | 'E2'): Promise<{
   matchTypes: MatchType[]
   entries: MatchSheetEntry[]
 }> {
-  const { rows } = await getAuthenticatedSheetRows(tab)
+  const { rows } = await getAuthenticatedSheetRows(tab, { cacheForSeconds: 5 })
   const dateRowIndex = rows.findIndex((row) =>
     row.some((value, column) => column >= 2 && isMatchDate(value.trim())),
   )

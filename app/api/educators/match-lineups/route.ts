@@ -54,7 +54,7 @@ export async function GET(request: Request) {
   if (process.env.VERCEL_ENV !== 'production') return jsonResponse({ lineups: [] })
   try {
     const matches = await getMatchResults()
-    return jsonResponse({ lineups: await getMatchLineups(matches.entries) })
+    return jsonResponse({ lineups: await getMatchLineups(matches.entries, { cacheForSeconds: 5 }) })
   } catch (error) {
     console.error('Erreur de lecture des feuilles de match:', error)
     return jsonResponse({ error: 'Impossible de charger les feuilles de match.' }, 500)

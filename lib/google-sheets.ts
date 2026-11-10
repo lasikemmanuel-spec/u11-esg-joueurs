@@ -355,7 +355,10 @@ export async function getSheetRows(tabName?: string): Promise<string[][]> {
   return parseCsv(text)
 }
 
-export async function getAuthenticatedSheetRows(tabName?: string) {
+export async function getAuthenticatedSheetRows(
+  tabName?: string,
+  options: { cacheForSeconds?: number } = {},
+) {
   const accessToken = await getGoogleAccessToken()
   if (!accessToken) throw new Error('Authentification Google indisponible pour les coordonnées éducateurs.')
 
@@ -370,11 +373,16 @@ export async function getAuthenticatedSheetRows(tabName?: string) {
   if (!sheetTitle) throw new Error('Aucun onglet Google Sheets trouvé.')
 
   const range = `'${sheetTitle.replace(/'/g, "''")}'`
+  const cacheForSeconds = Number.isSafeInteger(options.cacheForSeconds)
+    ? Math.max(0, Math.min(60, options.cacheForSeconds ?? 0))
+    : 0
   const response = await fetchGoogleSheetsApi(
     `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}?valueRenderOption=FORMATTED_VALUE`,
     {
       headers: { Authorization: `Bearer ${accessToken}` },
-      cache: 'no-store',
+      ...(cacheForSeconds > 0
+        ? { next: { revalidate: cacheForSeconds, tags: ['google-sheet'] } }
+        : { cache: 'no-store' as const }),
     },
   )
   if (!response.ok) {

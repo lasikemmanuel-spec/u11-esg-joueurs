@@ -15,6 +15,7 @@ import {
   finalizeLiveMatch,
   getSavedLiveMatches,
   getSavedLiveMatch,
+  resetFinalizedLiveMatch,
   saveLiveMatchSession,
 } from '@/lib/live-match-store'
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
@@ -247,9 +248,6 @@ export async function POST(request: Request) {
     if (existing && (!isLiveSession(existing) || existing.date !== session.date || existing.team !== session.team || existing.slotColumn !== session.slotColumn)) {
       throw new Error('Les données sauvegardées du match sont invalides.')
     }
-    if (existing && existing.completed) {
-      return jsonResponse({ error: 'Ce match a déjà été validé dans la feuille.' }, 409)
-    }
     if (body.action === 'reset') {
       if (!existing) return jsonResponse({ error: 'Aucun direct sauvegardé à réinitialiser.' }, 409)
       if (
@@ -260,9 +258,16 @@ export async function POST(request: Request) {
       ) {
         return jsonResponse({ error: 'La demande de réinitialisation est invalide.' }, 400)
       }
-      await saveLiveMatchSession(session)
+      if (existing.completed) {
+        await resetFinalizedLiveMatch(session)
+      } else {
+        await saveLiveMatchSession(session)
+      }
       revalidateTag('google-sheet', { expire: 0 })
       return jsonResponse({ ok: true, session })
+    }
+    if (existing && existing.completed) {
+      return jsonResponse({ error: 'Ce match a déjà été validé dans la feuille.' }, 409)
     }
     if (!existing && (match.resultLabel || match.goalsFor !== null || match.goalsAgainst !== null)) {
       return jsonResponse({ error: 'Un résultat existe déjà pour ce match. Le direct ne peut démarrer que sur un match à jouer.' }, 409)

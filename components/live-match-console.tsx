@@ -8,6 +8,7 @@ import {
   CircleHelp,
   Clock3,
   Flag,
+  Pencil,
   Pause,
   Play,
   RotateCcw,
@@ -67,6 +68,8 @@ export function LiveMatchConsole({
   const [playerOut, setPlayerOut] = useState('')
   const [playerIn, setPlayerIn] = useState('')
   const [showReview, setShowReview] = useState(false)
+  const [editingEventId, setEditingEventId] = useState<string | null>(null)
+  const [editingEventMinute, setEditingEventMinute] = useState('')
   const autoPauseRef = useRef(false)
 
   const persistSession = useCallback(async (nextSession: LiveMatchSession, action: 'save' | 'finalize' | 'reset' = 'save') => {
@@ -179,6 +182,21 @@ export function LiveMatchConsole({
     await persistSession({ ...session, events: session.events.filter((event) => event.id !== eventId) })
   }
 
+  const saveEventMinute = async (eventId: string) => {
+    if (!session) return
+    const minute = Number(editingEventMinute)
+    if (!Number.isSafeInteger(minute) || minute < 1 || minute > getLiveMinute(session, now)) {
+      setError(`Saisis une minute entre 1 et ${getLiveMinute(session, now)}.`)
+      return
+    }
+    const events = session.events
+      .map((event) => event.id === eventId ? { ...event, minute } : event)
+      .sort((left, right) => left.minute - right.minute)
+    await persistSession({ ...session, events })
+    setEditingEventId(null)
+    setEditingEventMinute('')
+  }
+
   const startOrResume = async () => {
     if (!session) return
     const phase = session.phase === 'ready'
@@ -216,7 +234,7 @@ export function LiveMatchConsole({
   }
 
   const resetMatch = async () => {
-    if (!session || session.completed || !window.confirm('Réinitialiser ce direct ? Le chronomètre et toutes les actions seront effacés.')) return
+    if (!session || !window.confirm('Réinitialiser ce match ? Le score, le chronomètre, les buts, les passes et les minutes jouées seront effacés de la feuille. Les convocations et la composition resteront en place.')) return
     const resetSession = createLiveMatchSession({
       date: session.date,
       team: session.team,
@@ -362,7 +380,7 @@ export function LiveMatchConsole({
                     Terminer
                   </button>
                 )}
-                {!session.completed && session.phase !== 'ready' && (
+                {(session.completed || session.phase !== 'ready') && (
                   <button type="button" disabled={saving} onClick={() => void resetMatch().catch(() => undefined)} className="inline-flex min-h-11 items-center gap-2 rounded-full border border-rose-200/25 bg-rose-300/10 px-4 text-sm font-bold text-rose-100 disabled:opacity-50">
                     <RotateCcw aria-hidden="true" className="size-4" />
                     Réinitialiser
@@ -455,7 +473,22 @@ export function LiveMatchConsole({
                 <ol className="flex flex-col gap-2">
                   {[...session.events].reverse().map((event) => (
                     <li key={event.id} className="flex items-center gap-3 rounded-xl bg-white/[0.06] px-3 py-2">
-                      <span className="shrink-0 rounded-lg bg-white/10 px-2 py-1 text-xs font-black text-amber-200">{formatLiveMinute(event.minute)}</span>
+                      {editingEventId === event.id ? (
+                        <label className="flex shrink-0 items-center gap-1 text-xs font-bold text-white/70">
+                          Min
+                          <input
+                            type="number"
+                            min={1}
+                            max={getLiveMinute(session, now)}
+                            value={editingEventMinute}
+                            onChange={(inputEvent) => setEditingEventMinute(inputEvent.target.value)}
+                            aria-label="Minute de l’action"
+                            className="h-9 w-16 rounded-lg border border-white/15 bg-[#101c41] px-2 text-center text-sm text-white"
+                          />
+                        </label>
+                      ) : (
+                        <span className="shrink-0 rounded-lg bg-white/10 px-2 py-1 text-xs font-black text-amber-200">{formatLiveMinute(event.minute)}</span>
+                      )}
                       <p className="min-w-0 flex-1 text-sm font-semibold">
                         {event.kind === 'goal'
                           ? event.side === 'against'
@@ -463,6 +496,20 @@ export function LiveMatchConsole({
                             : `But ${event.scorerNumber ? playerName(players, event.scorerNumber) : 'ESG'}${event.assistNumber ? ` · passe ${playerName(players, event.assistNumber)}` : ''}`
                           : `${playerName(players, event.playerOut)} sort · ${playerName(players, event.playerIn)} entre`}
                       </p>
+                      {!session.completed && (editingEventId === event.id ? (
+                        <>
+                          <button type="button" disabled={saving} onClick={() => void saveEventMinute(event.id).catch(() => undefined)} aria-label="Enregistrer la minute" className="flex size-9 shrink-0 items-center justify-center rounded-lg text-emerald-200 hover:bg-emerald-400/15 disabled:opacity-30">
+                            <Check aria-hidden="true" className="size-4" />
+                          </button>
+                          <button type="button" disabled={saving} onClick={() => { setEditingEventId(null); setEditingEventMinute('') }} aria-label="Annuler la modification" className="flex size-9 shrink-0 items-center justify-center rounded-lg text-white/55 hover:bg-white/10 disabled:opacity-30">
+                            <X aria-hidden="true" className="size-4" />
+                          </button>
+                        </>
+                      ) : (
+                        <button type="button" disabled={saving || editingEventId !== null || session.completed} onClick={() => { setEditingEventId(event.id); setEditingEventMinute(String(event.minute)); setError('') }} aria-label={`Modifier la minute ${formatLiveMinute(event.minute)}`} className="flex size-9 shrink-0 items-center justify-center rounded-lg text-white/55 hover:bg-white/10 disabled:opacity-30">
+                          <Pencil aria-hidden="true" className="size-4" />
+                        </button>
+                      ))}
                       <button type="button" disabled={saving || session.completed} onClick={() => void removeEvent(event.id).catch(() => undefined)} aria-label="Annuler cette action" className="flex size-9 shrink-0 items-center justify-center rounded-lg text-white/55 hover:bg-rose-400/15 hover:text-rose-200 disabled:opacity-30">
                         <Trash2 aria-hidden="true" className="size-4" />
                       </button>

@@ -79,6 +79,40 @@ export async function saveLiveMatchSession(session: LiveMatchSession) {
   }])
 }
 
+export async function resetFinalizedLiveMatch(session: LiveMatchSession) {
+  const live = await getLiveRows()
+  const liveRowIndex = live.rows.findIndex((row, index) => index > 0 && row[0] === sessionKey(session))
+  if (liveRowIndex < 0) throw new Error('Le direct sauvegardé est introuvable.')
+
+  const tab = MATCH_TABS[session.team]
+  const matchSheet = await getAuthenticatedSheetRows(tab)
+  const { dateRowIndex, playerRows } = findMatchRows(matchSheet.rows, session)
+  const escapedMatchTitle = matchSheet.sheetTitle.replace(/'/g, "''")
+  const escapedLiveTitle = live.sheetTitle.replace(/'/g, "''")
+  const cellRange = (column: number, rowIndex: number) =>
+    `'${escapedMatchTitle}'!${columnName(column)}${rowIndex + 1}`
+  const updates: Array<{ range: string; values: string[][] }> = [
+    {
+      range: `'${escapedLiveTitle}'!A${liveRowIndex + 1}:E${liveRowIndex + 1}`,
+      values: [[sessionKey(session), session.date, session.team, String(session.slotColumn), JSON.stringify(session)]],
+    },
+    { range: cellRange(session.slotColumn, dateRowIndex + 3), values: [['']] },
+    { range: cellRange(session.slotColumn, dateRowIndex + 4), values: [['']] },
+    { range: cellRange(session.slotColumn, dateRowIndex + 5), values: [['']] },
+  ]
+
+  for (const number of [...session.starters, ...session.substitutes]) {
+    const rowIndex = playerRows.get(number)
+    if (rowIndex === undefined) throw new Error(`Le joueur n°${number} est introuvable dans la feuille ${session.team}.`)
+    updates.push({
+      range: `${cellRange(session.slotColumn + 1, rowIndex)}:${columnName(session.slotColumn + 3)}${rowIndex + 1}`,
+      values: [['', '', '']],
+    })
+  }
+
+  await updateAuthenticatedSheetValues(updates)
+}
+
 function normalizeHeader(value: string) {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr-FR').replace(/[^a-z]/g, '')
 }

@@ -146,10 +146,13 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error('Erreur d’enregistrement de la feuille de match:', error)
     const message = error instanceof Error ? error.message : ''
+    const rateLimited = message.includes('(429)')
     return jsonResponse({
       error: message.startsWith('Choisis uniquement')
         ? message
-        : 'Impossible d’enregistrer la feuille de match.',
-    }, message.startsWith('Choisis uniquement') ? 400 : 500)
+        : rateLimited
+          ? 'Google Sheets est temporairement saturé. Attends une minute puis réessaie.'
+          : 'Impossible d’enregistrer la feuille de match.',
+    }, message.startsWith('Choisis uniquement') ? 400 : rateLimited ? 429 : 500)
   }
 }

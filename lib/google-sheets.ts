@@ -24,7 +24,7 @@ type GoogleSheetsRequestInit = RequestInit & {
   next?: { revalidate?: number | false; tags?: string[] }
 }
 
-const GOOGLE_REQUEST_TIMEOUT_MS = 15_000
+const GOOGLE_REQUEST_TIMEOUT_MS = 30_000
 
 async function fetchWithTimeout(
   url: string,
@@ -55,7 +55,7 @@ async function fetchGoogleSheetsApi(url: string, init: GoogleSheetsRequestInit =
       throw new Error('Google Sheets ne répond pas. Réessayez dans quelques instants.')
     }
     const response = await fetchWithTimeout(url, init, remainingMs)
-    if (response.status !== 429 || !canRetry || attempt >= 2) return response
+    if (response.status !== 429 || !canRetry || attempt >= 3) return response
     await response.body?.cancel()
 
     const retryAfter = response.headers.get('retry-after')
@@ -68,7 +68,7 @@ async function fetchGoogleSheetsApi(url: string, init: GoogleSheetsRequestInit =
       : Number.isFinite(retryAfterDate)
         ? retryAfterDate - Date.now()
         : 0
-    const delayMs = Math.max(0, Math.min(retryAfterMs, 5000)) || 300 * 2 ** attempt
+    const delayMs = Math.max(0, retryAfterMs) || 750 * 2 ** attempt
     if (Date.now() + delayMs >= deadline) {
       throw new Error('Google Sheets ne répond pas. Réessayez dans quelques instants.')
     }

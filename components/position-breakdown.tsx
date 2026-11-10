@@ -139,9 +139,6 @@ export function PositionBreakdown({
             className="h-9 w-full rounded-lg border border-accent/40 bg-background pr-3 pl-9 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </label>
-        <span aria-live="polite" className="shrink-0 text-right text-[11px] leading-tight text-muted-foreground sm:text-xs">
-          {searchTerm ? `${matchingPlayers.length} résultat${matchingPlayers.length === 1 ? '' : 's'}` : `${matchingPlayers.length} joueurs · ${sorted.length} postes`}
-        </span>
       </div>
 
       <div className={`roster-player-groups ${

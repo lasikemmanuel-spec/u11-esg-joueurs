@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import { CircleAlert, CircleCheck, CircleHelp, CircleX, Save, UsersRound, X } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
+import { PlayerCard } from '@/components/player-stats'
+import { countCancelledCallupsForPlayer } from '@/lib/cancelled-match-callups'
 import type { Convocation, MatchStatus } from '@/lib/convocations'
 import type { EditableCallupStatus } from '@/lib/convocation-management'
 import type { PublicPlayer } from '@/lib/players'
@@ -93,6 +95,7 @@ export function CallupScheduleEntry({
   trainingAttendance,
   trainingAttendanceError,
   matchEntries,
+  matchesPlayed,
   onClose,
 }: {
   players: PublicPlayer[]
@@ -104,11 +107,14 @@ export function CallupScheduleEntry({
   trainingAttendance: TrainingAttendanceSession[]
   trainingAttendanceError: boolean
   matchEntries: MatchSheetEntry[]
+  matchesPlayed: number
   onClose: () => void
 }) {
   const router = useRouter()
   const callupTitleRef = useRef<HTMLElement>(null)
+  const playerDialogRef = useRef<HTMLDialogElement>(null)
   const [date, setDate] = useState(initialDate ?? '')
+  const [selectedPlayerNumber, setSelectedPlayerNumber] = useState<number | null>(null)
   const [selections, setSelections] = useState<Record<number, SelectionValue>>({})
   const [query, setQuery] = useState('')
   const [pending, setPending] = useState(false)
@@ -116,6 +122,30 @@ export function CallupScheduleEntry({
   const [savingStatusChecked, setSavingStatusChecked] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+
+  const selectedPlayer = players.find((player) => player.number === selectedPlayerNumber) ?? null
+  const selectedPlayerStats = selectedPlayer
+    ? playerStats.find((stats) => stats.number === selectedPlayer.number) ?? {
+        number: selectedPlayer.number,
+        name: `${selectedPlayer.firstName} ${selectedPlayer.lastName}`.trim(),
+        trainingRate: null,
+        matchesCalled: null,
+        callUpRate: null,
+        starts: null,
+        subs: null,
+        minutes: null,
+        goals: null,
+        assists: null,
+        ire: null,
+      }
+    : null
+
+  useEffect(() => {
+    const dialog = playerDialogRef.current
+    if (!dialog) return
+    if (selectedPlayer && !dialog.open) dialog.showModal()
+    if (!selectedPlayer && dialog.open) dialog.close()
+  }, [selectedPlayer])
 
   useEffect(() => {
     if (!initialDate) return
@@ -458,9 +488,14 @@ export function CallupScheduleEntry({
             return (
               <li key={player.number} className="grid min-w-0 grid-cols-1 items-center gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,auto)] sm:py-2">
                 <div className="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-2 gap-y-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,auto)_auto]">
-                  <span className="col-start-1 row-start-1 min-w-0 truncate text-sm font-semibold text-foreground">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedPlayerNumber(player.number)}
+                    aria-label={`Voir la fiche de ${player.firstName} ${player.lastName}`}
+                    className="col-start-1 row-start-1 min-w-0 truncate text-left text-sm font-semibold text-foreground underline-offset-2 hover:text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+                  >
                     {player.firstName} <span className="font-black uppercase text-primary">{player.lastName}</span>
-                  </span>
+                  </button>
                   <div className="col-span-2 row-start-2 flex flex-wrap items-center gap-1.5 sm:col-start-2 sm:col-span-1 sm:row-start-1">
                     {playerTrainingStatuses.map(({ targetDate, date: sessionDate, status, sessionAvailable, isPrevious }) => {
                       const sessionDateLabel = new Date(`${sessionDate}T12:00:00`).toLocaleDateString('fr-FR', {
@@ -576,6 +611,30 @@ export function CallupScheduleEntry({
           Les statuts sont enregistrés dans l’onglet « 📣 Convocations Matchs ». Une date déjà saisie sera mise à jour.
         </p>
       </form>
+      {selectedPlayer && selectedPlayerStats && (
+        <dialog
+          ref={playerDialogRef}
+          aria-labelledby="selected-player-card-title"
+          onClose={() => setSelectedPlayerNumber(null)}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) event.currentTarget.close()
+          }}
+          className="fixed inset-0 m-auto max-h-[calc(100dvh-1.5rem)] w-[min(42rem,calc(100vw-1.5rem))] overflow-y-auto overscroll-contain rounded-2xl border-0 bg-transparent p-0 shadow-2xl backdrop:bg-[#07102a]/65"
+        >
+          <PlayerCard
+            stats={selectedPlayerStats}
+            player={selectedPlayer}
+            convocation={convocations.find((convocation) => convocation.number === selectedPlayer.number)}
+            matchesPlayed={matchesPlayed}
+            cancelledMatchesForPlayer={countCancelledCallupsForPlayer(
+              selectedPlayer.number,
+              convocations,
+              matchEntries,
+            )}
+            onClose={() => playerDialogRef.current?.close()}
+          />
+        </dialog>
+      )}
     </section>
   )
 }

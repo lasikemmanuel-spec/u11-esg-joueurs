@@ -516,6 +516,7 @@ export function DashboardTabs({
             <div id="match-calendar" className="scroll-mt-4">
               <MatchResultEntry
                 entries={matchResults.entries}
+                matchesPlayed={matchesPlayed}
                 players={rosterPlayers}
                 playerStats={players}
                 convocations={convocations}

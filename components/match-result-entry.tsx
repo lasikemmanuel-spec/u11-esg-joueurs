@@ -80,6 +80,7 @@ const dateTimeInputClass = 'h-9 min-w-0 w-full max-w-full appearance-none rounde
 
 export function MatchResultEntry({
   entries,
+  matchesPlayed,
   players,
   playerStats,
   convocations,
@@ -91,6 +92,7 @@ export function MatchResultEntry({
   onConnect,
 }: {
   entries: MatchSheetEntry[]
+  matchesPlayed: number
   players: PublicPlayer[]
   playerStats: PlayerStats[]
   convocations: Convocation[]
@@ -846,6 +848,7 @@ export function MatchResultEntry({
                     trainingAttendance={trainingAttendance}
                     trainingAttendanceError={trainingAttendanceError}
                     matchEntries={entries}
+                    matchesPlayed={matchesPlayed}
                     onClose={() => setOpenCallupDate('')}
                   />
                 </div>

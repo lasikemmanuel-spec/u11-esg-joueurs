@@ -164,8 +164,8 @@ export function TrainingAttendanceManager({
                 className="h-12 min-w-0 rounded-xl border border-white/20 bg-white/10 px-3 text-sm font-bold text-white outline-none focus-visible:ring-2 focus-visible:ring-amber-300 [color-scheme:dark]"
               />
             </label>
-            <button type="button" onClick={setAllPresent} disabled={!players.length || loadError} className="mt-auto inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-5 text-sm font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50">
-              <UsersRound aria-hidden="true" className="size-4" />Tous présents
+            <button type="button" onClick={setAllPresent} disabled={!players.length || loadError} aria-label="Marquer tous les joueurs présents" title="Remplace les statuts saisis par Présent pour toute l’équipe ; enregistre ensuite." className="mt-auto inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-5 text-sm font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50">
+              <UsersRound aria-hidden="true" className="size-4 shrink-0" /><span>Marquer tous les joueurs présents</span>
             </button>
           </div>
         </div>
@@ -207,14 +207,6 @@ export function TrainingAttendanceManager({
         <p role="status" className="rounded-xl bg-muted p-4 text-sm">Aucun joueur dans l’effectif.</p>
       ) : (
         <>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-lg font-black text-primary sm:text-xl">La feuille d’équipe</p>
-              <p className="text-xs text-muted-foreground">Choisis un statut pour chaque joueur · touche à nouveau pour le modifier.</p>
-            </div>
-            {savedSession && <span className="w-fit rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900">Séance déjà enregistrée · tes changements remplaceront les anciennes valeurs</span>}
-          </div>
-
           <label className="relative block sm:max-w-xl">
             <span className="sr-only">Rechercher un joueur par nom, prénom ou numéro</span>
             <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
@@ -227,6 +219,7 @@ export function TrainingAttendanceManager({
               className="h-12 w-full rounded-2xl border border-accent/40 bg-card pr-4 pl-12 text-sm shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring"
             />
           </label>
+          {savedSession && <p className="w-fit max-w-full rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900">Séance déjà enregistrée · tes changements remplaceront les anciennes valeurs</p>}
           {query && <p aria-live="polite" className="-mt-3 text-xs text-muted-foreground">{visiblePlayers.length} joueur{visiblePlayers.length === 1 ? '' : 's'} trouvé{visiblePlayers.length === 1 ? '' : 's'}</p>}
 
           {visiblePlayers.length === 0 ? (
@@ -236,18 +229,18 @@ export function TrainingAttendanceManager({
             {visiblePlayers.map((player) => (
               <li key={player.number} className={`group relative overflow-hidden rounded-2xl border bg-card p-3.5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-4 ${statuses[player.number] === 'P' ? 'border-emerald-300/80' : 'border-border'}`}>
                 {statuses[player.number] === 'P' && <div aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-300 to-lime-400" />}
-                <div className="mb-3 flex items-center gap-3">
+                <div className="mb-3 flex items-start gap-3">
                   <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#14234e] to-[#26478c] text-lg font-black text-amber-300 shadow-md ring-2 ring-amber-300/50">{player.number}</span>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-black text-foreground sm:text-base">{player.firstName} {player.lastName}</p>
+                    <p className="whitespace-normal break-words text-sm font-black leading-snug text-foreground sm:text-base">{player.firstName} {player.lastName}</p>
                     <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Joueur ESG</p>
+                    {statuses[player.number] ? (
+                      <span className={`mt-1 inline-flex max-w-full items-center gap-1 whitespace-normal rounded-full px-2 py-1 text-[10px] font-black leading-tight ${statuses[player.number] === 'P' ? 'bg-emerald-100 text-emerald-800' : 'bg-muted text-muted-foreground'}`}>
+                        {statuses[player.number] === 'P' && <Check aria-hidden="true" className="size-3 shrink-0" />}
+                        {STATUS_PRESENTATION[statuses[player.number] as TrainingAttendanceStatus].label}
+                      </span>
+                    ) : <span className="mt-1 inline-flex rounded-full bg-amber-100 px-2 py-1 text-[10px] font-black text-amber-900">À noter</span>}
                   </div>
-                  {statuses[player.number] ? (
-                    <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[10px] font-black ${statuses[player.number] === 'P' ? 'bg-emerald-100 text-emerald-800' : 'bg-muted text-muted-foreground'}`}>
-                      {statuses[player.number] === 'P' && <Check aria-hidden="true" className="size-3" />}
-                      {STATUS_PRESENTATION[statuses[player.number] as TrainingAttendanceStatus].label}
-                    </span>
-                  ) : <span className="shrink-0 rounded-full bg-amber-100 px-2 py-1 text-[10px] font-black text-amber-900">À noter</span>}
                 </div>
                 <div className="grid grid-cols-3 gap-2">
                   {TRAINING_ATTENDANCE_STATUSES.map((status) => {

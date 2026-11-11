@@ -595,11 +595,12 @@ export function MatchResultEntry({
                       aria-expanded={openCallupDate === date}
                       onClick={() => setOpenCallupDate((current) => current === date ? '' : date)}
                       className={[
-                        'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#ffe27a] bg-[#d4af37] px-3.5 text-xs font-black text-blue-950 shadow-md transition hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#172554] sm:min-h-11 sm:px-4 sm:text-sm',
+                        'inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-full border border-[#ffe27a]/80 bg-[#d4af37] px-3 text-[11px] font-extrabold text-blue-950 shadow-sm transition hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#172554] sm:min-h-10 sm:gap-2 sm:rounded-xl sm:px-3.5 sm:text-xs',
                       ].join(' ')}
                     >
                       {hasConvocations ? <Check aria-hidden="true" className="size-4" /> : <UsersRound aria-hidden="true" className="size-4" />}
-                      <span>{hasConvocations ? 'Voir les convocations' : 'Saisir les convocations'}</span>
+                      <span className="sm:hidden">Convocations</span>
+                      <span className="hidden sm:inline">{hasConvocations ? 'Voir les convocations' : 'Saisir les convocations'}</span>
                     </button>
                   )}
                   {canManage &&

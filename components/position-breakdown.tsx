@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { ChevronDown, ChevronUp, Search } from 'lucide-react'
+import { ChevronDown, ChevronRight, ChevronUp, Search } from 'lucide-react'
 import { PlayerCard } from '@/components/player-stats'
 import { ClubCrest } from '@/components/club-crest'
 import { countCancelledCallupsForPlayer } from '@/lib/cancelled-match-callups'
@@ -197,36 +197,74 @@ export function PositionBreakdown({
                     </span>
                   </button>
                 </h3>
-                {isExpanded && <ul id={groupId} className="flex flex-col divide-y divide-border/60 bg-card px-2.5 py-1 text-sm">
+                {isExpanded && <ul id={groupId} className="grid gap-1.5 bg-card/50 p-2 sm:grid-cols-2 text-sm">
                   {[...list]
                     .sort((a, b) => a.lastName.localeCompare(b.lastName, 'fr'))
                     .map((player) => {
                       const isSelected = player.number === selectedPlayer?.number
+                      const playerStat = stats.find((s) => s.number === player.number)
+                      const goals = playerStat?.goals ?? 0
+                      const rate = playerStat?.trainingRate ?? null
+
                       return (
                         <li key={player.number}>
                           <button
                             type="button"
                             aria-pressed={isSelected}
                             onClick={() => setSelectedNumber(isSelected ? null : player.number)}
-                            className={`flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                              isSelected ? 'bg-amber-400/20 border border-amber-400/50' : 'hover:bg-slate-100 dark:hover:bg-slate-800/60'
+                            className={`group flex w-full items-center justify-between gap-2.5 rounded-xl border p-2 text-left transition-all duration-200 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${
+                              isSelected
+                                ? 'border-amber-400 bg-amber-400/20 shadow-sm'
+                                : 'border-border/60 bg-card hover:border-amber-400/50 hover:bg-muted/40 hover:shadow-sm'
                             }`}
                           >
-                            <span
-                              title={`N°${player.number}`}
-                              className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-[#172554] text-xs font-black text-amber-300 ring-1 ring-amber-400/40 shadow-sm"
-                            >
-                              {player.number}
-                            </span>
-                            <span className="min-w-0 flex-1 break-words">
-                              <span className="font-extrabold uppercase tracking-wide text-foreground">{player.lastName}</span>{' '}
-                              <span className="font-medium text-foreground/90">{player.firstName}</span>
-                            </span>
-                            {player.transferStatus && (
-                              <span className="ml-auto shrink-0 rounded-md bg-amber-400/20 border border-amber-400/40 px-1.5 py-0.5 text-[11px] font-bold text-amber-900 dark:text-amber-200">
-                                {player.transferStatus}
+                            <div className="flex min-w-0 items-center gap-2.5">
+                              {/* Médaillon Numéro de maillot */}
+                              <span
+                                title={`N°${player.number}`}
+                                className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#172554] via-[#1e3a8a] to-[#172554] text-xs font-black text-amber-300 ring-1 ring-amber-400/50 shadow-sm group-hover:ring-amber-400"
+                              >
+                                {player.number}
                               </span>
-                            )}
+                              {/* Nom et Prénom */}
+                              <div className="min-w-0">
+                                <p className="truncate text-xs font-black uppercase tracking-wide text-foreground group-hover:text-[#172554] dark:group-hover:text-amber-300">
+                                  {player.lastName}{' '}
+                                  <span className="font-semibold normal-case text-muted-foreground">{player.firstName}</span>
+                                </p>
+                              </div>
+                            </div>
+
+                            {/* Badges d'information rapide */}
+                            <div className="flex shrink-0 items-center gap-1.5">
+                              {goals > 0 && (
+                                <span
+                                  title={`${goals} but${goals > 1 ? 's' : ''}`}
+                                  className="inline-flex items-center gap-1 rounded-full border border-amber-400/60 bg-amber-400/15 px-2 py-0.5 font-mono text-[11px] font-black text-amber-900 dark:text-amber-200 shadow-sm"
+                                >
+                                  <span>⚽</span>
+                                  <span>{goals}</span>
+                                </span>
+                              )}
+                              {rate !== null && (
+                                <span
+                                  title={`Assiduité : ${rate}%`}
+                                  className={`rounded-full px-2 py-0.5 font-mono text-[10px] font-bold ${
+                                    rate >= 75
+                                      ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
+                                      : 'bg-amber-500/15 text-amber-800 dark:text-amber-300'
+                                  }`}
+                                >
+                                  {rate}%
+                                </span>
+                              )}
+                              {player.transferStatus && (
+                                <span className="rounded-md border border-amber-400/40 bg-amber-400/20 px-1.5 py-0.5 text-[10px] font-bold text-amber-900 dark:text-amber-200">
+                                  {player.transferStatus}
+                                </span>
+                              )}
+                              <ChevronRight aria-hidden="true" className="size-4 text-muted-foreground opacity-60 transition-transform group-hover:translate-x-0.5 group-hover:opacity-100 group-hover:text-[#172554] dark:group-hover:text-amber-300" />
+                            </div>
                           </button>
                         </li>
                       )

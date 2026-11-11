@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { X } from 'lucide-react'
+import { X, Sparkles, Trophy, Timer, Shirt, Users, Star, ArrowUpRight } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import { TrainingEvolutionChart } from '@/components/training-evolution-chart'
 import { PlayerOffensiveRankings } from '@/components/player-offensive-rankings'
@@ -208,6 +208,22 @@ const rateTone = (rate: number | null) => {
     : 'border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200'
 }
 
+function getPositionDetails(position: string | null) {
+  if (!position) return { label: 'Joueur', icon: '⚽', badgeClass: 'bg-slate-700 text-slate-100 border-slate-500' }
+  const lower = position.toLowerCase()
+  if (lower.startsWith('gard')) return { label: 'Gardien', icon: '🧤', badgeClass: 'bg-emerald-800 text-emerald-100 border-emerald-500' }
+  if (lower.startsWith('déf') || lower.startsWith('def') || lower.startsWith('lat') || lower.startsWith('cent')) {
+    return { label: 'Défenseur', icon: '🛡️', badgeClass: 'bg-blue-900 text-blue-100 border-blue-400' }
+  }
+  if (lower.startsWith('mil') || lower.startsWith('ail')) {
+    return { label: 'Milieu', icon: '⚡', badgeClass: 'bg-amber-800 text-amber-100 border-amber-400' }
+  }
+  if (lower.startsWith('att') || lower.startsWith('av')) {
+    return { label: 'Attaquant', icon: '🎯', badgeClass: 'bg-rose-900 text-rose-100 border-rose-400' }
+  }
+  return { label: position, icon: '⚽', badgeClass: 'bg-[#172554] text-amber-200 border-amber-400' }
+}
+
 export function PlayerCard({
   stats,
   convocation,
@@ -229,71 +245,56 @@ export function PlayerCard({
   const matchPresenceRate = convocation?.presentRate ?? null
   const saturdayCallUpRate = convocation?.callUpRate ?? null
   const playerName = player ? `${player.firstName} ${player.lastName}`.trim() : stats.name
-  const rateTiles = [
-    { label: 'Présence entraînement', value: stats.trainingRate, tone: rateTone(stats.trainingRate) },
-    { label: 'Présence samedi', value: matchPresenceRate, tone: rateTone(matchPresenceRate) },
-    { label: 'Convocation samedi', value: saturdayCallUpRate, tone: rateTone(saturdayCallUpRate) },
-  ]
-  const summaryTiles = [
-    ...rateTiles.map((tile) => ({
-      ...tile,
-      displayValue: tile.value !== null ? `${tile.value}%` : '—',
-    })),
-    {
-      label: 'IRE',
-      displayValue: stats.ire !== null ? stats.ire.toFixed(2).replace('.', ',') : '—',
-      tone: status.className,
-    },
-  ]
+  const posDetails = getPositionDetails(player?.position ?? null)
+
   const encouragement = stats.trainingRate === null || matchPresenceRate === null
     ? {
-        title: 'Bilan de présence indisponible',
-        message: 'Les données de présence à l’entraînement ou aux matchs sont manquantes.',
+        title: 'Bilan de présence en cours',
+        message: 'Les données de présence se complètent au fil des séances.',
       }
     : stats.trainingRate > 75 && matchPresenceRate > 75
       ? {
-          title: 'Bravo, belle assiduité !',
-          message: 'Une belle régularité aux entraînements et aux matchs.',
+          title: 'Champion de l’assiduité ! ⭐',
+          message: 'Une présence remarquable aux entraînements et aux matchs. Bravo !',
         }
       : {
-          title: 'On continue les efforts !',
-          message: 'Chaque présence compte.',
+          title: 'Toujours ensemble, on progresse ! 💪',
+          message: 'Chaque entraînement compte pour progresser avec les copains.',
         }
+
   const countedMatches = stats.matchesCalled === null
     ? null
     : Math.max(0, stats.matchesCalled - cancelledMatchesForPlayer)
   const minutesPerMatch = countedMatches ? Math.round((stats.minutes ?? 0) / countedMatches) : null
-  const tiles = [
-    { label: 'Titulaire', value: display(stats.starts) },
-    { label: 'Remplaçant', value: display(stats.subs) },
-    { label: 'Minutes jouées', value: display(stats.minutes) },
-    { label: 'Minutes / match joué', value: display(minutesPerMatch) },
-    { label: 'Buts', value: display(stats.goals) },
-    { label: 'Passes décisives', value: display(stats.assists) },
-  ]
 
   return (
     <article
       aria-live="polite"
-      className="player-stats-card relative isolate flex flex-col gap-3 overflow-hidden rounded-2xl border-2 border-[oklch(0.8_0.08_85)] bg-card p-3 shadow-lg sm:p-4"
+      className="player-stats-card relative isolate flex flex-col gap-3.5 overflow-hidden rounded-3xl border-2 border-[#d4af37]/60 bg-card p-3.5 shadow-2xl sm:p-5"
     >
-      <div aria-hidden="true" className="pointer-events-none absolute -top-16 -right-16 -z-10 size-40 rounded-full bg-[oklch(0.8_0.08_85)]/20 blur-3xl" />
-      <header className="player-stats-header -mx-3 -mt-3 flex items-center justify-between gap-3 border-b-4 border-[oklch(0.8_0.08_85)] bg-[oklch(0.24_0.07_272)] px-3 py-3 text-white sm:-mx-4 sm:-mt-4 sm:px-4">
+      {/* Halo d'ambiance dorée ESG */}
+      <div aria-hidden="true" className="pointer-events-none absolute -top-20 -right-20 -z-10 size-56 rounded-full bg-amber-400/20 blur-3xl" />
+      <div aria-hidden="true" className="pointer-events-none absolute -bottom-20 -left-20 -z-10 size-56 rounded-full bg-blue-900/20 blur-3xl" />
+
+      {/* En-tête style Carte Collector ESG */}
+      <header className="player-stats-header -mx-3.5 -mt-3.5 flex items-center justify-between gap-3 border-b-2 border-amber-400 bg-gradient-to-r from-[#0c1630] via-[#172554] to-[#1e3a8a] px-4 py-3 text-white shadow-md sm:-mx-5 sm:-mt-5 sm:px-5 sm:py-4">
         <div className="flex items-center gap-3">
-          <ClubCrest className="size-11 ring-2 ring-[oklch(0.8_0.08_85)]" />
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-[oklch(0.8_0.08_85)]">ES Genech · U11</p>
-            <p id="selected-player-card-title" className="mt-0.5 text-xs font-medium text-white/75">Fiche joueur</p>
+          <ClubCrest className="size-11 shrink-0 rounded-full ring-2 ring-amber-400 shadow-md sm:size-12" />
+          <div className="min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-[0.24em] text-amber-300">ES Genech · U11</p>
+            <h2 id="selected-player-card-title" className="text-xs font-bold text-white/85">Fiche Officielle Joueur</h2>
           </div>
         </div>
         <div className="flex shrink-0 items-center gap-2">
-          <span className={`rounded-md px-2 py-1 text-xs font-semibold ${status.className}`}>{status.label}</span>
+          <span className={`rounded-full px-2.5 py-1 text-xs font-black shadow-sm ${status.className}`}>
+            {status.label}
+          </span>
           {onClose && (
             <button
               type="button"
               onClick={onClose}
               aria-label="Fermer la fiche joueur"
-              className="inline-flex size-9 items-center justify-center rounded-lg border border-white/25 text-white transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+              className="inline-flex size-9 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition-all hover:bg-white/20 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300"
             >
               <X aria-hidden="true" className="size-5" />
             </button>
@@ -301,57 +302,168 @@ export function PlayerCard({
         </div>
       </header>
 
-      <div className="player-stats-identity flex items-center gap-3 rounded-xl bg-secondary/60 p-3">
-        <div className="flex min-h-16 min-w-20 shrink-0 flex-col items-center justify-center rounded-xl border-2 border-[oklch(0.8_0.08_85)] bg-[oklch(0.24_0.07_272)] px-2.5 py-2 text-center text-white shadow-sm">
-          <span className="text-sm font-black uppercase leading-tight text-[oklch(0.8_0.08_85)] sm:text-base">
-            {player?.position ?? 'Joueur'}
+      {/* Hero Joueur : Écusson Numéro + Nom en Grand + Badge Poste */}
+      <div className="flex items-center gap-3.5 rounded-2xl border border-amber-400/30 bg-gradient-to-r from-[#172554]/10 via-amber-400/5 to-[#172554]/10 p-3 sm:p-4 dark:from-[#172554]/40 dark:to-[#172554]/20">
+        {/* Médaillon Numéro de Maillot */}
+        <div className="flex size-14 shrink-0 flex-col items-center justify-center rounded-2xl border-2 border-amber-400 bg-gradient-to-br from-[#172554] to-blue-950 text-white shadow-lg ring-2 ring-amber-400/30 sm:size-16">
+          <span className="text-[9px] font-black uppercase tracking-wider text-amber-300 opacity-80 leading-none">N°</span>
+          <span className="font-mono text-xl font-black leading-none text-white sm:text-2xl">
+            {player?.number ?? stats.number}
           </span>
         </div>
+
+        {/* Identité & Poste */}
         <div className="min-w-0 flex-1">
-          <h3 className="break-words text-lg font-black uppercase leading-tight tracking-wide text-primary">
+          <div className="flex flex-wrap items-center gap-1.5 pb-1">
+            <span className={`inline-flex items-center gap-1 rounded-full border px-2.5 py-0.5 text-[11px] font-black shadow-sm ${posDetails.badgeClass}`}>
+              <span>{posDetails.icon}</span>
+              <span>{posDetails.label}</span>
+            </span>
+            {player?.transferStatus && (
+              <span className="rounded-md border border-amber-400/50 bg-amber-400/20 px-2 py-0.5 text-[10px] font-bold text-amber-900 dark:text-amber-200">
+                {player.transferStatus}
+              </span>
+            )}
+          </div>
+          <h3 className="break-words text-lg font-black uppercase tracking-wide text-foreground sm:text-xl">
             {playerName}
           </h3>
         </div>
       </div>
 
-      <div role="status" className="player-stats-encouragement flex items-center gap-3 rounded-xl border border-[oklch(0.8_0.08_85)]/70 bg-[oklch(0.24_0.07_272)] px-3 py-2.5 text-white shadow-sm">
-        <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-full bg-[oklch(0.8_0.08_85)] text-sm font-black text-[oklch(0.24_0.07_272)]">★</span>
-        <div>
-          <p className="text-sm font-bold">{encouragement.title}</p>
-          <p className="mt-0.5 text-xs text-white/75">{encouragement.message}</p>
+      {/* Bannière d'encouragement ESG */}
+      <div role="status" className="flex items-center gap-3 rounded-2xl border border-amber-400/50 bg-gradient-to-r from-amber-400/15 via-[#172554]/10 to-amber-400/15 p-3 text-foreground shadow-sm dark:bg-[#112040]">
+        <span aria-hidden="true" className="flex size-9 shrink-0 items-center justify-center rounded-full bg-amber-400 text-base font-black text-blue-950 shadow-md">
+          ★
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="text-xs font-black text-foreground">{encouragement.title}</p>
+          <p className="mt-0.5 text-[11px] font-medium text-muted-foreground">{encouragement.message}</p>
         </div>
       </div>
 
-      <dl className="player-stats-summary grid grid-cols-2 gap-2">
-        {summaryTiles.map((tile) => (
+      {/* 4 Piliers d'Assiduité */}
+      <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {[
+          { label: 'Entraînement', value: stats.trainingRate, tone: rateTone(stats.trainingRate) },
+          { label: 'Présence Samedi', value: matchPresenceRate, tone: rateTone(matchPresenceRate) },
+          { label: 'Convocation', value: saturdayCallUpRate, tone: rateTone(saturdayCallUpRate) },
+          { label: 'Indice IRE', value: stats.ire, isIre: true, tone: status.className },
+        ].map((item) => (
           <div
-            key={tile.label}
-            className={`min-w-0 rounded-xl border border-t-2 border-t-[oklch(0.8_0.08_85)] px-2 py-2.5 text-center shadow-sm ${tile.tone}`}
+            key={item.label}
+            className={`flex min-w-0 flex-col justify-between rounded-2xl border-2 border-t-4 border-t-amber-400 bg-card p-2.5 text-center shadow-sm ${item.tone}`}
           >
-            <dt className="text-[9px] font-bold uppercase leading-tight tracking-wide opacity-75 sm:text-[10px]">
-              {tile.label}
+            <dt className="text-[10px] font-bold uppercase tracking-tight text-foreground/80">
+              {item.label}
             </dt>
-            <dd className="mt-1 font-mono text-xl font-black">
-              {tile.displayValue}
+            <dd className="mt-1.5 font-mono text-xl font-black">
+              {item.isIre
+                ? (stats.ire !== null ? stats.ire.toFixed(2).replace('.', ',') : '—')
+                : (item.value !== null ? `${item.value}%` : '—')}
             </dd>
           </div>
         ))}
       </dl>
 
-      {convocation && <SaturdaySection convocation={convocation} />}
+      {/* Section Performance Matchs (Style Cartes Panini / EA FC) */}
+      <div className="rounded-2xl border border-border/80 bg-secondary/30 p-3 dark:bg-[#0c1830]">
+        <div className="flex items-center justify-between pb-2">
+          <span className="flex items-center gap-1.5 text-xs font-black uppercase tracking-wider text-primary">
+            <Trophy aria-hidden="true" className="size-3.5 text-amber-400" />
+            Bilan en match
+          </span>
+          <span className="text-[10px] font-bold text-muted-foreground">
+            {countedMatches ?? 0} match{(countedMatches ?? 0) > 1 ? 's' : ''} joué{(countedMatches ?? 0) > 1 ? 's' : ''}
+          </span>
+        </div>
 
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {/* Buts */}
+          <div className={`flex flex-col justify-between rounded-xl border p-2.5 shadow-sm transition-all ${
+            (stats.goals ?? 0) > 0
+              ? 'border-amber-400/80 bg-amber-400/15 dark:bg-amber-400/10'
+              : 'border-border/60 bg-background/80'
+          }`}>
+            <span className="flex items-center justify-between text-[10px] font-extrabold uppercase text-muted-foreground">
+              <span>Buts</span>
+              <span className="text-base">⚽</span>
+            </span>
+            <span className="mt-1 font-mono text-2xl font-black text-[#172554] dark:text-amber-300">
+              {display(stats.goals)}
+            </span>
+          </div>
+
+          {/* Passes décisives */}
+          <div className="flex flex-col justify-between rounded-xl border border-border/60 bg-background/80 p-2.5 shadow-sm">
+            <span className="flex items-center justify-between text-[10px] font-extrabold uppercase text-muted-foreground">
+              <span>Passes D.</span>
+              <span className="text-base">🎯</span>
+            </span>
+            <span className="mt-1 font-mono text-2xl font-black text-foreground">
+              {display(stats.assists)}
+            </span>
+          </div>
+
+          {/* Minutes jouées */}
+          <div className="flex flex-col justify-between rounded-xl border border-border/60 bg-background/80 p-2.5 shadow-sm">
+            <span className="flex items-center justify-between text-[10px] font-extrabold uppercase text-muted-foreground">
+              <span>Minutes</span>
+              <Timer aria-hidden="true" className="size-3.5 text-amber-400" />
+            </span>
+            <div className="mt-1 flex items-baseline gap-1">
+              <span className="font-mono text-2xl font-black text-foreground">
+                {display(stats.minutes)}
+              </span>
+              <span className="text-[10px] font-bold text-muted-foreground">min</span>
+            </div>
+          </div>
+
+          {/* Minutes par match */}
+          <div className="flex flex-col justify-between rounded-xl border border-border/60 bg-background/80 p-2.5 shadow-sm">
+            <span className="text-[10px] font-extrabold uppercase text-muted-foreground">
+              Min. / match
+            </span>
+            <div className="mt-1 flex items-baseline gap-1">
+              <span className="font-mono text-xl font-black text-foreground">
+                {display(minutesPerMatch)}
+              </span>
+              <span className="text-[10px] font-bold text-muted-foreground">min</span>
+            </div>
+          </div>
+
+          {/* Titularisations */}
+          <div className="flex flex-col justify-between rounded-xl border border-border/60 bg-background/80 p-2.5 shadow-sm">
+            <span className="flex items-center justify-between text-[10px] font-extrabold uppercase text-muted-foreground">
+              <span>Titulaire</span>
+              <Shirt aria-hidden="true" className="size-3.5 text-blue-600 dark:text-blue-400" />
+            </span>
+            <span className="mt-1 font-mono text-xl font-black text-foreground">
+              {display(stats.starts)}
+            </span>
+          </div>
+
+          {/* Remplaçant */}
+          <div className="flex flex-col justify-between rounded-xl border border-border/60 bg-background/80 p-2.5 shadow-sm">
+            <span className="flex items-center justify-between text-[10px] font-extrabold uppercase text-muted-foreground">
+              <span>Remplaçant</span>
+              <Users aria-hidden="true" className="size-3.5 text-slate-500" />
+            </span>
+            <span className="mt-1 font-mono text-xl font-black text-foreground">
+              {display(stats.subs)}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Graphique d'Évolution d'Assiduité */}
       {player && <TrainingHistory sessions={trainingAttendance} playerNumber={player.number} />}
 
-      <dl className="player-match-stats grid grid-cols-2 gap-2">
-        {tiles.map((t) => (
-          <div key={t.label} className="flex min-h-14 flex-col justify-between gap-0.5 rounded-lg border border-accent/40 bg-secondary/40 p-2.5">
-            <dt className="text-[9px] font-bold uppercase tracking-wide text-muted-foreground">{t.label}</dt>
-            <dd className="font-mono text-lg font-black text-primary">{t.value}</dd>
-          </div>
-        ))}
-      </dl>
-      <p className="rounded-lg border-l-4 border-[oklch(0.8_0.08_85)] bg-secondary/50 px-3 py-2 text-[10px] leading-relaxed text-muted-foreground">
-        IRE = taux de convocation ÷ taux de présence. Entre 0,90 et 1,10 inclus : justement convoqué.
+      {/* Disponibilité match du samedi */}
+      {convocation && <SaturdaySection convocation={convocation} />}
+
+      <p className="rounded-xl border-l-4 border-amber-400 bg-secondary/50 px-3 py-2 text-[10px] leading-relaxed text-muted-foreground">
+        <strong>IRE (Indice de Justesse)</strong> : taux de convocation ÷ taux de présence. Entre 0,90 et 1,10 inclus : temps de jeu et convocations équilibrés.
       </p>
     </article>
   )

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react'
 import { useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { Armchair, ChevronRight, X } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import type { Convocation } from '@/lib/convocations'
@@ -186,7 +187,8 @@ export function MatchLineupEntry({
     substitutes: number[],
   ) => Promise<void>
 }) {
-  const dialogRef = useRef<HTMLDialogElement>(null)
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const closeButtonRef = useRef<HTMLButtonElement>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const key = matchKey(match)
   const assignments = assignmentsFromLineup(lineups.find((item) => matchKey(item) === key))
@@ -200,10 +202,20 @@ export function MatchLineupEntry({
   const pending = pendingKeys.has(key)
 
   useEffect(() => {
-    const dialog = dialogRef.current
-    if (!dialog) return
-    if (dialogOpen && !dialog.open) dialog.showModal()
-    if (!dialogOpen && dialog.open) dialog.close()
+    if (!dialogOpen) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setDialogOpen(false)
+    }
+    const focusFrame = window.requestAnimationFrame(() => closeButtonRef.current?.focus())
+    window.addEventListener('keydown', closeOnEscape)
+    return () => {
+      window.cancelAnimationFrame(focusFrame)
+      window.removeEventListener('keydown', closeOnEscape)
+      document.body.style.overflow = previousOverflow
+      triggerRef.current?.focus()
+    }
   }, [dialogOpen])
 
   const updateRole = (playerNumber: number, role: LineupRole | null) => {
@@ -222,6 +234,7 @@ export function MatchLineupEntry({
   return (
     <>
     <button
+      ref={triggerRef}
       id={`match-sheet-${dateKey(match.date)}-${match.team}-${match.slotColumn}`}
       type="button"
       onClick={() => setDialogOpen(true)}
@@ -238,19 +251,17 @@ export function MatchLineupEntry({
       <ChevronRight aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
     </button>
 
-    <dialog
-      ref={dialogRef}
+    {dialogOpen && createPortal(
+    <div
+      role="dialog"
+      aria-modal="true"
       aria-labelledby={`match-sheet-title-${dateKey(match.date)}-${match.team}-${match.slotColumn}`}
-      onClose={() => setDialogOpen(false)}
-      onCancel={(event) => {
-        event.preventDefault()
-        setDialogOpen(false)
-      }}
       onClick={(event) => {
         if (event.target === event.currentTarget) setDialogOpen(false)
       }}
-      className="fixed inset-0 m-auto flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-3xl flex-col overflow-hidden rounded-3xl border-2 border-[#d4af37]/70 bg-[#eef2ff] p-0 text-[#172554] shadow-2xl backdrop:bg-[#07102a]/70 backdrop:backdrop-blur-sm dark:bg-[#111b3b] dark:text-white"
+      className="fixed inset-0 z-[100] grid place-items-center bg-[#07102a]/80 p-2 backdrop-blur-sm sm:p-5"
     >
+      <section className="flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl border-2 border-[#d4af37] bg-[#eef2ff] text-[#172554] shadow-2xl dark:bg-[#111b3b] dark:text-white">
       <header className="flex shrink-0 items-center justify-between gap-3 border-b-4 border-[#d4af37] bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-4 py-3 text-white sm:px-6 sm:py-4">
         <div className="flex min-w-0 items-center gap-3">
           <ClubCrest className="size-11 ring-2 ring-[#d4af37] sm:size-12" />
@@ -263,6 +274,7 @@ export function MatchLineupEntry({
           </div>
         </div>
         <button
+          ref={closeButtonRef}
           type="button"
           onClick={() => setDialogOpen(false)}
           aria-label="Fermer la feuille de match"
@@ -345,7 +357,10 @@ export function MatchLineupEntry({
           <p role="status" className="mt-2 text-xs font-semibold text-emerald-700">Feuille enregistrée.</p>
         ) : null}
       </div>
-    </dialog>
+      </section>
+    </div>,
+    document.body,
+    )}
     </>
   )
 }

@@ -29,6 +29,15 @@ function isCallupStatus(value: unknown): value is CallupSelection['status'] {
   return value === '' || (typeof value === 'string' && statuses.some((status) => status === value))
 }
 
+function dateKey(value: string) {
+  const trimmed = value.trim()
+  const iso = trimmed.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+  if (iso) return `${iso[1]}-${iso[2].padStart(2, '0')}-${iso[3].padStart(2, '0')}`
+  const dayFirst = trimmed.match(/^(\d{1,2})[/. -](\d{1,2})[/. -](\d{4})$/)
+  if (dayFirst) return `${dayFirst[3]}-${dayFirst[2].padStart(2, '0')}-${dayFirst[1].padStart(2, '0')}`
+  return ''
+}
+
 function jsonResponse(body: object, status = 200) {
   return NextResponse.json(body, {
     status,

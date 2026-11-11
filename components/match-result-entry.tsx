@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, CalendarPlus, Check, ChevronDown, Clock3, Pencil, Plus, Save, Sparkles, Trash2, UsersRound, X } from 'lucide-react'
+import { CalendarDays, CalendarPlus, Check, ChevronDown, ChevronUp, Clock3, Pencil, Plus, Save, Sparkles, Trash2, UsersRound, X } from 'lucide-react'
 import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
 import { MatchLineupEntry, useMatchLineups } from '@/components/match-lineup-planner'
 import { LiveMatchConsole } from '@/components/live-match-console'
@@ -117,6 +117,7 @@ export function MatchResultEntry({
   const [expandedDayDate, setExpandedDayDate] = useState<string | null>(null)
   const [expandedMatchKeys, setExpandedMatchKeys] = useState<Set<string>>(() => new Set())
   const [open, setOpen] = useState(false)
+  const [formMinimized, setFormMinimized] = useState(false)
   const [pending, setPending] = useState(false)
   const [pendingDeletion, setPendingDeletion] = useState<string | null>(null)
   const [lineupToStartLive, setLineupToStartLive] = useState<{
@@ -163,6 +164,7 @@ export function MatchResultEntry({
       if (event.key === 'Escape' && !pending) {
         setOpen(false)
         setEditingSlot(null)
+        setFormMinimized(false)
       }
     }
     document.body.style.overflow = 'hidden'
@@ -242,6 +244,7 @@ export function MatchResultEntry({
     setDraft(createDraft())
     setError('')
     setNotice('')
+    setFormMinimized(false)
     setOpen(true)
   }
 
@@ -260,6 +263,7 @@ export function MatchResultEntry({
     })
     setError('')
     setNotice('')
+    setFormMinimized(false)
     setOpen(true)
   }
 
@@ -307,6 +311,7 @@ export function MatchResultEntry({
       setMonth(draft.date.slice(0, 7))
       setOpen(false)
       setEditingSlot(null)
+      setFormMinimized(false)
       router.refresh()
     } catch (saveError) {
       setError(saveError instanceof Error ? saveError.message : 'Impossible d’enregistrer le match.')
@@ -419,20 +424,42 @@ export function MatchResultEntry({
 
       {open && canManage && (
         <div
-          className="fixed inset-0 z-[100] flex items-end justify-center bg-[#08132f]/65 p-0 backdrop-blur-sm sm:items-center sm:p-4"
+          className={[
+            'fixed inset-0 z-[100] flex justify-center bg-[#08132f]/65 backdrop-blur-sm transition-all duration-300',
+            formMinimized
+              ? 'items-end pointer-events-none'
+              : 'items-end sm:items-center p-0 sm:p-4',
+          ].join(' ')}
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !pending) {
+            if (event.target === event.currentTarget && !pending && !formMinimized) {
               setOpen(false)
               setEditingSlot(null)
             }
           }}
         >
+          {/* Bouton flottant quand minimisé (mobile uniquement) */}
+          {formMinimized && (
+            <button
+              type="button"
+              onClick={() => setFormMinimized(false)}
+              className="pointer-events-auto mb-24 mr-4 ml-auto inline-flex items-center gap-2 rounded-2xl border-2 border-[#d4af37] bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-4 py-3 text-sm font-black text-[#d4af37] shadow-2xl ring-2 ring-[#d4af37]/30 transition hover:-translate-y-1 hover:shadow-[#d4af37]/30 sm:hidden"
+              aria-label="Rouvrir le formulaire"
+            >
+              <ChevronUp aria-hidden="true" className="size-5 text-[#d4af37]" />
+              <span>{editingSlot === null ? 'Planifier un match' : 'Modifier ce match'}</span>
+              <Sparkles aria-hidden="true" className="size-4 opacity-70" />
+            </button>
+          )}
+
           <form
             onSubmit={save}
             role="dialog"
             aria-modal="true"
             aria-labelledby="match-form-title"
-            className="flex max-h-[94dvh] w-full max-w-2xl flex-col overflow-hidden rounded-t-3xl border border-[#d4af37]/60 bg-card shadow-2xl sm:rounded-3xl"
+            className={[
+              'flex max-h-[94dvh] w-full max-w-2xl flex-col overflow-hidden border border-[#d4af37]/60 bg-card shadow-2xl transition-all duration-300 sm:rounded-3xl',
+              formMinimized ? 'hidden sm:flex rounded-t-3xl' : 'rounded-t-3xl',
+            ].join(' ')}
           >
             <header className="flex shrink-0 items-center justify-between gap-3 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-4 py-3 text-white">
               <div className="flex min-w-0 items-center gap-2.5">
@@ -444,15 +471,29 @@ export function MatchResultEntry({
                   </h3>
                 </div>
               </div>
-              <button
-                type="button"
-                disabled={pending}
-                onClick={() => { setOpen(false); setEditingSlot(null) }}
-                aria-label="Fermer la fenêtre"
-                className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 transition hover:bg-white/20 disabled:opacity-50"
-              >
-                <X aria-hidden="true" className="size-5" />
-              </button>
+              <div className="flex items-center gap-2">
+                {/* Bouton minimiser (mobile uniquement) */}
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => setFormMinimized(true)}
+                  aria-label="Réduire le formulaire"
+                  title="Réduire"
+                  className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 transition hover:bg-white/20 disabled:opacity-50 sm:hidden"
+                >
+                  <ChevronDown aria-hidden="true" className="size-5" />
+                </button>
+                {/* Bouton fermer */}
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => { setOpen(false); setEditingSlot(null); setFormMinimized(false) }}
+                  aria-label="Fermer la fenêtre"
+                  className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 transition hover:bg-white/20 disabled:opacity-50"
+                >
+                  <X aria-hidden="true" className="size-5" />
+                </button>
+              </div>
             </header>
             <div className="grid min-h-0 grid-cols-2 gap-3 overflow-y-auto p-4">
               <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554]">
@@ -545,7 +586,7 @@ export function MatchResultEntry({
               <button
                 type="button"
                 disabled={pending}
-                onClick={() => { setOpen(false); setEditingSlot(null) }}
+                onClick={() => { setOpen(false); setEditingSlot(null); setFormMinimized(false) }}
                 className="min-h-11 flex-1 rounded-xl border border-[#172554]/15 px-4 text-sm font-bold text-[#172554] disabled:opacity-50"
               >
                 Annuler

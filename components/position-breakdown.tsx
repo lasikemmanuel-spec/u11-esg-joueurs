@@ -1,7 +1,7 @@
 'use client'
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { ChevronDown, ChevronRight, ChevronUp, LayoutGrid, ListFilter, Search, Sparkles } from 'lucide-react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, LayoutGrid, ListFilter, Search, Sparkles } from 'lucide-react'
 import { PlayerCard } from '@/components/player-stats'
 import { ClubCrest } from '@/components/club-crest'
 import { countCancelledCallupsForPlayer } from '@/lib/cancelled-match-callups'
@@ -59,6 +59,9 @@ export function PositionBreakdown({
   const [viewMode, setViewMode] = useState<'cards' | 'accordion'>('cards')
   const [expandedPositions, setExpandedPositions] = useState<Set<string>>(() => new Set())
   const playerDialogRef = useRef<HTMLDialogElement>(null)
+  const navScrollRef = useRef<HTMLElement>(null)
+  const [canScrollLeft, setCanScrollLeft] = useState(false)
+  const [canScrollRight, setCanScrollRight] = useState(false)
   const shouldScrollToTopAfterCollapse = useRef(false)
 
   const searchTerm = normalizeName(query.trim())
@@ -93,6 +96,32 @@ export function PositionBreakdown({
       }),
     ]
   }, [searchFilteredPlayers])
+
+  const checkNavScroll = useCallback(() => {
+    const el = navScrollRef.current
+    if (!el) return
+    setCanScrollLeft(el.scrollLeft > 6)
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 10)
+  }, [])
+
+  useEffect(() => {
+    const timer = setTimeout(checkNavScroll, 100)
+    const el = navScrollRef.current
+    if (!el) return () => clearTimeout(timer)
+    el.addEventListener('scroll', checkNavScroll, { passive: true })
+    window.addEventListener('resize', checkNavScroll)
+    return () => {
+      clearTimeout(timer)
+      el.removeEventListener('scroll', checkNavScroll)
+      window.removeEventListener('resize', checkNavScroll)
+    }
+  }, [checkNavScroll, positionTabs])
+
+  const scrollNav = (direction: 'left' | 'right') => {
+    const el = navScrollRef.current
+    if (!el) return
+    el.scrollBy({ left: direction === 'right' ? 160 : -160, behavior: 'smooth' })
+  }
 
   // Joueurs finaux à afficher selon le filtre de poste actif (en vue cartes)
   const displayedPlayers = useMemo(() => {
@@ -212,33 +241,65 @@ export function PositionBreakdown({
         </div>
       </div>
 
-      {/* Barre de filtres rapides par poste (horizontale, scrollable sur smartphone) */}
-      <nav aria-label="Filtres de postes" className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-        {positionTabs.map((tab) => {
-          const isActive = selectedPositionTab === tab.key
-          return (
-            <button
-              key={tab.key}
-              type="button"
-              aria-pressed={isActive}
-              onClick={() => setSelectedPositionTab(tab.key)}
-              className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-black transition-all ${
-                isActive
-                  ? 'border border-amber-400/70 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] text-amber-300 shadow-md ring-2 ring-amber-400/30'
-                  : 'border border-border/70 bg-muted/70 text-muted-foreground hover:bg-card hover:text-foreground'
-              }`}
-            >
-              <span>{tab.icon}</span>
-              <span>{tab.label}</span>
-              <span className={`ml-0.5 rounded-full px-1.5 py-0.2 text-[10px] font-black ${
-                isActive ? 'bg-amber-400 text-blue-950' : 'bg-background text-muted-foreground'
-              }`}>
-                {tab.count}
-              </span>
-            </button>
-          )
-        })}
-      </nav>
+      {/* Barre de filtres rapides par poste avec boutons de défilement explicites */}
+      <div className="relative flex items-center">
+        {/* Bouton défilement gauche */}
+        {canScrollLeft && (
+          <button
+            type="button"
+            onClick={() => scrollNav('left')}
+            aria-label="Faire défiler les postes vers la gauche"
+            className="absolute left-0 z-20 flex size-8 items-center justify-center rounded-full border border-amber-400/80 bg-gradient-to-r from-[#172554] to-blue-900 text-amber-300 shadow-xl ring-2 ring-amber-400/30 transition-all active:scale-95"
+          >
+            <ChevronLeft aria-hidden="true" className="size-4" />
+          </button>
+        )}
+
+        {/* Barre de filtres scrollable */}
+        <nav
+          ref={navScrollRef}
+          aria-label="Filtres de postes"
+          className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none px-0.5 scroll-smooth"
+        >
+          {positionTabs.map((tab) => {
+            const isActive = selectedPositionTab === tab.key
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                aria-pressed={isActive}
+                onClick={() => setSelectedPositionTab(tab.key)}
+                className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-black transition-all ${
+                  isActive
+                    ? 'border border-amber-400/70 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] text-amber-300 shadow-md ring-2 ring-amber-400/30'
+                    : 'border border-border/70 bg-muted/70 text-muted-foreground hover:bg-card hover:text-foreground'
+                }`}
+              >
+                <span>{tab.icon}</span>
+                <span>{tab.label}</span>
+                <span className={`ml-0.5 rounded-full px-1.5 py-0.2 text-[10px] font-black ${
+                  isActive ? 'bg-amber-400 text-blue-950' : 'bg-background text-muted-foreground'
+                }`}>
+                  {tab.count}
+                </span>
+              </button>
+            )
+          })}
+        </nav>
+
+        {/* Bouton indicateur de défilement droit (avec mention et flèche animée) */}
+        {canScrollRight && (
+          <button
+            type="button"
+            onClick={() => scrollNav('right')}
+            aria-label="Faire défiler les postes vers la droite"
+            className="absolute right-0 z-20 flex items-center gap-1 rounded-full border border-amber-400 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] py-1 pl-2.5 pr-1.5 text-[10px] font-black text-amber-300 shadow-xl ring-2 ring-amber-400/50 motion-safe:animate-pulse transition-all active:scale-95"
+          >
+            <span>Postes</span>
+            <ChevronRight aria-hidden="true" className="size-3.5" />
+          </button>
+        )}
+      </div>
 
       {/* ─────────────────────────────────────────────────────────────
           1. VUE GALERIE DE CARTES COLLECTOR EA FC (OPTION 2)
@@ -264,7 +325,7 @@ export function PositionBreakdown({
                   type="button"
                   aria-pressed={isSelected}
                   onClick={() => setSelectedNumber(player.number)}
-                  className={`group relative flex flex-col justify-between overflow-hidden rounded-2xl border-2 p-3 text-left transition-all duration-200 active:scale-[0.98] ${
+                  className={`group relative flex min-h-[148px] sm:min-h-[156px] flex-col justify-between overflow-hidden rounded-2xl border-2 p-3 text-left transition-all duration-200 active:scale-[0.98] ${
                     isSelected
                       ? 'border-amber-400 bg-amber-400/15 shadow-lg'
                       : 'border-amber-400/30 bg-gradient-to-b from-[#172554]/10 via-card to-card hover:-translate-y-1 hover:border-amber-400 hover:shadow-xl dark:from-[#172554]/40 dark:via-card/90 dark:to-card'
@@ -289,12 +350,12 @@ export function PositionBreakdown({
                     </span>
                   </div>
 
-                  {/* Corps : Nom & Prénom du joueur */}
-                  <div className="min-w-0 py-1">
-                    <h4 className="truncate text-sm font-black uppercase tracking-wide text-foreground group-hover:text-[#172554] dark:group-hover:text-amber-300">
+                  {/* Corps : Nom & Prénom du joueur (jamais coupé, 2 lignes si besoin) */}
+                  <div className="min-w-0 py-1.5 flex-1 flex flex-col justify-center">
+                    <h4 className="line-clamp-2 leading-tight text-xs sm:text-sm font-black uppercase tracking-wide text-foreground break-words group-hover:text-[#172554] dark:group-hover:text-amber-300">
                       {player.lastName}
                     </h4>
-                    <p className="truncate text-xs font-semibold text-muted-foreground">
+                    <p className="truncate text-[11px] sm:text-xs font-semibold text-muted-foreground pt-0.5">
                       {player.firstName}
                     </p>
                   </div>

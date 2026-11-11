@@ -554,6 +554,7 @@ export function MatchResultEntry({
           const isSaturday = new Date(`${date}T12:00:00`).getDay() === 6
           const canScheduleCallup = canManage && isSaturday && matches.some((entry) => entry.resultLabel !== 'Annulé')
           const hasConvocations = completedConvocationDates.has(date)
+          const hasStartedConvocation = convocationDates.some((savedDate) => dateInputValue(savedDate) === date)
           const isExpanded = expandedDayDate === date
           const dayContentId = `match-day-${date}`
           return (
@@ -594,18 +595,16 @@ export function MatchResultEntry({
                       aria-expanded={openCallupDate === date}
                       onClick={() => setOpenCallupDate((current) => current === date ? '' : date)}
                       className={[
-                        'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg px-2.5 text-[11px] font-black transition-colors sm:gap-2 sm:rounded-xl sm:px-3 sm:text-sm',
-                        hasConvocations
-                          ? 'border border-white/25 bg-white/10 text-white/85 shadow-none hover:bg-white/15'
-                          : 'bg-[#d4af37] text-blue-950 shadow hover:bg-amber-300',
+                        'inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-[#ffe27a] bg-[#d4af37] px-3.5 text-xs font-black text-blue-950 shadow-md transition hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#172554] sm:min-h-11 sm:px-4 sm:text-sm',
                       ].join(' ')}
                     >
-                      {hasConvocations ? <Check aria-hidden="true" className="size-3.5 sm:size-4" /> : <UsersRound aria-hidden="true" className="size-3.5 sm:size-4" />}
-                      <span className="sm:hidden">{hasConvocations ? 'Convocations' : 'À convoquer'}</span>
-                      <span className="hidden sm:inline">{hasConvocations ? 'Voir les convocations' : 'Convocations à saisir'}</span>
+                      {hasConvocations ? <Check aria-hidden="true" className="size-4" /> : <UsersRound aria-hidden="true" className="size-4" />}
+                      <span>{hasConvocations ? 'Voir les convocations' : 'Saisir les convocations'}</span>
                     </button>
                   )}
                   {canManage &&
+                    !hasStartedConvocation &&
+                    openCallupDate !== date &&
                     date >= localToday() &&
                     matches.every((entry) =>
                       !entry.resultLabel && entry.goalsFor === null && entry.goalsAgainst === null,

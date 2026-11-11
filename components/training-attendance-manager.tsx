@@ -249,7 +249,7 @@ export function TrainingAttendanceManager({
                     </span>
                   ) : <span className="shrink-0 rounded-full bg-amber-100 px-2 py-1 text-[10px] font-black text-amber-900">À noter</span>}
                 </div>
-                <div className="grid grid-cols-3 gap-1.5 lg:grid-cols-5">
+                <div className="grid grid-cols-3 gap-2">
                   {TRAINING_ATTENDANCE_STATUSES.map((status) => {
                     const presentation = STATUS_PRESENTATION[status.value]
                     const StatusIcon = presentation.icon
@@ -265,7 +265,7 @@ export function TrainingAttendanceManager({
                           setMessage('')
                           setError('')
                         }}
-                        className={`flex min-h-11 flex-col items-center justify-center gap-0.5 rounded-xl border px-1 text-[9px] font-black transition active:scale-95 sm:text-[10px] ${selected ? `${presentation.active} shadow-sm ring-2 ring-current/15` : `${presentation.idle} hover:-translate-y-0.5`}`}
+                        className={`flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl border px-2 text-[10px] font-black leading-tight transition active:scale-95 sm:text-[11px] ${selected ? `${presentation.active} shadow-sm ring-2 ring-current/15` : `${presentation.idle} hover:-translate-y-0.5`}`}
                       >
                         <StatusIcon aria-hidden="true" className="size-4" />
                         <span>{status.shortLabel}</span>

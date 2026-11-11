@@ -22,8 +22,8 @@ const MATCH_STYLES: Record<MatchStatus, { label: string; className: string }> = 
 
 const TRAINING_STYLES: Record<string, { label: string; className: string }> = {
   P: { label: 'Présent', className: 'bg-emerald-600 text-white' },
-  AJ: { label: 'Justifié', className: 'bg-amber-400 text-amber-950' },
-  AI: { label: 'Absent', className: 'bg-blue-950 text-white' },
+  AJ: { label: 'Absence justifiée', className: 'bg-amber-400 text-amber-950' },
+  AI: { label: 'Absence injustifiée', className: 'bg-blue-950 text-white' },
   B: { label: 'Blessé', className: 'bg-rose-600 text-white' },
   E: { label: 'Exempt', className: 'bg-violet-600 text-white' },
 }
@@ -94,7 +94,7 @@ function TrainingHistory({ sessions, playerNumber }: { sessions: TrainingAttenda
           const style = TRAINING_STYLES[status] ?? { label: 'Non saisi', className: 'border border-slate-300 bg-slate-100 text-slate-600' }
           const [year, month, day] = session.date.split('-')
           return (
-            <li key={session.date} title={`${day}/${month}/${year} : ${style.label}`} className={`flex min-w-16 flex-col items-center rounded-lg px-2 py-1 text-[10px] leading-tight ${style.className}`}>
+            <li key={session.date} title={`${day}/${month}/${year} : ${style.label}`} className={`flex min-w-20 max-w-32 flex-col items-center rounded-lg px-2 py-1 text-center text-[10px] leading-tight ${style.className}`}>
               <span className="font-mono">{day}/{month}</span>
               <span className="font-bold">{style.label}</span>
             </li>

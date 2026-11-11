@@ -110,6 +110,12 @@ export function TrainingAttendanceManager({
     setError('')
   }
 
+  const resetAttendance = () => {
+    setStatuses(Object.fromEntries(players.map((player) => [player.number, ''])))
+    setMessage('')
+    setError('')
+  }
+
   const save = async () => {
     setSaving(true)
     setMessage('')
@@ -149,7 +155,6 @@ export function TrainingAttendanceManager({
                 <Sparkles aria-hidden="true" className="size-3.5" />ES Genech · U11
               </p>
               <h2 id="training-attendance-title" className="mt-1 text-2xl font-black leading-tight sm:text-3xl lg:text-4xl">Feuille de présence</h2>
-              <p className="mt-1 text-sm font-medium capitalize text-white/70 sm:text-base">{date ? formatDate(date) : 'Choisis la date de la séance'}</p>
             </div>
           </div>
           <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] xl:w-[min(100%,34rem)]">
@@ -164,9 +169,14 @@ export function TrainingAttendanceManager({
                 className="h-12 min-w-0 rounded-xl border border-white/20 bg-white/10 px-3 text-sm font-bold text-white outline-none focus-visible:ring-2 focus-visible:ring-amber-300 [color-scheme:dark]"
               />
             </label>
-            <button type="button" onClick={setAllPresent} disabled={!players.length || loadError} aria-label="Marquer tous les joueurs présents" title="Remplace les statuts saisis par Présent pour toute l’équipe ; enregistre ensuite." className="mt-auto inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-5 text-sm font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50">
-              <UsersRound aria-hidden="true" className="size-4 shrink-0" /><span>Marquer tous les joueurs présents</span>
-            </button>
+            <div className="mt-auto flex flex-col gap-2">
+              <button type="button" onClick={setAllPresent} disabled={!players.length || loadError} aria-label="Marquer tous les joueurs présents" title="Remplace les statuts saisis par Présent pour toute l’équipe ; enregistre ensuite." className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-5 text-sm font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50">
+                <UsersRound aria-hidden="true" className="size-4 shrink-0" /><span>Marquer tous les joueurs présents</span>
+              </button>
+              <button type="button" onClick={resetAttendance} disabled={!players.length || loadError || counts.filled === 0} title="Efface les choix de cette saisie à l’écran ; le classeur n’est pas modifié." className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 text-xs font-bold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50">
+                <RefreshCw aria-hidden="true" className="size-3.5" />Réinitialiser la feuille
+              </button>
+            </div>
           </div>
         </div>
 

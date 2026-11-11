@@ -64,29 +64,38 @@ function matchDateOrder(value: string) {
   return value
 }
 
+function localToday() {
+  const now = new Date()
+  now.setMinutes(now.getMinutes() - now.getTimezoneOffset())
+  return now.toISOString().slice(0, 10)
+}
+
 function TrainingHistory({ sessions, playerNumber }: { sessions: TrainingAttendanceSession[]; playerNumber: number }) {
   const [showAll, setShowAll] = useState(false)
-  if (sessions.length === 0) return null
-  const orderedSessions = [...sessions].sort((a, b) => b.date.localeCompare(a.date))
-  const recordedCount = sessions.filter((session) => Boolean(session.playerStatuses[playerNumber]?.trim())).length
-  const presentCount = sessions.filter((session) => session.playerStatuses[playerNumber]?.trim() === 'P').length
+  const today = localToday()
+  // Exclure les séances futures
+  const pastSessions = sessions.filter((session) => session.date <= today)
+  if (pastSessions.length === 0) return null
+  const orderedSessions = [...pastSessions].sort((a, b) => b.date.localeCompare(a.date))
+  const recordedCount = pastSessions.filter((session) => Boolean(session.playerStatuses[playerNumber]?.trim())).length
+  const presentCount = pastSessions.filter((session) => session.playerStatuses[playerNumber]?.trim() === 'P').length
 
   return (
     <section className="flex flex-col gap-3 border-t pt-3" aria-label="Historique des entraînements">
-      <TrainingEvolutionChart sessions={sessions} playerNumber={playerNumber} />
+      <TrainingEvolutionChart sessions={pastSessions} playerNumber={playerNumber} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h4 className="text-xs font-bold text-primary">Détail des séances</h4>
-          <p className="text-[10px] text-muted-foreground">{presentCount} présence{presentCount === 1 ? '' : 's'} · {recordedCount}/{sessions.length} statuts renseignés</p>
+          <p className="text-[10px] text-muted-foreground">{presentCount} présence{presentCount === 1 ? '' : 's'} · {recordedCount}/{pastSessions.length} statuts renseignés</p>
         </div>
-        {sessions.length > 5 && (
+        {pastSessions.length > 5 && (
           <button
             type="button"
             aria-expanded={showAll}
             onClick={() => setShowAll((current) => !current)}
             className="rounded-full border border-primary/20 bg-secondary/60 px-3 py-1 text-[11px] font-bold text-primary transition hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
           >
-            {showAll ? 'Réduire' : `Voir les ${sessions.length} séances`}
+            {showAll ? 'Réduire' : `Voir les ${pastSessions.length} séances`}
           </button>
         )}
       </div>

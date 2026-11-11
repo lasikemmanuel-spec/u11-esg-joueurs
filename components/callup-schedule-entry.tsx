@@ -2,13 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { Save, UsersRound } from 'lucide-react'
+import { CircleAlert, CircleCheck, CircleHelp, CircleMinus, Save, UsersRound } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import type { Convocation, MatchStatus } from '@/lib/convocations'
 import type { EditableCallupStatus } from '@/lib/convocation-management'
 import type { PublicPlayer } from '@/lib/players'
 import type { PlayerStats } from '@/lib/stats'
 import type { TrainingAttendanceSession } from '@/lib/training-attendance'
+import type { MatchSheetEntry } from '@/lib/match-results'
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
 
 const STATUS_OPTIONS: Array<{ value: EditableCallupStatus; label: string }> = [
@@ -82,13 +83,6 @@ function attendanceLabel(status: string | undefined) {
   return status
 }
 
-function attendanceTone(status: string | undefined) {
-  if (status === 'P') return 'bg-emerald-100 text-emerald-800'
-  if (status === 'AI') return 'bg-red-100 text-red-800'
-  if (status === 'AJ' || status === 'B') return 'bg-amber-100 text-amber-900'
-  return 'bg-slate-100 text-slate-700'
-}
-
 export function CallupScheduleEntry({
   players,
   playerStats,
@@ -98,6 +92,7 @@ export function CallupScheduleEntry({
   initialDate,
   trainingAttendance,
   trainingAttendanceError,
+  matchEntries,
 }: {
   players: PublicPlayer[]
   playerStats: PlayerStats[]
@@ -107,6 +102,7 @@ export function CallupScheduleEntry({
   initialDate?: string
   trainingAttendance: TrainingAttendanceSession[]
   trainingAttendanceError: boolean
+  matchEntries: MatchSheetEntry[]
 }) {
   const router = useRouter()
   const callupTitleRef = useRef<HTMLElement>(null)
@@ -194,6 +190,26 @@ export function CallupScheduleEntry({
         .sort((a, b) => a.date.localeCompare(b.date))
     },
     [relevantTrainingDates, sortedTrainingAttendance],
+  )
+  const lastCompletedMatchDate = useMemo(() => matchEntries
+    .filter((entry) => {
+      const entryDate = dateKey(entry.date)
+      return Boolean(
+        date && entryDate && entryDate < date &&
+        !entry.resultLabel.toLocaleLowerCase('fr-FR').includes('annul') &&
+        entry.goalsFor !== null && entry.goalsAgainst !== null,
+      )
+    })
+    .map((entry) => dateKey(entry.date))
+    .sort()
+    .at(-1) ?? '', [date, matchEntries])
+  const lastCompletedMatches = useMemo(
+    () => lastCompletedMatchDate
+      ? matchEntries.filter((entry) => dateKey(entry.date) === lastCompletedMatchDate &&
+        !entry.resultLabel.toLocaleLowerCase('fr-FR').includes('annul') &&
+        entry.goalsFor !== null && entry.goalsAgainst !== null)
+      : [],
+    [lastCompletedMatchDate, matchEntries],
   )
 
   useEffect(() => {
@@ -285,6 +301,7 @@ export function CallupScheduleEntry({
         <ClubCrest className="size-12 ring-2 ring-[#d4af37] sm:size-14" />
         <div className="min-w-0">
           <h2 id="callup-entry-title" className="font-bold">Convocations du samedi</h2>
+          <p className="mt-0.5 text-[10px] font-medium text-white/70">Présences d’entraînement : M = mardi · V = vendredi · le dernier match indique aussi son équipe.</p>
         </div>
       </header>
 
@@ -391,6 +408,30 @@ export function CallupScheduleEntry({
               ...session,
               status: session.playerStatuses?.[player.number],
             }))
+            const teamsPlayedLastMatch = lastCompletedMatches
+              .filter((match) => match.playedPlayerNumbers?.includes(player.number))
+              .map((match) => match.team)
+            const uniqueTeamsPlayed = [...new Set(teamsPlayedLastMatch)]
+            const participationRecorded = lastCompletedMatches.length > 0 &&
+              lastCompletedMatches.every((match) => match.hasParticipationData)
+            const lastMatchIcon = uniqueTeamsPlayed.length > 0
+              ? CircleCheck
+              : participationRecorded
+                ? CircleMinus
+                : CircleHelp
+            const lastMatchLabel = uniqueTeamsPlayed.length > 0
+              ? `Joué · ${uniqueTeamsPlayed.join(' + ')}`
+              : participationRecorded
+                ? 'Pas joué'
+                : 'Stats à saisir'
+            const lastMatchTone = uniqueTeamsPlayed.length > 0
+              ? 'bg-emerald-100 text-emerald-800'
+              : participationRecorded
+                ? 'bg-orange-100 text-orange-900'
+                : 'bg-slate-100 text-slate-700'
+            const lastMatchDateLabel = lastCompletedMatchDate
+              ? new Date(`${lastCompletedMatchDate}T12:00:00`).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
+              : ''
 
             return (
               <li key={player.number} className="grid min-w-0 grid-cols-1 items-center gap-2 px-3 py-3 sm:grid-cols-[minmax(0,1fr)_minmax(12rem,auto)] sm:py-2">
@@ -398,7 +439,7 @@ export function CallupScheduleEntry({
                   <span className="col-start-1 row-start-1 min-w-0 truncate text-sm font-semibold text-foreground">
                     {player.firstName} <span className="font-black uppercase text-primary">{player.lastName}</span>
                   </span>
-                  <div className="col-span-2 row-start-2 flex flex-wrap gap-1 sm:col-start-2 sm:col-span-1 sm:row-start-1">
+                  <div className="col-span-2 row-start-2 flex flex-wrap items-center gap-1.5 sm:col-start-2 sm:col-span-1 sm:row-start-1">
                     {playerTrainingStatuses.map(({ targetDate, date: sessionDate, status, sessionAvailable, isPrevious }) => {
                       const sessionDateLabel = new Date(`${sessionDate}T12:00:00`).toLocaleDateString('fr-FR', {
                         day: '2-digit',
@@ -415,22 +456,46 @@ export function CallupScheduleEntry({
                         weekday: 'short',
                       })
                       const label = sessionAvailable ? attendanceLabel(status) : 'Séance non trouvée'
+                      const AttendanceIcon = !sessionAvailable || !status
+                        ? CircleHelp
+                        : status === 'P'
+                          ? CircleCheck
+                          : CircleAlert
+                      const attendanceIconTone = !sessionAvailable || !status
+                        ? 'border-slate-200 bg-slate-100 text-slate-600'
+                        : status === 'P'
+                          ? 'border-emerald-200 bg-emerald-100 text-emerald-700'
+                          : 'border-orange-200 bg-orange-100 text-orange-700'
+                      const dayInitial = weekdayLabel.toLocaleLowerCase('fr-FR').startsWith('ven') ? 'V' : 'M'
+                      const attendanceDescription = isPrevious
+                        ? `Séance avant ${targetWeekdayLabel} ${targetDateLabel}, tenue ${weekdayLabel} ${sessionDateLabel} : ${label}`
+                        : `${weekdayLabel} ${sessionDateLabel} : ${label}`
                       return (
                         <span
                           key={targetDate}
-                          title={isPrevious
-                            ? `Séance avant ${targetWeekdayLabel} ${targetDateLabel}, tenue ${weekdayLabel} ${sessionDateLabel} : ${label}`
-                            : `${targetWeekdayLabel} ${targetDateLabel} : ${label}`}
-                          className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${attendanceTone(status)}`}
+                          role="img"
+                          aria-label={attendanceDescription}
+                          title={attendanceDescription}
+                          className={`relative inline-flex size-7 shrink-0 items-center justify-center rounded-full border ${attendanceIconTone}`}
                         >
-                          {isPrevious
-                            ? `Avant ${targetDateLabel} · ${weekdayLabel} ${sessionDateLabel}`
-                            : `${weekdayLabel} ${sessionDateLabel}`}
-                          {' · '}
-                          {status ? attendanceLabel(status) : sessionAvailable ? 'Non renseigné' : '—'}
+                          <AttendanceIcon aria-hidden="true" className="size-4" />
+                          <span aria-hidden="true" className="absolute -right-1 -bottom-1 flex size-3.5 items-center justify-center rounded-full border border-white bg-[#172554] text-[8px] font-black leading-none text-white">{dayInitial}</span>
                         </span>
                       )
                     })}
+                    {lastCompletedMatches.length > 0 && (() => {
+                      const LastMatchIcon = lastMatchIcon
+                      return (
+                        <span
+                          title={`Dernier match (${lastMatchDateLabel}) : ${uniqueTeamsPlayed.length ? `a joué avec ${uniqueTeamsPlayed.join(' et ')}` : participationRecorded ? 'n’a pas joué' : 'temps de jeu non renseigné'}`}
+                          aria-label={`Dernier match : ${lastMatchLabel}`}
+                          className={`inline-flex min-h-7 items-center gap-1 rounded-full px-2 py-1 text-[9px] font-black ${lastMatchTone}`}
+                        >
+                          <LastMatchIcon aria-hidden="true" className="size-3.5" />
+                          {lastMatchLabel}
+                        </span>
+                      )
+                    })()}
                   </div>
                   <span className={`col-start-2 row-start-1 shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold ${ireTone} sm:col-start-3`}>
                     IRE {playerIre === null || playerIre === undefined ? '—' : playerIre.toFixed(2).replace('.', ',')}

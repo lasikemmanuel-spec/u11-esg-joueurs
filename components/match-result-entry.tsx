@@ -826,6 +826,7 @@ export function MatchResultEntry({
                     initialDate={date}
                     trainingAttendance={trainingAttendance}
                     trainingAttendanceError={trainingAttendanceError}
+                    matchEntries={entries}
                   />
                 </div>
               )}

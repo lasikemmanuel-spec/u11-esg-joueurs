@@ -33,6 +33,8 @@ export type MatchSheetEntry = {
   resultLabel: string
   goalsFor: number | null
   goalsAgainst: number | null
+  playedPlayerNumbers?: number[]
+  hasParticipationData?: boolean
 }
 
 export type TeamMatchResults = {
@@ -84,6 +86,22 @@ function parseVenue(value: string) {
     : { homeAway: value, kickoffTime: '' }
 }
 
+function getPlayerParticipation(rows: string[][], column: number) {
+  const playedPlayerNumbers: number[] = []
+  let hasParticipationData = false
+  for (const row of rows) {
+    const number = Number.parseInt(row[0] ?? '', 10)
+    if (!Number.isSafeInteger(number) || number <= 0 || !row[1]?.trim()) continue
+    const rawMinutes = cell(row, column + 1)
+    if (!rawMinutes) continue
+    const minutes = Number(rawMinutes.replace(',', '.'))
+    if (!Number.isFinite(minutes) || minutes < 0) continue
+    hasParticipationData = true
+    if (minutes > 0) playedPlayerNumbers.push(number)
+  }
+  return { playedPlayerNumbers, hasParticipationData }
+}
+
 async function getTeamResults(tab: string, team: 'E1' | 'E2'): Promise<{
   results: MatchResult[]
   matchTypes: MatchType[]
@@ -123,6 +141,7 @@ async function getTeamResults(tab: string, team: 'E1' | 'E2'): Promise<{
 
     if (date && competition) matchTypes.push({ date, type: competition })
     if (hasEntry) {
+      const participation = getPlayerParticipation(rows, column)
       entries.push({
         team,
         slotColumn: column,
@@ -134,6 +153,7 @@ async function getTeamResults(tab: string, team: 'E1' | 'E2'): Promise<{
         resultLabel: resultLabelValue,
         goalsFor,
         goalsAgainst,
+        ...participation,
       })
     }
 

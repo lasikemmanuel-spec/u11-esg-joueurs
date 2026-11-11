@@ -157,7 +157,7 @@ export function TrainingAttendanceManager({
               <h2 id="training-attendance-title" className="mt-1 text-xl font-black leading-tight sm:text-3xl lg:text-4xl">Feuille de présence</h2>
             </div>
           </div>
-          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-3 xl:w-[min(100%,34rem)]">
+          <div className="grid gap-2 xl:w-[min(100%,34rem)]">
             <label className="grid gap-1 text-[11px] font-bold text-white/75 sm:gap-1.5 sm:text-xs">
               <span className="flex items-center gap-1.5"><CalendarDays aria-hidden="true" className="size-4 text-amber-300" />Date de la séance</span>
               <input
@@ -169,14 +169,6 @@ export function TrainingAttendanceManager({
                 className="h-10 min-w-0 rounded-xl border border-white/20 bg-white/10 px-3 text-sm font-bold text-white outline-none focus-visible:ring-2 focus-visible:ring-amber-300 [color-scheme:dark] sm:h-12"
               />
             </label>
-            <div className="mt-auto flex flex-col gap-1.5 sm:gap-2">
-              <button type="button" onClick={setAllPresent} disabled={!players.length || loadError} aria-label="Marquer tous les joueurs présents" title="Remplace les statuts saisis par Présent pour toute l’équipe ; enregistre ensuite." className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-3 text-xs font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-5 sm:text-sm">
-                <UsersRound aria-hidden="true" className="size-4 shrink-0" /><span className="whitespace-nowrap">Marquer tous les joueurs présents</span>
-              </button>
-              <button type="button" onClick={resetAttendance} disabled={!players.length || loadError || counts.filled === 0} title="Efface les choix de cette saisie à l’écran ; le classeur n’est pas modifié." className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 text-[11px] font-bold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 sm:text-xs">
-                <RefreshCw aria-hidden="true" className="size-3.5" />Réinitialiser la feuille
-              </button>
-            </div>
           </div>
         </div>
 
@@ -203,6 +195,14 @@ export function TrainingAttendanceManager({
             <span>{sessions.length} séance{sessions.length === 1 ? '' : 's'} · historique</span>
           </div>
         </div>
+      <div className="mt-2 flex flex-col gap-1.5 sm:flex-row sm:justify-end sm:gap-2">
+        <button type="button" onClick={setAllPresent} disabled={!players.length || loadError} aria-label="Marquer tous les joueurs présents" title="Remplace les statuts saisis par Présent pour toute l’équipe ; enregistre ensuite." className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-3 text-xs font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-5 sm:text-sm">
+          <UsersRound aria-hidden="true" className="size-4 shrink-0" /><span className="whitespace-nowrap">Marquer tous les joueurs présents</span>
+        </button>
+        <button type="button" onClick={resetAttendance} disabled={!players.length || loadError || counts.filled === 0} title="Efface les choix de cette saisie à l’écran ; le classeur n’est pas modifié." className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 text-[11px] font-bold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 sm:text-xs">
+          <RefreshCw aria-hidden="true" className="size-3.5" />Réinitialiser la feuille
+        </button>
+      </div>
       </header>
 
       {loadError && (

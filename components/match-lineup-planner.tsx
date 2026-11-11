@@ -5,10 +5,13 @@ import { useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Armchair, ChevronRight, X } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
+import { PlayerCard } from '@/components/player-stats'
+import { countCancelledCallupsForPlayer } from '@/lib/cancelled-match-callups'
 import type { Convocation } from '@/lib/convocations'
 import type { MatchSheetEntry } from '@/lib/match-results'
 import type { PublicPlayer } from '@/lib/players'
 import type { MatchLineup } from '@/lib/match-lineups'
+import type { PlayerStats } from '@/lib/stats'
 
 type LineupRole = 'starter' | 'substitute'
 type LineupAssignments = Record<number, LineupRole>
@@ -24,16 +27,18 @@ function JerseyIcon({ number }: { number: number }) {
         strokeWidth="1.5"
       />
       <path d="M11 4c.8 2.3 2.4 3.5 5 3.5S20.2 6.3 21 4" fill="none" stroke="#d4af37" strokeWidth="1.3" />
-      <text
-        x="16"
-        y="21"
-        fill="white"
-        fontSize={number > 99 ? 5 : number > 9 ? 7 : 9}
-        fontWeight="700"
-        textAnchor="middle"
-      >
-        {number}
-      </text>
+      {number > 0 && (
+        <text
+          x="16"
+          y="21"
+          fill="white"
+          fontSize={number > 99 ? 5 : number > 9 ? 7 : 9}
+          fontWeight="700"
+          textAnchor="middle"
+        >
+          {number}
+        </text>
+      )}
     </svg>
   )
 }
@@ -168,7 +173,10 @@ export function useMatchLineups(enabled: boolean) {
 
 export function MatchLineupEntry({
   match,
+  matchEntries,
   players,
+  playerStats,
+  matchesPlayed,
   convocations,
   lineups,
   pendingKeys,
@@ -176,7 +184,10 @@ export function MatchLineupEntry({
   saveLineup,
 }: {
   match: MatchSheetEntry
+  matchEntries: MatchSheetEntry[]
   players: PublicPlayer[]
+  playerStats: PlayerStats[]
+  matchesPlayed: number
   convocations: Convocation[]
   lineups: MatchLineup[]
   pendingKeys: Set<string>
@@ -190,6 +201,7 @@ export function MatchLineupEntry({
   const triggerRef = useRef<HTMLButtonElement>(null)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [selectedPlayerNumber, setSelectedPlayerNumber] = useState<number | null>(null)
   const key = matchKey(match)
   const assignments = assignmentsFromLineup(lineups.find((item) => matchKey(item) === key))
   const calledPlayers = players.filter((player) => isCalledForTeam(
@@ -200,6 +212,30 @@ export function MatchLineupEntry({
   const starters = calledPlayers.filter((player) => assignments[player.number] === 'starter')
   const substitutes = calledPlayers.filter((player) => assignments[player.number] === 'substitute')
   const pending = pendingKeys.has(key)
+  const selectedPlayer = players.find((player) => player.number === selectedPlayerNumber) ?? null
+  const selectedPlayerStats = selectedPlayer
+    ? playerStats.find((stats) => stats.number === selectedPlayer.number) ?? {
+        number: selectedPlayer.number,
+        name: `${selectedPlayer.firstName} ${selectedPlayer.lastName}`.trim(),
+        trainingRate: null,
+        matchesCalled: null,
+        callUpRate: null,
+        starts: null,
+        subs: null,
+        minutes: null,
+        goals: null,
+        assists: null,
+        ire: null,
+      }
+    : null
+  const playerDialogRef = useRef<HTMLDialogElement>(null)
+
+  useEffect(() => {
+    const dialog = playerDialogRef.current
+    if (!dialog) return
+    if (selectedPlayer && !dialog.open) dialog.showModal()
+    if (!selectedPlayer && dialog.open) dialog.close()
+  }, [selectedPlayer])
 
   useEffect(() => {
     if (!dialogOpen) return
@@ -284,22 +320,38 @@ export function MatchLineupEntry({
         </button>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-5">
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-gradient-to-b from-[#e6edff] to-[#f5f7ff] p-3 sm:p-5">
         {calledPlayers.length === 0 ? (
           <p className="rounded-xl bg-muted px-3 py-5 text-center text-sm text-muted-foreground">
             Enregistre d’abord les convocations de cette équipe.
           </p>
         ) : (
           <>
-            <ul className="divide-y divide-border rounded-lg border border-border">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#172554]/10 bg-white/80 px-3 py-2 shadow-sm">
+              <p className="text-xs font-bold text-[#172554]">Choisis la composition</p>
+              <p className="text-xs font-black text-[#172554]"><span className="text-[#1e3a8a]">{starters.length}/8 titulaires</span><span className="mx-2 text-slate-300">·</span>{substitutes.length} remplaçant{substitutes.length === 1 ? '' : 's'}</p>
+              <p className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-medium text-slate-600">
+                <span className="inline-flex items-center gap-1"><JerseyIcon number={0} /> Titulaire</span>
+                <span className="inline-flex items-center gap-1"><Armchair aria-hidden="true" className="size-4" /> Remplaçant</span>
+                <span className="inline-flex items-center gap-1"><X aria-hidden="true" className="size-3.5" /> Retirer le choix</span>
+                <span>Appuie sur un nom pour ouvrir sa fiche.</span>
+              </p>
+            </div>
+            <ul className="grid gap-2">
               {calledPlayers.map((player) => {
                 const currentRole = assignments[player.number]
-                const buttonClass = 'inline-flex size-10 items-center justify-center rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+                const buttonClass = 'inline-flex size-9 items-center justify-center rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
                 return (
-                  <li key={player.number} className="flex min-w-0 flex-col items-stretch gap-2 px-2 py-2 sm:flex-row sm:items-center sm:justify-between">
-                    <span className="min-w-0 whitespace-normal break-words text-sm font-medium">
-                      {player.firstName} <span className="font-bold uppercase">{player.lastName}</span>
-                    </span>
+                  <li key={player.number} className="flex min-h-14 min-w-0 items-center justify-between gap-2 rounded-xl border border-[#172554]/10 bg-white px-2.5 py-2 shadow-sm sm:px-3">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedPlayerNumber(player.number)}
+                      aria-label={`Voir la fiche de ${player.firstName} ${player.lastName}`}
+                      className="flex min-w-0 flex-1 items-center gap-1 truncate rounded-md text-left text-sm font-medium text-[#172554] underline-offset-2 hover:text-blue-800 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+                    >
+                      <span className="min-w-0 truncate">{player.firstName} <span className="font-bold uppercase">{player.lastName}</span></span>
+                      <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-slate-400" />
+                    </button>
                     <div role="group" aria-label={`Action pour ${player.firstName} ${player.lastName}`} className="flex shrink-0 items-center gap-2">
                       <button
                         type="button"
@@ -360,6 +412,27 @@ export function MatchLineupEntry({
       </section>
     </div>,
     document.body,
+    )}
+    {selectedPlayer && selectedPlayerStats && createPortal(
+      <dialog
+        ref={playerDialogRef}
+        aria-labelledby="selected-player-card-title"
+        onClose={() => setSelectedPlayerNumber(null)}
+        onClick={(event) => {
+          if (event.target === event.currentTarget) event.currentTarget.close()
+        }}
+        className="fixed inset-0 z-[110] m-auto max-h-[calc(100dvh-1.5rem)] w-[min(42rem,calc(100vw-1.5rem))] overflow-y-auto overscroll-contain rounded-2xl border-0 bg-transparent p-0 shadow-2xl backdrop:bg-[#07102a]/75"
+      >
+        <PlayerCard
+          stats={selectedPlayerStats}
+          player={selectedPlayer}
+          convocation={convocations.find((convocation) => convocation.number === selectedPlayer.number)}
+          matchesPlayed={matchesPlayed}
+          cancelledMatchesForPlayer={countCancelledCallupsForPlayer(selectedPlayer.number, convocations, matchEntries)}
+          onClose={() => playerDialogRef.current?.close()}
+        />
+      </dialog>,
+      document.body,
     )}
     </>
   )

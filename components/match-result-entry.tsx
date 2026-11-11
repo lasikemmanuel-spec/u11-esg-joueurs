@@ -819,7 +819,10 @@ export function MatchResultEntry({
                               ) : (
                                 <MatchLineupEntry
                                   match={entry}
+                                  matchEntries={entries}
                                   players={players}
+                                  playerStats={playerStats}
+                                  matchesPlayed={matchesPlayed}
                                   convocations={convocations}
                                   lineups={matchLineups.lineups}
                                   pendingKeys={matchLineups.pendingKeys}

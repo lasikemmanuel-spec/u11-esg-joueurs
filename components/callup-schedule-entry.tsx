@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { CircleAlert, CircleCheck, CircleHelp, CircleX, Save, UsersRound } from 'lucide-react'
+import { CircleAlert, CircleCheck, CircleHelp, CircleX, Save, UsersRound, X } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import type { Convocation, MatchStatus } from '@/lib/convocations'
 import type { EditableCallupStatus } from '@/lib/convocation-management'
@@ -93,6 +93,7 @@ export function CallupScheduleEntry({
   trainingAttendance,
   trainingAttendanceError,
   matchEntries,
+  onClose,
 }: {
   players: PublicPlayer[]
   playerStats: PlayerStats[]
@@ -103,6 +104,7 @@ export function CallupScheduleEntry({
   trainingAttendance: TrainingAttendanceSession[]
   trainingAttendanceError: boolean
   matchEntries: MatchSheetEntry[]
+  onClose: () => void
 }) {
   const router = useRouter()
   const callupTitleRef = useRef<HTMLElement>(null)
@@ -304,12 +306,21 @@ export function CallupScheduleEntry({
 
   return (
     <section aria-labelledby="callup-entry-title" className="overflow-visible rounded-xl border border-[#172554]/20 bg-[#eef2ff] shadow-sm">
-      <header ref={callupTitleRef} className="scroll-mt-4 flex items-center gap-3 rounded-t-xl bg-gradient-to-r from-[#172554] via-[#1e3a70] to-[#172554] px-4 py-3 text-white sm:px-5 sm:py-4">
+      <header ref={callupTitleRef} className="sticky top-0 z-20 flex scroll-mt-4 items-center gap-3 rounded-t-xl border-b border-[#d4af37]/70 bg-gradient-to-r from-[#172554] via-[#1e3a70] to-[#172554] px-4 py-3 text-white shadow-md sm:px-5 sm:py-4">
         <ClubCrest className="size-12 ring-2 ring-[#d4af37] sm:size-14" />
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1">
           <h2 id="callup-entry-title" className="font-bold">Convocations du samedi</h2>
           <p className="mt-0.5 text-[10px] font-medium text-white/70">Présences d’entraînement : M = mardi · V = vendredi · le dernier match indique aussi son équipe.</p>
         </div>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Fermer les convocations"
+          title="Fermer les convocations"
+          className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+        >
+          <X aria-hidden="true" className="size-5" />
+        </button>
       </header>
 
       <form onSubmit={save} className="flex flex-col gap-3 p-3 pb-24 sm:gap-4 sm:p-5 sm:pb-24">

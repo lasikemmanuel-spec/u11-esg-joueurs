@@ -827,6 +827,7 @@ export function MatchResultEntry({
                     trainingAttendance={trainingAttendance}
                     trainingAttendanceError={trainingAttendanceError}
                     matchEntries={entries}
+                    onClose={() => setOpenCallupDate('')}
                   />
                 </div>
               )}

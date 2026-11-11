@@ -8,7 +8,7 @@ import { countCancelledCallupsForPlayer } from '@/lib/cancelled-match-callups'
 import type { Convocation } from '@/lib/convocations'
 import type { TeamMatchResults } from '@/lib/match-results'
 import type { PublicPlayer } from '@/lib/players'
-import { ireStatus, type PlayerStats } from '@/lib/stats'
+import { ireStatus, type PlayerStats } from '@/lib/stats-shared'
 import type { TrainingAttendanceSession } from '@/lib/training-attendance-shared'
 
 const POSITION_ORDER = ['gard', 'déf', 'def', 'lat', 'cent', 'mil', 'ail', 'att', 'av']

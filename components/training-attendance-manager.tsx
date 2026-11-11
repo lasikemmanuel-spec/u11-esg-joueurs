@@ -241,7 +241,6 @@ export function TrainingAttendanceManager({
                         </span>
                       ) : <span className="inline-flex rounded-full bg-amber-100 px-2 py-1 text-[9px] font-black text-amber-900 sm:text-[10px]">À noter</span>}
                     </div>
-                    <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Joueur ESG</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">

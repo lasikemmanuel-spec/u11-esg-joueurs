@@ -226,10 +226,17 @@ export function CallupScheduleEntry({
 
   const visiblePlayers = useMemo(() => {
     const normalizedQuery = query.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr-FR')
+    const teamPriority = (playerNumber: number) => {
+      const status = selections[playerNumber]
+      if (status === '✅ Convoqué E1' || status === '✅ Convoqué E1 + E2') return 0
+      if (status === '✅ Convoqué E2') return 1
+      return 2
+    }
     return [...players]
       .filter((player) => !normalizedQuery || `${player.firstName} ${player.lastName}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr-FR').includes(normalizedQuery))
-      .sort((a, b) => a.lastName.localeCompare(b.lastName, 'fr') || a.firstName.localeCompare(b.firstName, 'fr'))
-  }, [players, query])
+      .sort((a, b) => teamPriority(a.number) - teamPriority(b.number) ||
+        a.lastName.localeCompare(b.lastName, 'fr') || a.firstName.localeCompare(b.firstName, 'fr'))
+  }, [players, query, selections])
 
   const selectedCount = Object.values(selections).filter(Boolean).length
   const missingStatusCount = players.length - selectedCount

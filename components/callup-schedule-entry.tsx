@@ -551,14 +551,25 @@ export function CallupScheduleEntry({
                 {saveDisabledReason}
               </p>
             )}
-            <button
-              type="submit"
-              disabled={!savingEnabled || pending || players.length === 0 || dates.length === 0}
-              className="inline-flex min-h-10 w-auto max-w-full items-center justify-center gap-2 rounded-lg bg-[#172554] px-5 text-sm font-bold text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              <Save aria-hidden="true" className="size-4" />
-              {pending ? 'Enregistrement…' : 'Enregistrer'}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onClose}
+                aria-label="Fermer les convocations"
+                title="Fermer les convocations"
+                className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg border border-[#172554]/15 bg-white text-[#172554] shadow-lg transition hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+              >
+                <X aria-hidden="true" className="size-5" />
+              </button>
+              <button
+                type="submit"
+                disabled={!savingEnabled || pending || players.length === 0 || dates.length === 0}
+                className="inline-flex min-h-10 w-auto max-w-full items-center justify-center gap-2 rounded-lg bg-[#172554] px-5 text-sm font-bold text-white shadow-lg disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                <Save aria-hidden="true" className="size-4" />
+                {pending ? 'Enregistrement…' : 'Enregistrer'}
+              </button>
+            </div>
           </div>
         </div>
         <p className="text-xs text-muted-foreground">

@@ -144,21 +144,21 @@ export function TrainingAttendanceManager({
   const completion = players.length ? Math.round(counts.filled / players.length * 100) : 0
 
   return (
-    <section className="flex flex-col gap-5" aria-labelledby="training-attendance-title">
-      <header className="relative isolate overflow-hidden rounded-[2rem] border border-[#e0bd43]/60 bg-gradient-to-br from-[#101b40] via-[#1d397f] to-[#12224e] p-5 text-white shadow-xl sm:p-7 lg:p-8">
+    <section className="flex flex-col gap-3 sm:gap-5" aria-labelledby="training-attendance-title">
+      <header className="relative isolate overflow-hidden rounded-[2rem] border border-[#e0bd43]/60 bg-gradient-to-br from-[#101b40] via-[#1d397f] to-[#12224e] p-3 text-white shadow-xl sm:p-7 lg:p-8">
         <div aria-hidden="true" className="pointer-events-none absolute -top-20 -right-14 -z-10 size-64 rounded-full bg-sky-300/10 blur-3xl" />
-        <div className="flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
-          <div className="flex items-center gap-4 sm:gap-5">
-            <ClubCrest className="size-16 ring-4 ring-[#e0bd43] sm:size-20" />
+        <div className="flex flex-col gap-4 sm:gap-6 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex items-center gap-3 sm:gap-5">
+            <ClubCrest className="size-12 ring-4 ring-[#e0bd43] sm:size-20" />
             <div className="min-w-0">
               <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-amber-300 sm:text-xs">
                 <Sparkles aria-hidden="true" className="size-3.5" />ES Genech · U11
               </p>
-              <h2 id="training-attendance-title" className="mt-1 text-2xl font-black leading-tight sm:text-3xl lg:text-4xl">Feuille de présence</h2>
+              <h2 id="training-attendance-title" className="mt-1 text-xl font-black leading-tight sm:text-3xl lg:text-4xl">Feuille de présence</h2>
             </div>
           </div>
-          <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] xl:w-[min(100%,34rem)]">
-            <label className="grid gap-1.5 text-xs font-bold text-white/75">
+          <div className="grid gap-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:gap-3 xl:w-[min(100%,34rem)]">
+            <label className="grid gap-1 text-[11px] font-bold text-white/75 sm:gap-1.5 sm:text-xs">
               <span className="flex items-center gap-1.5"><CalendarDays aria-hidden="true" className="size-4 text-amber-300" />Date de la séance</span>
               <input
                 type="date"
@@ -166,26 +166,26 @@ export function TrainingAttendanceManager({
                 max={MATCH_SEASON_END}
                 value={date}
                 onChange={(event) => setDate(event.target.value)}
-                className="h-12 min-w-0 rounded-xl border border-white/20 bg-white/10 px-3 text-sm font-bold text-white outline-none focus-visible:ring-2 focus-visible:ring-amber-300 [color-scheme:dark]"
+                className="h-10 min-w-0 rounded-xl border border-white/20 bg-white/10 px-3 text-sm font-bold text-white outline-none focus-visible:ring-2 focus-visible:ring-amber-300 [color-scheme:dark] sm:h-12"
               />
             </label>
-            <div className="mt-auto flex flex-col gap-2">
-              <button type="button" onClick={setAllPresent} disabled={!players.length || loadError} aria-label="Marquer tous les joueurs présents" title="Remplace les statuts saisis par Présent pour toute l’équipe ; enregistre ensuite." className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-5 text-sm font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50">
-                <UsersRound aria-hidden="true" className="size-4 shrink-0" /><span>Marquer tous les joueurs présents</span>
+            <div className="mt-auto flex flex-col gap-1.5 sm:gap-2">
+              <button type="button" onClick={setAllPresent} disabled={!players.length || loadError} aria-label="Marquer tous les joueurs présents" title="Remplace les statuts saisis par Présent pour toute l’équipe ; enregistre ensuite." className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-3 text-xs font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-5 sm:text-sm">
+                <UsersRound aria-hidden="true" className="size-4 shrink-0" /><span className="whitespace-nowrap">Marquer tous les joueurs présents</span>
               </button>
-              <button type="button" onClick={resetAttendance} disabled={!players.length || loadError || counts.filled === 0} title="Efface les choix de cette saisie à l’écran ; le classeur n’est pas modifié." className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 text-xs font-bold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50">
+              <button type="button" onClick={resetAttendance} disabled={!players.length || loadError || counts.filled === 0} title="Efface les choix de cette saisie à l’écran ; le classeur n’est pas modifié." className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 text-[11px] font-bold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 sm:text-xs">
                 <RefreshCw aria-hidden="true" className="size-3.5" />Réinitialiser la feuille
               </button>
             </div>
           </div>
         </div>
 
-        <div className="mt-6 grid gap-4 rounded-2xl border border-white/10 bg-white/[0.07] p-4 sm:grid-cols-[1fr_auto] sm:items-center sm:p-5">
+        <div className="mt-3 grid gap-3 rounded-2xl border border-white/10 bg-white/[0.07] p-3 sm:mt-6 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-4 sm:p-5">
           <div>
             <div className="flex flex-wrap items-end justify-between gap-2">
               <div>
-                <p className="text-xs font-bold uppercase tracking-wider text-white/60">L’équipe est prête ?</p>
-                <p className="mt-1 text-2xl font-black tabular-nums sm:text-3xl">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-white/60 sm:text-xs">L’équipe est prête ?</p>
+                <p className="mt-1 text-xl font-black tabular-nums sm:text-3xl">
                   <span className="text-emerald-300">{counts.present}</span><span className="text-white/45"> / {players.length}</span>
                   <span className="ml-2 text-base font-bold text-white/80">présents</span>
                 </p>
@@ -194,7 +194,7 @@ export function TrainingAttendanceManager({
                 {counts.missing ? `Encore ${counts.missing} à renseigner` : players.length ? 'Groupe complet · prêt pour le terrain !' : 'Effectif indisponible'}
               </p>
             </div>
-            <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-black/25" role="progressbar" aria-label="Présences renseignées" aria-valuemin={0} aria-valuemax={players.length} aria-valuenow={counts.filled}>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-black/25 sm:mt-3 sm:h-2.5" role="progressbar" aria-label="Présences renseignées" aria-valuemin={0} aria-valuemax={players.length} aria-valuenow={counts.filled}>
               <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-lime-300 transition-[width] duration-500" style={{ width: `${completion}%` }} />
             </div>
           </div>

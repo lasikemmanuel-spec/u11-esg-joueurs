@@ -232,14 +232,22 @@ export function TrainingAttendanceManager({
                 <div className="mb-3 flex items-start gap-3">
                   <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#14234e] to-[#26478c] text-lg font-black text-amber-300 shadow-md ring-2 ring-amber-300/50">{player.number}</span>
                   <div className="min-w-0 flex-1">
-                    <p className="whitespace-normal break-words text-sm font-black leading-snug text-foreground sm:text-base">{player.firstName} {player.lastName}</p>
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <p className="whitespace-normal break-words text-sm font-black leading-snug text-foreground sm:text-base">{player.firstName} {player.lastName}</p>
+                      {statuses[player.number] ? (
+                        <span className={`inline-flex max-w-full items-center gap-1 whitespace-normal rounded-full border px-2 py-1 text-[9px] font-black leading-tight sm:hidden ${STATUS_PRESENTATION[statuses[player.number] as TrainingAttendanceStatus].idle}`}>
+                          {statuses[player.number] === 'P' && <Check aria-hidden="true" className="size-3 shrink-0" />}
+                          {STATUS_PRESENTATION[statuses[player.number] as TrainingAttendanceStatus].label}
+                        </span>
+                      ) : <span className="inline-flex rounded-full bg-amber-100 px-2 py-1 text-[9px] font-black text-amber-900 sm:hidden">À noter</span>}
+                    </div>
                     <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Joueur ESG</p>
                     {statuses[player.number] ? (
-                      <span className={`mt-1 inline-flex max-w-full items-center gap-1 whitespace-normal rounded-full px-2 py-1 text-[10px] font-black leading-tight ${statuses[player.number] === 'P' ? 'bg-emerald-100 text-emerald-800' : 'bg-muted text-muted-foreground'}`}>
+                      <span className={`mt-1 hidden max-w-full items-center gap-1 whitespace-normal rounded-full border px-2 py-1 text-[10px] font-black leading-tight sm:inline-flex ${STATUS_PRESENTATION[statuses[player.number] as TrainingAttendanceStatus].idle}`}>
                         {statuses[player.number] === 'P' && <Check aria-hidden="true" className="size-3 shrink-0" />}
                         {STATUS_PRESENTATION[statuses[player.number] as TrainingAttendanceStatus].label}
                       </span>
-                    ) : <span className="mt-1 inline-flex rounded-full bg-amber-100 px-2 py-1 text-[10px] font-black text-amber-900">À noter</span>}
+                    ) : <span className="mt-1 hidden rounded-full bg-amber-100 px-2 py-1 text-[10px] font-black text-amber-900 sm:inline-flex">À noter</span>}
                   </div>
                 </div>
                 <div className="grid grid-cols-3 gap-2">

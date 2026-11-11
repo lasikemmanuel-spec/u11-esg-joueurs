@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { CircleAlert, CircleCheck, CircleHelp, CircleMinus, Save, UsersRound } from 'lucide-react'
+import { CircleAlert, CircleCheck, CircleHelp, CircleX, Save, UsersRound } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import type { Convocation, MatchStatus } from '@/lib/convocations'
 import type { EditableCallupStatus } from '@/lib/convocation-management'
@@ -417,7 +417,7 @@ export function CallupScheduleEntry({
             const lastMatchIcon = uniqueTeamsPlayed.length > 0
               ? CircleCheck
               : participationRecorded
-                ? CircleMinus
+                ? CircleX
                 : CircleHelp
             const lastMatchLabel = uniqueTeamsPlayed.length > 0
               ? `Joué · ${uniqueTeamsPlayed.join(' + ')}`
@@ -427,7 +427,7 @@ export function CallupScheduleEntry({
             const lastMatchTone = uniqueTeamsPlayed.length > 0
               ? 'bg-emerald-100 text-emerald-800'
               : participationRecorded
-                ? 'bg-orange-100 text-orange-900'
+                ? 'bg-rose-100 text-rose-800'
                 : 'bg-slate-100 text-slate-700'
             const lastMatchDateLabel = lastCompletedMatchDate
               ? new Date(`${lastCompletedMatchDate}T12:00:00`).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })

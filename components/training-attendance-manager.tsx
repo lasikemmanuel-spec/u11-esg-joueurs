@@ -190,10 +190,6 @@ export function TrainingAttendanceManager({
               <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-lime-300 transition-[width] duration-500" style={{ width: `${completion}%` }} />
             </div>
           </div>
-          <div className="flex items-center justify-between gap-4 border-t border-white/10 pt-3 text-xs font-bold text-white/65 sm:flex-col sm:items-end sm:border-l sm:border-t-0 sm:pl-5 sm:pt-0">
-            <span>{counts.filled}/{players.length} renseignés</span>
-            <span>{sessions.length} séance{sessions.length === 1 ? '' : 's'} · historique</span>
-          </div>
         </div>
       <div className="mt-2 flex flex-col gap-1.5 sm:flex-row sm:justify-end sm:gap-2">
         <button type="button" onClick={setAllPresent} disabled={!players.length || loadError} aria-label="Marquer tous les joueurs présents" title="Remplace les statuts saisis par Présent pour toute l’équipe ; enregistre ensuite." className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-3 text-xs font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-5 sm:text-sm">

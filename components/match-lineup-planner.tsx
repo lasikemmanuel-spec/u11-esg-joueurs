@@ -1,7 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { Armchair, ChevronDown, X } from 'lucide-react'
+import { useRef } from 'react'
+import { Armchair, ChevronRight, X } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import type { Convocation } from '@/lib/convocations'
 import type { MatchSheetEntry } from '@/lib/match-results'
@@ -185,6 +186,7 @@ export function MatchLineupEntry({
     substitutes: number[],
   ) => Promise<void>
 }) {
+  const dialogRef = useRef<HTMLDialogElement>(null)
   const key = matchKey(match)
   const assignments = assignmentsFromLineup(lineups.find((item) => matchKey(item) === key))
   const calledPlayers = players.filter((player) => isCalledForTeam(
@@ -211,20 +213,55 @@ export function MatchLineupEntry({
 
   return (
     <>
-    <details id={`match-sheet-${dateKey(match.date)}-${match.team}-${match.slotColumn}`} className="group mt-2 rounded-md border border-border">
-      <summary className={`flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 border-l-4 px-3 py-2 text-sm font-semibold [&::-webkit-details-marker]:hidden ${match.team === 'E1' ? 'border-l-[#172554] bg-[#172554]/[0.04] text-[#172554]' : 'border-l-amber-400 bg-amber-400/[0.08] text-amber-950'}`}>
-        <span className="flex items-center gap-2">
-          <ClubCrest className="size-6 ring-1 ring-[#d4af37]/70" />
-          Feuille de match
+    <button
+      id={`match-sheet-${dateKey(match.date)}-${match.team}-${match.slotColumn}`}
+      type="button"
+      onClick={() => dialogRef.current?.showModal()}
+      aria-haspopup="dialog"
+      className={`mt-2 flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border-l-4 px-3 py-2 text-left text-sm font-semibold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${match.team === 'E1' ? 'border-l-[#172554] bg-[#172554]/[0.05] text-[#172554]' : 'border-l-amber-400 bg-amber-400/[0.1] text-amber-950'}`}
+    >
+      <span className="flex min-w-0 items-center gap-2">
+        <ClubCrest className="size-8 ring-1 ring-[#d4af37]/70" />
+        <span className="min-w-0">
+          <span className="block font-black">Feuille de match · Équipe {match.team === 'E1' ? '1' : '2'}</span>
+          <span className="block text-xs font-medium text-muted-foreground">{calledPlayers.length} convoqué{calledPlayers.length === 1 ? '' : 's'} · {match.opponent || 'adversaire'}</span>
         </span>
-        <span className="flex items-center gap-2">
-          <span className="text-xs font-normal text-muted-foreground">{calledPlayers.length} convoqué{calledPlayers.length === 1 ? '' : 's'}</span>
-          <ChevronDown aria-hidden="true" className="size-4 text-muted-foreground transition-transform group-open:rotate-180" />
-        </span>
-      </summary>
-      <div className="px-2 py-2">
+      </span>
+      <ChevronRight aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
+    </button>
+
+    <dialog
+      ref={dialogRef}
+      aria-labelledby={`match-sheet-title-${dateKey(match.date)}-${match.team}-${match.slotColumn}`}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) event.currentTarget.close()
+      }}
+      className="fixed inset-0 m-auto flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-3xl flex-col overflow-hidden rounded-3xl border-2 border-[#d4af37]/70 bg-card p-0 text-foreground shadow-2xl backdrop:bg-[#07102a]/70 backdrop:backdrop-blur-sm"
+    >
+      <header className="flex shrink-0 items-center justify-between gap-3 border-b-4 border-[#d4af37] bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-4 py-3 text-white sm:px-6 sm:py-4">
+        <div className="flex min-w-0 items-center gap-3">
+          <ClubCrest className="size-11 ring-2 ring-[#d4af37] sm:size-12" />
+          <div className="min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#f4ce45]">ES Genech · U11</p>
+            <h2 id={`match-sheet-title-${dateKey(match.date)}-${match.team}-${match.slotColumn}`} className="truncate text-base font-black sm:text-lg">
+              Feuille de match · Équipe {match.team === 'E1' ? '1' : '2'}
+            </h2>
+            <p className="truncate text-xs font-medium text-white/70">{match.opponent || 'Adversaire à préciser'}</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => dialogRef.current?.close()}
+          aria-label="Fermer la feuille de match"
+          className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        >
+          <X aria-hidden="true" className="size-5" />
+        </button>
+      </header>
+
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-5">
         {calledPlayers.length === 0 ? (
-          <p className="rounded-lg bg-muted px-3 py-3 text-center text-sm text-muted-foreground">
+          <p className="rounded-xl bg-muted px-3 py-5 text-center text-sm text-muted-foreground">
             Enregistre d’abord les convocations de cette équipe.
           </p>
         ) : (
@@ -295,7 +332,7 @@ export function MatchLineupEntry({
           <p role="status" className="mt-2 text-xs font-semibold text-emerald-700">Feuille enregistrée.</p>
         ) : null}
       </div>
-    </details>
+    </dialog>
     </>
   )
 }

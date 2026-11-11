@@ -467,11 +467,11 @@ export function DashboardTabs({
                   aria-pressed={statsSection === key}
                   onClick={() => setStatsSection(key)}
                   className={[
-                    'min-h-10 flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-colors',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+                    'min-h-10 flex-1 rounded-lg px-3 py-2 text-sm font-semibold transition-all duration-200',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37] focus-visible:ring-offset-2',
                     statsSection === key
-                      ? 'bg-primary text-primary-foreground shadow-sm'
-                      : 'text-muted-foreground hover:bg-card hover:text-primary',
+                      ? 'bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] text-amber-300 font-extrabold shadow-md border border-amber-400/40'
+                      : 'text-muted-foreground hover:bg-card hover:text-[#172554]',
                   ].join(' ')}
                 >
                   {label}
@@ -599,9 +599,9 @@ export function DashboardTabs({
                     setActiveTab(tab.key)
                     setMoreMenuOpen(false)
                   }}
-                  className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-bold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="flex min-h-12 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-bold text-foreground transition hover:bg-gradient-to-r hover:from-[#172554]/10 hover:via-[#1e3a8a]/10 hover:to-[#172554]/10 hover:text-[#172554] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
                 >
-                  <Icon aria-hidden="true" className="size-5 text-primary" />
+                  <Icon aria-hidden="true" className="size-5 text-[#d4af37]" />
                   {tab.label}
                 </button>
               )

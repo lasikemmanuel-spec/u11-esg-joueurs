@@ -531,7 +531,7 @@ export function EducatorRoster({
                 onClick={requestAddProfile}
                 aria-label="Ajouter un profil"
                 title="Ajouter un profil"
-                className="inline-flex size-9 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-bold text-primary-foreground shadow-sm transition hover:opacity-90 sm:w-auto sm:px-3"
+                className="inline-flex size-9 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] text-sm font-bold text-amber-300 shadow-sm border border-amber-400/30 transition hover:brightness-110 sm:w-auto sm:px-3"
               >
                 <Plus aria-hidden="true" className="size-4" />
                 <span className="hidden sm:inline">Ajouter</span>
@@ -571,9 +571,11 @@ export function EducatorRoster({
                   setDirectoryView(key)
                 }}
                 className={[
-                  'inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition-colors',
-                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                  isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-card hover:text-primary',
+                  'inline-flex min-h-10 items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition-all duration-200',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37] focus-visible:ring-offset-2',
+                  isActive
+                    ? 'bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] text-amber-300 font-extrabold shadow-md border border-amber-400/40'
+                    : 'text-muted-foreground hover:bg-card hover:text-[#172554]',
                 ].join(' ')}
               >
                 <Icon aria-hidden="true" className="size-4" />

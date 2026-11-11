@@ -624,6 +624,7 @@ export function CallupScheduleEntry({
           <PlayerCard
             stats={selectedPlayerStats}
             player={selectedPlayer}
+            trainingAttendance={trainingAttendance}
             convocation={convocations.find((convocation) => convocation.number === selectedPlayer.number)}
             matchesPlayed={matchesPlayed}
             cancelledMatchesForPlayer={countCancelledCallupsForPlayer(

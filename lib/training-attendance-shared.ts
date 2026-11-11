@@ -1,7 +1,7 @@
 export const TRAINING_ATTENDANCE_STATUSES = [
   { value: 'P', label: 'Présent', shortLabel: 'Présent' },
-  { value: 'AJ', label: 'Absence justifiée', shortLabel: 'Justifié' },
-  { value: 'AI', label: 'Absence injustifiée', shortLabel: 'Absent' },
+  { value: 'AJ', label: 'Absence justifiée', shortLabel: 'Absence justifiée' },
+  { value: 'AI', label: 'Absence injustifiée', shortLabel: 'Absence injustifiée' },
   { value: 'B', label: 'Blessé', shortLabel: 'Blessé' },
   { value: 'E', label: 'Exempt', shortLabel: 'Exempt' },
 ] as const

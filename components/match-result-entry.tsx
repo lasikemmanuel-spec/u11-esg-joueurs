@@ -823,6 +823,7 @@ export function MatchResultEntry({
                                   players={players}
                                   playerStats={playerStats}
                                   matchesPlayed={matchesPlayed}
+                                  trainingAttendance={trainingAttendance}
                                   convocations={convocations}
                                   lineups={matchLineups.lineups}
                                   pendingKeys={matchLineups.pendingKeys}

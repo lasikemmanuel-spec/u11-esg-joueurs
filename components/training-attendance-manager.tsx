@@ -27,8 +27,8 @@ import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
 
 const STATUS_PRESENTATION = {
   P: { icon: CircleCheck, label: 'Présent', active: 'border-emerald-400 bg-emerald-500 text-white', idle: 'border-emerald-200 bg-emerald-50/70 text-emerald-800 hover:bg-emerald-100' },
-  AJ: { icon: ShieldCheck, label: 'Justifié', active: 'border-amber-400 bg-amber-400 text-amber-950', idle: 'border-amber-200 bg-amber-50/70 text-amber-900 hover:bg-amber-100' },
-  AI: { icon: X, label: 'Absent', active: 'border-rose-400 bg-rose-500 text-white', idle: 'border-rose-200 bg-rose-50/70 text-rose-800 hover:bg-rose-100' },
+  AJ: { icon: ShieldCheck, label: 'Absence justifiée', active: 'border-amber-400 bg-amber-400 text-amber-950', idle: 'border-amber-200 bg-amber-50/70 text-amber-900 hover:bg-amber-100' },
+  AI: { icon: X, label: 'Absence injustifiée', active: 'border-rose-400 bg-rose-500 text-white', idle: 'border-rose-200 bg-rose-50/70 text-rose-800 hover:bg-rose-100' },
   B: { icon: HeartPulse, label: 'Blessé', active: 'border-sky-400 bg-sky-500 text-white', idle: 'border-sky-200 bg-sky-50/70 text-sky-800 hover:bg-sky-100' },
   E: { icon: CircleHelp, label: 'Exempt', active: 'border-violet-400 bg-violet-500 text-white', idle: 'border-violet-200 bg-violet-50/70 text-violet-800 hover:bg-violet-100' },
 } as const

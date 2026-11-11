@@ -540,6 +540,7 @@ export function DashboardTabs({
             convocations={convocations}
             matchesPlayed={matchesPlayed}
             matchResults={matchResults}
+            trainingAttendance={trainingAttendance}
           />
         )}
         {activeTab === 'training' && educatorAccess === 'authenticated' && educatorIdentity && (

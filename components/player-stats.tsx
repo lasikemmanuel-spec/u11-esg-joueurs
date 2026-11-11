@@ -1,11 +1,13 @@
 'use client'
 
+import { useState } from 'react'
 import { X } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import { PlayerOffensiveRankings } from '@/components/player-offensive-rankings'
 import { ireStatus, type IreStatus, type PlayerStats as Stats } from '@/lib/stats-shared'
 import type { Convocation, MatchStatus } from '@/lib/convocations'
 import type { PublicPlayer } from '@/lib/players'
+import type { TrainingAttendanceSession } from '@/lib/training-attendance-shared'
 
 const MATCH_STYLES: Record<MatchStatus, { label: string; className: string }> = {
   called: { label: 'Convoqué', className: 'bg-emerald-600 text-white' },
@@ -16,6 +18,14 @@ const MATCH_STYLES: Record<MatchStatus, { label: string; className: string }> = 
   notCalled: { label: 'Non convoqué', className: 'border border-lime-500 bg-lime-400 text-lime-950' },
   noLicense: { label: 'Pas de licence', className: 'bg-muted text-muted-foreground' },
   unknown: { label: '?', className: 'bg-muted text-muted-foreground' },
+}
+
+const TRAINING_STYLES: Record<string, { label: string; className: string }> = {
+  P: { label: 'Présent', className: 'bg-emerald-600 text-white' },
+  AJ: { label: 'Justifié', className: 'bg-amber-400 text-amber-950' },
+  AI: { label: 'Absent', className: 'bg-blue-950 text-white' },
+  B: { label: 'Blessé', className: 'bg-rose-600 text-white' },
+  E: { label: 'Exempt', className: 'bg-violet-600 text-white' },
 }
 
 function RateRow({
@@ -45,13 +55,62 @@ function RateRow({
   )
 }
 
+function matchDateOrder(value: string) {
+  const iso = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+  if (iso) return `${iso[1]}-${iso[2].padStart(2, '0')}-${iso[3].padStart(2, '0')}`
+  const dayFirst = value.match(/^(\d{1,2})[/. -](\d{1,2})[/. -](\d{4})$/)
+  if (dayFirst) return `${dayFirst[3]}-${dayFirst[2].padStart(2, '0')}-${dayFirst[1].padStart(2, '0')}`
+  return value
+}
+
+function TrainingHistory({ sessions, playerNumber }: { sessions: TrainingAttendanceSession[]; playerNumber: number }) {
+  const [showAll, setShowAll] = useState(false)
+  if (sessions.length === 0) return null
+  const orderedSessions = [...sessions].sort((a, b) => b.date.localeCompare(a.date))
+  const recordedCount = sessions.filter((session) => Boolean(session.playerStatuses[playerNumber]?.trim())).length
+  const presentCount = sessions.filter((session) => session.playerStatuses[playerNumber]?.trim() === 'P').length
+
+  return (
+    <section className="flex flex-col gap-2 border-t pt-3" aria-label="Historique des entraînements">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <h4 className="text-xs font-bold text-primary">Entraînements · {sessions.length} séances</h4>
+          <p className="text-[10px] text-muted-foreground">{presentCount} présence{presentCount === 1 ? '' : 's'} · {recordedCount}/{sessions.length} statuts renseignés</p>
+        </div>
+        {sessions.length > 5 && (
+          <button
+            type="button"
+            aria-expanded={showAll}
+            onClick={() => setShowAll((current) => !current)}
+            className="rounded-full border border-primary/20 bg-secondary/60 px-3 py-1 text-[11px] font-bold text-primary transition hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+          >
+            {showAll ? 'Réduire' : `Voir les ${sessions.length} séances`}
+          </button>
+        )}
+      </div>
+      <ol className="flex flex-wrap gap-1.5">
+        {orderedSessions.slice(0, showAll ? undefined : 5).map((session) => {
+          const status = session.playerStatuses[playerNumber]?.trim() ?? ''
+          const style = TRAINING_STYLES[status] ?? { label: 'Non saisi', className: 'border border-slate-300 bg-slate-100 text-slate-600' }
+          const [year, month, day] = session.date.split('-')
+          return (
+            <li key={session.date} title={`${day}/${month}/${year} : ${style.label}`} className={`flex min-w-16 flex-col items-center rounded-lg px-2 py-1 text-[10px] leading-tight ${style.className}`}>
+              <span className="font-mono">{day}/{month}</span>
+              <span className="font-bold">{style.label}</span>
+            </li>
+          )
+        })}
+      </ol>
+    </section>
+  )
+}
+
 function SaturdaySection({
   convocation,
-  matchesPlayed,
 }: {
   convocation: Convocation
-  matchesPlayed: number
 }) {
+  const [showAllMatches, setShowAllMatches] = useState(false)
   const availability = [
     { label: 'Absence le samedi', rate: convocation.absentRate, count: convocation.absentCount, barClass: 'bg-blue-950' },
     { label: 'Blessé', rate: convocation.injuredRate, count: convocation.injuredCount, barClass: 'bg-red-600' },
@@ -66,31 +125,46 @@ function SaturdaySection({
 
       {convocation.matches.length > 0 && (
         <div className="flex flex-col gap-2">
-          <p className="text-xs text-muted-foreground">Historique des matchs ({matchesPlayed})</p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs font-semibold text-muted-foreground">Historique de la saison · {convocation.matches.length} matchs</p>
+            {convocation.matches.length > 5 && (
+              <button
+                type="button"
+                aria-expanded={showAllMatches}
+                onClick={() => setShowAllMatches((current) => !current)}
+                className="rounded-full border border-primary/20 bg-secondary/60 px-3 py-1 text-[11px] font-bold text-primary transition hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+              >
+                {showAllMatches ? 'Réduire' : `Voir les ${convocation.matches.length} matchs`}
+              </button>
+            )}
+          </div>
           <ol className="flex flex-wrap gap-1.5">
-            {convocation.matches.map((m) => {
-              const style = MATCH_STYLES[m.status]
-              return (
-                <li
-                  key={m.date}
-                  title={`${m.date} : ${m.raw}`}
-                  className={`flex min-w-12 flex-col items-center rounded-md px-1.5 py-1 text-[11px] leading-tight ${style.className}`}
-                >
-                  <span className="font-mono">{m.date}</span>
-                  <span className="whitespace-nowrap font-semibold">
-                    {m.status === 'called'
-                      ? (m.team ?? 'Conv.')
-                      : m.status === 'calledAbsent'
-                        ? 'Conv. abs.'
-                        : m.status === 'notCalled'
-                          ? 'Non conv.'
-                          : m.status === 'noLicense'
-                            ? 'Sans lic.'
-                        : style.label.split(' ')[0]}
-                  </span>
-                  <span className="sr-only">{style.label}</span>
-                </li>
-              )
+            {[...convocation.matches]
+              .sort((a, b) => matchDateOrder(b.date).localeCompare(matchDateOrder(a.date)))
+              .slice(0, showAllMatches ? undefined : 5)
+              .map((m) => {
+                const style = MATCH_STYLES[m.status]
+                return (
+                  <li
+                    key={m.date}
+                    title={`${m.date} : ${m.raw}`}
+                    className={`flex min-w-12 flex-col items-center rounded-md px-1.5 py-1 text-[11px] leading-tight ${style.className}`}
+                  >
+                    <span className="font-mono">{m.date}</span>
+                    <span className="whitespace-nowrap font-semibold">
+                      {m.status === 'called'
+                        ? (m.team ?? 'Conv.')
+                        : m.status === 'calledAbsent'
+                          ? 'Conv. abs.'
+                          : m.status === 'notCalled'
+                            ? 'Non conv.'
+                            : m.status === 'noLicense'
+                              ? 'Sans lic.'
+                              : style.label.split(' ')[0]}
+                    </span>
+                    <span className="sr-only">{style.label}</span>
+                  </li>
+                )
             })}
           </ol>
           <ul className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-muted-foreground">
@@ -127,6 +201,7 @@ export function PlayerCard({
   stats,
   convocation,
   player,
+  trainingAttendance = [],
   matchesPlayed,
   cancelledMatchesForPlayer = 0,
   onClose,
@@ -134,6 +209,7 @@ export function PlayerCard({
   stats: Stats
   convocation?: Convocation
   player?: PublicPlayer
+  trainingAttendance?: TrainingAttendanceSession[]
   matchesPlayed: number
   cancelledMatchesForPlayer?: number
   onClose?: () => void
@@ -251,7 +327,9 @@ export function PlayerCard({
         ))}
       </dl>
 
-      {convocation && <SaturdaySection convocation={convocation} matchesPlayed={matchesPlayed} />}
+      {convocation && <SaturdaySection convocation={convocation} />}
+
+      {player && <TrainingHistory sessions={trainingAttendance} playerNumber={player.number} />}
 
       <dl className="player-match-stats grid grid-cols-2 gap-2">
         {tiles.map((t) => (

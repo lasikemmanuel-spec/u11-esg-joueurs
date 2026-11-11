@@ -12,6 +12,7 @@ import type { MatchSheetEntry } from '@/lib/match-results'
 import type { PublicPlayer } from '@/lib/players'
 import type { MatchLineup } from '@/lib/match-lineups'
 import type { PlayerStats } from '@/lib/stats'
+import type { TrainingAttendanceSession } from '@/lib/training-attendance-shared'
 
 type LineupRole = 'starter' | 'substitute'
 type LineupAssignments = Record<number, LineupRole>
@@ -177,6 +178,7 @@ export function MatchLineupEntry({
   players,
   playerStats,
   matchesPlayed,
+  trainingAttendance,
   convocations,
   lineups,
   pendingKeys,
@@ -188,6 +190,7 @@ export function MatchLineupEntry({
   players: PublicPlayer[]
   playerStats: PlayerStats[]
   matchesPlayed: number
+  trainingAttendance: TrainingAttendanceSession[]
   convocations: Convocation[]
   lineups: MatchLineup[]
   pendingKeys: Set<string>
@@ -426,6 +429,7 @@ export function MatchLineupEntry({
         <PlayerCard
           stats={selectedPlayerStats}
           player={selectedPlayer}
+          trainingAttendance={trainingAttendance}
           convocation={convocations.find((convocation) => convocation.number === selectedPlayer.number)}
           matchesPlayed={matchesPlayed}
           cancelledMatchesForPlayer={countCancelledCallupsForPlayer(selectedPlayer.number, convocations, matchEntries)}

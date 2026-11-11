@@ -9,6 +9,7 @@ import type { Convocation } from '@/lib/convocations'
 import type { TeamMatchResults } from '@/lib/match-results'
 import type { PublicPlayer } from '@/lib/players'
 import type { PlayerStats } from '@/lib/stats'
+import type { TrainingAttendanceSession } from '@/lib/training-attendance-shared'
 
 const POSITION_ORDER = ['gard', 'déf', 'def', 'lat', 'cent', 'mil', 'ail', 'att', 'av']
 
@@ -27,12 +28,14 @@ export function PositionBreakdown({
   convocations,
   matchesPlayed,
   matchResults,
+  trainingAttendance,
 }: {
   players: PublicPlayer[]
   stats: PlayerStats[]
   convocations: Convocation[]
   matchesPlayed: number
   matchResults: TeamMatchResults
+  trainingAttendance: TrainingAttendanceSession[]
 }) {
   const [selectedNumber, setSelectedNumber] = useState<number | null>(null)
   const [query, setQuery] = useState('')
@@ -245,6 +248,7 @@ export function PositionBreakdown({
             <PlayerCard
               stats={selectedStats}
               player={selectedPlayer}
+              trainingAttendance={trainingAttendance}
               onClose={() => playerDialogRef.current?.close()}
               convocation={convocations.find((convocation) => convocation.number === selectedPlayer.number)}
               matchesPlayed={matchesPlayed}

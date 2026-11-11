@@ -39,9 +39,9 @@ export function ThemeToggle() {
       onClick={toggleTheme}
       aria-label={`Activer le mode ${theme === 'dark' ? 'clair' : 'sombre'}`}
       title={`Activer le mode ${theme === 'dark' ? 'clair' : 'sombre'}`}
-      className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-primary-foreground/25 bg-primary-foreground/10 px-3 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-foreground/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+      className="inline-flex h-10 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-3 text-sm font-bold text-white transition-all hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
     >
-      {theme === 'dark' ? <Sun aria-hidden="true" className="size-4" /> : <Moon aria-hidden="true" className="size-4" />}
+      {theme === 'dark' ? <Sun aria-hidden="true" className="size-4 text-amber-300" /> : <Moon aria-hidden="true" className="size-4 text-amber-200" />}
       <span className="hidden sm:inline">{theme === 'dark' ? 'Mode clair' : 'Mode sombre'}</span>
     </button>
   )

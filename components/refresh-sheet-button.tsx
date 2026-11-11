@@ -48,9 +48,9 @@ export function RefreshSheetButton({ compact = false }: { compact?: boolean }) {
         onClick={refresh}
         disabled={isPending}
         aria-busy={isPending}
-        className="inline-flex min-h-10 w-fit items-center justify-center gap-1.5 rounded-xl border border-primary-foreground/25 bg-primary-foreground/10 px-2.5 py-2 text-xs font-semibold text-primary-foreground hover:bg-primary-foreground/15 disabled:cursor-wait disabled:opacity-70 sm:gap-2 sm:px-4 sm:text-sm"
+        className="inline-flex min-h-10 w-fit items-center justify-center gap-1.5 rounded-xl border border-white/25 bg-white/10 px-2.5 py-2 text-xs font-bold text-white transition-all hover:bg-white/20 disabled:cursor-wait disabled:opacity-70 sm:gap-2 sm:px-4 sm:text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
       >
-        <RefreshCw aria-hidden="true" className={`size-4 ${isPending ? 'animate-spin' : ''}`} />
+        <RefreshCw aria-hidden="true" className={`size-4 text-amber-300 ${isPending ? 'animate-spin' : ''}`} />
         <span className={compact ? 'sm:hidden' : 'hidden'}>{isPending ? 'Actualisation…' : 'Actualiser'}</span>
         <span className={compact ? 'hidden sm:inline' : ''}>
           {isPending ? 'Actualisation…' : 'Actualiser les données'}

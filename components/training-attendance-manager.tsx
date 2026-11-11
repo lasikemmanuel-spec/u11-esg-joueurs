@@ -145,19 +145,19 @@ export function TrainingAttendanceManager({
 
   return (
     <section className="flex flex-col gap-3 sm:gap-5" aria-labelledby="training-attendance-title">
-      <header className="relative isolate overflow-hidden rounded-[2rem] border border-[#e0bd43]/60 bg-gradient-to-br from-[#101b40] via-[#1d397f] to-[#12224e] p-3 text-white shadow-xl sm:p-7 lg:p-8">
+      <header className="relative isolate overflow-hidden rounded-[2rem] border border-[#e0bd43]/60 bg-gradient-to-br from-[#101b40] via-[#1d397f] to-[#12224e] p-3 text-white shadow-xl sm:p-7 lg:p-8 xl:p-6 2xl:p-8">
         <div aria-hidden="true" className="pointer-events-none absolute -top-20 -right-14 -z-10 size-64 rounded-full bg-sky-300/10 blur-3xl" />
-        <div className="flex flex-col gap-4 sm:gap-6 xl:flex-row xl:items-center xl:justify-between">
+        <div className="flex flex-col gap-4 sm:gap-6 xl:flex-row xl:items-center xl:justify-between xl:gap-8">
           <div className="flex items-center gap-3 sm:gap-5">
             <ClubCrest className="size-12 ring-4 ring-[#e0bd43] sm:size-20" />
             <div className="min-w-0">
               <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-amber-300 sm:text-xs">
                 <Sparkles aria-hidden="true" className="size-3.5" />ES Genech · U11
               </p>
-              <h2 id="training-attendance-title" className="mt-1 text-xl font-black leading-tight sm:text-3xl lg:text-4xl">Feuille de présence</h2>
+              <h2 id="training-attendance-title" className="mt-1 text-xl font-black leading-tight sm:text-3xl lg:text-4xl xl:whitespace-nowrap xl:text-3xl 2xl:text-4xl">Feuille de présence</h2>
             </div>
           </div>
-          <div className="grid gap-2 xl:w-[min(100%,34rem)]">
+          <div className="grid gap-2 xl:w-[min(100%,34rem)] xl:shrink-0 xl:rounded-2xl xl:border xl:border-white/15 xl:bg-white/[0.06] xl:p-4">
             <label className="grid gap-1 text-[11px] font-bold text-white/75 sm:gap-1.5 sm:text-xs">
               <span className="flex items-center gap-1.5"><CalendarDays aria-hidden="true" className="size-4 text-amber-300" />Date de la séance</span>
               <input
@@ -191,7 +191,7 @@ export function TrainingAttendanceManager({
             </div>
           </div>
         </div>
-      <div className="mt-2 flex flex-col gap-1.5 sm:flex-row sm:justify-end sm:gap-2">
+      <div className="mt-2 flex flex-col gap-1.5 sm:flex-row sm:justify-end sm:gap-2 xl:mt-4 xl:border-t xl:border-white/10 xl:pt-4">
         <button type="button" onClick={setAllPresent} disabled={!players.length || loadError} aria-label="Marquer tous les joueurs présents" title="Remplace les statuts saisis par Présent pour toute l’équipe ; enregistre ensuite." className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-3 text-xs font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-5 sm:text-sm">
           <UsersRound aria-hidden="true" className="size-4 shrink-0" /><span className="whitespace-nowrap">Marquer tous les joueurs présents</span>
         </button>

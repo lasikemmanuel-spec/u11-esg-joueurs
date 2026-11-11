@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import { X } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
+import { TrainingEvolutionChart } from '@/components/training-evolution-chart'
 import { PlayerOffensiveRankings } from '@/components/player-offensive-rankings'
 import { ireStatus, type IreStatus, type PlayerStats as Stats } from '@/lib/stats-shared'
 import type { Convocation, MatchStatus } from '@/lib/convocations'
@@ -71,10 +72,11 @@ function TrainingHistory({ sessions, playerNumber }: { sessions: TrainingAttenda
   const presentCount = sessions.filter((session) => session.playerStatuses[playerNumber]?.trim() === 'P').length
 
   return (
-    <section className="flex flex-col gap-2 border-t pt-3" aria-label="Historique des entraînements">
+    <section className="flex flex-col gap-3 border-t pt-3" aria-label="Historique des entraînements">
+      <TrainingEvolutionChart sessions={sessions} playerNumber={playerNumber} />
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h4 className="text-xs font-bold text-primary">Entraînements · {sessions.length} séances</h4>
+          <h4 className="text-xs font-bold text-primary">Détail des séances</h4>
           <p className="text-[10px] text-muted-foreground">{presentCount} présence{presentCount === 1 ? '' : 's'} · {recordedCount}/{sessions.length} statuts renseignés</p>
         </div>
         {sessions.length > 5 && (

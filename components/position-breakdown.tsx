@@ -8,7 +8,7 @@ import { countCancelledCallupsForPlayer } from '@/lib/cancelled-match-callups'
 import type { Convocation } from '@/lib/convocations'
 import type { TeamMatchResults } from '@/lib/match-results'
 import type { PublicPlayer } from '@/lib/players'
-import type { PlayerStats } from '@/lib/stats'
+import { ireStatus, type PlayerStats } from '@/lib/stats'
 import type { TrainingAttendanceSession } from '@/lib/training-attendance-shared'
 
 const POSITION_ORDER = ['gard', 'déf', 'def', 'lat', 'cent', 'mil', 'ail', 'att', 'av']
@@ -316,6 +316,9 @@ export function PositionBreakdown({
               const goals = playerStat?.goals ?? 0
               const assists = playerStat?.assists ?? 0
               const rate = playerStat?.trainingRate ?? null
+              const ireValue = playerStat?.ire ?? null
+              const ireFormatted = ireValue !== null ? ireValue.toFixed(2).replace('.', ',') : null
+              const ireStatusKey = playerStat ? ireStatus(playerStat) : 'none'
               const pos = getPositionMeta(player.position)
               const isSelected = player.number === selectedPlayer?.number
 
@@ -325,7 +328,7 @@ export function PositionBreakdown({
                   type="button"
                   aria-pressed={isSelected}
                   onClick={() => setSelectedNumber(player.number)}
-                  className={`group relative flex min-h-[148px] sm:min-h-[156px] flex-col justify-between overflow-hidden rounded-2xl border-2 p-3 text-left transition-all duration-200 active:scale-[0.98] ${
+                  className={`group relative flex min-h-[156px] sm:min-h-[164px] flex-col justify-between overflow-hidden rounded-2xl border-2 p-3 text-left transition-all duration-200 active:scale-[0.98] ${
                     isSelected
                       ? 'border-amber-400 bg-amber-400/15 shadow-lg'
                       : 'border-amber-400/30 bg-gradient-to-b from-[#172554]/10 via-card to-card hover:-translate-y-1 hover:border-amber-400 hover:shadow-xl dark:from-[#172554]/40 dark:via-card/90 dark:to-card'
@@ -374,7 +377,7 @@ export function PositionBreakdown({
                     )}
                     {rate !== null && (
                       <span
-                        title={`Taux d'assiduité aux entraînements : ${rate}%`}
+                        title={`Taux de présence aux entraînements : ${rate}%`}
                         className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 font-mono text-[10px] font-bold ${
                           rate >= 75
                             ? 'border-emerald-500/30 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
@@ -382,7 +385,23 @@ export function PositionBreakdown({
                         }`}
                       >
                         <span aria-hidden="true">🏋️</span>
-                        <span>Assid. {rate}%</span>
+                        <span>Entraînement {rate}%</span>
+                      </span>
+                    )}
+                    {ireFormatted !== null && (
+                      <span
+                        title={`Indice de Répartition Équitable (IRE) : ${ireFormatted}`}
+                        className={`inline-flex items-center rounded-full border px-1.5 py-0.5 font-mono text-[10px] font-black ${
+                          ireStatusKey === 'fair'
+                            ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
+                            : ireStatusKey === 'under'
+                              ? 'border-amber-500/40 bg-amber-500/15 text-amber-800 dark:text-amber-300'
+                              : ireStatusKey === 'over'
+                                ? 'border-red-500/40 bg-red-500/15 text-red-800 dark:text-red-300'
+                                : 'border-border/70 bg-muted/60 text-muted-foreground'
+                        }`}
+                      >
+                        IRE {ireFormatted}
                       </span>
                     )}
                     {player.transferStatus && (
@@ -440,6 +459,9 @@ export function PositionBreakdown({
                       const playerStat = stats.find((s) => s.number === player.number)
                       const goals = playerStat?.goals ?? 0
                       const rate = playerStat?.trainingRate ?? null
+                      const ireValue = playerStat?.ire ?? null
+                      const ireFormatted = ireValue !== null ? ireValue.toFixed(2).replace('.', ',') : null
+                      const ireStatusKey = playerStat ? ireStatus(playerStat) : 'none'
 
                       return (
                         <button
@@ -461,14 +483,30 @@ export function PositionBreakdown({
                             {goals > 0 && <span className="font-mono text-xs font-black text-amber-500">⚽ {goals}</span>}
                             {rate !== null && (
                               <span
-                                title={`Taux d'assiduité aux entraînements : ${rate}%`}
+                                title={`Taux de présence aux entraînements : ${rate}%`}
                                 className={`rounded-md px-1.5 py-0.5 font-mono text-[10px] font-bold ${
                                   rate >= 75
                                     ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
                                     : 'bg-amber-500/15 text-amber-800 dark:text-amber-300'
                                 }`}
                               >
-                                🏋️ {rate}%
+                                🏋️ Entraînement {rate}%
+                              </span>
+                            )}
+                            {ireFormatted !== null && (
+                              <span
+                                title={`Indice IRE : ${ireFormatted}`}
+                                className={`rounded-md px-1.5 py-0.5 font-mono text-[10px] font-black ${
+                                  ireStatusKey === 'fair'
+                                    ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
+                                    : ireStatusKey === 'under'
+                                      ? 'bg-amber-500/15 text-amber-800 dark:text-amber-300'
+                                      : ireStatusKey === 'over'
+                                        ? 'bg-red-500/15 text-red-800 dark:text-red-300'
+                                        : 'bg-muted/60 text-muted-foreground'
+                                }`}
+                              >
+                                IRE {ireFormatted}
                               </span>
                             )}
                             <ChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />

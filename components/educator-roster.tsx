@@ -359,9 +359,9 @@ export function EducatorRoster({
     return (
       <section aria-label="Connexion éducateur" className="flex flex-col items-center gap-4">
         {authError && <p role="alert" className="w-full max-w-md text-sm font-medium text-destructive">{authError}</p>}
-        <form onSubmit={handleLogin} className="mx-auto flex w-full max-w-md flex-col gap-4 rounded-2xl border border-accent/60 bg-white p-6 shadow-sm">
+        <form onSubmit={handleLogin} className="mx-auto flex w-full max-w-md flex-col gap-4 rounded-2xl border border-accent/60 bg-card p-6 shadow-sm">
           <div className="flex justify-center">
-            <div className="flex size-36 items-center justify-center rounded-full bg-white shadow-sm ring-1 ring-accent/40">
+            <div className="flex size-36 items-center justify-center rounded-full bg-card shadow-sm ring-1 ring-accent/40">
               <EducatorAvatar username={username} revision={photoRevision} size="size-32" />
             </div>
           </div>
@@ -387,7 +387,7 @@ export function EducatorRoster({
                 className="h-10 rounded-xl border border-accent/40 bg-background px-3 outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
             </label>
-            <button type="submit" disabled={requestPending} className="h-10 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground transition hover:opacity-90 disabled:opacity-60">
+            <button type="submit" disabled={requestPending} className="h-10 rounded-xl bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] text-amber-300 font-extrabold shadow-md border border-amber-400/40 px-4 text-sm transition hover:brightness-110 disabled:opacity-60">
               {requestPending ? 'Connexion…' : 'Connexion'}
             </button>
         </form>

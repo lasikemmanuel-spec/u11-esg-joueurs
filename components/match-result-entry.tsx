@@ -76,7 +76,7 @@ function getEditableResult(entry: MatchSheetEntry) {
 }
 
 const inputClass = 'h-10 min-w-0 w-full max-w-full rounded-lg border border-accent/50 bg-background px-3 text-sm font-normal outline-none focus-visible:ring-2 focus-visible:ring-ring'
-const dateTimeInputClass = 'h-9 min-w-0 w-full max-w-full appearance-none rounded-lg border border-[#d4af37]/60 bg-white px-2 text-sm font-bold text-[#172554] outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37] [color-scheme:light]'
+const dateTimeInputClass = 'h-9 min-w-0 w-full max-w-full appearance-none rounded-lg border border-[#d4af37]/60 bg-white dark:bg-slate-900 px-2 text-sm font-bold text-[#172554] dark:text-amber-200 outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37] [color-scheme:light] dark:[color-scheme:dark]'
 
 export function MatchResultEntry({
   entries,
@@ -496,15 +496,15 @@ export function MatchResultEntry({
               </div>
             </header>
             <div className="grid min-h-0 grid-cols-2 gap-3 overflow-y-auto p-4">
-              <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554]">
+              <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554] dark:text-amber-200">
                 Équipe
                 <select disabled={editingSlot !== null} value={draft.team} onChange={(event) => setDraft({ ...draft, team: event.target.value as Draft['team'] })} className={inputClass}>
                   <option value="E1">Équipe 1</option>
                   <option value="E2">Équipe 2</option>
                 </select>
               </label>
-              <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554]">
-                <span className="flex items-center gap-1"><CalendarDays aria-hidden="true" className="size-3.5 text-[#b58b00]" /> Date</span>
+              <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554] dark:text-amber-200">
+                <span className="flex items-center gap-1"><CalendarDays aria-hidden="true" className="size-3.5 text-[#b58b00] dark:text-amber-400" /> Date</span>
                 <input
                   type="date"
                   required
@@ -515,24 +515,24 @@ export function MatchResultEntry({
                   className={dateTimeInputClass}
                 />
               </label>
-              <label className="col-span-2 flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554]">
+              <label className="col-span-2 flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554] dark:text-amber-200">
                 Adversaire
                 <input required maxLength={80} value={draft.opponent} onChange={(event) => setDraft({ ...draft, opponent: event.target.value })} className={inputClass} />
               </label>
-              <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554]">
+              <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554] dark:text-amber-200">
                 Type de match
                 <select value={draft.competition} onChange={(event) => setDraft({ ...draft, competition: event.target.value })} className={inputClass}>
                   <option>Championnat</option><option>Amical</option><option>Tournoi</option><option>Plateau</option>
                 </select>
               </label>
-              <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554]">
+              <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554] dark:text-amber-200">
                 Lieu
                 <select value={draft.homeAway} onChange={(event) => setDraft({ ...draft, homeAway: event.target.value })} className={inputClass}>
                   <option value="Domicile">Domicile</option><option value="Extérieur">Extérieur</option><option value="Terrain neutre">Terrain neutre</option>
                 </select>
               </label>
-              <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554]">
-                <span className="flex items-center gap-1"><Clock3 aria-hidden="true" className="size-3.5 text-[#b58b00]" /> Heure</span>
+              <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554] dark:text-amber-200">
+                <span className="flex items-center gap-1"><Clock3 aria-hidden="true" className="size-3.5 text-[#b58b00] dark:text-amber-400" /> Heure</span>
                 <input
                   type="time"
                   value={draft.kickoffTime}
@@ -541,8 +541,8 @@ export function MatchResultEntry({
                 />
               </label>
               <fieldset className="col-span-2 flex min-w-0 items-end gap-3">
-                <legend className="mb-1 text-xs font-bold text-[#172554]">Score</legend>
-                <label className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-xl border border-[#172554]/15 bg-[#172554]/5 px-3 py-2 text-xs font-semibold text-[#172554]">
+                <legend className="mb-1 text-xs font-bold text-[#172554] dark:text-amber-200">Score</legend>
+                <label className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-xl border border-[#172554]/15 dark:border-amber-400/30 bg-[#172554]/5 dark:bg-[#172554]/40 px-3 py-2 text-xs font-semibold text-[#172554] dark:text-amber-200">
                   ESG
                   <input
                     type="text"
@@ -552,11 +552,11 @@ export function MatchResultEntry({
                     value={draft.goalsFor}
                     onChange={(event) => setDraft({ ...draft, goalsFor: event.target.value.replace(/\D/g, '').slice(0, 2) })}
                     aria-label="Buts ESG"
-                    className="h-10 w-14 rounded-lg border border-[#d4af37]/60 bg-white text-center font-mono text-lg font-black text-[#172554] outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+                    className="h-10 w-14 rounded-lg border border-[#d4af37]/60 bg-white dark:bg-slate-900 text-center font-mono text-lg font-black text-[#172554] dark:text-amber-200 outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
                   />
                 </label>
                 <span className="pb-3 font-black text-[#d4af37]">–</span>
-                <label className="flex min-w-0 flex-1 items-center justify-between gap-1.5 rounded-xl border border-amber-400/30 bg-amber-50 px-2.5 py-2 text-[11px] font-semibold text-[#172554] sm:gap-2 sm:px-3 sm:text-xs">
+                <label className="flex min-w-0 flex-1 items-center justify-between gap-1.5 rounded-xl border border-amber-400/30 bg-amber-50 dark:bg-amber-950/30 px-2.5 py-2 text-[11px] font-semibold text-[#172554] dark:text-amber-200 sm:gap-2 sm:px-3 sm:text-xs">
                   Adversaire
                   <input
                     type="text"
@@ -566,11 +566,11 @@ export function MatchResultEntry({
                     value={draft.goalsAgainst}
                     onChange={(event) => setDraft({ ...draft, goalsAgainst: event.target.value.replace(/\D/g, '').slice(0, 2) })}
                     aria-label="Buts adversaire"
-                    className="h-10 w-14 rounded-lg border border-[#d4af37]/60 bg-white text-center font-mono text-lg font-black text-[#172554] outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+                    className="h-10 w-14 rounded-lg border border-[#d4af37]/60 bg-white dark:bg-slate-900 text-center font-mono text-lg font-black text-[#172554] dark:text-amber-200 outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
                   />
                 </label>
               </fieldset>
-              <label className="col-span-2 flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554]">
+              <label className="col-span-2 flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554] dark:text-amber-200">
                 Résultat
                 <select value={draft.resultLabel} onChange={(event) => setDraft({ ...draft, resultLabel: event.target.value })} className={inputClass}>
                   <option value="">À jouer / aucun résultat</option>
@@ -582,12 +582,12 @@ export function MatchResultEntry({
                 <p className="text-[11px] text-muted-foreground">Pour planifier : laisse le score et le résultat vides.</p>
               </div>
             </div>
-            <footer className="flex shrink-0 gap-2 border-t border-[#172554]/10 bg-background/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+            <footer className="flex shrink-0 gap-2 border-t border-[#172554]/10 dark:border-amber-400/20 bg-background/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
               <button
                 type="button"
                 disabled={pending}
                 onClick={() => { setOpen(false); setEditingSlot(null); setFormMinimized(false) }}
-                className="min-h-11 flex-1 rounded-xl border border-[#172554]/15 px-4 text-sm font-bold text-[#172554] disabled:opacity-50"
+                className="min-h-11 flex-1 rounded-xl border border-[#172554]/15 dark:border-amber-400/30 px-4 text-sm font-bold text-[#172554] dark:text-amber-200 disabled:opacity-50"
               >
                 Annuler
               </button>
@@ -845,7 +845,7 @@ export function MatchResultEntry({
                                   <span>{entry.homeAway || 'Lieu ?'}</span>
                                 </span>
                                 {entry.kickoffTime && (
-                                  <span className="inline-flex items-center gap-1 rounded-full border border-[#d4af37]/50 bg-amber-50 px-2 py-px text-[10px] font-black text-[#172554]">
+                                  <span className="inline-flex items-center gap-1 rounded-full border border-[#d4af37]/50 bg-amber-50 dark:bg-amber-950/40 px-2 py-px text-[10px] font-black text-[#172554] dark:text-amber-300">
                                     <Clock3 aria-hidden="true" className="size-3" />
                                     {entry.kickoffTime}
                                   </span>

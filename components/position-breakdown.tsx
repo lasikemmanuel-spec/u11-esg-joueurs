@@ -350,13 +350,13 @@ export function PositionBreakdown({
                     </span>
                   </div>
 
-                  {/* Corps : Nom & Prénom du joueur (jamais coupé, 2 lignes si besoin) */}
+                  {/* Corps : Prénom en grand + Nom de famille en sous-titre */}
                   <div className="min-w-0 py-1.5 flex-1 flex flex-col justify-center">
-                    <h4 className="line-clamp-2 leading-tight text-xs sm:text-sm font-black uppercase tracking-wide text-foreground break-words group-hover:text-[#172554] dark:group-hover:text-amber-300">
-                      {player.lastName}
-                    </h4>
-                    <p className="truncate text-[11px] sm:text-xs font-semibold text-muted-foreground pt-0.5">
+                    <h4 className="line-clamp-1 leading-tight text-sm sm:text-base font-black text-foreground break-words group-hover:text-[#172554] dark:group-hover:text-amber-300">
                       {player.firstName}
+                    </h4>
+                    <p className="line-clamp-2 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground break-words pt-0.5">
+                      {player.lastName}
                     </p>
                   </div>
 
@@ -374,13 +374,15 @@ export function PositionBreakdown({
                     )}
                     {rate !== null && (
                       <span
-                        className={`inline-flex items-center rounded-full px-1.5 py-0.5 font-mono font-bold ${
+                        title={`Taux d'assiduité aux entraînements : ${rate}%`}
+                        className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 font-mono text-[10px] font-bold ${
                           rate >= 75
-                            ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
-                            : 'bg-amber-500/15 text-amber-800 dark:text-amber-300'
+                            ? 'border-emerald-500/30 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
+                            : 'border-amber-500/30 bg-amber-500/15 text-amber-800 dark:text-amber-300'
                         }`}
                       >
-                        {rate}%
+                        <span aria-hidden="true">🏋️</span>
+                        <span>Assid. {rate}%</span>
                       </span>
                     )}
                     {player.transferStatus && (
@@ -437,6 +439,7 @@ export function PositionBreakdown({
                     {list.map((player) => {
                       const playerStat = stats.find((s) => s.number === player.number)
                       const goals = playerStat?.goals ?? 0
+                      const rate = playerStat?.trainingRate ?? null
 
                       return (
                         <button
@@ -450,12 +453,24 @@ export function PositionBreakdown({
                               {player.number}
                             </span>
                             <div className="min-w-0">
-                              <p className="truncate text-xs font-black uppercase text-foreground">{player.lastName}</p>
-                              <p className="truncate text-[11px] font-medium text-muted-foreground">{player.firstName}</p>
+                              <p className="truncate text-xs sm:text-sm font-black text-foreground">{player.firstName}</p>
+                              <p className="truncate text-[10px] sm:text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{player.lastName}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-1.5 shrink-0">
                             {goals > 0 && <span className="font-mono text-xs font-black text-amber-500">⚽ {goals}</span>}
+                            {rate !== null && (
+                              <span
+                                title={`Taux d'assiduité aux entraînements : ${rate}%`}
+                                className={`rounded-md px-1.5 py-0.5 font-mono text-[10px] font-bold ${
+                                  rate >= 75
+                                    ? 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
+                                    : 'bg-amber-500/15 text-amber-800 dark:text-amber-300'
+                                }`}
+                              >
+                                🏋️ {rate}%
+                              </span>
+                            )}
                             <ChevronRight aria-hidden="true" className="size-4 text-muted-foreground" />
                           </div>
                         </button>

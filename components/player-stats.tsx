@@ -325,9 +325,20 @@ export function PlayerCard({
               </span>
             )}
           </div>
-          <h3 className="break-words text-lg font-black uppercase tracking-wide text-foreground sm:text-xl">
-            {playerName}
-          </h3>
+          {player ? (
+            <div className="min-w-0">
+              <h3 className="break-words text-xl font-black text-foreground sm:text-2xl leading-tight">
+                {player.firstName}
+              </h3>
+              <p className="break-words text-xs font-bold uppercase tracking-wider text-muted-foreground sm:text-sm">
+                {player.lastName}
+              </p>
+            </div>
+          ) : (
+            <h3 className="break-words text-lg font-black uppercase tracking-wide text-foreground sm:text-xl">
+              {playerName}
+            </h3>
+          )}
         </div>
       </div>
 

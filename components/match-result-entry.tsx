@@ -128,7 +128,11 @@ export function MatchResultEntry({
     if (!date) return
     setMonth(date.slice(0, 7))
     setExpandedDayDate(date)
-    setExpandedMatchKeys((current) => new Set(current).add(`${focusMatch.team}-${focusMatch.slotColumn}`))
+    setExpandedMatchKeys((current) => {
+      const next = new Set(current)
+      next.delete(`${focusMatch.team}-${focusMatch.slotColumn}`)
+      return next
+    })
   }, [focusMatch])
 
   const refreshStatus = useCallback(() => {
@@ -189,18 +193,16 @@ export function MatchResultEntry({
       !date ||
       month !== date.slice(0, 7) ||
       expandedDayDate !== date ||
-      !expandedMatchKeys.has(matchKey) ||
       !dayEntries.some((day) => day.date === date)
     ) return
 
-    const matchSheetId = `match-sheet-${date}-${focusMatch.team}-${focusMatch.slotColumn}`
     const matchCardId = `match-card-${date}-${focusMatch.team}-${focusMatch.slotColumn}`
     const frame = window.requestAnimationFrame(() => {
-      const target = document.getElementById(matchSheetId) ?? document.getElementById(matchCardId)
+      const target = document.getElementById(matchCardId)
       target?.scrollIntoView({ behavior: 'smooth', block: 'center' })
     })
     return () => window.cancelAnimationFrame(frame)
-  }, [dayEntries, expandedDayDate, expandedMatchKeys, focusMatch, month])
+  }, [dayEntries, expandedDayDate, focusMatch, month])
   const completedConvocationDates = useMemo(() => new Set(
     convocationDates
       .map(dateInputValue)

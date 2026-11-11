@@ -187,6 +187,7 @@ export function MatchLineupEntry({
   ) => Promise<void>
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
   const key = matchKey(match)
   const assignments = assignmentsFromLineup(lineups.find((item) => matchKey(item) === key))
   const calledPlayers = players.filter((player) => isCalledForTeam(
@@ -197,6 +198,13 @@ export function MatchLineupEntry({
   const starters = calledPlayers.filter((player) => assignments[player.number] === 'starter')
   const substitutes = calledPlayers.filter((player) => assignments[player.number] === 'substitute')
   const pending = pendingKeys.has(key)
+
+  useEffect(() => {
+    const dialog = dialogRef.current
+    if (!dialog) return
+    if (dialogOpen && !dialog.open) dialog.showModal()
+    if (!dialogOpen && dialog.open) dialog.close()
+  }, [dialogOpen])
 
   const updateRole = (playerNumber: number, role: LineupRole | null) => {
     const nextAssignments = { ...assignments }
@@ -216,7 +224,7 @@ export function MatchLineupEntry({
     <button
       id={`match-sheet-${dateKey(match.date)}-${match.team}-${match.slotColumn}`}
       type="button"
-      onClick={() => dialogRef.current?.showModal()}
+      onClick={() => setDialogOpen(true)}
       aria-haspopup="dialog"
       className={`mt-2 flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border-l-4 px-3 py-2 text-left text-sm font-semibold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${match.team === 'E1' ? 'border-l-[#172554] bg-[#172554]/[0.05] text-[#172554]' : 'border-l-amber-400 bg-amber-400/[0.1] text-amber-950'}`}
     >
@@ -233,10 +241,15 @@ export function MatchLineupEntry({
     <dialog
       ref={dialogRef}
       aria-labelledby={`match-sheet-title-${dateKey(match.date)}-${match.team}-${match.slotColumn}`}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) event.currentTarget.close()
+      onClose={() => setDialogOpen(false)}
+      onCancel={(event) => {
+        event.preventDefault()
+        setDialogOpen(false)
       }}
-      className="fixed inset-0 m-auto flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-3xl flex-col overflow-hidden rounded-3xl border-2 border-[#d4af37]/70 bg-card p-0 text-foreground shadow-2xl backdrop:bg-[#07102a]/70 backdrop:backdrop-blur-sm"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) setDialogOpen(false)
+      }}
+      className="fixed inset-0 m-auto flex max-h-[calc(100dvh-1rem)] w-[calc(100vw-1rem)] max-w-3xl flex-col overflow-hidden rounded-3xl border-2 border-[#d4af37]/70 bg-[#eef2ff] p-0 text-[#172554] shadow-2xl backdrop:bg-[#07102a]/70 backdrop:backdrop-blur-sm dark:bg-[#111b3b] dark:text-white"
     >
       <header className="flex shrink-0 items-center justify-between gap-3 border-b-4 border-[#d4af37] bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-4 py-3 text-white sm:px-6 sm:py-4">
         <div className="flex min-w-0 items-center gap-3">
@@ -251,7 +264,7 @@ export function MatchLineupEntry({
         </div>
         <button
           type="button"
-          onClick={() => dialogRef.current?.close()}
+          onClick={() => setDialogOpen(false)}
           aria-label="Fermer la feuille de match"
           className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 transition hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
         >

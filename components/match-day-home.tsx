@@ -228,11 +228,13 @@ export function MatchDayHome({
   convocations,
   convocationDates,
   onSelectMatch,
+  onOpenCallups,
 }: {
   entries: MatchSheetEntry[]
   convocations: Convocation[]
   convocationDates: string[]
   onSelectMatch: (entry: MatchSheetEntry) => void
+  onOpenCallups: (date: string) => void
 }) {
   const today = localToday()
   const plannedDate = getNextPlannedMatchDate(entries, today)
@@ -334,10 +336,14 @@ export function MatchDayHome({
               </div>
               {hasCallups && (
                 <div className="mt-3">
-                  <span className="inline-flex min-h-9 items-center gap-2 rounded-full bg-[#d4af37] px-3 text-xs font-black text-[#172554] shadow-sm">
+                  <button
+                    type="button"
+                    onClick={() => onOpenCallups(plannedDate)}
+                    className="inline-flex min-h-9 items-center gap-2 rounded-full bg-[#d4af37] px-3 text-xs font-black text-[#172554] shadow-sm transition hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  >
                     <Check aria-hidden="true" className="size-4" />
                     {`${calledCount} joueur${calledCount === 1 ? '' : 's'} convoqué${calledCount === 1 ? '' : 's'}`}
-                  </span>
+                  </button>
                 </div>
               )}
             </>

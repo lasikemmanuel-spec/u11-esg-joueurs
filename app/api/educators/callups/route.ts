@@ -12,6 +12,7 @@ export const runtime = 'nodejs'
 
 const statuses = [
   '✅ Convoqué E1',
+  '✅ Convoqué E1 + E2',
   '❌ Non convoqué',
   '⚠️ Convoqué absent',
   '🗓️ Absent',
@@ -117,10 +118,19 @@ export async function POST(request: Request) {
       return jsonResponse({ error: 'La liste des joueurs a changé. Actualise la page avant d’enregistrer.' }, 409)
     }
 
+    const matches = await getMatchResults()
+    if (selections.some(({ status }) => status === '✅ Convoqué E1 + E2')) {
+      const teamsOnDate = new Set(matches.entries
+        .filter((entry) => dateKey(entry.date) === date && entry.resultLabel !== 'Annulé')
+        .map((entry) => entry.team))
+      if (!teamsOnDate.has('E1') || !teamsOnDate.has('E2')) {
+        return jsonResponse({ error: 'La double convocation est possible uniquement si les équipes 1 et 2 jouent ce jour-là.' }, 400)
+      }
+    }
+
     const saved = await writeCallupSchedule(date, selections)
     revalidateTag('google-sheet', { expire: 0 })
     try {
-      const matches = await getMatchResults()
       await syncMatchLineupsWithCallups(date, matches.entries, selections)
     } catch (syncError) {
       console.error('Erreur lors de la synchronisation des feuilles de match avec les convocations:', syncError)

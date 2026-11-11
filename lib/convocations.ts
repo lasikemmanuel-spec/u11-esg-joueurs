@@ -47,7 +47,14 @@ const toNumber = (value: string | undefined) => {
 
 function parseStatus(raw: string): Pick<MatchEntry, 'status' | 'team'> {
   const text = raw.toLowerCase()
-  const team = raw.match(/\bE(\d)\b/)?.[0] ?? null
+  const teams = new Set(raw.match(/\bE[12]\b/g) ?? [])
+  const team = teams.has('E1') && teams.has('E2')
+    ? 'E1+E2'
+    : teams.has('E1')
+      ? 'E1'
+      : teams.has('E2')
+        ? 'E2'
+        : null
 
   if (text.includes('bless')) return { status: 'injured', team: null }
   if (text.includes('licence')) return { status: 'noLicense', team: null }

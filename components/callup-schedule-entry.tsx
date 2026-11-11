@@ -13,6 +13,7 @@ import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
 
 const STATUS_OPTIONS: Array<{ value: EditableCallupStatus; label: string }> = [
   { value: '✅ Convoqué E1', label: '✅ Convoqué E1' },
+  { value: '✅ Convoqué E1 + E2', label: '✅ Convoqué E1 + E2' },
   { value: '❌ Non convoqué', label: '❌ Non convoqué' },
   { value: '⚠️ Convoqué absent', label: '⚠️ Convoqué absent' },
   { value: '🗓️ Absent', label: '🗓️ Absent' },
@@ -37,6 +38,7 @@ function dateKey(value: string) {
 }
 
 function existingSelection(status: MatchStatus, team: string | null): SelectionValue {
+  if ((status === 'called' || status === 'present') && team === 'E1+E2') return '✅ Convoqué E1 + E2'
   if ((status === 'called' || status === 'present') && team === 'E1') return '✅ Convoqué E1'
   if ((status === 'called' || status === 'present') && team === 'E2') return '✅ Convoqué E2'
   if (status === 'calledAbsent') return '⚠️ Convoqué absent'
@@ -215,8 +217,8 @@ export function CallupScheduleEntry({
 
   const selectedCount = Object.values(selections).filter(Boolean).length
   const missingStatusCount = players.length - selectedCount
-  const teamOneCount = Object.values(selections).filter((value) => value === '✅ Convoqué E1').length
-  const teamTwoCount = Object.values(selections).filter((value) => value === '✅ Convoqué E2').length
+  const teamOneCount = Object.values(selections).filter((value) => value === '✅ Convoqué E1' || value === '✅ Convoqué E1 + E2').length
+  const teamTwoCount = Object.values(selections).filter((value) => value === '✅ Convoqué E2' || value === '✅ Convoqué E1 + E2').length
   const existingDate = savedDates.has(date)
   const saveDisabledReason = !savingStatusChecked
     ? 'Vérification de la disponibilité de la saisie…'

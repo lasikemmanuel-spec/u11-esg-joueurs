@@ -93,8 +93,8 @@ export function MatchCallupBreakdown({
 
       const current = byDate.get(match.date) ?? { equipe1: 0, equipe2: 0, presents: 0 }
 
-      if (match.team === 'E1') current.equipe1 += 1
-      if (match.team === 'E2') current.equipe2 += 1
+      if (match.team === 'E1' || match.team === 'E1+E2') current.equipe1 += 1
+      if (match.team === 'E2' || match.team === 'E1+E2') current.equipe2 += 1
       if (PRESENT_STATUSES.has(match.status)) current.presents += 1
 
       byDate.set(match.date, current)

@@ -8,6 +8,7 @@ const MATCH_COLUMN_COUNT = 30
 
 export type EditableCallupStatus =
   | '✅ Convoqué E1'
+  | '✅ Convoqué E1 + E2'
   | '❌ Non convoqué'
   | '⚠️ Convoqué absent'
   | '🗓️ Absent'

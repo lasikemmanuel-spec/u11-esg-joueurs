@@ -52,7 +52,7 @@ export function countCancelledCallupsForPlayer(
     )
     const wasCalled = callup.matches.some((match) =>
       dateKey(match.date) === entryDate &&
-      (match.team === entry.team || (!match.team && cancelledTeamsOnDate.size === 1)) &&
+      (match.team === entry.team || match.team === 'E1+E2' || (!match.team && cancelledTeamsOnDate.size === 1)) &&
       calledStatuses.has(match.status),
     )
     if (wasCalled) cancelledMatches.add(key)

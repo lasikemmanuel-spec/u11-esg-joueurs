@@ -83,7 +83,7 @@ function isCalledForTeam(convocation: Convocation | undefined, date: string, tea
   return Boolean(
     callup &&
     (callup.status === 'called' || callup.status === 'present') &&
-    callup.team === team,
+    (callup.team === team || callup.team === 'E1+E2'),
   )
 }
 

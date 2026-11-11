@@ -148,7 +148,8 @@ export async function syncMatchLineupsWithCallups(
         throw new Error(`Le joueur n°${selection.number} est introuvable dans la feuille de match ${match.team}.`)
       }
       const currentRole = normalize(rows[rowByPlayer.get(selection.number)!][match.slotColumn] ?? '')
-      const isCalledForTeam = selection.status === `✅ Convoqué ${match.team}`
+      const isCalledForTeam = selection.status === `✅ Convoqué ${match.team}` ||
+        selection.status === '✅ Convoqué E1 + E2'
       updates.set(
         selection.number,
         !isCalledForTeam

@@ -123,7 +123,7 @@ export async function POST(request: Request) {
         const callup = player.matches.find((item) => dateKey(item.date) === date)
         return callup &&
           (callup.status === 'called' || callup.status === 'present') &&
-          callup.team === team
+          (callup.team === team || callup.team === 'E1+E2')
           ? [player.number]
           : []
       }),

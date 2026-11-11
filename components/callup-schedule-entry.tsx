@@ -424,11 +424,15 @@ export function CallupScheduleEntry({
               : participationRecorded
                 ? 'Pas joué'
                 : 'Stats à saisir'
-            const lastMatchTone = uniqueTeamsPlayed.length > 0
-              ? 'bg-emerald-100 text-emerald-800'
-              : participationRecorded
-                ? 'bg-rose-100 text-rose-800'
-                : 'bg-slate-100 text-slate-700'
+            const lastMatchTone = uniqueTeamsPlayed.length > 1
+              ? 'bg-gradient-to-r from-sky-100 to-amber-100 text-[#172554] ring-1 ring-amber-300'
+              : uniqueTeamsPlayed[0] === 'E1'
+                ? 'bg-sky-100 text-[#172554] ring-1 ring-sky-300'
+                : uniqueTeamsPlayed[0] === 'E2'
+                  ? 'bg-amber-100 text-amber-950 ring-1 ring-amber-300'
+                  : participationRecorded
+                    ? 'bg-rose-100 text-rose-800'
+                    : 'bg-slate-100 text-slate-700'
             const lastMatchDateLabel = lastCompletedMatchDate
               ? new Date(`${lastCompletedMatchDate}T12:00:00`).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
               : ''

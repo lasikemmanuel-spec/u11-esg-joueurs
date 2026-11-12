@@ -169,7 +169,7 @@ export async function GET(request: Request) {
   if (params.get('active') === '1') {
     try {
       const results = await getMatchResults()
-      const sessions = await getSavedLiveMatches({ cacheForSeconds: 5 })
+      const sessions = await getSavedLiveMatches({ cacheForSeconds: 30 })
       const today = new Date().toISOString().slice(0, 10)
       const matches = sessions.flatMap((session) => {
         if (!isLiveSession(session)) throw new Error('Les données sauvegardées d’un match en direct sont invalides.')
@@ -186,7 +186,12 @@ export async function GET(request: Request) {
       return jsonResponse({ matches })
     } catch (error) {
       console.error('Erreur de lecture des matchs en direct en cours:', error)
-      return jsonResponse({ error: 'Impossible de charger les matchs en direct en cours.' }, 500)
+      const rateLimited = error instanceof Error && error.message.includes('(429)')
+      return jsonResponse({
+        error: rateLimited
+          ? 'Google Sheets limite temporairement les lectures. Réessaie dans quelques instants.'
+          : 'Impossible de charger les matchs en direct en cours.',
+      }, rateLimited ? 429 : 500)
     }
   }
 

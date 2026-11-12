@@ -107,7 +107,9 @@ async function getTeamResults(tab: string, team: 'E1' | 'E2'): Promise<{
   matchTypes: MatchType[]
   entries: MatchSheetEntry[]
 }> {
-  const { rows } = await getAuthenticatedSheetRows(tab, { cacheForSeconds: 5 })
+  // These protected tabs are polled by the live-match dashboard; a short shared
+  // cache avoids a Google Sheets read for every connected educator.
+  const { rows } = await getAuthenticatedSheetRows(tab, { cacheForSeconds: 30 })
   const dateRowIndex = rows.findIndex((row) =>
     row.some((value, column) => column >= 2 && isMatchDate(value.trim())),
   )

@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import {
-  Check,
   Cloud,
   CloudFog,
   CloudLightning,
@@ -14,7 +13,6 @@ import {
   Trophy,
 } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
-import type { Convocation } from '@/lib/convocations'
 import type { MatchSheetEntry } from '@/lib/match-results'
 import { getLatestPlayedMatches, getNextPlannedMatchDate, normalizeMatchDate } from '@/lib/match-day-display'
 
@@ -214,27 +212,12 @@ function MatchWeather({
   )
 }
 
-function calledPlayerCount(convocations: Convocation[], date: string) {
-  return convocations.filter((player) =>
-    player.matches.some((match) =>
-      normalizeMatchDate(match.date) === date &&
-      (match.status === 'called' || match.status === 'calledAbsent' || match.status === 'present'),
-    ),
-  ).length
-}
-
 export function MatchDayHome({
   entries,
-  convocations,
-  convocationDates,
   onSelectMatch,
-  onOpenCallups,
 }: {
   entries: MatchSheetEntry[]
-  convocations: Convocation[]
-  convocationDates: string[]
   onSelectMatch: (entry: MatchSheetEntry) => void
-  onOpenCallups: (date: string) => void
 }) {
   const today = localToday()
   const plannedDate = getNextPlannedMatchDate(entries, today)
@@ -258,11 +241,6 @@ export function MatchDayHome({
       .at(-1) ?? null,
     [entries, today],
   )
-  const calledCount = plannedDate ? calledPlayerCount(convocations, plannedDate) : 0
-  const hasCallups = plannedDate !== null && convocationDates.some(
-    (date) => normalizeMatchDate(date) === plannedDate,
-  )
-
   return (
     <section
       aria-labelledby="match-day-home-title"
@@ -334,18 +312,6 @@ export function MatchDayHome({
                   </button>
                 ))}
               </div>
-              {hasCallups && (
-                <div className="mt-3">
-                  <button
-                    type="button"
-                    onClick={() => onOpenCallups(plannedDate)}
-                    className="inline-flex min-h-9 items-center gap-2 rounded-full bg-[#d4af37] px-3 text-xs font-black text-[#172554] shadow-sm transition hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                  >
-                    <Check aria-hidden="true" className="size-4" />
-                    {`${calledCount} joueur${calledCount === 1 ? '' : 's'} convoqué${calledCount === 1 ? '' : 's'}`}
-                  </button>
-                </div>
-              )}
             </>
           ) : (
             <>

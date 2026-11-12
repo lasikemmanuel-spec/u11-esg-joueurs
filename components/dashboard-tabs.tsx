@@ -99,7 +99,6 @@ export function DashboardTabs({
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [statsSection, setStatsSection] = useState<StatsSection>('players')
   const [matchFocuses, setMatchFocuses] = useState<Partial<Record<'E1' | 'E2', MatchFocus>>>({})
-  const [callupFocus, setCallupFocus] = useState<{ date: string; requestId: number } | null>(null)
   const [activeMatchTeam, setActiveMatchTeam] = useState<'E1' | 'E2' | null>(null)
   const [liveMatches, setLiveMatches] = useState<ActiveLiveMatch[]>([])
   const [liveMatchToOpen, setLiveMatchToOpen] = useState<MatchSheetEntry | null>(null)
@@ -496,12 +495,6 @@ export function DashboardTabs({
           <div className="flex flex-col gap-5">
             <MatchDayHome
               entries={matchResults.entries}
-              convocations={convocations}
-              convocationDates={convocationDates}
-              onOpenCallups={(date) => {
-                setCallupFocus({ date, requestId: Date.now() })
-                document.getElementById('match-calendar')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-              }}
               onSelectMatch={(entry) => {
                 const focus = {
                   date: entry.date,
@@ -524,7 +517,6 @@ export function DashboardTabs({
                 trainingAttendance={trainingAttendance}
                 trainingAttendanceError={trainingAttendanceError}
                 focusMatch={activeMatchTeam ? matchFocuses[activeMatchTeam] ?? null : null}
-                focusCallups={callupFocus}
                 onConnect={() => {
                   setReturnToMatchesAfterLogin(true)
                   setActiveTab('educator')

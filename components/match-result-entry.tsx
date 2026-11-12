@@ -88,7 +88,6 @@ export function MatchResultEntry({
   trainingAttendance,
   trainingAttendanceError,
   focusMatch,
-  focusCallups,
   onConnect,
 }: {
   entries: MatchSheetEntry[]
@@ -105,7 +104,6 @@ export function MatchResultEntry({
     slotColumn: number
     requestId: number
   } | null
-  focusCallups: { date: string; requestId: number } | null
   onConnect: () => void
 }) {
   const router = useRouter()
@@ -135,7 +133,7 @@ export function MatchResultEntry({
     setExpandedDayDate(date)
     setExpandedMatchKeys((current) => {
       const next = new Set(current)
-      next.delete(`${focusMatch.team}-${focusMatch.slotColumn}`)
+      next.add(`${focusMatch.team}-${focusMatch.slotColumn}`)
       return next
     })
   }, [focusMatch])
@@ -209,23 +207,6 @@ export function MatchResultEntry({
     })
     return () => window.cancelAnimationFrame(frame)
   }, [dayEntries, expandedDayDate, focusMatch, month])
-  useEffect(() => {
-    if (!focusCallups) return
-    const date = dateInputValue(focusCallups.date)
-    if (!date) return
-    setMonth(date.slice(0, 7))
-    setExpandedDayDate(date)
-    setOpenCallupDate(date)
-  }, [focusCallups])
-  useEffect(() => {
-    if (!focusCallups) return
-    const date = dateInputValue(focusCallups.date)
-    if (!date || month !== date.slice(0, 7) || expandedDayDate !== date || openCallupDate !== date || !dayEntries.some((day) => day.date === date)) return
-    const frame = window.requestAnimationFrame(() => {
-      document.getElementById(`callup-panel-${date}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    })
-    return () => window.cancelAnimationFrame(frame)
-  }, [dayEntries, expandedDayDate, focusCallups, month, openCallupDate])
   const completedConvocationDates = useMemo(() => new Set(
     convocationDates
       .map(dateInputValue)

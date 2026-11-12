@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import {
+  ArrowUpRight,
   Cloud,
   CloudFog,
   CloudLightning,
@@ -273,34 +274,39 @@ export function MatchDayHome({
                     key={`${match.team}-${match.slotColumn}`}
                     type="button"
                     onClick={() => onSelectMatch(match)}
-                    aria-label={`Ouvrir la feuille de match, équipe ${match.team === 'E1' ? '1' : '2'} contre ${match.opponent || 'adversaire à préciser'}`}
+                    aria-label={`Ouvrir la feuille de match, ES Genech ${match.team === 'E1' ? '1' : '2'} contre ${match.opponent || 'adversaire à préciser'}`}
                     className={[
-                      'flex w-full min-w-0 items-center gap-3 rounded-2xl border p-3 text-left backdrop-blur-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
+                      'group flex w-full min-w-0 items-center gap-3 rounded-2xl border p-3 text-left shadow-md backdrop-blur-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
                       match.team === 'E1'
-                        ? 'border-sky-300/40 bg-sky-400/15'
-                        : 'border-amber-300/50 bg-amber-400/15',
+                        ? 'border-sky-300/50 bg-gradient-to-br from-sky-400/20 to-blue-950/20 hover:border-sky-200'
+                        : 'border-amber-300/60 bg-gradient-to-br from-amber-400/20 to-blue-950/20 hover:border-amber-200',
                     ].join(' ')}
                   >
                     <ClubCrest className={[
-                      'size-10 shrink-0 rounded-full ring-2',
+                      'size-12 shrink-0 rounded-full ring-2 shadow-md transition-transform group-hover:scale-105',
                       match.team === 'E1' ? 'ring-sky-300' : 'ring-amber-300',
                     ].join(' ')} />
-                    <div className="min-w-0">
-                      <p className={[
-                        'text-[9px] font-black uppercase tracking-widest',
-                        match.team === 'E1' ? 'text-sky-200' : 'text-amber-200',
+                    <div className="min-w-0 flex-1">
+                      <span className={[
+                        'inline-flex rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em]',
+                        match.team === 'E1'
+                          ? 'border-sky-200/30 bg-sky-200/15 text-sky-100'
+                          : 'border-amber-200/40 bg-amber-200/15 text-amber-100',
                       ].join(' ')}>
-                        Équipe {match.team === 'E1' ? '1' : '2'}
-                      </p>
-                      <p className="break-words text-base font-black leading-tight">
+                        ES Genech {match.team === 'E1' ? '1' : '2'}
+                      </span>
+                      <p className="mt-1 break-words text-lg font-black leading-tight sm:text-xl">
                         {match.opponent || 'Adversaire à préciser'}
                       </p>
-                      <p className="mt-1 flex flex-wrap items-center gap-x-2 text-xs font-semibold text-white/75">
-                        <span className="inline-flex items-center gap-1">
+                      <span className="mt-1 inline-flex max-w-full rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white/90">
+                        {match.competition || 'Type non renseigné'}
+                      </span>
+                      <p className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-white/80">
+                        <span className="inline-flex items-center gap-1 rounded-full bg-black/10 px-2 py-1">
                           <MapPin aria-hidden="true" className="size-3" />
                           {match.homeAway || 'Lieu à préciser'}
                         </span>
-                        {match.kickoffTime && <span>· {match.kickoffTime}</span>}
+                        {match.kickoffTime && <span className="rounded-full bg-black/10 px-2 py-1">{match.kickoffTime}</span>}
                       </p>
                       <MatchWeather
                         date={plannedDate}
@@ -309,6 +315,7 @@ export function MatchDayHome({
                         today={today}
                       />
                     </div>
+                    <ArrowUpRight aria-hidden="true" className={`size-5 shrink-0 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 ${match.team === 'E1' ? 'text-sky-100' : 'text-amber-100'}`} />
                   </button>
                 ))}
               </div>

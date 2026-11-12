@@ -322,7 +322,7 @@ export function SaisiePreview() {
                 </label>
                 <label className="flex flex-col gap-1.5 text-sm font-semibold">Type de rencontre
                   <select value={matchDraft.kind} onChange={(event) => setMatchDraft({ ...matchDraft, kind: event.target.value })} className="h-11 rounded-xl border border-accent/50 bg-background px-3 font-normal">
-                    <option>Championnat</option><option>Amical</option><option>Tournoi</option><option>Plateau</option>
+                    <option>Championnat</option><option>Amical</option><option>Tournoi</option><option>Futsal</option><option>Plateau</option><option>Autre</option>
                   </select>
                 </label>
                 <div className="grid grid-cols-2 gap-3">

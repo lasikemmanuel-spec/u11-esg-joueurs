@@ -111,7 +111,7 @@ async function save(request: Request, editing: boolean) {
     new Date(date + 'T00:00:00Z').toISOString().slice(0, 10) !== date ||
     !opponent ||
     opponent.length > 80 ||
-    !['Championnat', 'Amical', 'Tournoi', 'Plateau'].includes(String(competition)) ||
+    !['Championnat', 'Amical', 'Tournoi', 'Futsal', 'Plateau', 'Autre'].includes(String(competition)) ||
     !['Domicile', 'Extérieur', 'Terrain neutre'].includes(String(homeAway)) ||
     (typeof kickoffTime !== 'string' || (kickoffTime !== '' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(kickoffTime))) ||
     (!hasNoScore && !hasValidScore) ||

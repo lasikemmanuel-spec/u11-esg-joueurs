@@ -503,7 +503,7 @@ export function MatchResultEntry({
               <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554] dark:text-amber-200">
                 Type de match
                 <select value={draft.competition} onChange={(event) => setDraft({ ...draft, competition: event.target.value })} className={inputClass}>
-                  <option>Championnat</option><option>Amical</option><option>Tournoi</option><option>Plateau</option>
+                  <option>Championnat</option><option>Amical</option><option>Tournoi</option><option>Futsal</option><option>Plateau</option><option>Autre</option>
                 </select>
               </label>
               <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554] dark:text-amber-200">
@@ -754,6 +754,9 @@ export function MatchResultEntry({
                           <span className="block whitespace-normal break-words pl-6 text-base font-black leading-snug sm:pl-8 sm:text-lg">
                             {entry.opponent || 'Adversaire à préciser'}
                           </span>
+                          <span className={`ml-6 inline-flex w-fit max-w-[calc(100%_-_1.5rem)] rounded-full px-2 py-0.5 text-[10px] font-bold ${isE1 ? 'bg-white/15 text-sky-100' : 'bg-blue-950/10 text-blue-950'}`}>
+                            {entry.competition || 'Type non renseigné'}
+                          </span>
                         </button>
                         {canManage && (
                           <div className="flex w-full shrink-0 items-center justify-end gap-1 lg:w-auto">
@@ -818,9 +821,6 @@ export function MatchResultEntry({
                           <div className="px-3 py-2">
                             <div className="min-w-0 flex-1">
                               <div className="mt-1 flex flex-wrap gap-1">
-                                <span className="inline-flex items-center rounded-full border border-border bg-background px-2 py-px text-[10px] font-semibold text-foreground">
-                                  {entry.competition || 'Type ?'}
-                                </span>
                                 <span className="inline-flex items-center gap-0.5 rounded-full border border-border bg-background px-2 py-px text-[10px] font-semibold text-foreground">
                                   <span>{homeAwayIcon}</span>
                                   <span>{entry.homeAway || 'Lieu ?'}</span>

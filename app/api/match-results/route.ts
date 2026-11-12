@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { getEducatorSession, hasEducatorAccess, isSameOriginRequest } from '@/lib/educator-auth'
-import { deleteMatchDay, deleteMatchResult, getMatchResults, writeMatchResult } from '@/lib/match-results'
+import { deleteMatchDay, deleteMatchResult, writeMatchResult } from '@/lib/match-results'
 import { MATCH_RESULT_STATUSES } from '@/lib/match-result-options'
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
 import { logSecurityEvent, getClientIp, getUserAgent } from '@/lib/security-logger'
@@ -25,14 +25,6 @@ function currentMatchDate() {
   const part = (type: 'year' | 'month' | 'day') =>
     dateParts.find((item) => item.type === type)?.value ?? ''
   return `${part('year')}-${part('month')}-${part('day')}`
-}
-
-function matchDateKey(value: string) {
-  const iso = value.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
-  if (iso) return `${iso[1]}-${iso[2].padStart(2, '0')}-${iso[3].padStart(2, '0')}`
-  const dayFirst = value.match(/^(\d{1,2})[/. -](\d{1,2})[/. -](\d{4})$/)
-  if (dayFirst) return `${dayFirst[3]}-${dayFirst[2].padStart(2, '0')}-${dayFirst[1].padStart(2, '0')}`
-  return ''
 }
 
 export async function GET(request: Request) {
@@ -167,88 +159,6 @@ export async function POST(request: Request) {
 
 export async function PUT(request: Request) {
   return save(request, true)
-}
-
-export async function PATCH(request: Request) {
-  if (process.env.VERCEL_ENV !== 'production') {
-    return jsonResponse({ error: 'La saisie réelle est désactivée dans cette prévisualisation.' }, 403)
-  }
-  if (!isSameOriginRequest(request)) return jsonResponse({ error: 'Requête non autorisée.' }, 403)
-  let educator
-  try {
-    educator = await getEducatorSession(request)
-  } catch (error) {
-    console.error('Erreur de vérification de session éducateur:', error)
-    return jsonResponse({ error: 'La connexion éducateur n’est pas disponible.' }, 503)
-  }
-  if (!educator) return jsonResponse({ error: 'Connexion éducateur requise.' }, 401)
-  if (!hasEducatorAccess(educator)) return jsonResponse({ error: 'Accès réservé aux éducateurs.' }, 403)
-  if (Number(request.headers.get('content-length') ?? 0) > 2048) {
-    return jsonResponse({ error: 'Requête trop volumineuse.' }, 413)
-  }
-
-  let input: Record<string, unknown>
-  try {
-    input = await request.json()
-  } catch {
-    return jsonResponse({ error: 'Modification d’horaire invalide.' }, 400)
-  }
-
-  const { team, date, slotColumn, kickoffTime } = input
-  if (
-    (team !== 'E1' && team !== 'E2') ||
-    typeof date !== 'string' ||
-    !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
-    Number.isNaN(Date.parse(`${date}T00:00:00Z`)) ||
-    new Date(`${date}T00:00:00Z`).toISOString().slice(0, 10) !== date ||
-    date < MATCH_SEASON_START || date > MATCH_SEASON_END ||
-    date < currentMatchDate() ||
-    typeof slotColumn !== 'number' || !Number.isSafeInteger(slotColumn) ||
-    typeof kickoffTime !== 'string' ||
-    !/^([01]\d|2[0-3]):[0-5]\d$/.test(kickoffTime)
-  ) {
-    return jsonResponse({ error: 'Vérifie la date et le nouvel horaire.' }, 400)
-  }
-
-  try {
-    const matches = await getMatchResults()
-    const entry = matches.entries.find((match) =>
-      match.team === team &&
-      match.slotColumn === slotColumn &&
-      matchDateKey(match.date) === date,
-    )
-    if (!entry) return jsonResponse({ error: 'Ce match n’existe plus. Actualise la page.' }, 409)
-    if (entry.resultLabel || entry.goalsFor !== null || entry.goalsAgainst !== null) {
-      return jsonResponse({ error: 'L’horaire ne peut être changé que pour un match à venir sans résultat.' }, 409)
-    }
-
-    const saved = await writeMatchResult({
-      team,
-      slotColumn,
-      date,
-      opponent: entry.opponent,
-      competition: entry.competition,
-      homeAway: entry.homeAway,
-      kickoffTime,
-      resultLabel: '',
-      goalsFor: null,
-      goalsAgainst: null,
-      preserveSlot: true,
-    })
-    revalidateTag('google-sheet', 'max')
-    logSecurityEvent({
-      event: 'match_modified',
-      username: educator.username,
-      ip: getClientIp(request),
-      userAgent: getUserAgent(request),
-      role: educator.role,
-      detail: `schedule_change team=${team} date=${date} slot=${slotColumn}`,
-    })
-    return jsonResponse({ ok: true, ...saved })
-  } catch (error) {
-    console.error('Erreur lors de la mise à jour de l’horaire du match:', error)
-    return jsonResponse({ error: 'Impossible d’enregistrer le nouvel horaire dans le calendrier.' }, 500)
-  }
 }
 
 export async function DELETE(request: Request) {

@@ -513,7 +513,6 @@ export function DashboardTabs({
                 setCallupFocus({ date, requestId: Date.now() })
                 document.getElementById('match-calendar')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
               }}
-              onScheduleUpdated={() => router.refresh()}
             />
             <div id="match-calendar" className="scroll-mt-4">
               <MatchResultEntry

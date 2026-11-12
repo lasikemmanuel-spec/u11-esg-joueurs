@@ -2,7 +2,8 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import {
-  ArrowUpRight,
+  ArrowRight,
+  ClipboardList,
   Cloud,
   CloudFog,
   CloudLightning,
@@ -10,7 +11,6 @@ import {
   CloudSnow,
   CloudSun,
   Clock3,
-  ChevronDown,
   MapPin,
   Sun,
   Trophy,
@@ -33,6 +33,83 @@ type WeatherState =
   | { status: 'ready'; weather: WeatherResult }
   | { status: 'unavailable' }
   | { status: 'tooEarly' }
+
+function ConvocationOverlay({
+  teamName,
+  players,
+  hasCallups,
+  canEdit,
+  onEdit,
+}: {
+  teamName: string
+  players: { name: string; absent: boolean }[]
+  hasCallups: boolean
+  canEdit: boolean
+  onEdit: () => void
+}) {
+  const [open, setOpen] = useState(false)
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-black text-white shadow-sm transition hover:border-amber-200/70 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        aria-haspopup="dialog"
+      >
+        <UsersRound aria-hidden="true" className="size-4 text-amber-200" />
+        Convocations
+        <span className="rounded-full bg-amber-300 px-2 py-0.5 text-[10px] font-black text-[#172554]">{players.length}</span>
+      </button>
+      {open && (
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-[#07102a]/75 p-2 backdrop-blur-sm sm:items-center sm:p-5" onClick={() => setOpen(false)}>
+          <section
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Convocations ${teamName}`}
+            className="w-full max-w-lg overflow-hidden rounded-[1.75rem] border border-amber-200/70 bg-gradient-to-br from-[#172554] via-[#1e3a8a] to-[#101a3d] text-white shadow-2xl animate-in slide-in-from-bottom-4 duration-200"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <header className="flex items-start justify-between gap-3 border-b border-white/10 p-4 sm:p-5">
+              <div>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-200">Jour de match · U11</p>
+                <h3 className="mt-1 text-xl font-black">Les convoqués</h3>
+                <p className="mt-1 text-xs font-bold text-white/70">{teamName} · {players.length} joueur{players.length === 1 ? '' : 's'}</p>
+              </div>
+              <button type="button" onClick={() => setOpen(false)} aria-label="Fermer" className="grid size-10 shrink-0 place-items-center rounded-full border border-white/15 bg-white/10 text-xl">×</button>
+            </header>
+            <div className="max-h-[55dvh] overflow-y-auto p-4 sm:p-5">
+              {!hasCallups ? (
+                <div className="rounded-2xl border border-dashed border-white/25 bg-white/5 p-6 text-center">
+                  <span className="text-3xl" aria-hidden="true">⚽</span>
+                  <p className="mt-2 font-black">Pas encore de convocation</p>
+                  <p className="mt-1 text-xs text-white/65">La liste apparaîtra ici dès qu’elle sera préparée.</p>
+                </div>
+              ) : players.length === 0 ? (
+                <p className="rounded-2xl bg-white/10 p-4 text-center text-sm font-semibold">Aucun joueur convoqué pour cette équipe.</p>
+              ) : (
+                <ul className="grid grid-cols-2 gap-2">
+                  {players.map((player, index) => (
+                    <li key={`${player.name}-${index}`} className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.08] p-2.5 text-xs font-bold">
+                      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-amber-300 text-[#172554]">{player.absent ? '!' : '✓'}</span>
+                      <span className="min-w-0 break-words">{player.name}{player.absent ? ' · absent' : ''}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            {canEdit && (
+              <footer className="border-t border-white/10 p-4 sm:p-5">
+                <button type="button" onClick={() => { setOpen(false); onEdit() }} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-200 px-4 text-sm font-black text-[#172554] shadow-lg transition hover:brightness-105">
+                  <UsersRound aria-hidden="true" className="size-4" /> {hasCallups ? 'Modifier la convocation' : 'Préparer la convocation'} <ArrowRight aria-hidden="true" className="size-4" />
+                </button>
+              </footer>
+            )}
+          </section>
+        </div>
+      )}
+    </>
+  )
+}
 
 const weatherDescriptions: Record<number, string> = {
   0: 'Ensoleillé',
@@ -225,7 +302,6 @@ export function MatchDayHome({
   canManageMatches,
   onSelectMatch,
   onOpenCallups,
-  onScheduleUpdated,
 }: {
   entries: MatchSheetEntry[]
   convocations: Convocation[]
@@ -233,7 +309,6 @@ export function MatchDayHome({
   canManageMatches: boolean
   onSelectMatch: (entry: MatchSheetEntry) => void
   onOpenCallups: (date: string) => void
-  onScheduleUpdated: () => void
 }) {
   const today = localToday()
   const plannedDate = getNextPlannedMatchDate(entries, today)
@@ -345,39 +420,33 @@ export function MatchDayHome({
                             )}
                           </div>
                           <MatchWeather date={plannedDate} homeAway={match.homeAway} opponent={match.opponent} today={today} />
-                          <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-black text-white/75">
-                            Voir la feuille de match <ArrowUpRight aria-hidden="true" className="size-3.5" />
+                          <span className="mt-3 flex w-full items-center justify-between gap-2 rounded-xl border border-amber-200/60 bg-gradient-to-r from-amber-300 to-yellow-200 px-3 py-2 text-[#172554] shadow-md transition group-hover:shadow-lg">
+                            <span className="flex min-w-0 items-center gap-2">
+                              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#172554] text-amber-200">
+                                <ClipboardList aria-hidden="true" className="size-4" />
+                              </span>
+                              <span className="min-w-0 text-left">
+                                <span className="block text-xs font-black leading-tight sm:text-sm">Ouvrir la feuille de match</span>
+                                <span className="block text-[10px] font-bold text-[#172554]/70">Compo, joueurs et infos du match</span>
+                              </span>
+                            </span>
+                            <ArrowRight aria-hidden="true" className="size-5 shrink-0 transition-transform group-hover:translate-x-1" />
                           </span>
                         </div>
                       </button>
-                      <div className="flex flex-wrap items-start gap-2 pl-1">
-                        <details className="group min-w-0 flex-1 rounded-xl border border-white/15 bg-white/[0.08] text-xs">
-                          <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 font-black text-white marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
-                            <span>{hasCallups ? 'Voir les convocations' : 'Convocations non renseignées'}</span>
-                            <ChevronDown aria-hidden="true" className="size-4 shrink-0 transition-transform group-open:rotate-180" />
-                          </summary>
-                          <div className="border-t border-white/10 px-3 py-2">
-                            {!hasCallups ? (
-                              <p className="text-white/75">Aucune convocation n’est enregistrée pour ce match.</p>
-                            ) : calledPlayers.length === 0 ? (
-                              <p className="text-white/75">Aucun joueur convoqué pour cette équipe.</p>
-                            ) : (
-                              <ul className="grid gap-1 sm:grid-cols-2">
-                                {calledPlayers.map((player, index) => (
-                                  <li key={`${player.name}-${index}`} className="break-words rounded-md bg-white/10 px-2 py-1 text-white/90">
-                                    {player.name}{player.absent ? ' · absent' : ''}
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                          </div>
-                        </details>
+                      <div className="flex flex-wrap items-center gap-2 pl-1">
+                        <ConvocationOverlay
+                          teamName={`ES Genech ${match.team === 'E1' ? '1' : '2'}`}
+                          players={calledPlayers}
+                          hasCallups={hasCallups}
+                          canEdit={canEditCallups}
+                          onEdit={() => onOpenCallups(plannedDate)}
+                        />
                         {canManageMatches && (
                           <MatchFamilyMessage
                             match={match}
                             date={plannedDate}
                             calledPlayerNames={calledPlayers.map((player) => player.name)}
-                            onScheduleUpdated={onScheduleUpdated}
                           />
                         )}
                       </div>
@@ -385,16 +454,6 @@ export function MatchDayHome({
                   )
                 })}
               </div>
-              {canEditCallups && plannedDate && (
-                <button
-                  type="button"
-                  onClick={() => onOpenCallups(plannedDate)}
-                  className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#f4d35e]/50 bg-white/10 px-3 py-2 text-xs font-black text-white shadow-sm transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
-                >
-                  <UsersRound aria-hidden="true" className="size-4 text-[#f4d35e]" />
-                  {hasCallups ? 'Modifier les convocations' : 'Préparer les convocations'}
-                </button>
-              )}
             </>
           ) : (
             <>

@@ -149,9 +149,7 @@ export async function syncMatchLineupsWithCallups(
       }
       const currentRole = normalize(rows[rowByPlayer.get(selection.number)!][match.slotColumn] ?? '')
       const isCalledForTeam = selection.status === `✅ Convoqué ${match.team}` ||
-        selection.status === '✅ Convoqué E1 + E2' ||
-        selection.status === `✅ Confirmé ${match.team}` ||
-        selection.status === '✅ Confirmé E1 + E2'
+        selection.status === '✅ Convoqué E1 + E2'
       updates.set(
         selection.number,
         !isCalledForTeam

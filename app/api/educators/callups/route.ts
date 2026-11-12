@@ -13,13 +13,10 @@ export const runtime = 'nodejs'
 const statuses = [
   '✅ Convoqué E1',
   '✅ Convoqué E1 + E2',
-  '✅ Confirmé E1',
-  '✅ Confirmé E1 + E2',
   '❌ Non convoqué',
   '⚠️ Convoqué absent',
   '🗓️ Absent',
   '✅ Convoqué E2',
-  '✅ Confirmé E2',
   '🩺 Blessé',
   'Pas de licence',
 ] as const satisfies readonly EditableCallupStatus[]
@@ -131,7 +128,7 @@ export async function POST(request: Request) {
     }
 
     const matches = await getMatchResults()
-    if (selections.some(({ status }) => status === '✅ Convoqué E1 + E2' || status === '✅ Confirmé E1 + E2')) {
+    if (selections.some(({ status }) => status === '✅ Convoqué E1 + E2')) {
       const teamsOnDate = new Set(matches.entries
         .filter((entry) => dateKey(entry.date) === date && entry.resultLabel !== 'Annulé')
         .map((entry) => entry.team))

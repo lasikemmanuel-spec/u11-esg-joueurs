@@ -15,15 +15,12 @@ import type { MatchSheetEntry } from '@/lib/match-results'
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
 
 const STATUS_OPTIONS: Array<{ value: EditableCallupStatus; label: string }> = [
-  { value: '✅ Convoqué E1', label: '⏳ ES Genech 1 · attente réponse' },
-  { value: '✅ Convoqué E1 + E2', label: '⏳ ES Genech 1 + 2 · attente' },
-  { value: '✅ Confirmé E1', label: '✅ ES Genech 1 · confirmé' },
-  { value: '✅ Confirmé E1 + E2', label: '✅ ES Genech 1 + 2 · confirmé' },
+  { value: '✅ Convoqué E1', label: '✅ Convoqué E1' },
+  { value: '✅ Convoqué E1 + E2', label: '✅ Convoqué E1 + E2' },
   { value: '❌ Non convoqué', label: '❌ Non convoqué' },
   { value: '⚠️ Convoqué absent', label: '⚠️ Convoqué absent' },
   { value: '🗓️ Absent', label: '🗓️ Absent' },
-  { value: '✅ Convoqué E2', label: '⏳ ES Genech 2 · attente réponse' },
-  { value: '✅ Confirmé E2', label: '✅ ES Genech 2 · confirmé' },
+  { value: '✅ Convoqué E2', label: '✅ Convoqué E2' },
   { value: '🩺 Blessé', label: '🩺 Blessé' },
   { value: 'Pas de licence', label: 'Pas de licence' },
 ]
@@ -43,12 +40,7 @@ function dateKey(value: string) {
   return ''
 }
 
-function existingSelection(status: MatchStatus, team: string | null, raw: string): SelectionValue {
-  if (raw.toLocaleLowerCase('fr-FR').includes('confirm') || status === 'present') {
-    if (team === 'E1+E2') return '✅ Confirmé E1 + E2'
-    if (team === 'E1') return '✅ Confirmé E1'
-    if (team === 'E2') return '✅ Confirmé E2'
-  }
+function existingSelection(status: MatchStatus, team: string | null): SelectionValue {
   if ((status === 'called' || status === 'present') && team === 'E1+E2') return '✅ Convoqué E1 + E2'
   if ((status === 'called' || status === 'present') && team === 'E1') return '✅ Convoqué E1'
   if ((status === 'called' || status === 'present') && team === 'E2') return '✅ Convoqué E2'
@@ -68,7 +60,7 @@ function selectionForPlayer(
   const entry = convocations
     .find((player) => player.number === playerNumber)
     ?.matches.find((match) => dateKey(match.date) === date)
-  return entry ? existingSelection(entry.status, entry.team, entry.raw) : ''
+  return entry ? existingSelection(entry.status, entry.team) : ''
 }
 
 function callupTrainingDates(matchDate: string) {
@@ -268,8 +260,8 @@ export function CallupScheduleEntry({
     const normalizedQuery = query.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr-FR')
     const teamPriority = (playerNumber: number) => {
       const status = selections[playerNumber]
-      if (status === '✅ Convoqué E1' || status === '✅ Convoqué E1 + E2' || status === '✅ Confirmé E1' || status === '✅ Confirmé E1 + E2') return 0
-      if (status === '✅ Convoqué E2' || status === '✅ Confirmé E2') return 1
+      if (status === '✅ Convoqué E1' || status === '✅ Convoqué E1 + E2') return 0
+      if (status === '✅ Convoqué E2') return 1
       return 2
     }
     return [...players]
@@ -280,10 +272,8 @@ export function CallupScheduleEntry({
 
   const selectedCount = Object.values(selections).filter(Boolean).length
   const missingStatusCount = players.length - selectedCount
-  const teamOneCount = Object.values(selections).filter((value) => value === '✅ Convoqué E1' || value === '✅ Convoqué E1 + E2' || value === '✅ Confirmé E1' || value === '✅ Confirmé E1 + E2').length
-  const teamTwoCount = Object.values(selections).filter((value) => value === '✅ Convoqué E2' || value === '✅ Convoqué E1 + E2' || value === '✅ Confirmé E2' || value === '✅ Confirmé E1 + E2').length
-  const awaitingResponseCount = Object.values(selections).filter((value) => value === '✅ Convoqué E1' || value === '✅ Convoqué E2' || value === '✅ Convoqué E1 + E2').length
-  const confirmedResponseCount = Object.values(selections).filter((value) => value === '✅ Confirmé E1' || value === '✅ Confirmé E2' || value === '✅ Confirmé E1 + E2').length
+  const teamOneCount = Object.values(selections).filter((value) => value === '✅ Convoqué E1' || value === '✅ Convoqué E1 + E2').length
+  const teamTwoCount = Object.values(selections).filter((value) => value === '✅ Convoqué E2' || value === '✅ Convoqué E1 + E2').length
   const existingDate = savedDates.has(date)
   const saveDisabledReason = !savingStatusChecked
     ? 'Vérification de la disponibilité de la saisie…'
@@ -350,7 +340,7 @@ export function CallupScheduleEntry({
         <ClubCrest className="size-12 ring-2 ring-[#d4af37] sm:size-14" />
         <div className="min-w-0 flex-1">
           <h2 id="callup-entry-title" className="font-bold">Convocations du samedi</h2>
-          <p className="mt-0.5 text-[10px] font-medium text-white/70">Convoqué = réponse attendue · confirmé = réponse reçue. M = mardi · V = vendredi.</p>
+          <p className="mt-0.5 text-[10px] font-medium text-white/70">Présences d’entraînement : M = mardi · V = vendredi · le dernier match indique aussi son équipe.</p>
         </div>
         <button
           type="button"
@@ -382,10 +372,6 @@ export function CallupScheduleEntry({
             <span className="inline-flex items-center gap-1"><ClubCrest className="size-4 ring-1 ring-[#d4af37]/60" /><span className="text-[#172554]">E1 : {teamOneCount}</span></span>
             <span className="inline-flex items-center gap-1"><ClubCrest className="size-4 ring-1 ring-[#d4af37]/60" /><span className="text-amber-800">E2 : {teamTwoCount}</span></span>
           </span>
-        </div>
-        <div className="flex flex-wrap gap-2 text-xs font-bold">
-          <span className="rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-amber-900">⏳ {awaitingResponseCount} réponse{awaitingResponseCount === 1 ? '' : 's'} attendue{awaitingResponseCount === 1 ? '' : 's'}</span>
-          <span className="rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-emerald-900">✅ {confirmedResponseCount} réponse{confirmedResponseCount === 1 ? '' : 's'} confirmée{confirmedResponseCount === 1 ? '' : 's'}</span>
         </div>
         {missingStatusCount > 0 && (
           <p role="status" className="rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900">

@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   ArrowRight,
-  ClipboardList,
   Cloud,
   CloudFog,
   CloudLightning,
@@ -414,11 +413,6 @@ export function MatchDayHome({
                             )}
                           </div>
                           <MatchWeather date={plannedDate} homeAway={match.homeAway} opponent={match.opponent} today={today} />
-                          <span className="mt-2 inline-flex min-h-10 max-w-full items-center gap-2 rounded-full border border-amber-200/60 bg-gradient-to-r from-amber-300 to-yellow-200 px-3 py-1.5 text-[#172554] shadow-sm transition group-hover:shadow-md">
-                            <ClipboardList aria-hidden="true" className="size-4 shrink-0" />
-                            <span className="truncate text-xs font-black">Feuille de match</span>
-                            <ArrowRight aria-hidden="true" className="size-4 shrink-0 transition-transform group-hover:translate-x-1" />
-                          </span>
                         </div>
                       </button>
                       <div className="grid w-full grid-cols-2 items-center gap-2 pl-1">

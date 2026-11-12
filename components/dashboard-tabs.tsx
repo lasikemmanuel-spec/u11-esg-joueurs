@@ -496,6 +496,7 @@ export function DashboardTabs({
           <div className="flex flex-col gap-5">
             <MatchDayHome
               entries={matchResults.entries}
+              convocations={convocations}
               convocationDates={convocationDates}
               canManageMatches={educatorAccess === 'authenticated'}
               onSelectMatch={(entry) => {

@@ -10,12 +10,15 @@ import {
   CloudSnow,
   CloudSun,
   Clock3,
+  ChevronDown,
   MapPin,
   Sun,
   Trophy,
   UsersRound,
 } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
+import { MatchFamilyMessage } from '@/components/match-family-message'
+import type { Convocation } from '@/lib/convocations'
 import type { MatchSheetEntry } from '@/lib/match-results'
 import { getLatestPlayedMatches, getNextPlannedMatchDate, normalizeMatchDate } from '@/lib/match-day-display'
 
@@ -217,12 +220,14 @@ function MatchWeather({
 
 export function MatchDayHome({
   entries,
+  convocations,
   convocationDates,
   canManageMatches,
   onSelectMatch,
   onOpenCallups,
 }: {
   entries: MatchSheetEntry[]
+  convocations: Convocation[]
   convocationDates: string[]
   canManageMatches: boolean
   onSelectMatch: (entry: MatchSheetEntry) => void
@@ -283,60 +288,93 @@ export function MatchDayHome({
                 })}
               </p>
               <div className="mt-4 grid gap-2 sm:grid-cols-2">
-                {matchesOnPlannedDate.map((match) => (
-                  <button
-                    key={`${match.team}-${match.slotColumn}`}
-                    type="button"
-                    onClick={() => onSelectMatch(match)}
-                    aria-label={`Ouvrir la feuille de match, ES Genech ${match.team === 'E1' ? '1' : '2'} contre ${match.opponent || 'adversaire à préciser'}`}
-                    className={[
-                      'group flex w-full min-w-0 items-center gap-3 rounded-2xl border p-3 text-left shadow-md backdrop-blur-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
-                      match.team === 'E1'
-                        ? 'border-sky-300/50 bg-gradient-to-br from-sky-400/20 to-blue-950/20 hover:border-sky-200'
-                        : 'border-amber-300/60 bg-gradient-to-br from-amber-400/20 to-blue-950/20 hover:border-amber-200',
-                    ].join(' ')}
-                  >
-                    <ClubCrest className={[
-                      'size-12 shrink-0 rounded-full ring-2 shadow-md transition-transform group-hover:scale-105',
-                      match.team === 'E1' ? 'ring-sky-300' : 'ring-amber-300',
-                    ].join(' ')} />
-                    <div className="min-w-0 flex-1">
-                      <span className={[
-                        'inline-flex rounded-full border px-3 py-1 text-xs font-black tracking-wide shadow-sm sm:text-sm',
-                        match.team === 'E1'
-                          ? 'border-sky-200/60 bg-sky-200/20 text-white'
-                          : 'border-amber-200/70 bg-amber-200/20 text-amber-100',
-                      ].join(' ')}>
-                        ES Genech {match.team === 'E1' ? '1' : '2'}
-                      </span>
-                      <p className="mt-1 break-words text-lg font-black leading-tight sm:text-xl">
-                        {match.opponent || 'Adversaire à préciser'}
-                      </p>
-                      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-white/90">
-                        <span className="inline-flex max-w-full rounded-full border border-white/15 bg-white/10 px-2 py-1 font-bold">
-                          {match.competition || 'Type non renseigné'}
-                        </span>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-black/10 px-2 py-1">
-                          <MapPin aria-hidden="true" className="size-3" />
-                          {match.homeAway || 'Lieu à préciser'}
-                        </span>
-                        {match.kickoffTime && (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-black/10 px-2 py-1">
-                            <Clock3 aria-hidden="true" className="size-3" />
-                            {match.kickoffTime}
+                {matchesOnPlannedDate.map((match) => {
+                  const calledPlayers = convocations.flatMap((player) => {
+                    const callup = player.matches.find((item) =>
+                      normalizeMatchDate(item.date) === plannedDate &&
+                      (item.team === match.team || item.team === 'E1+E2') &&
+                      (item.status === 'called' || item.status === 'calledAbsent' || item.status === 'present'),
+                    )
+                    return callup ? [{ name: player.name, absent: callup.status === 'calledAbsent' }] : []
+                  })
+
+                  return (
+                    <div key={`${match.team}-${match.slotColumn}`} className="flex min-w-0 flex-col gap-2">
+                      <button
+                        type="button"
+                        onClick={() => onSelectMatch(match)}
+                        aria-label={`Ouvrir la feuille de match, ES Genech ${match.team === 'E1' ? '1' : '2'} contre ${match.opponent || 'adversaire à préciser'}`}
+                        className={[
+                          'group flex w-full min-w-0 items-center gap-3 rounded-2xl border p-3 text-left shadow-md backdrop-blur-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
+                          match.team === 'E1'
+                            ? 'border-sky-300/50 bg-gradient-to-br from-sky-400/20 to-blue-950/20 hover:border-sky-200'
+                            : 'border-amber-300/60 bg-gradient-to-br from-amber-400/20 to-blue-950/20 hover:border-amber-200',
+                        ].join(' ')}
+                      >
+                        <ClubCrest className={[
+                          'size-12 shrink-0 rounded-full ring-2 shadow-md transition-transform group-hover:scale-105',
+                          match.team === 'E1' ? 'ring-sky-300' : 'ring-amber-300',
+                        ].join(' ')} />
+                        <div className="min-w-0 flex-1">
+                          <span className={[
+                            'inline-flex rounded-full border px-3 py-1 text-xs font-black tracking-wide shadow-sm sm:text-sm',
+                            match.team === 'E1'
+                              ? 'border-sky-200/60 bg-sky-200/20 text-white'
+                              : 'border-amber-200/70 bg-amber-200/20 text-amber-100',
+                          ].join(' ')}>
+                            ES Genech {match.team === 'E1' ? '1' : '2'}
                           </span>
-                        )}
+                          <p className="mt-1 break-words text-lg font-black leading-tight sm:text-xl">
+                            {match.opponent || 'Adversaire à préciser'}
+                          </p>
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-white/90">
+                            <span className="inline-flex max-w-full rounded-full border border-white/15 bg-white/10 px-2 py-1 font-bold">
+                              {match.competition || 'Type non renseigné'}
+                            </span>
+                            <span className="inline-flex items-center gap-1 rounded-full bg-black/10 px-2 py-1">
+                              <MapPin aria-hidden="true" className="size-3" />
+                              {match.homeAway || 'Lieu à préciser'}
+                            </span>
+                            {match.kickoffTime && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-black/10 px-2 py-1">
+                                <Clock3 aria-hidden="true" className="size-3" />
+                                {match.kickoffTime}
+                              </span>
+                            )}
+                          </div>
+                          <MatchWeather date={plannedDate} homeAway={match.homeAway} opponent={match.opponent} today={today} />
+                          <span className="mt-2 inline-flex items-center gap-1 text-[10px] font-black text-white/75">
+                            Voir la feuille de match <ArrowUpRight aria-hidden="true" className="size-3.5" />
+                          </span>
+                        </div>
+                      </button>
+                      <div className="flex flex-wrap items-start gap-2 pl-1">
+                        <details className="group min-w-0 flex-1 rounded-xl border border-white/15 bg-white/[0.08] text-xs">
+                          <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 font-black text-white marker:hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">
+                            <span>{hasCallups ? 'Voir les convocations' : 'Convocations non renseignées'}</span>
+                            <ChevronDown aria-hidden="true" className="size-4 shrink-0 transition-transform group-open:rotate-180" />
+                          </summary>
+                          <div className="border-t border-white/10 px-3 py-2">
+                            {!hasCallups ? (
+                              <p className="text-white/75">Aucune convocation n’est enregistrée pour ce match.</p>
+                            ) : calledPlayers.length === 0 ? (
+                              <p className="text-white/75">Aucun joueur convoqué pour cette équipe.</p>
+                            ) : (
+                              <ul className="grid gap-1 sm:grid-cols-2">
+                                {calledPlayers.map((player, index) => (
+                                  <li key={`${player.name}-${index}`} className="break-words rounded-md bg-white/10 px-2 py-1 text-white/90">
+                                    {player.name}{player.absent ? ' · absent' : ''}
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        </details>
+                        {canManageMatches && <MatchFamilyMessage match={match} date={plannedDate} />}
                       </div>
-                      <MatchWeather
-                        date={plannedDate}
-                        homeAway={match.homeAway}
-                        opponent={match.opponent}
-                        today={today}
-                      />
                     </div>
-                    <ArrowUpRight aria-hidden="true" className={`size-5 shrink-0 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5 ${match.team === 'E1' ? 'text-sky-100' : 'text-amber-100'}`} />
-                  </button>
-                ))}
+                  )
+                })}
               </div>
               {canEditCallups && plannedDate && (
                 <button

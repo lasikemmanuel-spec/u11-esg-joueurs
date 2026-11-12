@@ -288,10 +288,10 @@ export function MatchDayHome({
                     ].join(' ')} />
                     <div className="min-w-0 flex-1">
                       <span className={[
-                        'inline-flex rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.14em]',
+                        'inline-flex rounded-full border px-3 py-1 text-xs font-black tracking-wide shadow-sm sm:text-sm',
                         match.team === 'E1'
-                          ? 'border-sky-200/30 bg-sky-200/15 text-sky-100'
-                          : 'border-amber-200/40 bg-amber-200/15 text-amber-100',
+                          ? 'border-sky-200/60 bg-sky-200/20 text-white'
+                          : 'border-amber-200/70 bg-amber-200/20 text-amber-100',
                       ].join(' ')}>
                         ES Genech {match.team === 'E1' ? '1' : '2'}
                       </span>
@@ -364,7 +364,7 @@ export function MatchDayHome({
                       </span>
                       <div className="min-w-0 flex-1">
                         <p className="text-[9px] font-black uppercase tracking-widest text-white/60">
-                          Équipe {team === 'E1' ? '1' : '2'} · {new Date(`${result.normalizedDate}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                          ES Genech {team === 'E1' ? '1' : '2'} · {new Date(`${result.normalizedDate}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                         </p>
                         <p className="truncate text-sm font-bold text-white">
                           {outcome} · {result.opponent || 'Adversaire'}

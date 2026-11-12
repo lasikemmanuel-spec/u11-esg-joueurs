@@ -283,7 +283,7 @@ export function MatchLineupEntry({
       <span className="flex min-w-0 items-center gap-2">
         <ClubCrest className="size-8 ring-1 ring-[#d4af37]/70" />
         <span className="min-w-0">
-          <span className="block font-black">Feuille de match · Équipe {match.team === 'E1' ? '1' : '2'}</span>
+          <span className="block font-black">Feuille de match · ES Genech {match.team === 'E1' ? '1' : '2'}</span>
           <span className="block text-xs font-medium text-muted-foreground">{calledPlayers.length} convoqué{calledPlayers.length === 1 ? '' : 's'} · {match.opponent || 'adversaire'}</span>
         </span>
       </span>
@@ -307,7 +307,7 @@ export function MatchLineupEntry({
           <div className="min-w-0">
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#f4ce45]">ES Genech · U11</p>
             <h2 id={`match-sheet-title-${dateKey(match.date)}-${match.team}-${match.slotColumn}`} className="truncate text-base font-black sm:text-lg">
-              Feuille de match · Équipe {match.team === 'E1' ? '1' : '2'}
+              Feuille de match · ES Genech {match.team === 'E1' ? '1' : '2'}
             </h2>
             <p className="truncate text-xs font-medium text-white/70">{match.opponent || 'Adversaire à préciser'}</p>
           </div>

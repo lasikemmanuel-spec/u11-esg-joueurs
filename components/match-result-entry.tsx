@@ -480,8 +480,8 @@ export function MatchResultEntry({
               <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554] dark:text-amber-200">
                 Équipe
                 <select disabled={editingSlot !== null} value={draft.team} onChange={(event) => setDraft({ ...draft, team: event.target.value as Draft['team'] })} className={inputClass}>
-                  <option value="E1">Équipe 1</option>
-                  <option value="E2">Équipe 2</option>
+                  <option value="E1">ES Genech 1</option>
+                  <option value="E2">ES Genech 2</option>
                 </select>
               </label>
               <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554] dark:text-amber-200">
@@ -743,7 +743,7 @@ export function MatchResultEntry({
                             />
                             <ClubCrest className={['size-6 shrink-0 rounded-full ring-2', isE1 ? 'ring-white/40' : 'ring-blue-950/30'].join(' ')} />
                             <span className="min-w-0 flex-1 text-[9px] font-black uppercase tracking-widest opacity-80">
-                              ESG – Équipe {isE1 ? '1' : '2'}
+                              ES Genech {isE1 ? '1' : '2'}
                             </span>
                             {(isPlayed || isCancelled) && (
                               <span className={['shrink-0 rounded-lg px-2 py-1 font-mono text-xs font-black', scoreBg].join(' ')}>
@@ -768,7 +768,7 @@ export function MatchResultEntry({
                                   match: { ...entry, date },
                                   lineup: savedLineup,
                                 })}
-                                aria-label={`Lancer le direct, équipe ${isE1 ? '1' : '2'} contre ${entry.opponent || 'adversaire'}`}
+                                aria-label={`Lancer le direct, ES Genech ${isE1 ? '1' : '2'} contre ${entry.opponent || 'adversaire'}`}
                                 title="Lancer le match en direct"
                                 className="group inline-flex min-h-11 items-center gap-2 rounded-2xl border-2 border-emerald-200 bg-gradient-to-r from-lime-300 via-emerald-400 to-emerald-500 px-3 text-emerald-950 shadow-lg ring-2 ring-emerald-300/50 transition hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-60 sm:hidden"
                               >

@@ -345,7 +345,7 @@ export function MatchDayHome({
                   if (!result) return null
                   const isWin = result.goalsFor > result.goalsAgainst
                   const isDraw = result.goalsFor === result.goalsAgainst
-                  const outcome = isWin ? 'Victoire' : isDraw ? 'Match nul' : 'Défaite'
+                  const teamName = `ES Genech ${team === 'E1' ? '1' : '2'}`
                   const scoreStyle = isWin
                     ? 'bg-emerald-300 text-emerald-950'
                     : isDraw
@@ -355,7 +355,7 @@ export function MatchDayHome({
                   return (
                     <div
                       key={team}
-                      className="flex min-w-0 items-center gap-3 rounded-2xl border border-white/15 bg-white/[0.08] p-3"
+                      className={`flex min-w-0 items-center gap-3 rounded-2xl border p-3 shadow-sm ${isWin ? 'border-emerald-300/40 bg-gradient-to-r from-emerald-400/15 to-white/[0.06]' : isDraw ? 'border-amber-200/40 bg-gradient-to-r from-amber-300/15 to-white/[0.06]' : 'border-rose-300/35 bg-gradient-to-r from-rose-400/15 to-white/[0.06]'}`}
                     >
                       <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-white/10">
                         {isWin
@@ -363,14 +363,17 @@ export function MatchDayHome({
                           : <ClubCrest className="size-8 rounded-full" />}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p className="text-[9px] font-black uppercase tracking-widest text-white/60">
-                          ES Genech {team === 'E1' ? '1' : '2'} · {new Date(`${result.normalizedDate}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
+                        <p className="text-[10px] font-black uppercase tracking-widest text-white/70">
+                          {teamName} · {new Date(`${result.normalizedDate}T12:00:00`).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}
                         </p>
-                        <p className="truncate text-sm font-bold text-white">
-                          {outcome} · {result.opponent || 'Adversaire'}
+                        <p className={`mt-0.5 text-sm font-black ${isWin ? 'text-emerald-200' : isDraw ? 'text-amber-200' : 'text-rose-200'}`}>
+                          {isWin ? `🏆 Victoire de ${teamName} !` : isDraw ? '🤝 Match nul' : `💪 Défaite de ${teamName}`}
+                        </p>
+                        <p className="break-words text-sm font-semibold leading-snug text-white">
+                          Contre {result.opponent || 'adversaire non renseigné'}
                         </p>
                       </div>
-                      <span className={`shrink-0 rounded-xl px-2.5 py-1 text-base font-black tabular-nums ${scoreStyle}`}>
+                      <span aria-label={`Score de ES Genech ${team === 'E1' ? '1' : '2'} : ${result.goalsFor} à ${result.goalsAgainst}`} className={`shrink-0 rounded-xl px-2.5 py-1 text-base font-black tabular-nums ${scoreStyle}`}>
                         {result.goalsFor}–{result.goalsAgainst}
                       </span>
                     </div>

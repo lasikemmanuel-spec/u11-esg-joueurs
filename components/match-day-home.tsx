@@ -53,7 +53,7 @@ function ConvocationOverlay({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-3 py-2 text-xs font-black text-white shadow-sm transition hover:border-amber-200/70 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        className="inline-flex min-h-10 w-full min-w-0 items-center justify-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-2 py-2 text-[11px] font-black text-white shadow-sm transition hover:border-amber-200/70 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:gap-2 sm:px-3 sm:text-xs"
         aria-haspopup="dialog"
       >
         <UsersRound aria-hidden="true" className="size-4 text-amber-200" />
@@ -393,16 +393,10 @@ export function MatchDayHome({
                           match.team === 'E1' ? 'ring-sky-300' : 'ring-amber-300',
                         ].join(' ')} />
                         <div className="min-w-0 flex-1">
-                          <span className={[
-                            'inline-flex rounded-full border px-3 py-1 text-xs font-black tracking-wide shadow-sm sm:text-sm',
-                            match.team === 'E1'
-                              ? 'border-sky-200/60 bg-sky-200/20 text-white'
-                              : 'border-amber-200/70 bg-amber-200/20 text-amber-100',
-                          ].join(' ')}>
-                            ES Genech {match.team === 'E1' ? '1' : '2'}
-                          </span>
-                          <p className="mt-1 break-words text-lg font-black leading-tight sm:text-xl">
-                            {match.opponent || 'Adversaire à préciser'}
+                          <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-base font-black leading-tight sm:text-lg">
+                            <span className="break-words">ES Genech {match.team === 'E1' ? '1' : '2'}</span>
+                            <span aria-hidden="true" className="text-xs font-bold text-white/60">vs</span>
+                            <span className="break-words">{match.opponent || 'Adversaire à préciser'}</span>
                           </p>
                           <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-white/90">
                             <span className="inline-flex max-w-full rounded-full border border-white/15 bg-white/10 px-2 py-1 font-bold">
@@ -427,7 +421,7 @@ export function MatchDayHome({
                           </span>
                         </div>
                       </button>
-                      <div className="flex flex-wrap items-center gap-2 pl-1">
+                      <div className="grid w-full grid-cols-2 items-center gap-2 pl-1">
                         <ConvocationOverlay
                           teamName={`ES Genech ${match.team === 'E1' ? '1' : '2'}`}
                           players={calledPlayers}

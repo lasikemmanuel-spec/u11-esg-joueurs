@@ -93,10 +93,10 @@ export function MatchFamilyMessage({
       <button
         type="button"
         onClick={openComposer}
-        className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-emerald-300/50 bg-emerald-500/15 px-3 py-2 text-xs font-black text-white shadow-sm transition hover:bg-emerald-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        className="inline-flex min-h-10 w-full min-w-0 items-center justify-center gap-1.5 rounded-xl border border-emerald-300/50 bg-emerald-500/15 px-2 py-2 text-[11px] font-black text-white shadow-sm transition hover:bg-emerald-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:gap-2 sm:px-3 sm:text-xs"
       >
         <Share2 aria-hidden="true" className="size-4 text-emerald-200" />
-        Préparer un message
+        Message familles
       </button>
 
       <dialog

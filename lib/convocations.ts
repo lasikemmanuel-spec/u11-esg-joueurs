@@ -61,6 +61,7 @@ function parseStatus(raw: string): Pick<MatchEntry, 'status' | 'team'> {
   if (text.includes('non convoq') || text.includes('non convoqué') || text.includes('non convoque')) {
     return { status: 'notCalled', team: null }
   }
+  if (text.includes('confirm')) return { status: 'called', team }
   if (
     text.includes('présent') ||
     text.includes('present') ||

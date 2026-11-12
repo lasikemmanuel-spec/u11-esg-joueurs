@@ -13,6 +13,7 @@ import {
   MapPin,
   Sun,
   Trophy,
+  UsersRound,
 } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import type { MatchSheetEntry } from '@/lib/match-results'
@@ -216,10 +217,16 @@ function MatchWeather({
 
 export function MatchDayHome({
   entries,
+  convocationDates,
+  canManageMatches,
   onSelectMatch,
+  onOpenCallups,
 }: {
   entries: MatchSheetEntry[]
+  convocationDates: string[]
+  canManageMatches: boolean
   onSelectMatch: (entry: MatchSheetEntry) => void
+  onOpenCallups: (date: string) => void
 }) {
   const today = localToday()
   const plannedDate = getNextPlannedMatchDate(entries, today)
@@ -242,6 +249,12 @@ export function MatchDayHome({
       .sort()
       .at(-1) ?? null,
     [entries, today],
+  )
+  const canEditCallups = Boolean(
+    canManageMatches && plannedDate && new Date(`${plannedDate}T12:00:00`).getDay() === 6,
+  )
+  const hasCallups = plannedDate !== null && convocationDates.some(
+    (date) => normalizeMatchDate(date) === plannedDate,
   )
   return (
     <section
@@ -325,6 +338,16 @@ export function MatchDayHome({
                   </button>
                 ))}
               </div>
+              {canEditCallups && plannedDate && (
+                <button
+                  type="button"
+                  onClick={() => onOpenCallups(plannedDate)}
+                  className="mt-3 inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#f4d35e]/50 bg-white/10 px-3 py-2 text-xs font-black text-white shadow-sm transition hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                >
+                  <UsersRound aria-hidden="true" className="size-4 text-[#f4d35e]" />
+                  {hasCallups ? 'Modifier les convocations' : 'Préparer les convocations'}
+                </button>
+              )}
             </>
           ) : (
             <>

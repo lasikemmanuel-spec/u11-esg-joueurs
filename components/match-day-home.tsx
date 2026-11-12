@@ -9,6 +9,7 @@ import {
   CloudRain,
   CloudSnow,
   CloudSun,
+  Clock3,
   MapPin,
   Sun,
   Trophy,
@@ -298,16 +299,21 @@ export function MatchDayHome({
                       <p className="mt-1 break-words text-lg font-black leading-tight sm:text-xl">
                         {match.opponent || 'Adversaire à préciser'}
                       </p>
-                      <span className="mt-1 inline-flex max-w-full rounded-full border border-white/15 bg-white/10 px-2 py-0.5 text-[10px] font-bold text-white/90">
-                        {match.competition || 'Type non renseigné'}
-                      </span>
-                      <p className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-white/80">
+                      <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-white/90">
+                        <span className="inline-flex max-w-full rounded-full border border-white/15 bg-white/10 px-2 py-1 font-bold">
+                          {match.competition || 'Type non renseigné'}
+                        </span>
                         <span className="inline-flex items-center gap-1 rounded-full bg-black/10 px-2 py-1">
                           <MapPin aria-hidden="true" className="size-3" />
                           {match.homeAway || 'Lieu à préciser'}
                         </span>
-                        {match.kickoffTime && <span className="rounded-full bg-black/10 px-2 py-1">{match.kickoffTime}</span>}
-                      </p>
+                        {match.kickoffTime && (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-black/10 px-2 py-1">
+                            <Clock3 aria-hidden="true" className="size-3" />
+                            {match.kickoffTime}
+                          </span>
+                        )}
+                      </div>
                       <MatchWeather
                         date={plannedDate}
                         homeAway={match.homeAway}

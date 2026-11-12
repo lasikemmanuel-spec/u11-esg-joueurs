@@ -420,17 +420,10 @@ export function MatchDayHome({
                             )}
                           </div>
                           <MatchWeather date={plannedDate} homeAway={match.homeAway} opponent={match.opponent} today={today} />
-                          <span className="mt-3 flex w-full items-center justify-between gap-2 rounded-xl border border-amber-200/60 bg-gradient-to-r from-amber-300 to-yellow-200 px-3 py-2 text-[#172554] shadow-md transition group-hover:shadow-lg">
-                            <span className="flex min-w-0 items-center gap-2">
-                              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-[#172554] text-amber-200">
-                                <ClipboardList aria-hidden="true" className="size-4" />
-                              </span>
-                              <span className="min-w-0 text-left">
-                                <span className="block text-xs font-black leading-tight sm:text-sm">Ouvrir la feuille de match</span>
-                                <span className="block text-[10px] font-bold text-[#172554]/70">Compo, joueurs et infos du match</span>
-                              </span>
-                            </span>
-                            <ArrowRight aria-hidden="true" className="size-5 shrink-0 transition-transform group-hover:translate-x-1" />
+                          <span className="mt-2 inline-flex min-h-10 max-w-full items-center gap-2 rounded-full border border-amber-200/60 bg-gradient-to-r from-amber-300 to-yellow-200 px-3 py-1.5 text-[#172554] shadow-sm transition group-hover:shadow-md">
+                            <ClipboardList aria-hidden="true" className="size-4 shrink-0" />
+                            <span className="truncate text-xs font-black">Feuille de match</span>
+                            <ArrowRight aria-hidden="true" className="size-4 shrink-0 transition-transform group-hover:translate-x-1" />
                           </span>
                         </div>
                       </button>

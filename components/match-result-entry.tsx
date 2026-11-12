@@ -737,7 +737,7 @@ export function MatchResultEntry({
                     >
                       <div
                         className={[
-                          'flex min-w-0 flex-col gap-2 px-3 py-2 lg:flex-row lg:items-center lg:justify-between',
+                          'flex min-w-0 flex-col gap-2 px-3 py-2',
                           isE1
                             ? 'bg-[#172554] text-white'
                             : 'bg-amber-400 text-blue-950',
@@ -773,8 +773,20 @@ export function MatchResultEntry({
                           <span className="block whitespace-normal break-words pl-6 text-base font-black leading-snug sm:pl-8 sm:text-lg">
                             {entry.opponent || 'Adversaire à préciser'}
                           </span>
-                          <span className={`ml-6 inline-flex w-fit max-w-[calc(100%_-_1.5rem)] rounded-full px-2 py-0.5 text-[10px] font-bold ${isE1 ? 'bg-white/15 text-sky-100' : 'bg-blue-950/10 text-blue-950'}`}>
-                            {entry.competition || 'Type non renseigné'}
+                          <span className="ml-6 flex flex-wrap items-center gap-1.5 text-[10px] font-bold">
+                            <span className={`inline-flex w-fit max-w-full rounded-full px-2 py-0.5 ${isE1 ? 'bg-white/15 text-sky-100' : 'bg-blue-950/10 text-blue-950'}`}>
+                              {entry.competition || 'Type non renseigné'}
+                            </span>
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${isE1 ? 'bg-white/10 text-white/90' : 'bg-blue-950/10 text-blue-950'}`}>
+                              <span aria-hidden="true">{homeAwayIcon}</span>
+                              {entry.homeAway || 'Lieu ?'}
+                            </span>
+                            {entry.kickoffTime && (
+                              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${isE1 ? 'bg-white/10 text-white/90' : 'bg-blue-950/10 text-blue-950'}`}>
+                                <Clock3 aria-hidden="true" className="size-3" />
+                                {entry.kickoffTime}
+                              </span>
+                            )}
                           </span>
                         </button>
                         {canManage && (
@@ -837,22 +849,6 @@ export function MatchResultEntry({
                       </div>
                       {isMatchExpanded && (
                         <div id={matchPanelId}>
-                          <div className="px-3 py-2">
-                            <div className="min-w-0 flex-1">
-                              <div className="mt-1 flex flex-wrap gap-1">
-                                <span className="inline-flex items-center gap-0.5 rounded-full border border-border bg-background px-2 py-px text-[10px] font-semibold text-foreground">
-                                  <span>{homeAwayIcon}</span>
-                                  <span>{entry.homeAway || 'Lieu ?'}</span>
-                                </span>
-                                {entry.kickoffTime && (
-                                  <span className="inline-flex items-center gap-1 rounded-full border border-[#d4af37]/50 bg-amber-50 dark:bg-amber-950/40 px-2 py-px text-[10px] font-black text-[#172554] dark:text-amber-300">
-                                    <Clock3 aria-hidden="true" className="size-3" />
-                                    {entry.kickoffTime}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                          </div>
                           {canManage && (
                             <div className="px-3 pb-3">
                               {matchLineups.loading ? (

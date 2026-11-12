@@ -622,7 +622,7 @@ export function EducatorRoster({
                     if (!value) return null
                     const label = parent === 'father' ? 'Papa' : 'Maman'
                     return (
-                      <div key={parent} className="grid w-full grid-cols-[3.25rem_minmax(0,1fr)] items-center gap-1 md:grid-cols-[4.5rem_minmax(0,1fr)] md:gap-2">
+                      <div key={parent} className="grid w-full min-w-0 grid-cols-1 items-start gap-1.5 md:grid-cols-[4.5rem_minmax(0,1fr)] md:items-center md:gap-2">
                         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
                           <ParentAvatar parent={parent} />
                           {label}
@@ -773,7 +773,7 @@ export function EducatorRoster({
               if (!value) return null
               const label = parent === 'father' ? 'Papa' : 'Maman'
               return (
-                <div key={parent} className="grid w-full grid-cols-[3.25rem_minmax(0,1fr)] items-center gap-1 md:grid-cols-[4.5rem_minmax(0,1fr)] md:gap-2">
+                <div key={parent} className="grid w-full min-w-0 grid-cols-1 items-start gap-1.5 md:grid-cols-[4.5rem_minmax(0,1fr)] md:items-center md:gap-2">
                   <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
                     <ParentAvatar parent={parent} />
                     {label}

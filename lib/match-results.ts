@@ -80,6 +80,8 @@ function matchOpponent(row: string[] | undefined, column: number) {
 }
 
 function parseVenue(value: string) {
+  const timeOnly = value.match(/^(\d{2}:\d{2})$/)
+  if (timeOnly) return { homeAway: '', kickoffTime: timeOnly[1] }
   const match = value.match(/^(Domicile|Extérieur|Terrain neutre)(?: · (\d{2}:\d{2}))?$/)
   return match
     ? { homeAway: match[1], kickoffTime: match[2] ?? '' }
@@ -194,6 +196,7 @@ export type MatchResultInput = {
   resultLabel: MatchResultStatus | ''
   goalsFor: number | null
   goalsAgainst: number | null
+  preserveSlot?: boolean
 }
 
 export type MatchResultDeletion = Pick<MatchSheetEntry, 'team' | 'date' | 'slotColumn'>
@@ -342,7 +345,7 @@ export async function writeMatchResult(input: MatchResultInput) {
   }
 
   let relocatedFromColumn: number | null = null
-  if (targetColumn !== null && emptyColumn !== null && emptyColumn < targetColumn) {
+  if (targetColumn !== null && !input.preserveSlot && emptyColumn !== null && emptyColumn < targetColumn) {
     relocatedFromColumn = targetColumn
     targetColumn = emptyColumn
   } else if (targetColumn === null) {
@@ -363,7 +366,9 @@ export async function writeMatchResult(input: MatchResultInput) {
     { range: cellRange(targetColumn, competitionRowIndex), values: [[input.competition]] },
     {
       range: cellRange(targetColumn, homeAwayRowIndex),
-      values: [[input.kickoffTime ? `${input.homeAway} · ${input.kickoffTime}` : input.homeAway]],
+      values: [[input.kickoffTime
+        ? input.homeAway ? `${input.homeAway} · ${input.kickoffTime}` : input.kickoffTime
+        : input.homeAway]],
     },
     { range: cellRange(targetColumn, resultRowIndex), values: [[input.resultLabel]] },
     { range: cellRange(targetColumn, goalsForRowIndex), values: [[hasScore ? String(input.goalsFor) : '']] },

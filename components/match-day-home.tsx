@@ -225,6 +225,7 @@ export function MatchDayHome({
   canManageMatches,
   onSelectMatch,
   onOpenCallups,
+  onScheduleUpdated,
 }: {
   entries: MatchSheetEntry[]
   convocations: Convocation[]
@@ -232,6 +233,7 @@ export function MatchDayHome({
   canManageMatches: boolean
   onSelectMatch: (entry: MatchSheetEntry) => void
   onOpenCallups: (date: string) => void
+  onScheduleUpdated: () => void
 }) {
   const today = localToday()
   const plannedDate = getNextPlannedMatchDate(entries, today)
@@ -370,7 +372,14 @@ export function MatchDayHome({
                             )}
                           </div>
                         </details>
-                        {canManageMatches && <MatchFamilyMessage match={match} date={plannedDate} />}
+                        {canManageMatches && (
+                          <MatchFamilyMessage
+                            match={match}
+                            date={plannedDate}
+                            calledPlayerNames={calledPlayers.map((player) => player.name)}
+                            onScheduleUpdated={onScheduleUpdated}
+                          />
+                        )}
                       </div>
                     </div>
                   )

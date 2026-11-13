@@ -25,6 +25,7 @@ import {
   saveOfflineLiveMatch,
 } from '@/lib/offline-storage'
 import {
+  areLiveSessionsEqual,
   calculateLiveMatchSummary,
   createLiveMatchSession,
   getLiveElapsedSeconds,
@@ -67,6 +68,7 @@ export function LiveMatchConsole({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [offlineNotice, setOfflineNotice] = useState(false)
+  const [remoteUpdateNotice, setRemoteUpdateNotice] = useState(false)
   const [eventMinuteOverride, setEventMinuteOverride] = useState<number | null>(null)
   const [scorerNumber, setScorerNumber] = useState('')
   const [assistNumber, setAssistNumber] = useState('')
@@ -76,8 +78,10 @@ export function LiveMatchConsole({
   const [editingEventId, setEditingEventId] = useState<string | null>(null)
   const [editingEventMinute, setEditingEventMinute] = useState('')
   const autoPauseRef = useRef(false)
+  const lastLocalMutationAt = useRef(0)
 
   const persistSession = useCallback(async (nextSession: LiveMatchSession, action: 'save' | 'finalize' | 'reset' = 'save') => {
+    lastLocalMutationAt.current = Date.now()
     setSaving(true)
     setError('')
     // Sauvegarder immédiatement dans le stockage local offline
@@ -193,6 +197,69 @@ export function LiveMatchConsole({
       })
     return () => { active = false }
   }, [match.date, match.slotColumn, match.team, starters, substitutes])
+
+  // Polling léger pour synchroniser les actions effectuées depuis un autre appareil (ex: deux éducateurs en direct)
+  useEffect(() => {
+    if (loading || !session || session.completed) return
+
+    let cancelled = false
+    const pollInterval = 6000
+
+    const poll = async () => {
+      // Ignorer si l'onglet est masqué, si l'appareil est hors-ligne,
+      // si une sauvegarde locale est en cours, ou si une mutation locale a eu lieu il y a moins de 5 secondes
+      if (
+        document.visibilityState === 'hidden' ||
+        (typeof navigator !== 'undefined' && !navigator.onLine) ||
+        saving ||
+        Date.now() - lastLocalMutationAt.current < 5000
+      ) {
+        return
+      }
+
+      try {
+        const params = new URLSearchParams({
+          date: match.date,
+          team: match.team,
+          slotColumn: String(match.slotColumn),
+        })
+        const response = await fetch(`/api/educators/live-match?${params}`, { cache: 'no-store' })
+        if (!response.ok) return
+        const result = (await response.json()) as { session?: LiveMatchSession | null }
+        if (cancelled || !result.session) return
+
+        const remote = result.session
+        setSession((current) => {
+          if (!current || areLiveSessionsEqual(current, remote)) return current
+
+          // Si le direct a changé sur le serveur (action d'un autre éducateur)
+          saveOfflineLiveMatch(remote)
+          setRemoteUpdateNotice(true)
+          setTimeout(() => setRemoteUpdateNotice(false), 3000)
+          return remote
+        })
+      } catch {
+        // Erreur réseau de polling ignorée pour ne pas perturber l'expérience
+      }
+    }
+
+    const timer = window.setInterval(() => {
+      void poll()
+    }, pollInterval)
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void poll()
+      }
+    }
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }, [loading, match.date, match.slotColumn, match.team, saving, session?.completed])
 
   const elapsedSeconds = session ? getLiveElapsedSeconds(session, now) : 0
   const summaryState = useMemo(() => {
@@ -377,10 +444,30 @@ export function LiveMatchConsole({
             <Trophy aria-hidden="true" className="size-5" />
           </span>
           <div className="min-w-0">
-            <h2 id="live-match-title" className="truncate text-base font-black">
-              Direct · Équipe {match.team === 'E1' ? '1' : '2'}
-            </h2>
-            <p className="truncate text-xs text-white/65">{match.opponent || 'Adversaire à préciser'}</p>
+            <div className="flex items-center gap-2">
+              <h2 id="live-match-title" className="truncate text-base font-black">
+                Direct · Équipe {match.team === 'E1' ? '1' : '2'}
+              </h2>
+              {offlineNotice ? (
+                <span className="inline-flex items-center gap-1 rounded-full bg-amber-400/20 px-2 py-0.5 text-[10px] font-bold text-amber-200">
+                  <WifiOff className="size-2.5" />
+                  Hors-ligne
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/20 px-2 py-0.5 text-[10px] font-bold text-emerald-300">
+                  <span className="size-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Synchro
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <p className="truncate text-xs text-white/65">{match.opponent || 'Adversaire à préciser'}</p>
+              {remoteUpdateNotice && (
+                <span className="inline-flex items-center gap-1 rounded-full bg-sky-400/30 px-2 py-0.5 text-[10px] font-bold text-sky-200 animate-in fade-in duration-200">
+                  ↻ Mis à jour par un autre éducateur
+                </span>
+              )}
+            </div>
           </div>
         </div>
         <button type="button" onClick={onClose} disabled={saving} aria-label="Fermer le direct" className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white/10 hover:bg-white/20 disabled:opacity-50">

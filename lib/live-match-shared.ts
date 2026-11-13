@@ -191,3 +191,39 @@ export function calculateLiveMatchSummary(session: LiveMatchSession, now = Date.
     })),
   }
 }
+
+export function areLiveSessionsEqual(
+  left: LiveMatchSession | null,
+  right: LiveMatchSession | null,
+): boolean {
+  if (left === right) return true
+  if (!left || !right) return false
+
+  if (
+    left.date !== right.date ||
+    left.team !== right.team ||
+    left.slotColumn !== right.slotColumn ||
+    left.phase !== right.phase ||
+    left.completed !== right.completed ||
+    left.runningSince !== right.runningSince ||
+    left.elapsedSeconds !== right.elapsedSeconds ||
+    left.events.length !== right.events.length
+  ) {
+    return false
+  }
+
+  for (let i = 0; i < left.events.length; i += 1) {
+    const a = left.events[i]
+    const b = right.events[i]
+    if (a.id !== b.id || a.minute !== b.minute || a.kind !== b.kind) return false
+    if (a.kind === 'goal' && b.kind === 'goal') {
+      if (a.side !== b.side || a.scorerNumber !== b.scorerNumber || a.assistNumber !== b.assistNumber) {
+        return false
+      }
+    } else if (a.kind === 'substitution' && b.kind === 'substitution') {
+      if (a.playerOut !== b.playerOut || a.playerIn !== b.playerIn) return false
+    }
+  }
+
+  return true
+}

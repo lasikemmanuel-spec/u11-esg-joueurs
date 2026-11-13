@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  areLiveSessionsEqual,
   calculateLiveMatchSummary,
   createLiveMatchSession,
   formatLiveMinute,
@@ -77,5 +78,23 @@ describe('live match calculations', () => {
     ]
 
     expect(() => calculateLiveMatchSummary(match)).toThrow('Remplacement invalide')
+  })
+
+  it('correctly compares two live sessions for polling reconciliation', () => {
+    const s1 = session()
+    const s2 = session()
+    expect(areLiveSessionsEqual(s1, s2)).toBe(true)
+
+    s2.elapsedSeconds = 10
+    expect(areLiveSessionsEqual(s1, s2)).toBe(false)
+
+    s1.elapsedSeconds = 10
+    expect(areLiveSessionsEqual(s1, s2)).toBe(true)
+
+    s1.events.push({ id: 'g1', kind: 'goal', side: 'for', minute: 4, scorerNumber: 9 })
+    expect(areLiveSessionsEqual(s1, s2)).toBe(false)
+
+    s2.events.push({ id: 'g1', kind: 'goal', side: 'for', minute: 4, scorerNumber: 9 })
+    expect(areLiveSessionsEqual(s1, s2)).toBe(true)
   })
 })

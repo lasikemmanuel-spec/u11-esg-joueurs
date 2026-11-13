@@ -363,7 +363,7 @@ export function MatchDayHome({
                   year: 'numeric',
                 })}
               </p>
-              <div className="mt-4 grid gap-2 sm:grid-cols-2">
+              <div className="mt-4 grid items-stretch gap-2 sm:grid-cols-2">
                 {matchesOnPlannedDate.map((match) => {
                   const calledPlayers = convocations.flatMap((player) => {
                     const callup = player.matches.find((item) =>
@@ -375,13 +375,13 @@ export function MatchDayHome({
                   })
 
                   return (
-                    <div key={`${match.team}-${match.slotColumn}`} className="flex min-w-0 flex-col gap-2">
+                    <div key={`${match.team}-${match.slotColumn}`} className="flex min-w-0 flex-col gap-2 sm:h-full">
                       <button
                         type="button"
                         onClick={() => onSelectMatch(match)}
                         aria-label={`Ouvrir la feuille de match, ES Genech ${match.team === 'E1' ? '1' : '2'} contre ${match.opponent || 'adversaire à préciser'}`}
                         className={[
-                          'group flex w-full min-w-0 items-center gap-3 rounded-2xl border p-3 text-left shadow-md backdrop-blur-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white',
+                          'group flex w-full min-w-0 items-center gap-3 rounded-2xl border p-3 text-left shadow-md backdrop-blur-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:flex-1',
                           match.team === 'E1'
                             ? 'border-sky-300/50 bg-gradient-to-br from-sky-400/20 to-blue-950/20 hover:border-sky-200'
                             : 'border-amber-300/60 bg-gradient-to-br from-amber-400/20 to-blue-950/20 hover:border-amber-200',
@@ -415,7 +415,7 @@ export function MatchDayHome({
                           <MatchWeather date={plannedDate} homeAway={match.homeAway} opponent={match.opponent} today={today} />
                         </div>
                       </button>
-                      <div className="grid w-full grid-cols-2 items-center gap-2 pl-1">
+                      <div className="mt-auto grid w-full grid-cols-2 items-center gap-2 pl-1">
                         <ConvocationOverlay
                           teamName={`ES Genech ${match.team === 'E1' ? '1' : '2'}`}
                           players={calledPlayers}

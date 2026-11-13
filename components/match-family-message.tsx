@@ -4,9 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Copy, MessageCircle, Share2, X } from 'lucide-react'
 import type { MatchSheetEntry } from '@/lib/match-results'
 
-type MessageKind = 'convocation' | 'scheduleChange'
-
-function buildMessage(match: MatchSheetEntry, date: string, kind: MessageKind, calledPlayerNames: string[]) {
+function buildMessage(match: MatchSheetEntry, date: string, calledPlayerNames: string[]) {
   const teamName = `ES Genech ${match.team === 'E1' ? '1' : '2'}`
   const opponent = match.opponent || 'adversaire à préciser'
   const playerList = calledPlayerNames.length > 0
@@ -17,17 +15,6 @@ function buildMessage(match: MatchSheetEntry, date: string, kind: MessageKind, c
     day: 'numeric',
     month: 'long',
   })
-
-  if (kind === 'scheduleChange') {
-    return [
-      `⚠️ Changement d’horaire pour le match de ${teamName} contre ${opponent}.`,
-      `📅 ${dateLabel}`,
-      match.kickoffTime ? `🕒 Nouvel horaire : ${match.kickoffTime}` : '🕒 Nouvel horaire : à préciser',
-      `📍 ${match.homeAway || 'Lieu à préciser'}`,
-      `👥 Joueurs concernés :\n${playerList}`,
-      'À bientôt, allez l’ESG !',
-    ].join('\n')
-  }
 
   return [
     `📣 Match de ${teamName} contre ${opponent}`,
@@ -53,7 +40,6 @@ export function MatchFamilyMessage({
   const titleId = `match-family-message-title-${match.team}-${match.slotColumn}`
   const messageId = `match-family-message-text-${match.team}-${match.slotColumn}`
   const [open, setOpen] = useState(false)
-  const [kind, setKind] = useState<MessageKind>('convocation')
   const [message, setMessage] = useState('')
   const [notice, setNotice] = useState('')
   const whatsappHref = useMemo(
@@ -67,16 +53,9 @@ export function MatchFamilyMessage({
   }, [open])
 
   const openComposer = () => {
-    setKind('convocation')
-    setMessage(buildMessage(match, date, 'convocation', calledPlayerNames))
+    setMessage(buildMessage(match, date, calledPlayerNames))
     setNotice('')
     setOpen(true)
-  }
-
-  const changeKind = (nextKind: MessageKind) => {
-    setKind(nextKind)
-    setMessage(buildMessage(match, date, nextKind, calledPlayerNames))
-    setNotice('')
   }
 
   const copyMessage = async () => {
@@ -124,24 +103,6 @@ export function MatchFamilyMessage({
         </header>
 
         <div className="space-y-3 p-4">
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              aria-pressed={kind === 'convocation'}
-              onClick={() => changeKind('convocation')}
-              className={`min-h-10 rounded-xl px-3 text-xs font-black ${kind === 'convocation' ? 'bg-[#172554] text-white dark:bg-amber-300 dark:text-[#172554]' : 'border border-[#172554]/20 bg-white/70 dark:bg-white/10'}`}
-            >
-              Convocation
-            </button>
-            <button
-              type="button"
-              aria-pressed={kind === 'scheduleChange'}
-              onClick={() => changeKind('scheduleChange')}
-              className={`min-h-10 rounded-xl px-3 text-xs font-black ${kind === 'scheduleChange' ? 'bg-[#172554] text-white dark:bg-amber-300 dark:text-[#172554]' : 'border border-[#172554]/20 bg-white/70 dark:bg-white/10'}`}
-            >
-              Changement d’horaire
-            </button>
-          </div>
           <label className="block text-xs font-bold" htmlFor={messageId}>
             Texte à partager
           </label>

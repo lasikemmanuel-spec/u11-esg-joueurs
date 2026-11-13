@@ -109,22 +109,30 @@ async function getMatchDetailRows() {
   }
 }
 
-async function saveMatchDetails(input: MatchResultInput, slotColumn: number) {
-  if (!input.kickoffTime && !input.meetingTime && !input.venueAddress) return
+async function getMatchDetailsUpdates(input: MatchResultInput, slotColumn: number) {
+  if (!input.kickoffTime && !input.meetingTime && !input.venueAddress) return []
   await ensureAuthenticatedSheetTab(MATCH_DETAILS_TAB)
   const { sheetTitle, rows } = await getAuthenticatedSheetRows(MATCH_DETAILS_TAB)
   const escapedTitle = sheetTitle.replace(/'/g, "''")
   const range = (row: number) => `'${escapedTitle}'!A${row}:F${row}`
-  if (!rows[0]?.[0]) {
-    await updateAuthenticatedSheetValues([{ range: range(1), values: [['Clé', 'Équipe', 'Date', 'Heure match', 'Heure rendez-vous', 'Adresse']] }])
-  }
+  const updates: Array<{ range: string; values: string[][] }> = []
+  if (!rows[0]?.[0]) updates.push({
+    range: range(1),
+    values: [['Clé', 'Équipe', 'Date', 'Heure match', 'Heure rendez-vous', 'Adresse']],
+  })
   const key = matchDetailsKey(input.team, input.date, slotColumn)
   const existingIndex = rows.findIndex((row, index) => index > 0 && row[0] === key)
   const targetRow = existingIndex >= 0 ? existingIndex + 1 : Math.max(rows.length + 1, 2)
-  await updateAuthenticatedSheetValues([{
+  updates.push({
     range: range(targetRow),
     values: [[key, input.team, input.date, input.kickoffTime, input.meetingTime ?? '', input.venueAddress ?? '']],
-  }])
+  })
+  return updates
+}
+
+async function saveMatchDetails(input: MatchResultInput, slotColumn: number) {
+  const updates = await getMatchDetailsUpdates(input, slotColumn)
+  if (updates.length > 0) await updateAuthenticatedSheetValues(updates)
 }
 
 function getPlayerParticipation(rows: string[][], column: number) {
@@ -449,8 +457,9 @@ export async function writeMatchResult(input: MatchResultInput) {
       { range: cellRange(relocatedFromColumn, goalsAgainstRowIndex), values: [['']] },
     )
   }
+  updates.push(...await getMatchDetailsUpdates(input, targetColumn))
+  // Keep the fixture and its optional meeting/venue details in the same Sheets batch.
   await updateAuthenticatedSheetValues(updates)
-  await saveMatchDetails(input, targetColumn)
 
   return { sheetTitle, slotColumn: targetColumn, updatedExistingMatch: input.slotColumn !== undefined }
 }

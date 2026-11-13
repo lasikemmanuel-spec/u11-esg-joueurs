@@ -1,21 +1,14 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
+import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
 import { BarChart3, CalendarDays, Dumbbell, Ellipsis, LogOut, Radio, Shirt, UsersRound, X, type LucideIcon } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
-import { MatchCallupBreakdown } from '@/components/match-callup-breakdown'
-import { PlayerStats } from '@/components/player-stats'
-import { PositionBreakdown } from '@/components/position-breakdown'
-import { EducatorRoster } from '@/components/educator-roster'
-import { MatchResultEntry } from '@/components/match-result-entry'
-import { MatchDayHome } from '@/components/match-day-home'
 import { EducatorAvatar } from '@/components/educator-avatar'
 import { EducatorProfilePhotoEditor } from '@/components/educator-profile-photo-editor'
 import { RefreshSheetButton } from '@/components/refresh-sheet-button'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { LiveMatchConsole } from '@/components/live-match-console'
-import { TrainingAttendanceManager } from '@/components/training-attendance-manager'
 import type { Convocation } from '@/lib/convocations'
 import type { PublicPlayer } from '@/lib/players'
 import type { MatchSheetEntry, TeamMatchResults } from '@/lib/match-results'
@@ -41,6 +34,31 @@ type ActiveLiveMatch = {
 }
 
 const EMPTY_PLAYER_NUMBERS: number[] = []
+
+const MatchCallupBreakdown = dynamic(() => import('@/components/match-callup-breakdown').then((module) => module.MatchCallupBreakdown), {
+  loading: () => <p role="status" className="p-4 text-sm text-muted-foreground">Chargement des statistiques de matchs…</p>,
+})
+const PlayerStats = dynamic(() => import('@/components/player-stats').then((module) => module.PlayerStats), {
+  loading: () => <p role="status" className="p-4 text-sm text-muted-foreground">Chargement des statistiques joueurs…</p>,
+})
+const PositionBreakdown = dynamic(() => import('@/components/position-breakdown').then((module) => module.PositionBreakdown), {
+  loading: () => <p role="status" className="p-4 text-sm text-muted-foreground">Chargement de l’effectif…</p>,
+})
+const EducatorRoster = dynamic(() => import('@/components/educator-roster').then((module) => module.EducatorRoster), {
+  loading: () => <p role="status" className="p-4 text-sm text-muted-foreground">Chargement de l’espace éducateurs…</p>,
+})
+const MatchResultEntry = dynamic(() => import('@/components/match-result-entry').then((module) => module.MatchResultEntry), {
+  loading: () => <p role="status" className="p-4 text-sm text-muted-foreground">Chargement des feuilles de match…</p>,
+})
+const MatchDayHome = dynamic(() => import('@/components/match-day-home').then((module) => module.MatchDayHome), {
+  loading: () => <p role="status" className="p-4 text-sm text-muted-foreground">Chargement du calendrier…</p>,
+})
+const TrainingAttendanceManager = dynamic(() => import('@/components/training-attendance-manager').then((module) => module.TrainingAttendanceManager), {
+  loading: () => <p role="status" className="p-4 text-sm text-muted-foreground">Chargement des présences…</p>,
+})
+const LiveMatchConsole = dynamic(() => import('@/components/live-match-console').then((module) => module.LiveMatchConsole), {
+  loading: () => <p role="status" className="p-4 text-sm text-muted-foreground">Chargement du match en direct…</p>,
+})
 
 function isMatchSheetEntry(value: unknown): value is MatchSheetEntry {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
@@ -77,6 +95,7 @@ export function DashboardTabs({
   trainingAttendanceError,
   cohesionDays,
   matchDataErrors,
+  dataLoadErrors,
   updatedAt,
   children,
 }: {
@@ -91,7 +110,8 @@ export function DashboardTabs({
   trainingAttendanceError: boolean
   cohesionDays: CohesionDay[]
   matchDataErrors: string[]
-  updatedAt: string
+  dataLoadErrors: string[]
+  updatedAt: string | null
   children: ReactNode
 }) {
   const router = useRouter()
@@ -343,7 +363,13 @@ export function DashboardTabs({
           </div>
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
             {logoutError && <p role="alert" className="text-xs font-medium text-red-200">{logoutError}</p>}
-            <p className="text-[11px] text-white/70">Synchronisé le {updatedAt}</p>
+            <p className="text-[11px] text-white/70">
+              {applicationSession === 'authenticated'
+                ? updatedAt ? `Synchronisé le ${updatedAt}` : 'Synchronisation indisponible'
+                : applicationSession === 'checking'
+                  ? 'Vérification de la connexion…'
+                  : 'Données disponibles après connexion'}
+            </p>
           </div>
         </div>
       </div>
@@ -454,6 +480,14 @@ export function DashboardTabs({
       </nav>
 
       <div className="min-w-0 p-3 sm:p-4 md:p-5">
+        {dataLoadErrors.length > 0 && (
+          <div role="status" className="mb-4 rounded-xl border border-amber-500/40 bg-amber-500/10 px-4 py-3 text-sm text-foreground">
+            <p className="font-bold">Certaines données n’ont pas pu être chargées.</p>
+            <p className="mt-1 text-muted-foreground">
+              Indisponibles : {dataLoadErrors.join(', ')}. Les panneaux concernés peuvent être incomplets ; actualise la page pour réessayer.
+            </p>
+          </div>
+        )}
         {activeTab === 'stats' && (
           <div className="flex flex-col gap-4">
             <nav aria-label="Statistiques" className="flex gap-2 rounded-xl border border-accent/50 bg-muted/50 p-1.5">

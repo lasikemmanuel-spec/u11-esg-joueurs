@@ -18,7 +18,7 @@ const fallbackRoster: Roster = {
   club: 'ES Genech',
   title: 'Liste des joueurs',
   players: [],
-  fetchedAt: new Date().toISOString(),
+  fetchedAt: '',
 }
 
 const fallbackStats: StatsData = {
@@ -55,15 +55,15 @@ export default async function Page() {
   } catch (error) {
     console.error('Impossible de vérifier la session éducateur:', error)
   }
-  const [roster, stats, convocationsResult, matchResultsResult, cohesionResult, trainingAttendanceResult] = await Promise.all([
-    educator ? getRoster().catch((error) => {
+  const [rosterResult, statsResult, convocationsResult, matchResultsResult, cohesionResult, trainingAttendanceResult] = await Promise.all([
+    educator ? getRoster().then((data) => ({ data, error: false })).catch((error) => {
       console.error('Impossible de charger l’effectif:', error)
-      return fallbackRoster
-    }) : fallbackRoster,
-    educator ? getStats().catch((error) => {
+      return { data: fallbackRoster, error: true }
+    }) : { data: fallbackRoster, error: false },
+    educator ? getStats().then((data) => ({ data, error: false })).catch((error) => {
       console.error('Impossible de charger les statistiques joueurs:', error)
-      return fallbackStats
-    }) : fallbackStats,
+      return { data: fallbackStats, error: true }
+    }) : { data: fallbackStats, error: false },
     educator ? getConvocations().then((data) => ({ data, error: false })).catch((error) => {
       console.error('Impossible de charger les convocations:', error)
       return { data: fallbackConvocations, error: true }
@@ -81,6 +81,8 @@ export default async function Page() {
       return { data: fallbackTrainingAttendance, error: true }
     }) : { data: fallbackTrainingAttendance, error: false },
   ])
+  const roster = rosterResult.data
+  const stats = statsResult.data
   const convocations = convocationsResult.data
   const matchResults = matchResultsResult.data
   const publicPlayers: PublicPlayer[] = roster.players.map(
@@ -97,6 +99,14 @@ export default async function Page() {
     ...(matchResultsResult.error ? ['scores'] : []),
     ...(cohesionResult.error ? ['cohesion'] : []),
   ]
+  const dataLoadErrors = [
+    ...(rosterResult.error ? ['effectif'] : []),
+    ...(statsResult.error ? ['statistiques'] : []),
+    ...(convocationsResult.error ? ['convocations'] : []),
+    ...(matchResultsResult.error ? ['résultats des matchs'] : []),
+    ...(cohesionResult.error ? ['journées de cohésion'] : []),
+    ...(trainingAttendanceResult.error ? ['présences aux entraînements'] : []),
+  ]
   const dataQuality = {
     missingBirthDates: roster.players.filter((player) => !player.birthDate).length,
     suspiciousBirthDates: roster.players.filter((player) => isDateSuspicious(player)).length,
@@ -104,11 +114,13 @@ export default async function Page() {
     noTransfer: roster.players.filter((player) => !player.transferStatus).length,
   }
 
-  const updatedAt = new Intl.DateTimeFormat('fr-FR', {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-    timeZone: 'Europe/Paris',
-  }).format(new Date(roster.fetchedAt))
+  const updatedAt = rosterResult.error || !roster.fetchedAt
+    ? null
+    : new Intl.DateTimeFormat('fr-FR', {
+      dateStyle: 'medium',
+      timeStyle: 'short',
+      timeZone: 'Europe/Paris',
+    }).format(new Date(roster.fetchedAt))
 
   return (
     <div className="relative isolate min-h-dvh bg-muted/40">
@@ -128,6 +140,7 @@ export default async function Page() {
         trainingAttendanceError={trainingAttendanceResult.error}
         cohesionDays={cohesionResult.data}
         matchDataErrors={matchDataErrors}
+        dataLoadErrors={dataLoadErrors}
         updatedAt={updatedAt}
       >
         {educator && <DataQualityPanel {...dataQuality} />}

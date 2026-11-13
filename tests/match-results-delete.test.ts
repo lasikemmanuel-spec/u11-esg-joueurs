@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { ensureAuthenticatedSheetColumnCount, getAuthenticatedSheetRows, updateAuthenticatedSheetValues } = vi.hoisted(() => ({
+const { ensureAuthenticatedSheetColumnCount, ensureAuthenticatedSheetTab, getAuthenticatedSheetRows, updateAuthenticatedSheetValues } = vi.hoisted(() => ({
   ensureAuthenticatedSheetColumnCount: vi.fn(),
+  ensureAuthenticatedSheetTab: vi.fn(),
   getAuthenticatedSheetRows: vi.fn(),
   updateAuthenticatedSheetValues: vi.fn(),
 }))
@@ -9,6 +10,7 @@ const { ensureAuthenticatedSheetColumnCount, getAuthenticatedSheetRows, updateAu
 vi.mock('server-only', () => ({}))
 vi.mock('@/lib/google-sheets', () => ({
   ensureAuthenticatedSheetColumnCount,
+  ensureAuthenticatedSheetTab,
   getAuthenticatedSheetRows,
   updateAuthenticatedSheetValues,
 }))
@@ -38,18 +40,21 @@ describe('match deletion', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     ensureAuthenticatedSheetColumnCount.mockResolvedValue(undefined)
+    ensureAuthenticatedSheetTab.mockResolvedValue(undefined)
     updateAuthenticatedSheetValues.mockResolvedValue(undefined)
   })
 
   it('stores match time alongside venue and exposes it separately when reading', async () => {
     const rows = sheetRows([{ column: 2, date: '14/11/2026', opponent: 'Club' }])
     rows[4][2] = 'Domicile · 10:30'
-    getAuthenticatedSheetRows
-      .mockResolvedValueOnce({ sheetTitle: MATCH_TABS.E1, rows })
-      .mockResolvedValueOnce({
-        sheetTitle: MATCH_TABS.E2,
-        rows: sheetRows([{ column: 2, date: '14/11/2026', opponent: 'Autre club' }]),
-      })
+    getAuthenticatedSheetRows.mockImplementation(async (tab: string) => ({
+      sheetTitle: tab,
+      rows: tab === MATCH_TABS.E1
+        ? rows
+        : tab === MATCH_TABS.E2
+          ? sheetRows([{ column: 2, date: '14/11/2026', opponent: 'Autre club' }])
+          : [],
+    }))
 
     const results = await getMatchResults()
     expect(results.entries.find((entry) => entry.team === 'E1' && entry.slotColumn === 2)).toMatchObject({
@@ -58,10 +63,12 @@ describe('match deletion', () => {
     })
     expect(results.E1).toEqual([])
 
-    getAuthenticatedSheetRows.mockResolvedValue({
-      sheetTitle: MATCH_TABS.E1,
-      rows: sheetRows([{ column: 2, date: '21/11/2026', opponent: 'Club existant' }]),
-    })
+    getAuthenticatedSheetRows
+      .mockResolvedValueOnce({
+        sheetTitle: MATCH_TABS.E1,
+        rows: sheetRows([{ column: 2, date: '21/11/2026', opponent: 'Club existant' }]),
+      })
+      .mockResolvedValueOnce({ sheetTitle: '⚽ Détails rendez-vous', rows: [] })
     await writeMatchResult({
       team: 'E1',
       date: '2026-11-14',
@@ -73,9 +80,13 @@ describe('match deletion', () => {
       goalsFor: null,
       goalsAgainst: null,
     })
-    expect(updateAuthenticatedSheetValues.mock.calls[0][0]).toContainEqual({
+    expect(updateAuthenticatedSheetValues.mock.calls.flatMap(([updates]) => updates)).toContainEqual({
       range: "'⚽ Feuille de Match Equipe 1'!G5",
-      values: [['Domicile · 10:30']],
+      values: [['Domicile']],
+    })
+    expect(updateAuthenticatedSheetValues.mock.calls.flatMap(([updates]) => updates)).toContainEqual({
+      range: "'⚽ Détails rendez-vous'!A1:F1",
+      values: [['Clé', 'Équipe', 'Date', 'Heure match', 'Heure rendez-vous', 'Adresse']],
     })
   })
 

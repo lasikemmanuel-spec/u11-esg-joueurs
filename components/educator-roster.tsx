@@ -1,12 +1,11 @@
 'use client'
 
 import { useState, useMemo, useEffect, useLayoutEffect, useCallback, useRef, type FormEvent } from 'react'
+import dynamic from 'next/dynamic'
 import { Search, Copy, Check, CheckCircle2, Award, Save, ChevronDown, ChevronUp, ChevronRight, Pencil, Plus, X, ContactRound, UsersRound, KeyRound, LockKeyhole } from 'lucide-react'
 import type { Player, PublicPlayer } from '@/lib/players'
 import { matchesSearch } from '@/lib/search'
 import { ParentAvatar } from '@/components/parent-avatar'
-import { EducatorDirectory } from '@/components/educator-directory'
-import { EducatorAccountManagement } from '@/components/educator-account-management'
 import { EducatorAvatar } from '@/components/educator-avatar'
 import { prepareEducatorPhoto } from '@/lib/prepare-educator-photo'
 
@@ -36,6 +35,13 @@ type PhoneEncryptionDiagnostics = {
 }
 
 import { PhoneActionButtons } from '@/components/phone-action-buttons'
+
+const EducatorDirectory = dynamic(() => import('@/components/educator-directory').then((module) => module.EducatorDirectory), {
+  loading: () => <p role="status" className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">Chargement de l’annuaire…</p>,
+})
+const EducatorAccountManagement = dynamic(() => import('@/components/educator-account-management').then((module) => module.EducatorAccountManagement), {
+  loading: () => <p role="status" className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">Chargement de la gestion des comptes…</p>,
+})
 
 export function EducatorRoster({
   initialEducator = null,

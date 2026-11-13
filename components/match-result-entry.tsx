@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, CalendarPlus, Check, ChevronDown, ChevronUp, Clock3, Pencil, Plus, Save, Sparkles, Trash2, UsersRound, X } from 'lucide-react'
+import { CalendarDays, CalendarPlus, Check, ChevronDown, ChevronUp, Clock3, Map, Navigation, Pencil, Plus, Save, Sparkles, Trash2, UsersRound, X } from 'lucide-react'
 import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
 import { MatchLineupEntry, useMatchLineups } from '@/components/match-lineup-planner'
 import { LiveMatchConsole } from '@/components/live-match-console'
+import { MatchFamilyMessage } from '@/components/match-family-message'
 import { ClubCrest } from '@/components/club-crest'
 import type { MatchSheetEntry } from '@/lib/match-results'
 import type { Convocation } from '@/lib/convocations'
@@ -740,6 +741,14 @@ export function MatchResultEntry({
                             ? 'bg-[#172554] text-white'
                             : 'bg-amber-400 text-blue-950'
                   const homeAwayIcon = entry.homeAway === 'Domicile' ? '🏠' : entry.homeAway === 'Extérieur' ? '✈️' : '⚖️'
+                  const calledPlayerNames = convocations.flatMap((player) => {
+                    const callup = player.matches.find((item) =>
+                      dateInputValue(item.date) === date &&
+                      (item.team === entry.team || item.team === 'E1+E2') &&
+                      (item.status === 'called' || item.status === 'calledAbsent' || item.status === 'present'),
+                    )
+                    return callup ? [player.name] : []
+                  })
                   return (
                     <div
                       key={entry.team + '-' + entry.slotColumn}
@@ -865,6 +874,29 @@ export function MatchResultEntry({
                       </div>
                       {isMatchExpanded && (
                         <div id={matchPanelId}>
+                          <div className="flex flex-wrap items-center gap-2 border-b border-border/70 px-3 py-2">
+                            {entry.meetingTime && (
+                              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-black text-amber-950 dark:bg-amber-300/20 dark:text-amber-100">
+                                <Clock3 aria-hidden="true" className="size-3.5" /> Rendez-vous au stade · {entry.meetingTime}
+                              </span>
+                            )}
+                            {entry.homeAway === 'Extérieur' && entry.venueAddress?.trim() && (() => {
+                              const query = encodeURIComponent(entry.venueAddress.trim()).replace(/%20/g, '+')
+                              return (
+                                <>
+                                  <a href={`https://maps.google.com/?q=${query}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-[#4285F4] px-3 text-xs font-black text-white">
+                                    <Map aria-hidden="true" className="size-4" /> Google Maps
+                                  </a>
+                                  <a href={`https://waze.com/ul?q=${query}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-[#33CCFF] px-3 text-xs font-black text-[#10213f]">
+                                    <Navigation aria-hidden="true" className="size-4" /> Waze
+                                  </a>
+                                </>
+                              )
+                            })()}
+                            {canManage && (
+                              <MatchFamilyMessage match={entry} date={date} calledPlayerNames={calledPlayerNames} />
+                            )}
+                          </div>
                           {canManage && (
                             <div className="px-3 pb-3">
                               {matchLineups.loading ? (

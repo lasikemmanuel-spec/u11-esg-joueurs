@@ -121,6 +121,8 @@ export function DashboardTabs({
   const [matchFocuses, setMatchFocuses] = useState<Partial<Record<'E1' | 'E2', MatchFocus>>>({})
   const [callupFocus, setCallupFocus] = useState<{ date: string; requestId: number } | null>(null)
   const [activeMatchTeam, setActiveMatchTeam] = useState<'E1' | 'E2' | null>(null)
+  const [matchCalendarLoaded, setMatchCalendarLoaded] = useState(false)
+  const matchCalendarRef = useRef<HTMLDivElement | null>(null)
   const [liveMatches, setLiveMatches] = useState<ActiveLiveMatch[]>([])
   const [liveMatchToOpen, setLiveMatchToOpen] = useState<MatchSheetEntry | null>(null)
   const [liveMatchError, setLiveMatchError] = useState('')
@@ -148,6 +150,24 @@ export function DashboardTabs({
     window.addEventListener('keydown', closeOnEscape)
     return () => window.removeEventListener('keydown', closeOnEscape)
   }, [moreMenuOpen])
+
+  useEffect(() => {
+    if (activeTab !== 'matches' || applicationSession !== 'authenticated' || matchCalendarLoaded) return
+    const target = matchCalendarRef.current
+    if (!target) return
+    if (typeof IntersectionObserver === 'undefined') {
+      setMatchCalendarLoaded(true)
+      return
+    }
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry?.isIntersecting) return
+      setMatchCalendarLoaded(true)
+      observer.disconnect()
+    })
+    observer.observe(target)
+    return () => observer.disconnect()
+  }, [activeTab, applicationSession, matchCalendarLoaded])
 
   useEffect(() => {
     let active = true
@@ -542,29 +562,37 @@ export function DashboardTabs({
                 }
                 setMatchFocuses((current) => ({ ...current, [entry.team]: focus }))
                 setActiveMatchTeam(entry.team)
+                setMatchCalendarLoaded(true)
               }}
               onOpenCallups={(date) => {
                 setCallupFocus({ date, requestId: Date.now() })
+                setMatchCalendarLoaded(true)
                 document.getElementById('match-calendar')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
               }}
             />
-            <div id="match-calendar" className="scroll-mt-4">
-              <MatchResultEntry
-                entries={matchResults.entries}
-                matchesPlayed={matchesPlayed}
-                players={rosterPlayers}
-                playerStats={players}
-                convocations={convocations}
-                convocationDates={convocationDates}
-                trainingAttendance={trainingAttendance}
-                trainingAttendanceError={trainingAttendanceError}
-                focusMatch={activeMatchTeam ? matchFocuses[activeMatchTeam] ?? null : null}
-                focusCallups={callupFocus}
-                onConnect={() => {
-                  setReturnToMatchesAfterLogin(true)
-                  setActiveTab('educator')
-                }}
-              />
+            <div id="match-calendar" ref={matchCalendarRef} className="scroll-mt-4">
+              {matchCalendarLoaded ? (
+                <MatchResultEntry
+                  entries={matchResults.entries}
+                  matchesPlayed={matchesPlayed}
+                  players={rosterPlayers}
+                  playerStats={players}
+                  convocations={convocations}
+                  convocationDates={convocationDates}
+                  trainingAttendance={trainingAttendance}
+                  trainingAttendanceError={trainingAttendanceError}
+                  focusMatch={activeMatchTeam ? matchFocuses[activeMatchTeam] ?? null : null}
+                  focusCallups={callupFocus}
+                  onConnect={() => {
+                    setReturnToMatchesAfterLogin(true)
+                    setActiveTab('educator')
+                  }}
+                />
+              ) : (
+                <div role="status" className="rounded-xl border border-dashed border-accent/40 bg-card p-4 text-sm text-muted-foreground">
+                  Le calendrier détaillé se chargera à l’ouverture de cette section.
+                </div>
+              )}
             </div>
           </div>
         )}

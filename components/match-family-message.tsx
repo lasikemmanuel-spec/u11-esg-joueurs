@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Copy, MessageCircle, Share2, X } from 'lucide-react'
+import { Copy, Map, MessageCircle, Navigation, Share2, X } from 'lucide-react'
 import type { MatchSheetEntry } from '@/lib/match-results'
 
 function buildMessage(match: MatchSheetEntry, date: string, calledPlayerNames: string[]) {
@@ -16,7 +16,6 @@ function buildMessage(match: MatchSheetEntry, date: string, calledPlayerNames: s
     month: 'long',
   })
   const venueAddress = match.homeAway === 'Extérieur' ? match.venueAddress?.trim() : ''
-  const mapQuery = venueAddress ? encodeURIComponent(venueAddress).replace(/%20/g, '+') : ''
 
   return [
     `📣 Match de ${teamName} contre ${opponent}`,
@@ -26,8 +25,6 @@ function buildMessage(match: MatchSheetEntry, date: string, calledPlayerNames: s
     match.kickoffTime ? `🕒 ${match.kickoffTime}` : '',
     match.meetingTime ? `🤝 Rendez-vous au stade : ${match.meetingTime}` : '',
     venueAddress ? `📍 Adresse du stade : ${venueAddress}` : '',
-    venueAddress ? `🗺️ Google Maps : https://maps.google.com/?q=${mapQuery}` : '',
-    venueAddress ? `🚗 Waze : https://waze.com/ul?q=${mapQuery}` : '',
     `👥 Joueurs convoqués :\n${playerList}`,
     'À bientôt, allez l’ESG !',
   ].filter(Boolean).join('\n')
@@ -48,6 +45,9 @@ export function MatchFamilyMessage({
   const [open, setOpen] = useState(false)
   const [message, setMessage] = useState('')
   const [notice, setNotice] = useState('')
+  const mapQuery = match.venueAddress ? encodeURIComponent(match.venueAddress.trim()).replace(/%20/g, '+') : ''
+  const mapsHref = mapQuery ? `https://maps.google.com/?q=${mapQuery}` : ''
+  const wazeHref = mapQuery ? `https://waze.com/ul?q=${mapQuery}` : ''
   const whatsappHref = useMemo(
     () => {
       const isDesktop = typeof navigator !== 'undefined' && !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
@@ -123,6 +123,17 @@ export function MatchFamilyMessage({
             rows={7}
             className="w-full resize-y rounded-xl border border-[#172554]/20 bg-white p-3 text-sm leading-relaxed text-[#172554] outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37] dark:bg-slate-900 dark:text-white"
           />
+          {match.homeAway === 'Extérieur' && match.venueAddress?.trim() && (
+            <div className="flex flex-wrap items-center gap-2 rounded-xl border border-[#172554]/10 bg-white/60 p-2 dark:bg-white/5">
+              <span className="mr-auto text-xs font-bold">Ouvrir l’adresse :</span>
+              <a href={mapsHref} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#4285F4] px-3 text-xs font-black text-white">
+                <Map aria-hidden="true" className="size-4" /> Google Maps
+              </a>
+              <a href={wazeHref} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-[#33CCFF] px-3 text-xs font-black text-[#10213f]">
+                <Navigation aria-hidden="true" className="size-4" /> Waze
+              </a>
+            </div>
+          )}
           {notice && <p role="status" className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">{notice}</p>}
           <div className="flex flex-wrap justify-end gap-2">
             <button

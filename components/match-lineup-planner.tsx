@@ -5,6 +5,12 @@ import { useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Armchair, ChevronRight, X } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
+import {
+  getOfflineLineups,
+  queuePendingLineup,
+  removePendingLineup,
+  saveOfflineLineups,
+} from '@/lib/offline-storage'
 import { PlayerCard } from '@/components/player-stats'
 import { countCancelledCallupsForPlayer } from '@/lib/cancelled-match-callups'
 import type { Convocation } from '@/lib/convocations'
@@ -109,7 +115,9 @@ export function useMatchLineups(enabled: boolean) {
     }
 
     let active = true
+    const cachedLineups = getOfflineLineups()
     setLoading(true)
+
     fetch('/api/educators/match-lineups', { cache: 'no-store' })
       .then(async (response) => {
         const result = await response.json()
@@ -118,10 +126,18 @@ export function useMatchLineups(enabled: boolean) {
         if (!Array.isArray(lineupsValue) || !lineupsValue.every(isMatchLineup)) {
           throw new Error('Les feuilles de match reçues sont invalides.')
         }
-        if (active) setLineups(lineupsValue)
+        if (active) {
+          setLineups(lineupsValue)
+          saveOfflineLineups(lineupsValue)
+        }
       })
       .catch((loadError) => {
-        if (active) setError(loadError instanceof Error ? loadError.message : 'Impossible de charger les feuilles de match.')
+        if (!active) return
+        if (cachedLineups) {
+          setLineups(cachedLineups)
+        } else {
+          setError(loadError instanceof Error ? loadError.message : 'Impossible de charger les feuilles de match.')
+        }
       })
       .finally(() => {
         if (active) setLoading(false)
@@ -138,6 +154,30 @@ export function useMatchLineups(enabled: boolean) {
     setPendingKeys((current) => new Set(current).add(key))
     setError('')
     setSavedKey('')
+
+    const localLineup: MatchLineup = {
+      date: match.date,
+      team: match.team,
+      slotColumn: match.slotColumn,
+      starters,
+      substitutes,
+    }
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      queuePendingLineup(localLineup)
+      setLineups((current) => [
+        ...current.filter((item) => matchKey(item) !== key),
+        localLineup,
+      ])
+      setSavedKey(key)
+      setPendingKeys((current) => {
+        const next = new Set(current)
+        next.delete(key)
+        return next
+      })
+      return
+    }
+
     try {
       const response = await fetch('/api/educators/match-lineups', {
         method: 'POST',
@@ -153,13 +193,28 @@ export function useMatchLineups(enabled: boolean) {
       const result = await response.json()
       if (!response.ok) throw new Error(result.error ?? 'Impossible d’enregistrer la feuille de match.')
       if (!isMatchLineup(result.lineup)) throw new Error('La feuille de match enregistrée est invalide.')
+      removePendingLineup(`${match.date}_${match.team}_${match.slotColumn}`)
       setLineups((current) => [
         ...current.filter((lineup) => matchKey(lineup) !== key),
         result.lineup,
       ])
       setSavedKey(key)
     } catch (saveError) {
-      setError(saveError instanceof Error ? saveError.message : 'Impossible d’enregistrer la feuille de match.')
+      const isNetwork =
+        (typeof navigator !== 'undefined' && !navigator.onLine) ||
+        saveError instanceof TypeError ||
+        (saveError instanceof Error && (saveError.message.includes('fetch') || saveError.message.includes('NetworkError')))
+
+      if (isNetwork) {
+        queuePendingLineup(localLineup)
+        setLineups((current) => [
+          ...current.filter((item) => matchKey(item) !== key),
+          localLineup,
+        ])
+        setSavedKey(key)
+      } else {
+        setError(saveError instanceof Error ? saveError.message : 'Impossible d’enregistrer la feuille de match.')
+      }
     } finally {
       setPendingKeys((current) => {
         const next = new Set(current)

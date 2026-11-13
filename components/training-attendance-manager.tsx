@@ -17,6 +17,12 @@ import {
   X,
 } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
+import {
+  getOfflineAttendance,
+  queuePendingAttendance,
+  removePendingAttendance,
+  saveOfflineAttendance,
+} from '@/lib/offline-storage'
 import type { PublicPlayer } from '@/lib/players'
 import {
   TRAINING_ATTENDANCE_STATUSES,
@@ -74,8 +80,12 @@ export function TrainingAttendanceManager({
   const savedSession = useMemo(() => sessions.find((session) => session.date === date), [sessions, date])
   useEffect(() => {
     const next: Record<number, TrainingAttendanceStatus | ''> = {}
+    const offlineEntries = getOfflineAttendance(date)
+    const offlineMap = offlineEntries ? Object.fromEntries(offlineEntries.map((e) => [e.number, e.status])) : null
+
     for (const player of players) {
-      const value = savedSession?.playerStatuses[player.number] ?? ''
+      const serverValue = savedSession?.playerStatuses[player.number]
+      const value = serverValue ?? offlineMap?.[player.number] ?? ''
       next[player.number] = TRAINING_ATTENDANCE_STATUSES.some((status) => status.value === value)
         ? value as TrainingAttendanceStatus
         : ''
@@ -105,13 +115,21 @@ export function TrainingAttendanceManager({
   }, [players, query])
 
   const setAllPresent = () => {
-    setStatuses(Object.fromEntries(players.map((player) => [player.number, 'P'])))
+    const next = Object.fromEntries(players.map((player) => [player.number, 'P' as const]))
+    setStatuses(next)
+    if (date) {
+      saveOfflineAttendance(date, players.map((p) => ({ number: p.number, status: 'P' })))
+    }
     setMessage('')
     setError('')
   }
 
   const resetAttendance = () => {
-    setStatuses(Object.fromEntries(players.map((player) => [player.number, ''])))
+    const next = Object.fromEntries(players.map((player) => [player.number, '' as const]))
+    setStatuses(next)
+    if (date) {
+      saveOfflineAttendance(date, players.map((p) => ({ number: p.number, status: '' })))
+    }
     setMessage('')
     setError('')
   }
@@ -120,21 +138,39 @@ export function TrainingAttendanceManager({
     setSaving(true)
     setMessage('')
     setError('')
+    const entries = players.map((player) => ({ number: player.number, status: statuses[player.number] }))
+    saveOfflineAttendance(date, entries)
+
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      queuePendingAttendance(date, entries)
+      setMessage('Présences sauvegardées localement (mode hors-ligne) 📡. Elles seront transmises automatiquement dès la reconnexion.')
+      setSaving(false)
+      return
+    }
+
     try {
       const response = await fetch('/api/educators/training-attendance', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          date,
-          entries: players.map((player) => ({ number: player.number, status: statuses[player.number] })),
-        }),
+        body: JSON.stringify({ date, entries }),
       })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error ?? 'Enregistrement impossible.')
+      removePendingAttendance(date)
       setMessage('Présences enregistrées dans le classeur Google.')
       router.refresh()
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Enregistrement impossible.')
+      const isNetwork =
+        (typeof navigator !== 'undefined' && !navigator.onLine) ||
+        cause instanceof TypeError ||
+        (cause instanceof Error && (cause.message.includes('fetch') || cause.message.includes('NetworkError')))
+
+      if (isNetwork) {
+        queuePendingAttendance(date, entries)
+        setMessage('Connexion coupée : présences enregistrées localement (mode hors-ligne) 📡. Elles seront envoyées dès le retour du réseau.')
+      } else {
+        setError(cause instanceof Error ? cause.message : 'Enregistrement impossible.')
+      }
     } finally {
       setSaving(false)
     }

@@ -11,11 +11,19 @@ import {
   RotateCcw,
   Save,
   Trophy,
+  WifiOff,
   X,
 } from 'lucide-react'
 import type { MatchSheetEntry } from '@/lib/match-results'
 import type { PublicPlayer } from '@/lib/players'
 import { LiveMatchEventList } from '@/components/live-match-event-list'
+import {
+  getOfflineLiveMatch,
+  liveMatchKey,
+  queuePendingLiveMatch,
+  removePendingLiveMatch,
+  saveOfflineLiveMatch,
+} from '@/lib/offline-storage'
 import {
   calculateLiveMatchSummary,
   createLiveMatchSession,
@@ -58,6 +66,7 @@ export function LiveMatchConsole({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [offlineNotice, setOfflineNotice] = useState(false)
   const [eventMinuteOverride, setEventMinuteOverride] = useState<number | null>(null)
   const [scorerNumber, setScorerNumber] = useState('')
   const [assistNumber, setAssistNumber] = useState('')
@@ -71,6 +80,19 @@ export function LiveMatchConsole({
   const persistSession = useCallback(async (nextSession: LiveMatchSession, action: 'save' | 'finalize' | 'reset' = 'save') => {
     setSaving(true)
     setError('')
+    // Sauvegarder immédiatement dans le stockage local offline
+    saveOfflineLiveMatch(nextSession)
+
+    // Si le navigateur est explicitement hors ligne
+    if (typeof navigator !== 'undefined' && !navigator.onLine) {
+      queuePendingLiveMatch(nextSession, action)
+      setSession(nextSession)
+      setOfflineNotice(true)
+      setNow(Date.now())
+      setSaving(false)
+      return nextSession
+    }
+
     try {
       const response = await fetch('/api/educators/live-match', {
         method: 'POST',
@@ -80,10 +102,26 @@ export function LiveMatchConsole({
       const result = await response.json() as { error?: string; session?: LiveMatchSession }
       if (!response.ok) throw new Error(result.error ?? 'Impossible de sauvegarder le match.')
       if (!result.session) throw new Error('La sauvegarde du match est invalide.')
+      removePendingLiveMatch(liveMatchKey(nextSession))
       setSession(result.session)
+      saveOfflineLiveMatch(result.session)
+      setOfflineNotice(false)
       setNow(Date.now())
       return result.session
     } catch (saveError) {
+      // Si une coupure réseau survient au bord du terrain, on stocke en attente
+      const isNetworkError =
+        (typeof navigator !== 'undefined' && !navigator.onLine) ||
+        (saveError instanceof TypeError) ||
+        (saveError instanceof Error && (saveError.message.includes('fetch') || saveError.message.includes('NetworkError')))
+
+      if (isNetworkError) {
+        queuePendingLiveMatch(nextSession, action)
+        setSession(nextSession)
+        setOfflineNotice(true)
+        setNow(Date.now())
+        return nextSession
+      }
       setError(saveError instanceof Error ? saveError.message : 'Impossible de sauvegarder le match.')
       throw saveError
     } finally {
@@ -107,6 +145,8 @@ export function LiveMatchConsole({
 
   useEffect(() => {
     let active = true
+    const offlineCached = getOfflineLiveMatch(match.date, match.team, match.slotColumn)
+
     const params = new URLSearchParams({
       date: match.date,
       team: match.team,
@@ -116,7 +156,7 @@ export function LiveMatchConsole({
       .then(async (response) => {
         const result = await response.json() as { error?: string; session?: LiveMatchSession | null }
         if (!response.ok) throw new Error(result.error ?? 'Impossible de charger le match.')
-        const saved = result.session ?? createLiveMatchSession({
+        const saved = result.session ?? offlineCached ?? createLiveMatchSession({
           date: match.date,
           team: match.team,
           slotColumn: match.slotColumn,
@@ -125,10 +165,28 @@ export function LiveMatchConsole({
         })
         if (active) {
           setSession(saved)
+          saveOfflineLiveMatch(saved)
         }
       })
       .catch((loadError: unknown) => {
-        if (active) setError(loadError instanceof Error ? loadError.message : 'Impossible de charger le match.')
+        if (!active) return
+        if (offlineCached) {
+          setSession(offlineCached)
+          setOfflineNotice(true)
+        } else if (typeof navigator !== 'undefined' && !navigator.onLine) {
+          const offlineFresh = createLiveMatchSession({
+            date: match.date,
+            team: match.team,
+            slotColumn: match.slotColumn,
+            starters,
+            substitutes,
+          })
+          setSession(offlineFresh)
+          saveOfflineLiveMatch(offlineFresh)
+          setOfflineNotice(true)
+        } else {
+          setError(loadError instanceof Error ? loadError.message : 'Impossible de charger le match.')
+        }
       })
       .finally(() => {
         if (active) setLoading(false)
@@ -384,6 +442,12 @@ export function LiveMatchConsole({
                 )}
               </div>
               <p className="mt-3 text-[11px] text-white/55">2 mi-temps de 25 min · sauvegarde automatique</p>
+              {offlineNotice && (
+                <div className="mt-3 flex items-center justify-center gap-1.5 rounded-full border border-amber-300/40 bg-amber-400/10 px-3 py-1.5 text-[11px] font-bold text-amber-200">
+                  <WifiOff className="size-3.5 shrink-0" />
+                  <span>Mode hors-ligne · sauvegardé sur l’appareil (sync auto dès connexion)</span>
+                </div>
+              )}
             </section>
 
             {session.phase !== 'ready' && session.phase !== 'finished' && (

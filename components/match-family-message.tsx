@@ -10,13 +10,23 @@ async function getMatchTemperature(match: MatchSheetEntry, date: string): Promis
     let latitude = 50.53
     let longitude = 3.22
     if (match.homeAway === 'Extérieur') {
-      const params = new URLSearchParams({
-        name: match.venueAddress?.trim() || match.opponent,
-        count: '1', language: 'fr', countryCode: 'FR', format: 'json',
-      })
-      const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?${params}`)
-      const result = await response.json() as { results?: Array<{ latitude: number; longitude: number }> }
-      const place = result.results?.[0]
+      const ignoredClubWords = new Set(['as', 'es', 'us', 'fc', 'sc', 'rc', 'ol', 'ac', 'sa', 'football', 'club', 'sporting', 'olympique'])
+      const opponentQueries = [
+        match.opponent.trim(),
+        ...match.opponent.trim().split(/\s+/).filter((word) =>
+          word.length >= 3 && !ignoredClubWords.has(word.toLocaleLowerCase('fr-FR')),
+        ),
+      ].slice(0, 5)
+      const queries = [...new Set([match.venueAddress?.trim(), ...opponentQueries].filter((name): name is string => Boolean(name)))]
+      let place: { latitude: number; longitude: number } | undefined
+      for (const name of queries) {
+        const params = new URLSearchParams({ name, count: '1', language: 'fr', countryCode: 'FR', format: 'json' })
+        const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?${params}`)
+        if (!response.ok) continue
+        const result = await response.json() as { results?: Array<{ latitude: number; longitude: number }> }
+        place = result.results?.[0]
+        if (place) break
+      }
       if (!place) return null
       latitude = place.latitude
       longitude = place.longitude

@@ -1,11 +1,12 @@
 import 'server-only'
-import { ensureAuthenticatedSheetColumnCount, getAuthenticatedSheetRows, updateAuthenticatedSheetValues } from '@/lib/google-sheets'
+import { ensureAuthenticatedSheetColumnCount, ensureAuthenticatedSheetTab, getAuthenticatedSheetRows, updateAuthenticatedSheetValues } from '@/lib/google-sheets'
 import type { MatchResultStatus } from '@/lib/match-result-options'
 
 export const MATCH_TABS = {
   E1: '⚽ Feuille de Match Equipe 1',
   E2: '⚽ Feuille de Match Equipe 2',
 } as const
+const MATCH_DETAILS_TAB = '⚽ Détails rendez-vous'
 
 export type MatchResult = {
   date: string
@@ -83,14 +84,47 @@ function matchOpponent(row: string[] | undefined, column: number) {
 
 function parseVenue(value: string) {
   const details = value.match(/^(.*?)\|RDV=([^|]*)\|ADR=([^|]*)$/)
-  const base = details ? details[1] : value
-  const match = base.match(/^(Domicile|Extérieur|Terrain neutre)(?: · (\d{2}:\d{2}))?$/)
+  const storedBase = details ? details[1] : value
+  const baseMatch = storedBase.match(/^(Domicile|Extérieur|Terrain neutre)(?: · (\d{2}:\d{2}))?$/)
+  const base = baseMatch ? baseMatch[1] : storedBase
+  const kickoffTime = baseMatch?.[2] ?? ''
   return {
-    homeAway: match ? match[1] : base,
-    kickoffTime: match?.[2] ?? '',
+    homeAway: base,
+    kickoffTime: kickoffTime,
     meetingTime: details?.[2] ?? '',
     venueAddress: details?.[3] ? decodeURIComponent(details[3]) : '',
   }
+}
+
+function matchDetailsKey(team: 'E1' | 'E2', date: string, slotColumn: number) {
+  return `${team}|${matchDateKey(date)}|${slotColumn}`
+}
+
+async function getMatchDetailRows() {
+  try {
+    return (await getAuthenticatedSheetRows(MATCH_DETAILS_TAB, { cacheForSeconds: 30 })).rows
+  } catch (error) {
+    if (error instanceof Error && error.message === 'Aucun onglet Google Sheets trouvé.') return []
+    throw error
+  }
+}
+
+async function saveMatchDetails(input: MatchResultInput, slotColumn: number) {
+  if (!input.kickoffTime && !input.meetingTime && !input.venueAddress) return
+  await ensureAuthenticatedSheetTab(MATCH_DETAILS_TAB)
+  const { sheetTitle, rows } = await getAuthenticatedSheetRows(MATCH_DETAILS_TAB)
+  const escapedTitle = sheetTitle.replace(/'/g, "''")
+  const range = (row: number) => `'${escapedTitle}'!A${row}:F${row}`
+  if (!rows[0]?.[0]) {
+    await updateAuthenticatedSheetValues([{ range: range(1), values: [['Clé', 'Équipe', 'Date', 'Heure match', 'Heure rendez-vous', 'Adresse']] }])
+  }
+  const key = matchDetailsKey(input.team, input.date, slotColumn)
+  const existingIndex = rows.findIndex((row, index) => index > 0 && row[0] === key)
+  const targetRow = existingIndex >= 0 ? existingIndex + 1 : Math.max(rows.length + 1, 2)
+  await updateAuthenticatedSheetValues([{
+    range: range(targetRow),
+    values: [[key, input.team, input.date, input.kickoffTime, input.meetingTime ?? '', input.venueAddress ?? '']],
+  }])
 }
 
 function getPlayerParticipation(rows: string[][], column: number) {
@@ -166,6 +200,28 @@ async function getTeamResults(tab: string, team: 'E1' | 'E2'): Promise<{
         goalsAgainst,
         ...participation,
       })
+      // One-time cleanup for older entries that stored kickoff/address details
+      // in the visible "Dom / Ext" cell.
+      if (cell(homeAway, column) !== venue.homeAway && date) {
+        const title = tab.replace(/'/g, "''")
+        await updateAuthenticatedSheetValues([{
+          range: `'${title}'!${columnName(column)}${homeAwayRowIndex + 1}`,
+          values: [[venue.homeAway]],
+        }])
+        await saveMatchDetails({
+          team,
+          date,
+          opponent,
+          competition,
+          homeAway: venue.homeAway,
+          kickoffTime: venue.kickoffTime,
+          meetingTime: venue.meetingTime,
+          venueAddress: venue.venueAddress,
+          resultLabel: '',
+          goalsFor: null,
+          goalsAgainst: null,
+        }, column)
+      }
     }
 
     if (
@@ -376,8 +432,7 @@ export async function writeMatchResult(input: MatchResultInput) {
     { range: cellRange(targetColumn, competitionRowIndex), values: [[input.competition]] },
     {
       range: cellRange(targetColumn, homeAwayRowIndex),
-      values: [[`${input.homeAway}${input.kickoffTime ? ` · ${input.kickoffTime}` : ''}` +
-        ((input.meetingTime ?? input.venueAddress) ? `|RDV=${input.meetingTime ?? ''}|ADR=${encodeURIComponent(input.venueAddress ?? '')}` : '')]],
+      values: [[input.homeAway]],
     },
     { range: cellRange(targetColumn, resultRowIndex), values: [[input.resultLabel]] },
     { range: cellRange(targetColumn, goalsForRowIndex), values: [[hasScore ? String(input.goalsFor) : '']] },
@@ -395,6 +450,7 @@ export async function writeMatchResult(input: MatchResultInput) {
     )
   }
   await updateAuthenticatedSheetValues(updates)
+  await saveMatchDetails(input, targetColumn)
 
   return { sheetTitle, slotColumn: targetColumn, updatedExistingMatch: input.slotColumn !== undefined }
 }
@@ -437,10 +493,20 @@ export async function deleteMatchDay(date: string) {
 }
 
 export async function getMatchResults(): Promise<TeamMatchResults> {
-  const [E1, E2] = await Promise.all([
+  const [E1, E2, detailRows] = await Promise.all([
     getTeamResults(MATCH_TABS.E1, 'E1'),
     getTeamResults(MATCH_TABS.E2, 'E2'),
+    getMatchDetailRows(),
   ])
+  const details = new Map(detailRows.slice(1).map((row) => [row[0], {
+    kickoffTime: row[3] ?? '',
+    meetingTime: row[4] ?? '',
+    venueAddress: row[5] ?? '',
+  }]))
+  const entries = [...E1.entries, ...E2.entries].map((entry) => ({
+    ...entry,
+    ...(details.get(matchDetailsKey(entry.team, entry.date, entry.slotColumn)) ?? {}),
+  }))
   return {
     E1: E1.results,
     E2: E2.results,
@@ -448,6 +514,6 @@ export async function getMatchResults(): Promise<TeamMatchResults> {
       E1: E1.matchTypes,
       E2: E2.matchTypes,
     },
-    entries: [...E1.entries, ...E2.entries].sort((a, b) => matchDateKey(a.date).localeCompare(matchDateKey(b.date))),
+    entries: entries.sort((a, b) => matchDateKey(a.date).localeCompare(matchDateKey(b.date))),
   }
 }

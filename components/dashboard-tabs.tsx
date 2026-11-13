@@ -17,7 +17,7 @@ import type { CohesionDay } from '@/lib/cohesion'
 import type { PlayerStats as PlayerStat } from '@/lib/stats'
 
 type TabKey = 'roster' | 'educator' | 'training' | 'stats' | 'matches'
-type StatsSection = 'players' | 'matches'
+type StatsSection = 'players' | 'dynamics' | 'matches'
 type MatchFocus = {
   date: string
   team: 'E1' | 'E2'
@@ -37,6 +37,9 @@ const EMPTY_PLAYER_NUMBERS: number[] = []
 
 const MatchCallupBreakdown = dynamic(() => import('@/components/match-callup-breakdown').then((module) => module.MatchCallupBreakdown), {
   loading: () => <p role="status" className="p-4 text-sm text-muted-foreground">Chargement des statistiques de matchs…</p>,
+})
+const TeamFormDynamics = dynamic(() => import('@/components/team-form-dynamics').then((module) => module.TeamFormDynamics), {
+  loading: () => <p role="status" className="p-4 text-sm text-muted-foreground">Chargement de la dynamique d’équipe…</p>,
 })
 const PlayerStats = dynamic(() => import('@/components/player-stats').then((module) => module.PlayerStats), {
   loading: () => <p role="status" className="p-4 text-sm text-muted-foreground">Chargement des statistiques joueurs…</p>,
@@ -513,7 +516,8 @@ export function DashboardTabs({
             <nav aria-label="Statistiques" className="flex gap-2 rounded-xl border border-accent/50 bg-muted/50 p-1.5">
               {([
                 { key: 'players' as const, label: 'Joueurs' },
-                { key: 'matches' as const, label: 'Matchs' },
+                { key: 'dynamics' as const, label: 'Forme & Équipes' },
+                { key: 'matches' as const, label: 'Événements & Convocations' },
               ]).map(({ key, label }) => (
                 <button
                   key={key}
@@ -532,9 +536,13 @@ export function DashboardTabs({
                 </button>
               ))}
             </nav>
-            {statsSection === 'players' ? (
+            {statsSection === 'players' && (
               <PlayerStats players={players} />
-            ) : (
+            )}
+            {statsSection === 'dynamics' && (
+              <TeamFormDynamics matchResults={matchResults} />
+            )}
+            {statsSection === 'matches' && (
               <MatchCallupBreakdown
                 convocations={convocations}
                 presentCounts={presentCounts}

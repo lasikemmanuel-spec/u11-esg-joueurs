@@ -4,7 +4,38 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { Copy, MessageCircle, Share2, X } from 'lucide-react'
 import type { MatchSheetEntry } from '@/lib/match-results'
 
-function buildMessage(match: MatchSheetEntry, date: string, calledPlayerNames: string[]) {
+async function getMatchTemperature(match: MatchSheetEntry, date: string): Promise<number | null> {
+  if ((Date.parse(`${date}T00:00:00Z`) - Date.parse(`${new Date().toISOString().slice(0, 10)}T00:00:00Z`)) / 86_400_000 > 15) return null
+  try {
+    let latitude = 50.53
+    let longitude = 3.22
+    if (match.homeAway === 'Extérieur') {
+      const params = new URLSearchParams({
+        name: match.venueAddress?.trim() || match.opponent,
+        count: '1', language: 'fr', countryCode: 'FR', format: 'json',
+      })
+      const response = await fetch(`https://geocoding-api.open-meteo.com/v1/search?${params}`)
+      const result = await response.json() as { results?: Array<{ latitude: number; longitude: number }> }
+      const place = result.results?.[0]
+      if (!place) return null
+      latitude = place.latitude
+      longitude = place.longitude
+    }
+    const params = new URLSearchParams({
+      latitude: String(latitude), longitude: String(longitude),
+      daily: 'temperature_2m_max', timezone: 'Europe/Paris', start_date: date, end_date: date,
+    })
+    const response = await fetch(`https://api.open-meteo.com/v1/forecast?${params}`)
+    const result = await response.json() as { daily?: { time?: string[]; temperature_2m_max?: number[] } }
+    const index = result.daily?.time?.indexOf(date) ?? -1
+    const temperature = result.daily?.temperature_2m_max?.[index]
+    return typeof temperature === 'number' ? temperature : null
+  } catch {
+    return null
+  }
+}
+
+function buildMessage(match: MatchSheetEntry, date: string, calledPlayerNames: string[], temperature: number | null) {
   const teamName = `ES Genech ${match.team === 'E1' ? '1' : '2'}`
   const opponent = match.opponent || 'adversaire à préciser'
   const playerList = calledPlayerNames.length > 0
@@ -16,8 +47,17 @@ function buildMessage(match: MatchSheetEntry, date: string, calledPlayerNames: s
     month: 'long',
   })
   const venueAddress = match.homeAway === 'Extérieur' ? match.venueAddress?.trim() : ''
+  const kitList = [
+    '• Short',
+    '• Chaussettes',
+    '• Tenue de Genech',
+    '• Protège-tibias',
+    '• Gourde',
+    ...(temperature !== null && temperature < 10 ? ['• Gants'] : []),
+  ].join('\n')
 
   return [
+    'Bonjour à tous,',
     `📣 Match de ${teamName} contre ${opponent}`,
     `📅 ${dateLabel}`,
     `🏆 ${match.competition || 'Rencontre'}`,
@@ -26,7 +66,8 @@ function buildMessage(match: MatchSheetEntry, date: string, calledPlayerNames: s
     match.meetingTime ? `🤝 Rendez-vous au stade : ${match.meetingTime}` : '',
     venueAddress ? `📍 Adresse du stade : ${venueAddress}` : '',
     `👥 Joueurs convoqués :\n${playerList}`,
-    'À bientôt, allez l’ESG !',
+    `🎒 Merci de ne pas oublier :\n${kitList}`,
+    'La Team U11',
   ].filter(Boolean).join('\n')
 }
 
@@ -45,6 +86,7 @@ export function MatchFamilyMessage({
   const [open, setOpen] = useState(false)
   const [message, setMessage] = useState('')
   const [notice, setNotice] = useState('')
+  const [preparing, setPreparing] = useState(false)
   const whatsappHref = useMemo(
     () => {
       const isDesktop = typeof navigator !== 'undefined' && !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
@@ -59,10 +101,16 @@ export function MatchFamilyMessage({
     if (!open && dialogRef.current?.open) dialogRef.current.close()
   }, [open])
 
-  const openComposer = () => {
-    setMessage(buildMessage(match, date, calledPlayerNames))
+  const openComposer = async () => {
+    setPreparing(true)
     setNotice('')
-    setOpen(true)
+    try {
+      const temperature = await getMatchTemperature(match, date)
+      setMessage(buildMessage(match, date, calledPlayerNames, temperature))
+      setOpen(true)
+    } finally {
+      setPreparing(false)
+    }
   }
 
   const copyMessage = async () => {
@@ -78,11 +126,12 @@ export function MatchFamilyMessage({
     <>
       <button
         type="button"
-        onClick={openComposer}
+        onClick={() => void openComposer()}
+        disabled={preparing}
         className="inline-flex min-h-9 w-auto min-w-0 items-center justify-center gap-1.5 rounded-xl border border-emerald-300/50 bg-emerald-500/15 px-3 py-1.5 text-xs font-black text-white shadow-sm transition hover:bg-emerald-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
       >
         <Share2 aria-hidden="true" className="size-4 text-emerald-200" />
-        Message familles
+        {preparing ? 'Préparation…' : 'Message familles'}
       </button>
 
       <dialog

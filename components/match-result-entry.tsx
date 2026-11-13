@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, CalendarPlus, Check, ChevronDown, ChevronUp, Clock3, Map, Navigation, Pencil, Plus, Save, Sparkles, Trash2, UsersRound, X } from 'lucide-react'
+import { CalendarDays, CalendarPlus, Check, ChevronDown, ChevronUp, Clock3, Map as GoogleMapIcon, Navigation, Pencil, Plus, Save, Sparkles, Trash2, UsersRound, X } from 'lucide-react'
 import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
 import { MatchLineupEntry, useMatchLineups } from '@/components/match-lineup-planner'
 import { LiveMatchConsole } from '@/components/live-match-console'
@@ -885,7 +885,7 @@ export function MatchResultEntry({
                               return (
                                 <>
                                   <a href={`https://maps.google.com/?q=${query}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-[#4285F4] px-3 text-xs font-black text-white">
-                                    <Map aria-hidden="true" className="size-4" /> Google Maps
+                                    <GoogleMapIcon aria-hidden="true" className="size-4" /> Google Maps
                                   </a>
                                   <a href={`https://waze.com/ul?q=${query}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-[#33CCFF] px-3 text-xs font-black text-[#10213f]">
                                     <Navigation aria-hidden="true" className="size-4" /> Waze

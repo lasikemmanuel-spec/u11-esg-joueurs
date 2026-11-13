@@ -205,7 +205,7 @@ async function getTeamResults(tab: string, team: 'E1' | 'E2'): Promise<{
       if (cell(homeAway, column) !== venue.homeAway && date) {
         const title = tab.replace(/'/g, "''")
         await updateAuthenticatedSheetValues([{
-          range: `'${title}'!${columnName(column)}${homeAwayRowIndex + 1}`,
+          range: `'${title}'!${columnName(column)}${dateRowIndex + 3}`,
           values: [[venue.homeAway]],
         }])
         await saveMatchDetails({

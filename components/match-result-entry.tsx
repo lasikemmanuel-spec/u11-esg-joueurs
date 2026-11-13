@@ -661,7 +661,7 @@ export function MatchResultEntry({
                     </span>
                   </span>
                 </button>
-                <div className="flex w-full min-w-0 flex-wrap items-center gap-1.5 sm:gap-2">
+                <div className="flex w-full min-w-0 flex-nowrap items-center gap-1.5 sm:gap-2">
                   <span className="inline-flex min-h-8 shrink-0 items-center gap-1.5 rounded-full border border-white/15 bg-white/10 py-1 pl-1 pr-2.5 text-[11px] font-semibold text-white/85">
                     <span className="inline-flex size-6 items-center justify-center rounded-full bg-[#d4af37] text-[10px] font-black text-blue-950">
                       {matches.length}
@@ -673,13 +673,10 @@ export function MatchResultEntry({
                       type="button"
                       aria-expanded={openCallupDate === date}
                       onClick={() => setOpenCallupDate((current) => current === date ? '' : date)}
-                      className={[
-                        'inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-full border border-[#ffe27a]/80 bg-[#d4af37] px-3 text-[11px] font-extrabold text-blue-950 shadow-sm transition hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#172554] sm:min-h-10 sm:gap-2 sm:rounded-xl sm:px-3.5 sm:text-xs',
-                      ].join(' ')}
+                      className="inline-flex min-h-9 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-full border border-[#ffe27a]/80 bg-[#d4af37] px-2 text-[11px] font-extrabold text-blue-950 shadow-sm transition hover:bg-amber-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#172554] sm:min-h-10 sm:flex-none sm:gap-2 sm:rounded-xl sm:px-3.5 sm:text-xs"
                     >
                       {hasConvocations ? <Check aria-hidden="true" className="size-4" /> : <UsersRound aria-hidden="true" className="size-4" />}
-                      <span className="sm:hidden">Convocations</span>
-                      <span className="hidden sm:inline">{hasConvocations ? 'Voir les convocations' : 'Saisir les convocations'}</span>
+                      <span className="truncate">Convocations</span>
                     </button>
                   )}
                   {canManage &&
@@ -695,10 +692,10 @@ export function MatchResultEntry({
                         onClick={() => removeMatch(date)}
                         aria-label="Supprimer la journée"
                         title="Supprimer la journée"
-                        className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-full border border-white/15 bg-white/5 px-2.5 text-[11px] font-semibold text-white/65 transition hover:border-red-200/40 hover:bg-red-500/15 hover:text-white disabled:opacity-50 sm:gap-2 sm:rounded-xl sm:px-3 sm:text-xs"
+                        className="ml-auto inline-flex size-9 shrink-0 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white/70 transition hover:border-red-200/40 hover:bg-red-500/15 hover:text-white disabled:opacity-50 sm:size-10 sm:rounded-xl"
                       >
                         <Trash2 aria-hidden="true" className="size-3.5" />
-                        <span className="hidden sm:inline">{pendingDeletion === `day-${date}` ? 'Suppression…' : 'Supprimer la journée'}</span>
+                        <span className="sr-only">{pendingDeletion === `day-${date}` ? 'Suppression…' : 'Supprimer la journée'}</span>
                       </button>
                     )}
                 </div>

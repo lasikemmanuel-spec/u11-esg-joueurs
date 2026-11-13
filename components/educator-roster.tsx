@@ -2,12 +2,14 @@
 
 import { useState, useMemo, useEffect, useLayoutEffect, useCallback, useRef, type FormEvent } from 'react'
 import dynamic from 'next/dynamic'
-import { Search, Copy, Check, CheckCircle2, Award, Save, ChevronDown, ChevronUp, ChevronRight, Pencil, Plus, X, ContactRound, UsersRound, KeyRound, LockKeyhole } from 'lucide-react'
-import type { Player, PublicPlayer } from '@/lib/players'
+import { Search, CheckCircle2, Award, ChevronDown, ChevronUp, ChevronRight, Pencil, Plus, ContactRound, UsersRound, KeyRound, LockKeyhole } from 'lucide-react'
+import type { PublicPlayer } from '@/lib/players'
 import { matchesSearch } from '@/lib/search'
 import { ParentAvatar } from '@/components/parent-avatar'
 import { EducatorAvatar } from '@/components/educator-avatar'
 import { prepareEducatorPhoto } from '@/lib/prepare-educator-photo'
+import type { ParentKey, PhoneEditor } from '@/components/educator-roster-dialogs'
+import { EducatorPlayerCard, type EducatorPlayer, type PlayerPhones } from '@/components/educator-player-card'
 
 type EducatorIdentity = { username: string; displayName: string; role: 'educator' | 'admin' | 'reader' }
 
@@ -20,10 +22,6 @@ const positionRank = (position: string | null) => {
   return index === -1 ? POSITION_ORDER.length : index
 }
 
-type PlayerPhones = { legacyPhone: string; fatherPhone: string; motherPhone: string }
-type EducatorPlayer = PublicPlayer & Pick<Player, 'licenseNumber'>
-type ParentKey = 'father' | 'mother'
-type PhoneEditor = { number: number; name: string; parent: ParentKey | null; value: string }
 type DirectoryView = 'educators' | 'players' | 'accounts'
 type EducatorSessionStatus = 'checking' | 'unauthenticated' | 'authenticated' | 'unavailable'
 type PhoneEncryptionDiagnostics = {
@@ -42,6 +40,7 @@ const EducatorDirectory = dynamic(() => import('@/components/educator-directory'
 const EducatorAccountManagement = dynamic(() => import('@/components/educator-account-management').then((module) => module.EducatorAccountManagement), {
   loading: () => <p role="status" className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">Chargement de la gestion des comptes…</p>,
 })
+const EducatorRosterDialogs = dynamic(() => import('@/components/educator-roster-dialogs').then((module) => module.EducatorRosterDialogs))
 
 export function EducatorRoster({
   initialEducator = null,
@@ -768,117 +767,28 @@ export function EducatorRoster({
         </p>
       ) : (
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-          {visiblePlayers.map((player) => {
-            const licenseNumber = player.licenseNumber
-            const isCopied = licenseNumber && copiedId === licenseNumber
-            const phone = phones[player.number]
-            const position = player.position ?? 'Non renseigné'
-            const hasParentContacts = Boolean(phone?.fatherPhone || phone?.motherPhone || phone?.legacyPhone)
-            const isExpanded = expandedPlayers.has(player.number)
-            const parentContact = (parent: ParentKey, value: string) => {
-              if (!value) return null
-              const label = parent === 'father' ? 'Papa' : 'Maman'
-              return (
-                <div key={parent} className="grid w-full min-w-0 grid-cols-1 items-start gap-1.5 md:grid-cols-[4.5rem_minmax(0,1fr)] md:items-center md:gap-2">
-                  <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
-                    <ParentAvatar parent={parent} />
-                    {label}
-                  </span>
-                  <PhoneActionButtons
-                    phone={value}
-                    label={label}
-                    playerName={`${player.firstName} ${player.lastName}`}
-                  />
-                </div>
-              )
-            }
-
-            return (
-              <article
-                key={player.number}
-                className="min-w-0 overflow-hidden rounded-2xl border-2 border-[#172554]/15 bg-card shadow-sm transition hover:border-[#172554]/35 hover:shadow-md"
-              >
-                <div className="flex items-center gap-2.5 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-3 py-3 text-white">
-                  <span
-                    title={`N°${player.number}`}
-                    className="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-amber-400 bg-[#172554] text-sm font-black text-amber-300 shadow-md"
-                  >
-                    {player.number}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <h3 className="whitespace-normal break-words text-sm font-black leading-tight sm:text-base">
-                      {player.firstName} <span className="uppercase tracking-wide">{player.lastName}</span>
-                    </h3>
-                    <span className="mt-1 inline-flex max-w-full truncate rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-200 ring-1 ring-white/15">
-                      {position}
-                    </span>
-                  </div>
-                  {educator.role === 'admin' && (
-                    <button
-                      type="button"
-                      onClick={() => openPhoneEditor(player)}
-                      disabled={requestPending}
-                      aria-label={`Modifier les téléphones de ${player.firstName} ${player.lastName}`}
-                      title="Modifier les numéros"
-                      className="inline-flex size-9 shrink-0 items-center justify-center rounded-lg border border-white/20 text-blue-100 transition hover:bg-white/10 disabled:opacity-50"
-                    >
-                      <Pencil aria-hidden="true" className="size-4" />
-                    </button>
-                  )}
-                </div>
-                <div className="flex min-h-11 items-center gap-1.5 px-3 py-2 text-xs text-muted-foreground">
-                  <span className="truncate">Licence FFF : <span className="font-mono font-semibold text-foreground">{licenseNumber ?? 'non renseignée'}</span></span>
-                  {licenseNumber && (
-                    <button
-                      type="button"
-                      onClick={() => handleCopy(licenseNumber)}
-                      className={`inline-flex size-8 shrink-0 items-center justify-center rounded-lg transition ${
-                        isCopied ? 'bg-emerald-600 text-white' : 'text-muted-foreground hover:bg-accent/40 hover:text-foreground'
-                      }`}
-                      title="Copier le numéro de licence"
-                      aria-label={`Copier le numéro de licence de ${player.firstName} ${player.lastName}`}
-                    >
-                      {isCopied ? <Check aria-hidden="true" className="size-3.5" /> : <Copy aria-hidden="true" className="size-3.5" />}
-                    </button>
-                  )}
-                </div>
-                <details
-                  open={isExpanded}
-                  onToggle={(event) => {
-                    const nextOpen = event.currentTarget.open
-                    setExpandedPlayers((current) => {
-                      if (current.has(player.number) === nextOpen) return current
-                      const next = new Set(current)
-                      if (nextOpen) next.add(player.number)
-                      else next.delete(player.number)
-                      return next
-                    })
-                  }}
-                  className="group border-t border-accent/35"
-                >
-                  <summary className="flex min-h-10 cursor-pointer list-none items-center justify-between gap-2 px-3 text-xs font-bold text-primary outline-none transition hover:bg-accent/20 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring">
-                    <span>{isExpanded ? 'Masquer les contacts' : 'Voir les contacts'}</span>
-                    <ChevronDown aria-hidden="true" className="size-4 shrink-0 transition-transform group-open:rotate-180" />
-                  </summary>
-                  <div className="grid gap-2 border-t border-accent/20 bg-muted/30 p-3">
-                    {parentContact('father', phone?.fatherPhone ?? '')}
-                    {parentContact('mother', phone?.motherPhone ?? '')}
-                    {phone?.legacyPhone && (
-                      <div className="inline-flex flex-wrap items-center gap-2">
-                        <span className="text-xs font-semibold text-muted-foreground">Autre contact</span>
-                        <PhoneActionButtons
-                          phone={phone.legacyPhone}
-                          label="l’autre contact"
-                          playerName={`${player.firstName} ${player.lastName}`}
-                        />
-                      </div>
-                    )}
-                    {!hasParentContacts && <p className="text-xs text-muted-foreground">Aucun téléphone renseigné.</p>}
-                  </div>
-                </details>
-              </article>
-            )
-          })}
+          {visiblePlayers.map((player) => (
+            <EducatorPlayerCard
+              key={player.number}
+              player={player}
+              phone={phones[player.number]}
+              isAdmin={educator.role === 'admin'}
+              requestPending={requestPending}
+              copied={Boolean(player.licenseNumber && copiedId === player.licenseNumber)}
+              expanded={expandedPlayers.has(player.number)}
+              onEditPhones={() => openPhoneEditor(player)}
+              onCopyLicense={handleCopy}
+              onExpandedChange={(open) => {
+                setExpandedPlayers((current) => {
+                  if (current.has(player.number) === open) return current
+                  const next = new Set(current)
+                  if (open) next.add(player.number)
+                  else next.delete(player.number)
+                  return next
+                })
+              }}
+            />
+          ))}
         </div>
       )}
             </>
@@ -895,142 +805,20 @@ export function EducatorRoster({
         />
       )}
 
-      {addProfileChooserOpen && educator.role === 'admin' && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="add-profile-title"
-          className="fixed inset-0 z-[60] grid place-items-center bg-[#172554]/60 p-4"
-        >
-          <section className="w-full max-w-sm rounded-2xl border border-accent/60 bg-card p-5 shadow-2xl">
-            <header className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Nouvelle fiche</p>
-                <h2 id="add-profile-title" className="mt-1 text-lg font-black text-primary">Que souhaitez-vous ajouter ?</h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => setAddProfileChooserOpen(false)}
-                aria-label="Fermer"
-                className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground"
-              >
-                <X aria-hidden="true" className="size-4" />
-              </button>
-            </header>
-            <div className="mt-4 grid gap-2">
-              <button
-                type="button"
-                onClick={() => chooseAddProfile('educators')}
-                className="flex min-h-12 items-center gap-3 rounded-xl border border-accent/50 bg-background px-3 text-left font-semibold text-primary transition hover:bg-accent/20"
-              >
-                <ContactRound aria-hidden="true" className="size-5 shrink-0" />
-                Fiche éducateur
-              </button>
-              <button
-                type="button"
-                onClick={() => chooseAddProfile('accounts')}
-                className="flex min-h-12 items-center gap-3 rounded-xl border border-accent/50 bg-background px-3 text-left font-semibold text-primary transition hover:bg-accent/20"
-              >
-                <KeyRound aria-hidden="true" className="size-5 shrink-0" />
-                Comptes (Admin/Éducateur/Lecteur)
-              </button>
-            </div>
-          </section>
-        </div>
-      )}
-
-      {phoneEditor && educator.role === 'admin' && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="parent-phone-dialog-title"
-          className="fixed inset-0 z-50 grid place-items-center bg-[#172554]/60 p-4"
-        >
-          <section className="w-full max-w-sm rounded-2xl border border-accent/60 bg-card p-5 shadow-2xl">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Fiche de {phoneEditor.name}</p>
-                <h3 id="parent-phone-dialog-title" className="mt-1 text-lg font-black text-primary">
-                  {phoneEditor.parent ? `Téléphone de ${phoneEditor.parent === 'father' ? 'Papa' : 'Maman'}` : 'Quel parent ?'}
-                </h3>
-              </div>
-              <button
-                type="button"
-                onClick={() => setPhoneEditor(null)}
-                aria-label="Fermer"
-                className="inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground hover:bg-accent/40"
-              >
-                <X className="size-4" />
-              </button>
-            </div>
-
-            {!phoneEditor.parent ? (
-              <div className="mt-4 grid grid-cols-2 gap-3">
-                {(['father', 'mother'] as const).map((parent) => (
-                  <button
-                    key={parent}
-                    type="button"
-                    onClick={() => selectPhoneParent(parent)}
-                    className="flex min-h-24 flex-col items-center justify-center gap-2 rounded-xl border border-accent/50 bg-background px-3 py-3 text-sm font-bold text-primary hover:bg-primary/5"
-                  >
-                    <ParentAvatar parent={parent} />
-                    {parent === 'father' ? 'Papa' : 'Maman'}
-                  </button>
-                ))}
-              </div>
-            ) : (
-              <>
-                <label className="mt-4 flex flex-col gap-1.5 text-sm font-semibold">
-                  Numéro de téléphone
-                  <input
-                    autoFocus
-                    type="tel"
-                    inputMode="tel"
-                    autoComplete="off"
-                    maxLength={80}
-                    value={phoneEditor.value}
-                    onChange={(event) => setPhoneEditor((current) => current ? { ...current, value: event.target.value } : current)}
-                    placeholder="Ex. 06 12 34 56 78"
-                    className="h-11 rounded-xl border border-accent/50 bg-background px-3 text-base outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  />
-                </label>
-                <p className="mt-2 text-xs text-muted-foreground">
-                  Le numéro est chiffré et synchronisé dès que tu l’enregistres.
-                </p>
-                {authError && <p role="alert" className="mt-2 text-sm font-medium text-destructive">{authError}</p>}
-                <div className="mt-4 flex flex-wrap justify-between gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setPhoneEditor((current) => current ? { ...current, parent: null, value: '' } : current)}
-                    disabled={requestPending}
-                    className="min-h-10 rounded-xl border border-accent/50 px-3 text-sm font-semibold text-primary disabled:opacity-50"
-                  >
-                    Changer de parent
-                  </button>
-                  <div className="flex gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setPhoneEditor(null)}
-                      disabled={requestPending}
-                      className="min-h-10 rounded-xl px-3 text-sm font-semibold text-muted-foreground"
-                    >
-                      Annuler
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void handleSavePhone()}
-                      disabled={requestPending || !phoneEditor.value.trim()}
-                      className="inline-flex min-h-10 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground disabled:opacity-50"
-                    >
-                      <Save className="size-4" />
-                      {requestPending ? 'Enregistrement…' : 'Enregistrer'}
-                    </button>
-                  </div>
-                </div>
-              </>
-            )}
-          </section>
-        </div>
+      {educator.role === 'admin' && (addProfileChooserOpen || phoneEditor) && (
+        <EducatorRosterDialogs
+          addProfileChooserOpen={addProfileChooserOpen}
+          onCloseAddProfileChooser={() => setAddProfileChooserOpen(false)}
+          onChooseAddProfile={chooseAddProfile}
+          phoneEditor={phoneEditor}
+          onClosePhoneEditor={() => setPhoneEditor(null)}
+          onSelectPhoneParent={selectPhoneParent}
+          onPhoneValueChange={(value) => setPhoneEditor((current) => current ? { ...current, value } : current)}
+          onChangePhoneParent={() => setPhoneEditor((current) => current ? { ...current, parent: null, value: '' } : current)}
+          onSavePhone={() => void handleSavePhone()}
+          authError={authError}
+          requestPending={requestPending}
+        />
       )}
       {(directoryView === 'players' || Boolean(query.trim())) && !query.trim() && hasExpandedVisiblePlayer && (
         <div className="pointer-events-none fixed inset-x-0 bottom-[calc(5.5rem+env(safe-area-inset-bottom))] z-40 flex justify-center sm:hidden">

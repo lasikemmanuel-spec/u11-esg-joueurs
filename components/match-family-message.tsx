@@ -16,7 +16,7 @@ function buildMessage(match: MatchSheetEntry, date: string, calledPlayerNames: s
     month: 'long',
   })
   const venueAddress = match.homeAway === 'Extérieur' ? match.venueAddress?.trim() : ''
-  const encodedAddress = venueAddress ? encodeURIComponent(venueAddress) : ''
+  const mapQuery = venueAddress ? encodeURIComponent(venueAddress).replace(/%20/g, '+') : ''
 
   return [
     `📣 Match de ${teamName} contre ${opponent}`,
@@ -26,8 +26,8 @@ function buildMessage(match: MatchSheetEntry, date: string, calledPlayerNames: s
     match.kickoffTime ? `🕒 ${match.kickoffTime}` : '',
     match.meetingTime ? `🤝 Rendez-vous au stade : ${match.meetingTime}` : '',
     venueAddress ? `📍 Adresse du stade : ${venueAddress}` : '',
-    venueAddress ? `🗺️ Google Maps : https://www.google.com/maps/search/?api=1&query=${encodedAddress}` : '',
-    venueAddress ? `🚗 Waze : https://waze.com/ul?q=${encodedAddress}&navigate=yes` : '',
+    venueAddress ? `🗺️ Google Maps : https://maps.google.com/?q=${mapQuery}` : '',
+    venueAddress ? `🚗 Waze : https://waze.com/ul?q=${mapQuery}` : '',
     `👥 Joueurs convoqués :\n${playerList}`,
     'À bientôt, allez l’ESG !',
   ].filter(Boolean).join('\n')

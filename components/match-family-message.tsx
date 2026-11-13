@@ -22,6 +22,8 @@ function buildMessage(match: MatchSheetEntry, date: string, calledPlayerNames: s
     `🏆 ${match.competition || 'Rencontre'}`,
     `📍 ${match.homeAway || 'Lieu à préciser'}`,
     match.kickoffTime ? `🕒 ${match.kickoffTime}` : '',
+    match.meetingTime ? `🤝 Rendez-vous au stade : ${match.meetingTime}` : '',
+    match.homeAway === 'Extérieur' && match.venueAddress ? `📍 Adresse du stade : ${match.venueAddress}` : '',
     `👥 Joueurs convoqués :\n${playerList}`,
     'À bientôt, allez l’ESG !',
   ].filter(Boolean).join('\n')

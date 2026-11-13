@@ -73,6 +73,8 @@ async function save(request: Request, editing: boolean) {
   const competition = input.competition
   const homeAway = input.homeAway
   const kickoffTime = input.kickoffTime ?? ''
+  const meetingTime = input.meetingTime ?? ''
+  const venueAddress = input.venueAddress ?? ''
   const resultLabel = input.resultLabel
   const goalsFor = input.goalsFor
   const goalsAgainst = input.goalsAgainst
@@ -114,6 +116,8 @@ async function save(request: Request, editing: boolean) {
     !['Championnat', 'Amical', 'Tournoi', 'Futsal', 'Plateau', 'Autre'].includes(String(competition)) ||
     !['Domicile', 'Extérieur', 'Terrain neutre'].includes(String(homeAway)) ||
     (typeof kickoffTime !== 'string' || (kickoffTime !== '' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(kickoffTime))) ||
+    (typeof meetingTime !== 'string' || (meetingTime !== '' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(meetingTime))) ||
+    (typeof venueAddress !== 'string' || venueAddress.length > 180) ||
     (!hasNoScore && !hasValidScore) ||
     !validResultAndScore ||
     (editing && (typeof slotColumn !== 'number' || !Number.isSafeInteger(slotColumn))) ||
@@ -131,6 +135,8 @@ async function save(request: Request, editing: boolean) {
       competition: String(competition),
       homeAway: String(homeAway),
       kickoffTime: String(kickoffTime),
+      meetingTime: String(meetingTime),
+      venueAddress: homeAway === 'Extérieur' ? String(venueAddress) : '',
       resultLabel: resultLabel as '' | typeof MATCH_RESULT_STATUSES[number],
       goalsFor: hasNoScore ? null : goalsFor as number,
       goalsAgainst: hasNoScore ? null : goalsAgainst as number,

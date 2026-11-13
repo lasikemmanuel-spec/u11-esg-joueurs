@@ -34,6 +34,8 @@ type Draft = {
   competition: string
   homeAway: string
   kickoffTime: string
+  meetingTime: string
+  venueAddress: string
   resultLabel: string
   goalsFor: string
   goalsAgainst: string
@@ -61,6 +63,8 @@ function createDraft(): Draft {
     competition: 'Championnat',
     homeAway: 'Domicile',
     kickoffTime: '',
+    meetingTime: '',
+    venueAddress: '',
     resultLabel: '',
     goalsFor: '',
     goalsAgainst: '',
@@ -257,6 +261,8 @@ export function MatchResultEntry({
       competition: entry.competition || 'Championnat',
       homeAway: entry.homeAway || 'Domicile',
       kickoffTime: entry.kickoffTime,
+      meetingTime: entry.meetingTime ?? '',
+      venueAddress: entry.venueAddress ?? '',
       resultLabel: getEditableResult(entry),
       goalsFor: entry.goalsFor === null ? '' : String(entry.goalsFor),
       goalsAgainst: entry.goalsAgainst === null ? '' : String(entry.goalsAgainst),
@@ -540,6 +546,16 @@ export function MatchResultEntry({
                   className={dateTimeInputClass}
                 />
               </label>
+              <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554] dark:text-amber-200">
+                <span className="flex items-center gap-1"><Clock3 aria-hidden="true" className="size-3.5 text-[#b58b00] dark:text-amber-400" /> Rendez-vous au stade</span>
+                <input type="time" value={draft.meetingTime} onChange={(event) => setDraft({ ...draft, meetingTime: event.target.value })} className={dateTimeInputClass} />
+              </label>
+              {draft.homeAway === 'Extérieur' && (
+                <label className="col-span-2 flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554] dark:text-amber-200">
+                  Adresse du stade extérieur
+                  <input maxLength={180} value={draft.venueAddress} onChange={(event) => setDraft({ ...draft, venueAddress: event.target.value })} placeholder="Rue, code postal, ville" className={inputClass} />
+                </label>
+              )}
               <fieldset className="col-span-2 flex min-w-0 items-end gap-3">
                 <legend className="mb-1 text-xs font-bold text-[#172554] dark:text-amber-200">Score</legend>
                 <label className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-xl border border-[#172554]/15 dark:border-amber-400/30 bg-[#172554]/5 dark:bg-[#172554]/40 px-3 py-2 text-xs font-semibold text-[#172554] dark:text-amber-200">

@@ -412,6 +412,12 @@ export function MatchDayHome({
                               </span>
                             )}
                           </div>
+                          {(match.meetingTime || (match.homeAway === 'Extérieur' && match.venueAddress)) && (
+                            <div className="mt-1.5 space-y-1 text-[11px] font-semibold text-white/85">
+                              {match.meetingTime && <p>🤝 Rendez-vous au stade · {match.meetingTime}</p>}
+                              {match.homeAway === 'Extérieur' && match.venueAddress && <p className="break-words">📍 {match.venueAddress}</p>}
+                            </div>
+                          )}
                           <MatchWeather date={plannedDate} homeAway={match.homeAway} opponent={match.opponent} today={today} />
                         </div>
                       </button>

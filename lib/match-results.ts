@@ -30,6 +30,8 @@ export type MatchSheetEntry = {
   competition: string
   homeAway: string
   kickoffTime: string
+  meetingTime?: string
+  venueAddress?: string
   resultLabel: string
   goalsFor: number | null
   goalsAgainst: number | null
@@ -80,10 +82,15 @@ function matchOpponent(row: string[] | undefined, column: number) {
 }
 
 function parseVenue(value: string) {
-  const match = value.match(/^(Domicile|Extérieur|Terrain neutre)(?: · (\d{2}:\d{2}))?$/)
-  return match
-    ? { homeAway: match[1], kickoffTime: match[2] ?? '' }
-    : { homeAway: value, kickoffTime: '' }
+  const details = value.match(/^(.*?)\|RDV=([^|]*)\|ADR=([^|]*)$/)
+  const base = details ? details[1] : value
+  const match = base.match(/^(Domicile|Extérieur|Terrain neutre)(?: · (\d{2}:\d{2}))?$/)
+  return {
+    homeAway: match ? match[1] : base,
+    kickoffTime: match?.[2] ?? '',
+    meetingTime: details?.[2] ?? '',
+    venueAddress: details?.[3] ? decodeURIComponent(details[3]) : '',
+  }
 }
 
 function getPlayerParticipation(rows: string[][], column: number) {
@@ -152,6 +159,8 @@ async function getTeamResults(tab: string, team: 'E1' | 'E2'): Promise<{
         competition,
         homeAway: venue.homeAway,
         kickoffTime: venue.kickoffTime,
+        meetingTime: venue.meetingTime,
+        venueAddress: venue.venueAddress,
         resultLabel: resultLabelValue,
         goalsFor,
         goalsAgainst,
@@ -193,6 +202,8 @@ export type MatchResultInput = {
   competition: string
   homeAway: string
   kickoffTime: string
+  meetingTime?: string
+  venueAddress?: string
   resultLabel: MatchResultStatus | ''
   goalsFor: number | null
   goalsAgainst: number | null
@@ -365,7 +376,8 @@ export async function writeMatchResult(input: MatchResultInput) {
     { range: cellRange(targetColumn, competitionRowIndex), values: [[input.competition]] },
     {
       range: cellRange(targetColumn, homeAwayRowIndex),
-      values: [[input.kickoffTime ? `${input.homeAway} · ${input.kickoffTime}` : input.homeAway]],
+      values: [[`${input.homeAway}${input.kickoffTime ? ` · ${input.kickoffTime}` : ''}` +
+        ((input.meetingTime ?? input.venueAddress) ? `|RDV=${input.meetingTime ?? ''}|ADR=${encodeURIComponent(input.venueAddress ?? '')}` : '')]],
     },
     { range: cellRange(targetColumn, resultRowIndex), values: [[input.resultLabel]] },
     { range: cellRange(targetColumn, goalsForRowIndex), values: [[hasScore ? String(input.goalsFor) : '']] },

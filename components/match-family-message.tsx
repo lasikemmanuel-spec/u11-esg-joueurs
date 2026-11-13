@@ -43,7 +43,11 @@ export function MatchFamilyMessage({
   const [message, setMessage] = useState('')
   const [notice, setNotice] = useState('')
   const whatsappHref = useMemo(
-    () => `https://wa.me/?text=${encodeURIComponent(message)}`,
+    () => {
+      const isDesktop = typeof navigator !== 'undefined' && !/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)
+      const whatsappUrl = isDesktop ? 'https://web.whatsapp.com/send?text=' : 'https://wa.me/?text='
+      return `${whatsappUrl}${encodeURIComponent(message)}`
+    },
     [message],
   )
 

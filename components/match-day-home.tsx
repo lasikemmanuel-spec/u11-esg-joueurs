@@ -10,7 +10,9 @@ import {
   CloudSnow,
   CloudSun,
   Clock3,
+  Map,
   MapPin,
+  Navigation,
   Sun,
   Trophy,
   UsersRound,
@@ -411,11 +413,16 @@ export function MatchDayHome({
                                 {match.kickoffTime}
                               </span>
                             )}
+                            {match.meetingTime && (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-amber-300/20 px-2 py-1 text-amber-100">
+                                <UsersRound aria-hidden="true" className="size-3" /> RDV {match.meetingTime}
+                              </span>
+                            )}
                           </div>
                           <MatchWeather date={plannedDate} homeAway={match.homeAway} opponent={match.opponent} today={today} />
                         </div>
                       </button>
-                      <div className="mt-auto grid w-full grid-cols-2 items-center gap-2 pl-1">
+                      <div className="mt-auto grid w-full grid-cols-2 items-center gap-2 pl-1 sm:grid-cols-4">
                         <ConvocationOverlay
                           teamName={`ES Genech ${match.team === 'E1' ? '1' : '2'}`}
                           players={calledPlayers}
@@ -430,6 +437,19 @@ export function MatchDayHome({
                             calledPlayerNames={calledPlayers.map((player) => player.name)}
                           />
                         )}
+                        {match.homeAway === 'Extérieur' && match.venueAddress?.trim() && (() => {
+                          const query = encodeURIComponent(match.venueAddress.trim()).replace(/%20/g, '+')
+                          return (
+                            <>
+                              <a href={`https://maps.google.com/?q=${query}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-xl bg-[#4285F4] px-2 text-[10px] font-black text-white sm:text-xs">
+                                <Map aria-hidden="true" className="size-3.5 shrink-0" /> Maps
+                              </a>
+                              <a href={`https://waze.com/ul?q=${query}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 min-w-0 items-center justify-center gap-1 rounded-xl bg-[#33CCFF] px-2 text-[10px] font-black text-[#10213f] sm:text-xs">
+                                <Navigation aria-hidden="true" className="size-3.5 shrink-0" /> Waze
+                              </a>
+                            </>
+                          )
+                        })()}
                       </div>
                     </div>
                   )

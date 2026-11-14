@@ -3,6 +3,7 @@ import {
   areLiveSessionsEqual,
   calculateLiveMatchSummary,
   createLiveMatchSession,
+  getLiveMatchFormat,
   formatLiveMinute,
   getLiveMinute,
 } from '@/lib/live-match-shared'
@@ -53,6 +54,67 @@ describe('live match calculations', () => {
     match.elapsedSeconds = 26 * 60
     expect(getLiveMinute(match)).toBe(27)
     expect(formatLiveMinute(getLiveMinute(match))).toBe('2+25′')
+  })
+
+  it('supports a three-period format and marks minutes at each period boundary', () => {
+    const match = createLiveMatchSession({
+      date: '2026-11-14',
+      team: 'E1',
+      slotColumn: 2,
+      starters: [1],
+      substitutes: [],
+      format: { periods: 3, minutesPerPeriod: 20 },
+    })
+    match.phase = 'secondHalf'
+    match.elapsedSeconds = 20 * 60
+    expect(getLiveMinute(match)).toBe(21)
+    expect(formatLiveMinute(getLiveMinute(match), getLiveMatchFormat(match))).toBe('1+20′')
+
+    match.phase = 'secondHalftime'
+    match.elapsedSeconds = 40 * 60
+    expect(getLiveMinute(match)).toBe(40)
+    match.phase = 'thirdPeriod'
+    expect(getLiveMinute(match)).toBe(41)
+    expect(formatLiveMinute(getLiveMinute(match), getLiveMatchFormat(match))).toBe('1+40′')
+  })
+
+  it('uses the configured duration for two 30-minute periods', () => {
+    const match = createLiveMatchSession({
+      date: '2026-11-14',
+      team: 'E1',
+      slotColumn: 2,
+      starters: [1],
+      substitutes: [],
+      format: { periods: 2, minutesPerPeriod: 30 },
+    })
+    match.phase = 'secondHalf'
+    match.elapsedSeconds = 30 * 60
+
+    expect(getLiveMinute(match)).toBe(31)
+    expect(formatLiveMinute(getLiveMinute(match), getLiveMatchFormat(match))).toBe('1+30′')
+  })
+
+  it('calculates playing time over all three configured periods', () => {
+    const match = createLiveMatchSession({
+      date: '2026-11-14',
+      team: 'E1',
+      slotColumn: 2,
+      starters: [1],
+      substitutes: [2, 3],
+      format: { periods: 3, minutesPerPeriod: 20 },
+    })
+    match.phase = 'finished'
+    match.elapsedSeconds = 60 * 60
+    match.events = [
+      { id: 'sub-1', kind: 'substitution', minute: 21, playerOut: 1, playerIn: 2 },
+      { id: 'sub-2', kind: 'substitution', minute: 41, playerOut: 2, playerIn: 3 },
+    ]
+
+    expect(calculateLiveMatchSummary(match).players).toEqual(expect.arrayContaining([
+      { number: 1, minutes: 20, goals: 0, assists: 0 },
+      { number: 2, minutes: 20, goals: 0, assists: 0 },
+      { number: 3, minutes: 20, goals: 0, assists: 0 },
+    ]))
   })
 
   it('calculates playing time correctly for substitutions in the second half', () => {

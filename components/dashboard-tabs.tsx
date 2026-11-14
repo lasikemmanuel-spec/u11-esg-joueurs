@@ -30,7 +30,7 @@ type EducatorIdentity = { username: string; displayName: string; role: AccountRo
 type ApplicationSession = 'checking' | 'unauthenticated' | 'authenticated' | 'unavailable'
 type ActiveLiveMatch = {
   match: MatchSheetEntry
-  phase: 'firstHalf' | 'halftime' | 'secondHalf' | 'finished'
+  phase: 'firstHalf' | 'halftime' | 'secondHalf' | 'secondHalftime' | 'thirdPeriod' | 'finished'
 }
 
 const EMPTY_PLAYER_NUMBERS: number[] = []
@@ -83,7 +83,7 @@ function isActiveLiveMatch(value: unknown): value is ActiveLiveMatch {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
   const liveMatch = value as Record<string, unknown>
   return isMatchSheetEntry(liveMatch.match) &&
-    ['firstHalf', 'halftime', 'secondHalf', 'finished'].includes(String(liveMatch.phase))
+    ['firstHalf', 'halftime', 'secondHalf', 'secondHalftime', 'thirdPeriod', 'finished'].includes(String(liveMatch.phase))
 }
 
 export function DashboardTabs({
@@ -726,8 +726,8 @@ export function DashboardTabs({
             const isE1 = entry.team === 'E1'
             const phaseLabel = phase === 'finished'
               ? 'Récapitulatif à valider'
-              : phase === 'halftime'
-                ? 'Reprendre après la mi-temps'
+              : phase === 'halftime' || phase === 'secondHalftime'
+                ? 'Reprendre après la pause'
                 : 'Reprendre le direct'
             return (
               <button

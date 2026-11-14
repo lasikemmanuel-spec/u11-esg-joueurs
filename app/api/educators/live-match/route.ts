@@ -6,8 +6,11 @@ import { getRoster } from '@/lib/players'
 import { getMatchLineups } from '@/lib/match-lineups'
 import {
   calculateLiveMatchSummary,
+  DEFAULT_LIVE_MATCH_FORMAT,
   getLiveElapsedSeconds,
   getLiveMinute,
+  getLiveMatchMaximumSeconds,
+  isLiveMatchFormat,
   type LiveMatchEvent,
   type LiveMatchSession,
 } from '@/lib/live-match-shared'
@@ -60,7 +63,7 @@ function isPlayerNumber(value: unknown): value is number {
 
 function isLiveEvent(value: unknown): value is LiveMatchEvent {
   if (!isRecord(value) || typeof value.id !== 'string' || value.id.length > 80) return false
-  if (!Number.isSafeInteger(value.minute) || (value.minute as number) < 1 || (value.minute as number) > 50) return false
+  if (!Number.isSafeInteger(value.minute) || (value.minute as number) < 1 || (value.minute as number) > 180) return false
   if (value.kind === 'goal') {
     return (value.side === 'for' || value.side === 'against') &&
       (value.scorerNumber === undefined || isPlayerNumber(value.scorerNumber)) &&
@@ -75,6 +78,24 @@ function isLiveEvent(value: unknown): value is LiveMatchEvent {
 
 function isLiveSession(value: unknown): value is LiveMatchSession {
   if (!isRecord(value)) return false
+  const format = value.format === undefined
+    ? undefined
+    : isLiveMatchFormat(value.format) ? value.format : null
+  if (format === null) return false
+  const resolvedFormat = format ?? DEFAULT_LIVE_MATCH_FORMAT
+  const validPhase = [
+    'ready',
+    'firstHalf',
+    'halftime',
+    'secondHalf',
+    'secondHalftime',
+    'thirdPeriod',
+    'finished',
+  ].includes(String(value.phase))
+  if (
+    (value.phase === 'secondHalftime' || value.phase === 'thirdPeriod') &&
+    resolvedFormat.periods !== 3
+  ) return false
   const players = [...(Array.isArray(value.starters) ? value.starters : []), ...(Array.isArray(value.substitutes) ? value.substitutes : [])]
   return typeof value.date === 'string' &&
     /^\d{4}-\d{2}-\d{2}$/.test(value.date) &&
@@ -83,11 +104,11 @@ function isLiveSession(value: unknown): value is LiveMatchSession {
     Number.isSafeInteger(value.slotColumn) &&
     value.slotColumn >= 2 &&
     (value.slotColumn - 2) % 4 === 0 &&
-    ['ready', 'firstHalf', 'halftime', 'secondHalf', 'finished'].includes(String(value.phase)) &&
+    validPhase &&
     typeof value.elapsedSeconds === 'number' &&
     Number.isSafeInteger(value.elapsedSeconds) &&
     value.elapsedSeconds >= 0 &&
-    value.elapsedSeconds <= 50 * 60 &&
+    value.elapsedSeconds <= getLiveMatchMaximumSeconds(resolvedFormat) &&
     (value.runningSince === null || (
       typeof value.runningSince === 'string' && Number.isFinite(Date.parse(value.runningSince))
     )) &&

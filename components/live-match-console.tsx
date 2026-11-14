@@ -10,6 +10,7 @@ import {
   Play,
   RotateCcw,
   Save,
+  Settings2,
   Trophy,
   WifiOff,
   X,
@@ -28,12 +29,22 @@ import {
   areLiveSessionsEqual,
   calculateLiveMatchSummary,
   createLiveMatchSession,
+  DEFAULT_LIVE_MATCH_FORMAT,
   getLiveElapsedSeconds,
+  getLiveMatchFormat,
+  getLiveMatchMaximumSeconds,
   getLiveMinute,
   getLivePlayersOnPitch,
   type LiveMatchEvent,
   type LiveMatchSession,
 } from '@/lib/live-match-shared'
+import {
+  DEFAULT_LIVE_MATCH_SETTINGS,
+  getLiveMatchFormatLabel,
+  isLiveMatchSettings,
+  type LiveMatchPreset,
+  type LiveMatchSettings,
+} from '@/lib/live-match-settings'
 
 function playerName(players: PublicPlayer[], number: number) {
   const player = players.find((item) => item.number === number)
@@ -67,6 +78,14 @@ export function LiveMatchConsole({
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [liveMatchSettings, setLiveMatchSettings] = useState(DEFAULT_LIVE_MATCH_SETTINGS)
+  const [draftFormats, setDraftFormats] = useState<LiveMatchSettings['formats']>(
+    DEFAULT_LIVE_MATCH_SETTINGS.formats.map((format) => ({ ...format })) as LiveMatchSettings['formats'],
+  )
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [settingsSaving, setSettingsSaving] = useState(false)
+  const [settingsError, setSettingsError] = useState('')
+  const [selectedFormatId, setSelectedFormatId] = useState('')
   const [offlineNotice, setOfflineNotice] = useState(false)
   const [remoteUpdateNotice, setRemoteUpdateNotice] = useState(false)
   const [eventMinuteOverride, setEventMinuteOverride] = useState<number | null>(null)
@@ -156,26 +175,55 @@ export function LiveMatchConsole({
       team: match.team,
       slotColumn: String(match.slotColumn),
     })
-    fetch(`/api/educators/live-match?${params}`, { cache: 'no-store' })
-      .then(async (response) => {
+    const load = async () => {
+      try {
+        let settings = DEFAULT_LIVE_MATCH_SETTINGS
+        try {
+          const settingsResponse = await fetch('/api/educators/live-match/settings', { cache: 'no-store' })
+          const settingsResult = await settingsResponse.json() as { error?: string; settings?: unknown }
+          if (!settingsResponse.ok) throw new Error(settingsResult.error ?? 'Impossible de charger les formats de match.')
+          if (!isLiveMatchSettings(settingsResult.settings)) throw new Error('Les formats de match reçus sont invalides.')
+          settings = settingsResult.settings
+        } catch (settingsLoadError) {
+          if (typeof navigator === 'undefined' || navigator.onLine) throw settingsLoadError
+          setOfflineNotice(true)
+        }
+        if (!active) return
+        setLiveMatchSettings(settings)
+        setDraftFormats(settings.formats.map((format) => ({ ...format })) as LiveMatchSettings['formats'])
+
+        const response = await fetch(`/api/educators/live-match?${params}`, { cache: 'no-store' })
         const result = await response.json() as { error?: string; session?: LiveMatchSession | null }
         if (!response.ok) throw new Error(result.error ?? 'Impossible de charger le match.')
-        const saved = result.session ?? offlineCached ?? createLiveMatchSession({
-          date: match.date,
-          team: match.team,
-          slotColumn: match.slotColumn,
-          starters,
-          substitutes,
-        })
+        const saved = result.session ?? offlineCached
+        const initial = saved
+          ? { ...saved, format: saved.format ?? DEFAULT_LIVE_MATCH_FORMAT }
+          : createLiveMatchSession({
+              date: match.date,
+              team: match.team,
+              slotColumn: match.slotColumn,
+              starters,
+              substitutes,
+              format: settings.formats[0],
+            })
         if (active) {
-          setSession(saved)
-          saveOfflineLiveMatch(saved)
+          setSession(initial)
+          const matchingFormat = settings.formats.find((format) =>
+            format.periods === getLiveMatchFormat(initial).periods &&
+            format.minutesPerPeriod === getLiveMatchFormat(initial).minutesPerPeriod,
+          )
+          setSelectedFormatId(matchingFormat?.id ?? '')
+          saveOfflineLiveMatch(initial)
         }
-      })
-      .catch((loadError: unknown) => {
+      } catch (loadError) {
         if (!active) return
         if (offlineCached) {
-          setSession(offlineCached)
+          const cached = {
+            ...offlineCached,
+            format: offlineCached.format ?? DEFAULT_LIVE_MATCH_FORMAT,
+          }
+          setSession(cached)
+          setSelectedFormatId('')
           setOfflineNotice(true)
         } else if (typeof navigator !== 'undefined' && !navigator.onLine) {
           const offlineFresh = createLiveMatchSession({
@@ -184,17 +232,20 @@ export function LiveMatchConsole({
             slotColumn: match.slotColumn,
             starters,
             substitutes,
+            format: DEFAULT_LIVE_MATCH_FORMAT,
           })
           setSession(offlineFresh)
+          setSelectedFormatId('')
           saveOfflineLiveMatch(offlineFresh)
           setOfflineNotice(true)
         } else {
           setError(loadError instanceof Error ? loadError.message : 'Impossible de charger le match.')
         }
-      })
-      .finally(() => {
+      } finally {
         if (active) setLoading(false)
-      })
+      }
+    }
+    void load()
     return () => { active = false }
   }, [match.date, match.slotColumn, match.team, starters, substitutes])
 
@@ -262,6 +313,15 @@ export function LiveMatchConsole({
   }, [loading, match.date, match.slotColumn, match.team, saving, session?.completed])
 
   const elapsedSeconds = session ? getLiveElapsedSeconds(session, now) : 0
+  const sessionFormat = session ? getLiveMatchFormat(session) : DEFAULT_LIVE_MATCH_FORMAT
+  const maximumMatchMinute = sessionFormat.periods * sessionFormat.minutesPerPeriod
+  const periodTitle = !session
+    ? ''
+    : session.phase === 'finished'
+      ? 'Fin du match'
+      : session.phase === 'halftime' || session.phase === 'secondHalftime'
+        ? `Pause après la période ${session.phase === 'halftime' ? 1 : 2}`
+        : `Période ${session.phase === 'thirdPeriod' ? 3 : session.phase === 'secondHalf' ? 2 : 1}`
   const summaryState = useMemo(() => {
     if (!session) return { summary: null, error: '' }
     try {
@@ -324,7 +384,9 @@ export function LiveMatchConsole({
       ? 'firstHalf'
       : session.phase === 'halftime'
         ? 'secondHalf'
-        : session.phase
+        : session.phase === 'secondHalftime'
+          ? 'thirdPeriod'
+          : session.phase
     await persistSession({
       ...session,
       phase,
@@ -335,11 +397,14 @@ export function LiveMatchConsole({
 
   const pause = async () => {
     if (!session) return
+    const format = getLiveMatchFormat(session)
     const elapsed = getLiveElapsedSeconds(session, now)
-    const phase = session.phase === 'firstHalf' && elapsed >= 25 * 60
+    const phase = session.phase === 'firstHalf' && elapsed >= format.minutesPerPeriod * 60
       ? 'halftime'
-      : session.phase === 'secondHalf' && elapsed >= 50 * 60
-        ? 'finished'
+      : session.phase === 'secondHalf' && elapsed >= format.minutesPerPeriod * 2 * 60
+        ? format.periods === 3 ? 'secondHalftime' : 'finished'
+        : session.phase === 'thirdPeriod' && elapsed >= getLiveMatchMaximumSeconds(format)
+          ? 'finished'
         : session.phase
     await persistSession({ ...session, elapsedSeconds: elapsed, runningSince: null, phase })
   }
@@ -362,6 +427,7 @@ export function LiveMatchConsole({
       slotColumn: session.slotColumn,
       starters: session.starters,
       substitutes: session.substitutes,
+      format: getLiveMatchFormat(session),
     })
     await persistSession(resetSession, 'reset')
     setEventMinuteOverride(null)
@@ -374,17 +440,27 @@ export function LiveMatchConsole({
   useEffect(() => {
     if (!session?.runningSince || session.phase === 'finished') return
     const timer = window.setInterval(() => {
+      const format = getLiveMatchFormat(session)
       const elapsed = getLiveElapsedSeconds(session)
       setNow(Date.now())
-      const firstHalfEnded = session.phase === 'firstHalf' && elapsed >= 25 * 60
-      const matchEnded = session.phase === 'secondHalf' && elapsed >= 50 * 60
-      if ((firstHalfEnded || matchEnded) && !autoPauseRef.current) {
+      const firstPeriodEnded = session.phase === 'firstHalf' && elapsed >= format.minutesPerPeriod * 60
+      const secondPeriodEnded = session.phase === 'secondHalf' && elapsed >= format.minutesPerPeriod * 2 * 60
+      const finalPeriodEnded = session.phase === 'thirdPeriod' && elapsed >= getLiveMatchMaximumSeconds(format)
+      if ((firstPeriodEnded || secondPeriodEnded || finalPeriodEnded) && !autoPauseRef.current) {
         autoPauseRef.current = true
         const nextSession: LiveMatchSession = {
           ...session,
-          elapsedSeconds: firstHalfEnded ? 25 * 60 : 50 * 60,
+          elapsedSeconds: firstPeriodEnded
+            ? format.minutesPerPeriod * 60
+            : secondPeriodEnded
+              ? format.minutesPerPeriod * 2 * 60
+              : getLiveMatchMaximumSeconds(format),
           runningSince: null,
-          phase: firstHalfEnded ? 'halftime' : 'finished',
+          phase: firstPeriodEnded
+            ? 'halftime'
+            : secondPeriodEnded && format.periods === 3
+              ? 'secondHalftime'
+              : 'finished',
         }
         void persistSession(nextSession).finally(() => { autoPauseRef.current = false })
       }
@@ -427,6 +503,59 @@ export function LiveMatchConsole({
     if (!session || session.phase !== 'finished') return
     const completed = await persistSession(session, 'finalize')
     if (completed.completed) onFinalized()
+  }
+
+  const setFormatForMatch = (formatId: string) => {
+    if (!session) return
+    const format = liveMatchSettings.formats.find((item) => item.id === formatId)
+    if (!format) return
+    setSelectedFormatId(format.id)
+    setSession({
+      ...session,
+      format: { periods: format.periods, minutesPerPeriod: format.minutesPerPeriod },
+    })
+  }
+
+  const updateDraftFormat = (formatId: LiveMatchPreset['id'], field: 'periods' | 'minutesPerPeriod', value: number) => {
+    setDraftFormats((current) => current.map((format) => format.id === formatId
+      ? { ...format, [field]: value }
+      : format) as LiveMatchSettings['formats'])
+  }
+
+  const saveSettings = async () => {
+    const settings = { formats: draftFormats }
+    if (!isLiveMatchSettings(settings)) {
+      setSettingsError('Chaque format doit comporter 2 ou 3 périodes de 1 à 60 minutes.')
+      return
+    }
+    setSettingsSaving(true)
+    setSettingsError('')
+    try {
+      const response = await fetch('/api/educators/live-match/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings }),
+      })
+      const result = await response.json() as { error?: string; settings?: unknown }
+      if (!response.ok) throw new Error(result.error ?? 'Impossible d’enregistrer les formats.')
+      if (!isLiveMatchSettings(result.settings)) throw new Error('Les formats enregistrés sont invalides.')
+      setLiveMatchSettings(result.settings)
+      setDraftFormats(result.settings.formats.map((format) => ({ ...format })) as LiveMatchSettings['formats'])
+      if (session?.phase === 'ready' && selectedFormatId) {
+        const selectedFormat = result.settings.formats.find((format) => format.id === selectedFormatId)
+        if (selectedFormat) {
+          setSession({
+            ...session,
+            format: { periods: selectedFormat.periods, minutesPerPeriod: selectedFormat.minutesPerPeriod },
+          })
+        }
+      }
+      setSettingsOpen(false)
+    } catch (saveError) {
+      setSettingsError(saveError instanceof Error ? saveError.message : 'Impossible d’enregistrer les formats.')
+    } finally {
+      setSettingsSaving(false)
+    }
   }
 
   if (!mounted) return null
@@ -484,8 +613,86 @@ export function LiveMatchConsole({
           <>
             <section className="rounded-3xl border border-white/10 bg-gradient-to-br from-[#1e3a8a] to-[#172554] p-5 text-center shadow-xl">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-300">
-                {session.phase === 'halftime' ? 'Mi-temps' : session.phase === 'finished' ? 'Fin du match' : session.phase === 'secondHalf' ? '2e mi-temps' : '1re mi-temps'}
+                {periodTitle}
               </p>
+              {session.phase === 'ready' && (
+                <div className="mx-auto mt-3 flex max-w-xl flex-wrap items-end justify-center gap-2 text-left">
+                  <label className="min-w-52 flex-1 text-xs font-bold text-white/75">
+                    Format de ce match
+                    <select
+                      value={selectedFormatId}
+                      disabled={saving || settingsSaving}
+                      onChange={(event) => setFormatForMatch(event.target.value)}
+                      className="mt-1 h-10 w-full rounded-lg border border-white/15 bg-[#101c41] px-3 text-sm text-white"
+                    >
+                      {!selectedFormatId && <option value="">Format actuel · {getLiveMatchFormatLabel(sessionFormat)}</option>}
+                      {liveMatchSettings.formats.map((format) => (
+                        <option key={format.id} value={format.id}>{getLiveMatchFormatLabel(format)}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    disabled={saving || settingsSaving || offlineNotice}
+                    onClick={() => {
+                      setDraftFormats(liveMatchSettings.formats.map((format) => ({ ...format })) as LiveMatchSettings['formats'])
+                      setSettingsError('')
+                      setSettingsOpen((open) => !open)
+                    }}
+                    className="inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-white/20 bg-white/10 px-3 text-xs font-bold disabled:opacity-40"
+                  >
+                    <Settings2 aria-hidden="true" className="size-4" />
+                    Régler les formats
+                  </button>
+                </div>
+              )}
+              {settingsOpen && session.phase === 'ready' && (
+                <div className="mx-auto mt-3 max-w-xl rounded-2xl border border-white/15 bg-[#101c41]/80 p-3 text-left">
+                  <h3 className="text-sm font-black">Formats disponibles pour tous les éducateurs</h3>
+                  <p className="mt-1 text-xs text-white/60">Ces durées seront enregistrées dans les réglages partagés de l’application.</p>
+                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                    {draftFormats.map((format, index) => (
+                      <fieldset key={format.id} className="rounded-xl border border-white/10 p-2">
+                        <legend className="px-1 text-xs font-bold">Format {index + 1}</legend>
+                        <label className="mt-1 block text-[11px] text-white/70">
+                          Périodes
+                          <select
+                            value={format.periods}
+                            disabled={settingsSaving}
+                            onChange={(event) => updateDraftFormat(format.id, 'periods', Number(event.target.value))}
+                            className="mt-1 h-9 w-full rounded-lg border border-white/15 bg-[#101c41] px-2 text-sm text-white"
+                          >
+                            <option value={2}>2</option>
+                            <option value={3}>3</option>
+                          </select>
+                        </label>
+                        <label className="mt-2 block text-[11px] text-white/70">
+                          Minutes par période
+                          <input
+                            type="number"
+                            min={1}
+                            max={60}
+                            value={format.minutesPerPeriod}
+                            disabled={settingsSaving}
+                            onChange={(event) => updateDraftFormat(format.id, 'minutesPerPeriod', Number(event.target.value))}
+                            className="mt-1 h-9 w-full rounded-lg border border-white/15 bg-[#101c41] px-2 text-sm text-white"
+                          />
+                        </label>
+                        <p className="mt-2 text-xs font-black text-amber-200">{getLiveMatchFormatLabel(format)}</p>
+                      </fieldset>
+                    ))}
+                  </div>
+                  {settingsError && <p role="alert" className="mt-2 text-xs font-bold text-rose-200">{settingsError}</p>}
+                  <div className="mt-3 flex justify-end gap-2">
+                    <button type="button" disabled={settingsSaving} onClick={() => setSettingsOpen(false)} className="min-h-9 rounded-lg px-3 text-xs font-bold text-white/70 hover:bg-white/10 disabled:opacity-50">
+                      Annuler
+                    </button>
+                    <button type="button" disabled={settingsSaving} onClick={() => void saveSettings()} className="min-h-9 rounded-lg bg-emerald-400 px-3 text-xs font-black text-emerald-950 disabled:opacity-50">
+                      {settingsSaving ? 'Enregistrement…' : 'Enregistrer les formats'}
+                    </button>
+                  </div>
+                </div>
+              )}
               <div className="mt-2 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-start gap-2">
                 <div className="min-w-0 text-center">
                   <p className="min-h-8 text-xs font-bold leading-tight text-white/65">ESG</p>
@@ -507,7 +714,13 @@ export function LiveMatchConsole({
                     className="inline-flex min-h-11 items-center gap-2 rounded-full bg-emerald-400 px-5 text-sm font-black text-emerald-950 disabled:opacity-50"
                   >
                     <Play aria-hidden="true" className="size-4" />
-                    {session.phase === 'ready' ? 'Démarrer la 1re mi-temps' : session.phase === 'halftime' ? 'Démarrer la 2e mi-temps' : 'Reprendre'}
+                    {session.phase === 'ready'
+                      ? 'Démarrer la période 1'
+                      : session.phase === 'halftime'
+                        ? 'Démarrer la période 2'
+                        : session.phase === 'secondHalftime'
+                          ? 'Démarrer la période 3'
+                          : 'Reprendre'}
                   </button>
                 ) : session.runningSince ? (
                   <button type="button" disabled={saving} onClick={() => void pause().catch(() => undefined)} className="inline-flex min-h-11 items-center gap-2 rounded-full bg-amber-300 px-5 text-sm font-black text-amber-950 disabled:opacity-50">
@@ -528,7 +741,9 @@ export function LiveMatchConsole({
                   </button>
                 )}
               </div>
-              <p className="mt-3 text-[11px] text-white/55">2 mi-temps de 25 min · sauvegarde automatique</p>
+              <p className="mt-3 text-[11px] text-white/55">
+                {sessionFormat.periods} périodes de {sessionFormat.minutesPerPeriod} min · {maximumMatchMinute} min au total · sauvegarde automatique
+              </p>
               {offlineNotice && (
                 <div className="mt-3 flex items-center justify-center gap-1.5 rounded-full border border-amber-300/40 bg-amber-400/10 px-3 py-1.5 text-[11px] font-bold text-amber-200">
                   <WifiOff className="size-3.5 shrink-0" />
@@ -547,7 +762,7 @@ export function LiveMatchConsole({
                       <input
                         type="number"
                         min={1}
-                        max={50}
+                        max={maximumMatchMinute}
                         value={eventMinute}
                         onChange={(event) => setEventMinuteOverride(event.target.value ? Number(event.target.value) : getLiveMinute(session, now))}
                         className="h-9 w-16 rounded-lg border border-white/15 bg-[#101c41] px-2 text-center text-sm text-white"
@@ -583,7 +798,7 @@ export function LiveMatchConsole({
                   </div>
                   <label className="mb-3 flex items-center gap-2 text-xs font-bold text-white/70">
                     Minute
-                    <input type="number" min={1} max={50} value={eventMinute} onChange={(event) => setEventMinuteOverride(event.target.value ? Number(event.target.value) : getLiveMinute(session, now))} className="h-9 w-16 rounded-lg border border-white/15 bg-[#101c41] px-2 text-center text-sm text-white" />
+                    <input type="number" min={1} max={maximumMatchMinute} value={eventMinute} onChange={(event) => setEventMinuteOverride(event.target.value ? Number(event.target.value) : getLiveMinute(session, now))} className="h-9 w-16 rounded-lg border border-white/15 bg-[#101c41] px-2 text-center text-sm text-white" />
                   </label>
                   <div className="grid gap-2 sm:grid-cols-2">
                     <label className="text-xs font-semibold text-white/70">

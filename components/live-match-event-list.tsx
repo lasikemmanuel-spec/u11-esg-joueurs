@@ -2,7 +2,7 @@
 
 import { Check, CircleHelp, Pencil, Trash2, X } from 'lucide-react'
 import type { PublicPlayer } from '@/lib/players'
-import { formatLiveMinute, type LiveMatchSession } from '@/lib/live-match-shared'
+import { formatLiveMinute, getLiveMatchFormat, type LiveMatchSession } from '@/lib/live-match-shared'
 
 function playerName(players: PublicPlayer[], number: number) {
   const player = players.find((item) => item.number === number)
@@ -62,7 +62,7 @@ export function LiveMatchEventList({
                   />
                 </label>
               ) : (
-                <span className="shrink-0 rounded-lg bg-white/10 px-2 py-1 text-xs font-black text-amber-200">{formatLiveMinute(event.minute)}</span>
+                <span className="shrink-0 rounded-lg bg-white/10 px-2 py-1 text-xs font-black text-amber-200">{formatLiveMinute(event.minute, getLiveMatchFormat(session))}</span>
               )}
               <p className="min-w-0 flex-1 text-sm font-semibold">
                 {event.kind === 'goal'
@@ -81,7 +81,7 @@ export function LiveMatchEventList({
                   </button>
                 </>
               ) : (
-                <button type="button" disabled={saving || editingEventId !== null} onClick={() => onEdit(event.id, event.minute)} aria-label={`Modifier la minute ${formatLiveMinute(event.minute)}`} className="flex size-9 shrink-0 items-center justify-center rounded-lg text-white/55 hover:bg-white/10 disabled:opacity-30">
+                <button type="button" disabled={saving || editingEventId !== null} onClick={() => onEdit(event.id, event.minute)} aria-label={`Modifier la minute ${formatLiveMinute(event.minute, getLiveMatchFormat(session))}`} className="flex size-9 shrink-0 items-center justify-center rounded-lg text-white/55 hover:bg-white/10 disabled:opacity-30">
                   <Pencil aria-hidden="true" className="size-4" />
                 </button>
               ))}

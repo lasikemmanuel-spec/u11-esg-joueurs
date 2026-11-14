@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calculateTeamDynamics } from '@/lib/team-dynamics'
+import { calculateTeamDynamics, filterMatchesByCompetition } from '@/lib/team-dynamics'
 import type { MatchResult } from '@/lib/match-results'
 
 describe('calculateTeamDynamics', () => {
@@ -12,6 +12,61 @@ describe('calculateTeamDynamics', () => {
     expect(dynamics.overall.avgGoalsAgainst).toBe(0)
     expect(dynamics.recentMatches).toHaveLength(0)
     expect(dynamics.streak.label).toBe('Aucun match disputé')
+  })
+
+  describe('filterMatchesByCompetition', () => {
+    const results: MatchResult[] = [
+      {
+        date: '2026-09-12',
+        opponent: 'Club A',
+        competition: 'Championnat U11',
+        homeAway: 'Domicile',
+        goalsFor: 2,
+        goalsAgainst: 0,
+        outcome: 'win',
+      },
+      {
+        date: '2026-09-19',
+        opponent: 'Club B',
+        competition: 'Match amical',
+        homeAway: 'Extérieur',
+        goalsFor: 1,
+        goalsAgainst: 1,
+        outcome: 'draw',
+      },
+      {
+        date: '2026-09-26',
+        opponent: 'Club C',
+        competition: 'Plateau',
+        homeAway: 'Domicile',
+        goalsFor: 3,
+        goalsAgainst: 2,
+        outcome: 'win',
+      },
+      {
+        date: '2026-10-03',
+        opponent: 'Club D',
+        competition: 'AMICAL',
+        homeAway: 'Extérieur',
+        goalsFor: 0,
+        goalsAgainst: 2,
+        outcome: 'loss',
+      },
+    ]
+
+    it('filters championship and friendly matches without excluding other competitions from all', () => {
+      expect(filterMatchesByCompetition(results, 'championship').map((match) => match.opponent)).toEqual(['Club A'])
+      expect(filterMatchesByCompetition(results, 'friendly').map((match) => match.opponent)).toEqual(['Club B', 'Club D'])
+      expect(filterMatchesByCompetition(results, 'all')).toHaveLength(4)
+    })
+
+    it('feeds separate match sets into otherwise unchanged team summaries', () => {
+      const championship = calculateTeamDynamics('E1', filterMatchesByCompetition(results, 'championship'))
+      const friendlies = calculateTeamDynamics('E1', filterMatchesByCompetition(results, 'friendly'))
+
+      expect(championship.overall).toMatchObject({ matches: 1, wins: 1, goalsFor: 2, goalsAgainst: 0 })
+      expect(friendlies.overall).toMatchObject({ matches: 2, wins: 0, draws: 1, losses: 1, goalsFor: 1, goalsAgainst: 3 })
+    })
   })
 
   it('calculates correct statistics, averages and home/away splits', () => {

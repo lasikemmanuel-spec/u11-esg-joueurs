@@ -8,6 +8,7 @@ import { ClubCrest } from '@/components/club-crest'
 import { EducatorAvatar } from '@/components/educator-avatar'
 import { EducatorProfilePhotoEditor } from '@/components/educator-profile-photo-editor'
 import { RefreshSheetButton } from '@/components/refresh-sheet-button'
+import { TeamStatsSummary } from '@/components/team-stats-summary'
 import { ThemeToggle } from '@/components/theme-toggle'
 import type { Convocation } from '@/lib/convocations'
 import type { PublicPlayer } from '@/lib/players'
@@ -91,6 +92,7 @@ function isActiveLiveMatch(value: unknown): value is ActiveLiveMatch {
 
 export function DashboardTabs({
   players,
+  teamTrainingRate,
   rosterPlayers,
   convocations,
   matchesPlayed,
@@ -106,6 +108,7 @@ export function DashboardTabs({
   children,
 }: {
   players: PlayerStat[]
+  teamTrainingRate: number | null
   rosterPlayers: PublicPlayer[]
   convocations: Convocation[]
   matchesPlayed: number
@@ -544,7 +547,10 @@ export function DashboardTabs({
               ))}
             </nav>
             {statsSection === 'players' && (
-              <PlayerStats players={players} />
+              <div className="flex flex-col gap-4">
+                <TeamStatsSummary stats={{ players, teamTrainingRate }} />
+                <PlayerStats players={players} />
+              </div>
             )}
             {statsSection === 'dynamics' && (
               <TeamFormDynamics matchResults={matchResults} />

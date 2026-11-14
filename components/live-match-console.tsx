@@ -5,12 +5,16 @@ import { createPortal } from 'react-dom'
 import {
   ArrowLeftRight,
   Check,
+  CircleDot,
   Flag,
+  Minus,
   Pause,
   Play,
+  Plus,
   RotateCcw,
   Save,
   Settings2,
+  Timer,
   Trophy,
   WifiOff,
   X,
@@ -647,38 +651,96 @@ export function LiveMatchConsole({
                 </div>
               )}
               {settingsOpen && session.phase === 'ready' && (
-                <div className="mx-auto mt-3 max-w-xl rounded-2xl border border-white/15 bg-[#101c41]/80 p-3 text-left">
-                  <h3 className="text-sm font-black">Formats disponibles pour tous les éducateurs</h3>
-                  <p className="mt-1 text-xs text-white/60">Ces durées seront enregistrées dans les réglages partagés de l’application.</p>
-                  <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                <div className="mx-auto mt-3 max-w-2xl overflow-hidden rounded-3xl border border-emerald-200/30 bg-gradient-to-br from-[#10224a] via-[#172b59] to-[#103d3b] p-3 text-left shadow-2xl sm:p-4">
+                  <div className="mb-3 flex items-start gap-3 rounded-2xl border border-white/10 bg-white/[0.06] p-3">
+                    <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-emerald-300 text-emerald-950 shadow-lg shadow-emerald-950/30">
+                      <CircleDot aria-hidden="true" className="size-6" />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-black uppercase tracking-[0.18em] text-emerald-200">Coup d’envoi</p>
+                      <h3 className="text-sm font-black sm:text-base">Prépare tes formats de match</h3>
+                      <p className="mt-0.5 text-xs leading-relaxed text-white/65">Les changements seront partagés avec tous les éducateurs.</p>
+                    </div>
+                  </div>
+                  <div className="grid gap-2 sm:grid-cols-3">
                     {draftFormats.map((format, index) => (
-                      <fieldset key={format.id} className="rounded-xl border border-white/10 p-2">
-                        <legend className="px-1 text-xs font-bold">Format {index + 1}</legend>
-                        <label className="mt-1 block text-[11px] text-white/70">
-                          Périodes
-                          <select
-                            value={format.periods}
-                            disabled={settingsSaving}
-                            onChange={(event) => updateDraftFormat(format.id, 'periods', Number(event.target.value))}
-                            className="mt-1 h-9 w-full rounded-lg border border-white/15 bg-[#101c41] px-2 text-sm text-white"
-                          >
-                            <option value={2}>2</option>
-                            <option value={3}>3</option>
-                          </select>
-                        </label>
-                        <label className="mt-2 block text-[11px] text-white/70">
-                          Minutes par période
-                          <input
-                            type="number"
-                            min={1}
-                            max={60}
-                            value={format.minutesPerPeriod}
-                            disabled={settingsSaving}
-                            onChange={(event) => updateDraftFormat(format.id, 'minutesPerPeriod', Number(event.target.value))}
-                            className="mt-1 h-9 w-full rounded-lg border border-white/15 bg-[#101c41] px-2 text-sm text-white"
-                          />
-                        </label>
-                        <p className="mt-2 text-xs font-black text-amber-200">{getLiveMatchFormatLabel(format)}</p>
+                      <fieldset key={format.id} className="min-w-0 rounded-2xl border border-white/15 bg-[#0b1838]/65 p-3 shadow-inner">
+                        <legend className="sr-only">Format {index + 1}</legend>
+                        <div className="mb-2 flex items-center justify-between gap-2">
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-300 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-[#172554]">
+                            <CircleDot aria-hidden="true" className="size-3" />
+                            Format {index + 1}
+                          </span>
+                          <span className="text-[10px] font-bold text-white/50">SUR 3</span>
+                        </div>
+                        <div className="flex flex-col gap-2.5">
+                          <div>
+                            <p className="mb-1 text-[10px] font-bold uppercase tracking-wider text-white/55">Périodes</p>
+                            <div className="grid grid-cols-2 gap-1 rounded-xl bg-black/20 p-1">
+                              {([2, 3] as const).map((periods) => (
+                                <button
+                                  key={periods}
+                                  type="button"
+                                  disabled={settingsSaving}
+                                  aria-pressed={format.periods === periods}
+                                  onClick={() => updateDraftFormat(format.id, 'periods', periods)}
+                                  className={[
+                                    'min-h-9 rounded-lg px-1 text-[11px] font-black transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-50',
+                                    format.periods === periods
+                                      ? 'bg-emerald-300 text-emerald-950 shadow'
+                                      : 'text-white/70 hover:bg-white/10',
+                                  ].join(' ')}
+                                >
+                                  {periods === 2 ? '2 périodes' : '3 périodes'}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                          <div>
+                            <label htmlFor={`format-minutes-${format.id}`} className="mb-1 flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-white/55">
+                              <Timer aria-hidden="true" className="size-3.5" />
+                              Minutes / période
+                            </label>
+                            <div className="flex h-10 items-center justify-between rounded-xl border border-white/10 bg-black/20 p-1">
+                              <button
+                                type="button"
+                                disabled={settingsSaving || format.minutesPerPeriod <= 1}
+                                onClick={() => updateDraftFormat(format.id, 'minutesPerPeriod', Math.max(1, format.minutesPerPeriod - 1))}
+                                aria-label={`Diminuer la durée du format ${index + 1}`}
+                                className="flex size-8 shrink-0 items-center justify-center rounded-lg text-white/75 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-30"
+                              >
+                                <Minus aria-hidden="true" className="size-4" />
+                              </button>
+                              <input
+                                id={`format-minutes-${format.id}`}
+                                type="number"
+                                min={1}
+                                max={60}
+                                step={1}
+                                value={format.minutesPerPeriod}
+                                disabled={settingsSaving}
+                                onChange={(event) => updateDraftFormat(format.id, 'minutesPerPeriod', Number(event.target.value))}
+                                aria-label={`Minutes par période pour le format ${index + 1}`}
+                                className="h-full min-w-0 w-14 border-0 bg-transparent text-center font-mono text-lg font-black tabular-nums text-white outline-none focus-visible:ring-0"
+                              />
+                              <button
+                                type="button"
+                                disabled={settingsSaving || format.minutesPerPeriod >= 60}
+                                onClick={() => updateDraftFormat(format.id, 'minutesPerPeriod', Math.min(60, format.minutesPerPeriod + 1))}
+                                aria-label={`Augmenter la durée du format ${index + 1}`}
+                                className="flex size-8 shrink-0 items-center justify-center rounded-lg text-white/75 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-30"
+                              >
+                                <Plus aria-hidden="true" className="size-4" />
+                              </button>
+                            </div>
+                          </div>
+                          <p className="flex min-h-8 items-center justify-center gap-1.5 rounded-xl border border-amber-200/25 bg-amber-300/10 px-2 text-center text-xs font-black text-amber-200">
+                            <Timer aria-hidden="true" className="size-3.5 shrink-0" />
+                            {getLiveMatchFormatLabel(format)}
+                            <span className="text-white/45">·</span>
+                            {format.periods * format.minutesPerPeriod} min au total
+                          </p>
+                        </div>
                       </fieldset>
                     ))}
                   </div>

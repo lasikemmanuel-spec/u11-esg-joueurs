@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
-import { BarChart3, CalendarDays, Dumbbell, Ellipsis, LogOut, Radio, Shirt, UsersRound, X, type LucideIcon } from 'lucide-react'
+import { BarChart3, CalendarDays, Dumbbell, Ellipsis, LogOut, MessageCircle, Radio, Shirt, UsersRound, X, type LucideIcon } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import { EducatorAvatar } from '@/components/educator-avatar'
 import { EducatorProfilePhotoEditor } from '@/components/educator-profile-photo-editor'
@@ -16,7 +16,7 @@ import type { TrainingAttendanceSession } from '@/lib/training-attendance'
 import type { CohesionDay } from '@/lib/cohesion'
 import type { PlayerStats as PlayerStat } from '@/lib/stats'
 
-type TabKey = 'roster' | 'educator' | 'training' | 'stats' | 'matches'
+type TabKey = 'roster' | 'educator' | 'training' | 'stats' | 'matches' | 'whatsapp'
 type StatsSection = 'players' | 'dynamics' | 'matches'
 type MatchFocus = {
   date: string
@@ -61,6 +61,9 @@ const TrainingAttendanceManager = dynamic(() => import('@/components/training-at
 })
 const LiveMatchConsole = dynamic(() => import('@/components/live-match-console').then((module) => module.LiveMatchConsole), {
   loading: () => <p role="status" className="p-4 text-sm text-muted-foreground">Chargement du match en direct…</p>,
+})
+const WhatsAppMessageCenter = dynamic(() => import('@/components/whatsapp-message-center').then((module) => module.WhatsAppMessageCenter), {
+  loading: () => <p role="status" className="p-4 text-sm text-muted-foreground">Chargement des messages WhatsApp…</p>,
 })
 
 function isMatchSheetEntry(value: unknown): value is MatchSheetEntry {
@@ -313,6 +316,9 @@ export function DashboardTabs({
     ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
       ? [{ key: 'training' as const, label: 'Entraînements' }]
       : []),
+    ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
+      ? [{ key: 'whatsapp' as const, label: 'Messages WhatsApp' }]
+      : []),
   ]
   const canAccessTraining = educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
   const mobileMainTabs: Array<{ key: TabKey | 'more'; label: string; icon: LucideIcon }> = canAccessTraining
@@ -332,6 +338,7 @@ export function DashboardTabs({
     stats: BarChart3,
     educator: UsersRound,
     training: Dumbbell,
+    whatsapp: MessageCircle,
   }
   const mainHeader = (
     <header className="relative z-20 border-b-2 border-[#d4af37] bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] text-white shadow-md">
@@ -603,6 +610,9 @@ export function DashboardTabs({
               )}
             </div>
           </div>
+        )}
+        {activeTab === 'whatsapp' && educatorIdentity && (
+          <WhatsAppMessageCenter />
         )}
         {activeTab === 'roster' && (
           <PositionBreakdown

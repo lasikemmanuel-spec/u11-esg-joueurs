@@ -544,14 +544,7 @@ export function DashboardTabs({
               ))}
             </nav>
             {statsSection === 'players' && (
-              <PlayerStats
-                players={players}
-                rosterPlayers={rosterPlayers}
-                convocations={convocations}
-                matchesPlayed={matchesPlayed}
-                trainingAttendance={trainingAttendance}
-                matchEntries={matchResults.entries}
-              />
+              <PlayerStats players={players} />
             )}
             {statsSection === 'dynamics' && (
               <TeamFormDynamics matchResults={matchResults} />

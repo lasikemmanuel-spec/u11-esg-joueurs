@@ -1,15 +1,13 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { ChevronRight, Search, X, Sparkles, Trophy, Timer, Shirt, Users, Star, ArrowUpRight } from 'lucide-react'
+import { useState } from 'react'
+import { X, Sparkles, Trophy, Timer, Shirt, Users, Star, ArrowUpRight } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import { TrainingEvolutionChart } from '@/components/training-evolution-chart'
 import { PlayerOffensiveRankings } from '@/components/player-offensive-rankings'
-import { countCancelledCallupsForPlayer } from '@/lib/cancelled-match-callups'
 import { ireStatus, type IreStatus, type PlayerStats as Stats } from '@/lib/stats-shared'
 import type { Convocation, MatchStatus } from '@/lib/convocations'
 import type { PublicPlayer } from '@/lib/players'
-import type { MatchSheetEntry } from '@/lib/match-results'
 import type { TrainingAttendanceSession } from '@/lib/training-attendance-shared'
 
 const MATCH_STYLES: Record<MatchStatus, { label: string; className: string }> = {
@@ -482,189 +480,6 @@ export function PlayerCard({
   )
 }
 
-const emptyStats = (player: PublicPlayer): Stats => ({
-  number: player.number,
-  name: `${player.firstName} ${player.lastName}`.trim(),
-  trainingRate: null,
-  matchesCalled: null,
-  callUpRate: null,
-  starts: null,
-  subs: null,
-  minutes: null,
-  goals: null,
-  assists: null,
-  ire: null,
-})
-
-function normalizePlayerSearch(value: string) {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLocaleLowerCase('fr-FR')
-}
-
-export function PlayerStats({
-  players,
-  rosterPlayers = [],
-  convocations = [],
-  matchesPlayed = 0,
-  trainingAttendance = [],
-  matchEntries = [],
-}: {
-  players: Stats[]
-  rosterPlayers?: PublicPlayer[]
-  convocations?: Convocation[]
-  matchesPlayed?: number
-  trainingAttendance?: TrainingAttendanceSession[]
-  matchEntries?: MatchSheetEntry[]
-}) {
-  const [query, setQuery] = useState('')
-  const [selectedNumber, setSelectedNumber] = useState<number | null>(null)
-  const [showRankings, setShowRankings] = useState(false)
-  const playerDialogRef = useRef<HTMLDialogElement>(null)
-  const rosterByNumber = useMemo(
-    () => new Map(rosterPlayers.map((player) => [player.number, player])),
-    [rosterPlayers],
-  )
-  const statsByNumber = useMemo(
-    () => new Map(players.map((stats) => [stats.number, stats])),
-    [players],
-  )
-  const listedPlayers = useMemo(() => {
-    const numbers = new Set([...rosterPlayers.map((player) => player.number), ...players.map((stats) => stats.number)])
-    const normalizedQuery = normalizePlayerSearch(query.trim())
-    return [...numbers]
-      .map((number) => {
-        const player = rosterByNumber.get(number)
-        return {
-          number,
-          player,
-          stats: statsByNumber.get(number) ?? (player ? emptyStats(player) : null),
-        }
-      })
-      .filter((entry): entry is { number: number; player: PublicPlayer | undefined; stats: Stats } => entry.stats !== null)
-      .filter(({ number, player, stats }) => !normalizedQuery || normalizePlayerSearch(
-        `${number} ${stats.name} ${player ? `${player.firstName} ${player.lastName} ${player.position ?? ''}` : ''}`,
-      ).includes(normalizedQuery))
-      .sort((a, b) => a.number - b.number || a.stats.name.localeCompare(b.stats.name, 'fr'))
-  }, [players, query, rosterByNumber, rosterPlayers, statsByNumber])
-
-  const selectedStats = selectedNumber === null ? null : statsByNumber.get(selectedNumber)
-    ?? (rosterByNumber.has(selectedNumber) ? emptyStats(rosterByNumber.get(selectedNumber)!) : null)
-  const selectedPlayer = selectedNumber === null ? undefined : rosterByNumber.get(selectedNumber)
-
-  useEffect(() => {
-    const dialog = playerDialogRef.current
-    if (!dialog) return
-    if (selectedNumber !== null && !dialog.open) dialog.showModal()
-    if (selectedNumber === null && dialog.open) dialog.close()
-  }, [selectedNumber])
-
-  return (
-    <section aria-label="Statistiques des joueurs" className="flex flex-col gap-4">
-      <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <label className="sr-only" htmlFor="player-stats-search">Rechercher un joueur par nom ou numéro</label>
-        <div className="relative min-w-0 flex-1">
-          <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            id="player-stats-search"
-            type="text"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Nom ou numéro de maillot"
-            autoComplete="off"
-            className="min-h-11 w-full rounded-lg border border-input bg-background py-2 pl-10 pr-10 text-base text-foreground outline-none transition placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring sm:text-sm"
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => setQuery('')}
-              aria-label="Effacer la recherche"
-              className="absolute right-2 top-1/2 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            >
-              <X aria-hidden="true" className="size-4" />
-            </button>
-          )}
-        </div>
-        <p aria-live="polite" className="shrink-0 text-xs text-muted-foreground">
-          {listedPlayers.length} joueur{listedPlayers.length === 1 ? '' : 's'}
-        </p>
-      </div>
-
-      {listedPlayers.length > 0 ? (
-        <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
-          {listedPlayers.map(({ number, player, stats }) => (
-            <li key={number}>
-              <button
-                type="button"
-                onClick={() => setSelectedNumber(number)}
-                aria-label={`Ouvrir la fiche de ${stats.name}`}
-                className="flex min-h-[76px] w-full items-center gap-3 rounded-xl border border-border bg-card p-3 text-left shadow-sm transition hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.99]"
-              >
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-full bg-primary font-mono text-base font-bold text-primary-foreground">
-                  {number}
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-bold text-foreground">{stats.name}</span>
-                  <span className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-[11px] text-muted-foreground">
-                    {player?.position && <span>{player.position}</span>}
-                    <span>{stats.trainingRate === null ? 'Présence —' : `${stats.trainingRate}% entraînement`}</span>
-                    <span>{stats.minutes === null ? 'Minutes —' : `${stats.minutes} min`}</span>
-                  </span>
-                </span>
-                <ChevronRight aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : (
-        <p role="status" className="rounded-xl border border-dashed border-accent/60 bg-card p-6 text-center text-sm text-muted-foreground">
-          {query.trim() ? `Aucun joueur ne correspond à « ${query.trim()} ».` : 'Aucun joueur à afficher.'}
-        </p>
-      )}
-
-      <div className="rounded-xl border border-border bg-card">
-        <button
-          type="button"
-          aria-expanded={showRankings}
-          onClick={() => setShowRankings((current) => !current)}
-          className="flex min-h-11 w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm font-semibold text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        >
-          <span>Voir les classements de la saison</span>
-          <ChevronRight aria-hidden="true" className={`size-4 transition-transform ${showRankings ? 'rotate-90' : ''}`} />
-        </button>
-        {showRankings && (
-          <div className="border-t border-border p-3 sm:p-4">
-            <PlayerOffensiveRankings players={players} />
-          </div>
-        )}
-      </div>
-
-      {selectedStats && (
-        <dialog
-          ref={playerDialogRef}
-          aria-labelledby="selected-player-card-title"
-          onClose={() => setSelectedNumber(null)}
-          onClick={(event) => {
-            if (event.target === event.currentTarget) event.currentTarget.close()
-          }}
-          className="fixed inset-0 m-auto max-h-[calc(100dvh-1.5rem)] w-[min(42rem,calc(100vw-1.5rem))] overflow-y-auto overscroll-contain rounded-3xl border-0 bg-transparent p-0 shadow-2xl backdrop:bg-[#07102a]/70"
-        >
-          <PlayerCard
-            stats={selectedStats}
-            player={selectedPlayer}
-            convocation={convocations.find((convocation) => convocation.number === selectedStats.number)}
-            trainingAttendance={trainingAttendance}
-            matchesPlayed={matchesPlayed}
-            cancelledMatchesForPlayer={countCancelledCallupsForPlayer(
-              selectedStats.number,
-              convocations,
-              matchEntries,
-            )}
-            onClose={() => playerDialogRef.current?.close()}
-          />
-        </dialog>
-      )}
-    </section>
-  )
+export function PlayerStats({ players }: { players: Stats[] }) {
+  return <PlayerOffensiveRankings players={players} />
 }

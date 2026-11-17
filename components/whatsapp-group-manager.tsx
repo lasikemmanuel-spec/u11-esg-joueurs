@@ -9,9 +9,12 @@ import {
   getStoredWhatsAppTemplates,
   saveStoredWhatsAppGroups,
   saveStoredWhatsAppTemplates,
+  loadSharedWhatsAppSettings,
+  saveSharedWhatsAppSettings,
   type WhatsAppGroup,
   type WhatsAppTemplate,
 } from '@/lib/whatsapp-messages'
+import { useEffect } from 'react'
 
 export function WhatsAppGroupManager({
   onClose,
@@ -34,6 +37,29 @@ export function WhatsAppGroupManager({
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null)
   const [templateTitle, setTemplateTitle] = useState('')
   const [templateContent, setTemplateContent] = useState('')
+  const [saving, setSaving] = useState(false)
+  const [syncNotice, setSyncNotice] = useState('')
+
+  useEffect(() => {
+    void loadSharedWhatsAppSettings().then((shared) => {
+      if (!shared) return
+      setGroups(shared.groups)
+      setTemplates(shared.templates)
+      saveStoredWhatsAppGroups(shared.groups)
+      saveStoredWhatsAppTemplates(shared.templates)
+      onGroupsUpdated?.(shared.groups)
+    })
+  }, [onGroupsUpdated])
+
+  const persistSettings = async (nextGroups: WhatsAppGroup[], nextTemplates: WhatsAppTemplate[]) => {
+    setSaving(true)
+    setSyncNotice('')
+    const saved = await saveSharedWhatsAppSettings(nextGroups, nextTemplates)
+    setSyncNotice(saved
+      ? 'Configuration synchronisée sur tous vos appareils.'
+      : 'Configuration enregistrée sur cet appareil uniquement.')
+    setSaving(false)
+  }
 
   const handleSaveGroup = () => {
     if (!groupName.trim()) return
@@ -58,6 +84,7 @@ export function WhatsAppGroupManager({
     setGroups(next)
     saveStoredWhatsAppGroups(next)
     onGroupsUpdated?.(next)
+    void persistSettings(next, templates)
     setEditingGroupId(null)
     setGroupName('')
     setGroupChatLink('')
@@ -68,6 +95,7 @@ export function WhatsAppGroupManager({
     setGroups(next)
     saveStoredWhatsAppGroups(next)
     onGroupsUpdated?.(next)
+    void persistSettings(next, templates)
   }
 
   const handleResetGroups = () => {
@@ -75,6 +103,7 @@ export function WhatsAppGroupManager({
       setGroups(DEFAULT_WHATSAPP_GROUPS)
       saveStoredWhatsAppGroups(DEFAULT_WHATSAPP_GROUPS)
       onGroupsUpdated?.(DEFAULT_WHATSAPP_GROUPS)
+      void persistSettings(DEFAULT_WHATSAPP_GROUPS, templates)
     }
   }
 
@@ -101,6 +130,7 @@ export function WhatsAppGroupManager({
 
     setTemplates(next)
     saveStoredWhatsAppTemplates(next)
+    void persistSettings(groups, next)
     setEditingTemplateId(null)
     setTemplateTitle('')
     setTemplateContent('')
@@ -110,12 +140,14 @@ export function WhatsAppGroupManager({
     const next = templates.filter((t) => t.id !== id)
     setTemplates(next)
     saveStoredWhatsAppTemplates(next)
+    void persistSettings(groups, next)
   }
 
   const handleResetTemplates = () => {
     if (confirm('Réinitialiser les modèles aux valeurs par défaut ?')) {
       setTemplates(DEFAULT_WHATSAPP_TEMPLATES)
       saveStoredWhatsAppTemplates(DEFAULT_WHATSAPP_TEMPLATES)
+      void persistSettings(groups, DEFAULT_WHATSAPP_TEMPLATES)
     }
   }
 
@@ -168,6 +200,11 @@ export function WhatsAppGroupManager({
 
         {/* Contenu */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+          {syncNotice && (
+            <p role="status" aria-live="polite" className="rounded-xl border border-emerald-400/25 bg-emerald-400/10 px-3 py-2 text-xs font-semibold text-emerald-100">
+              {syncNotice}
+            </p>
+          )}
           {activeTab === 'groups' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">

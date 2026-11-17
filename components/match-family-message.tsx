@@ -8,6 +8,9 @@ import {
   getStoredWhatsAppGroups,
   getStoredWhatsAppTemplates,
   replaceMessageVariables,
+  loadSharedWhatsAppSettings,
+  saveStoredWhatsAppGroups,
+  saveStoredWhatsAppTemplates,
   type MessageVariablesContext,
   type WhatsAppGroup,
   type WhatsAppTemplate,
@@ -89,6 +92,16 @@ export function MatchFamilyMessage({
     const loadedTemplates = getStoredWhatsAppTemplates()
     setGroups(loadedGroups)
     setTemplates(loadedTemplates)
+
+    void loadSharedWhatsAppSettings().then((shared) => {
+      if (!shared) return
+      setGroups(shared.groups)
+      setTemplates(shared.templates)
+      saveStoredWhatsAppGroups(shared.groups)
+      saveStoredWhatsAppTemplates(shared.templates)
+      const sharedMatchingGroup = shared.groups.find((group) => group.teamFilter === match.team) ?? shared.groups[0]
+      if (sharedMatchingGroup) setSelectedGroupId(sharedMatchingGroup.id)
+    })
 
     // Pré-sélection intelligente du groupe correspondant à l'équipe
     const matchingGroup = loadedGroups.find((g) => g.teamFilter === match.team) ?? loadedGroups[0]

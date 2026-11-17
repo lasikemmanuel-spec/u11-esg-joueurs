@@ -9,6 +9,9 @@ import {
   DEFAULT_WHATSAPP_TEMPLATES,
   getStoredWhatsAppGroups,
   getStoredWhatsAppTemplates,
+  loadSharedWhatsAppSettings,
+  saveStoredWhatsAppGroups,
+  saveStoredWhatsAppTemplates,
   replaceMessageVariables,
   type WhatsAppGroup,
   type WhatsAppTemplate,
@@ -38,6 +41,23 @@ export function WhatsAppMessageCenter() {
     const storedTemplates = getStoredWhatsAppTemplates()
     setGroups(storedGroups)
     setTemplates(storedTemplates)
+
+    void loadSharedWhatsAppSettings().then((shared) => {
+      if (!shared) return
+      setGroups(shared.groups)
+      setTemplates(shared.templates)
+      saveStoredWhatsAppGroups(shared.groups)
+      saveStoredWhatsAppTemplates(shared.templates)
+      setSelectedGroupId((current) => shared.groups.some((group) => group.id === current)
+        ? current
+        : shared.groups[0]?.id ?? '')
+      setSelectedTemplateId((current) => shared.templates.some((template) => template.id === current)
+        ? current
+        : shared.templates.some((template) => template.id === 'tpl-entrainement')
+          ? 'tpl-entrainement'
+          : shared.templates[0]?.id ?? '')
+    })
+
     setSelectedGroupId(storedGroups[0]?.id ?? '')
     if (!storedTemplates.some((template) => template.id === 'tpl-entrainement')) {
       setSelectedTemplateId(storedTemplates[0]?.id ?? '')

@@ -195,6 +195,45 @@ export function saveStoredWhatsAppTemplates(templates: WhatsAppTemplate[]): void
   }
 }
 
+export async function loadSharedWhatsAppSettings(): Promise<{
+  groups: WhatsAppGroup[]
+  templates: WhatsAppTemplate[]
+} | null> {
+  try {
+    const response = await fetch('/api/educators/whatsapp/settings', { cache: 'no-store' })
+    if (!response.ok) return null
+    const settings = await response.json() as Partial<{
+      groups: WhatsAppGroup[]
+      templates: WhatsAppTemplate[]
+    }>
+    if (!Array.isArray(settings.groups) || !Array.isArray(settings.templates)) return null
+    return { groups: settings.groups, templates: settings.templates }
+  } catch {
+    return null
+  }
+}
+
+export async function saveSharedWhatsAppSettings(
+  groups: WhatsAppGroup[],
+  templates: WhatsAppTemplate[],
+): Promise<boolean> {
+  try {
+    const response = await fetch('/api/educators/whatsapp/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ groups, templates }),
+    })
+    if (!response.ok) return false
+    saveStoredWhatsAppGroups(groups)
+    saveStoredWhatsAppTemplates(templates)
+    return true
+  } catch {
+    saveStoredWhatsAppGroups(groups)
+    saveStoredWhatsAppTemplates(templates)
+    return false
+  }
+}
+
 export function buildKitList(temperature: number | null): string {
   const items = [
     '• Short',

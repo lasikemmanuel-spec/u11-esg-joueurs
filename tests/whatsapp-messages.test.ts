@@ -5,6 +5,8 @@ import {
   DEFAULT_WHATSAPP_GROUPS,
   DEFAULT_WHATSAPP_TEMPLATES,
   replaceMessageVariables,
+  type WhatsAppGroup,
+  type WhatsAppTemplate,
 } from '@/lib/whatsapp-messages'
 
 describe('whatsapp-messages', () => {

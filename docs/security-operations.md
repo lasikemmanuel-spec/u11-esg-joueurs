@@ -24,6 +24,30 @@ La valeur IP provient des en-têtes de proxy ; n’accepter cette configuration 
 
 Les permissions effectives du projet Vercel, de Google Sheets et la configuration active des variables ne sont pas vérifiables depuis ce dépôt ; un administrateur doit les contrôler dans leurs consoles respectives.
 
+## Checklist des variables de production
+
+Configurer au minimum les variables suivantes dans l’environnement Vercel Production :
+
+- `EDUCATOR_SESSION_SECRET` : secret aléatoire d’au moins 32 octets.
+- `EDUCATOR_ACCOUNT_ENCRYPTION_KEY` : clé AES-GCM base64url de exactement 32 octets, utilisée pour les comptes éducateurs et les paramètres WhatsApp.
+- `EDUCATOR_PHONE_ENCRYPTION_KEY` : clé AES-GCM base64url de exactement 32 octets, distincte de la clé précédente, utilisée pour les téléphones.
+- `EDUCATOR_ACCOUNTS` : tableau JSON bootstrap contenant au moins un compte administrateur.
+- `GOOGLE_SHEET_ID` : identifiant du classeur privé.
+- `GOOGLE_SERVICE_ACCOUNT_EMAIL` et `GOOGLE_PRIVATE_KEY` : compte de service autorisé à lire et écrire le classeur.
+- `UPSTASH_REDIS_REST_URL` et `UPSTASH_REDIS_REST_TOKEN` : limitation distribuée des tentatives de connexion.
+
+`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` et `GOOGLE_REFRESH_TOKEN` constituent une alternative OAuth au compte de service. Ne pas stocker ces valeurs dans le dépôt.
+
+Avant le premier déploiement, vérifier que :
+
+1. les trois onglets protégés sont accessibles au compte de service ;
+2. le classeur n’est pas publiquement accessible ;
+3. les clés restent inchangées entre les déploiements ;
+4. `pnpm test` passe intégralement ;
+5. `pnpm build` produit une sortie Next.js sans avertissement de sécurité ;
+6. une connexion, une déconnexion, une modification WhatsApp et une modification de présence sont vérifiées sur l’URL de production ;
+7. les headers `HSTS`, CSP, `X-Frame-Options` et `Clear-Site-Data` sont présents.
+
 ## En-têtes et tests
 
 La configuration Next.js applique CSP, HSTS, anti-clickjacking, `nosniff`, `Referrer-Policy`, `Permissions-Policy` et des restrictions d’isolation du navigateur. Les règles sont vérifiées par `pnpm test`. Lancer `pnpm test` et `pnpm build` avant chaque déploiement.

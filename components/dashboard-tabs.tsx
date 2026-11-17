@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
-import { BarChart3, CalendarDays, Dumbbell, Ellipsis, LogOut, Radio, Shirt, UsersRound, X, type LucideIcon } from 'lucide-react'
+import { BarChart3, CalendarDays, Dumbbell, Ellipsis, LogOut, MessageCircle, Radio, Shirt, UsersRound, X, type LucideIcon } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import { EducatorAvatar } from '@/components/educator-avatar'
 import { EducatorProfilePhotoEditor } from '@/components/educator-profile-photo-editor'
 import { RefreshSheetButton } from '@/components/refresh-sheet-button'
+import { TeamStatsSummary } from '@/components/team-stats-summary'
 import { ThemeToggle } from '@/components/theme-toggle'
 import type { Convocation } from '@/lib/convocations'
 import type { PublicPlayer } from '@/lib/players'
@@ -16,7 +17,7 @@ import type { TrainingAttendanceSession } from '@/lib/training-attendance'
 import type { CohesionDay } from '@/lib/cohesion'
 import type { PlayerStats as PlayerStat } from '@/lib/stats'
 
-type TabKey = 'roster' | 'educator' | 'training' | 'stats' | 'matches'
+type TabKey = 'roster' | 'educator' | 'training' | 'stats' | 'matches' | 'whatsapp'
 type StatsSection = 'players' | 'dynamics' | 'matches'
 type MatchFocus = {
   date: string
@@ -30,7 +31,7 @@ type EducatorIdentity = { username: string; displayName: string; role: AccountRo
 type ApplicationSession = 'checking' | 'unauthenticated' | 'authenticated' | 'unavailable'
 type ActiveLiveMatch = {
   match: MatchSheetEntry
-  phase: 'firstHalf' | 'halftime' | 'secondHalf' | 'finished'
+  phase: 'firstHalf' | 'halftime' | 'secondHalf' | 'secondHalftime' | 'thirdPeriod' | 'finished'
 }
 
 const EMPTY_PLAYER_NUMBERS: number[] = []
@@ -62,6 +63,9 @@ const TrainingAttendanceManager = dynamic(() => import('@/components/training-at
 const LiveMatchConsole = dynamic(() => import('@/components/live-match-console').then((module) => module.LiveMatchConsole), {
   loading: () => <p role="status" className="p-4 text-sm text-muted-foreground">Chargement du match en direct…</p>,
 })
+const WhatsAppMessageCenter = dynamic(() => import('@/components/whatsapp-message-center').then((module) => module.WhatsAppMessageCenter), {
+  loading: () => <p role="status" className="p-4 text-sm text-muted-foreground">Chargement des messages WhatsApp…</p>,
+})
 
 function isMatchSheetEntry(value: unknown): value is MatchSheetEntry {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
@@ -83,11 +87,12 @@ function isActiveLiveMatch(value: unknown): value is ActiveLiveMatch {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
   const liveMatch = value as Record<string, unknown>
   return isMatchSheetEntry(liveMatch.match) &&
-    ['firstHalf', 'halftime', 'secondHalf', 'finished'].includes(String(liveMatch.phase))
+    ['firstHalf', 'halftime', 'secondHalf', 'secondHalftime', 'thirdPeriod', 'finished'].includes(String(liveMatch.phase))
 }
 
 export function DashboardTabs({
   players,
+  teamTrainingRate,
   rosterPlayers,
   convocations,
   matchesPlayed,
@@ -103,6 +108,7 @@ export function DashboardTabs({
   children,
 }: {
   players: PlayerStat[]
+  teamTrainingRate: number | null
   rosterPlayers: PublicPlayer[]
   convocations: Convocation[]
   matchesPlayed: number
@@ -313,6 +319,9 @@ export function DashboardTabs({
     ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
       ? [{ key: 'training' as const, label: 'Entraînements' }]
       : []),
+    ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
+      ? [{ key: 'whatsapp' as const, label: 'Messages WhatsApp' }]
+      : []),
   ]
   const canAccessTraining = educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
   const mobileMainTabs: Array<{ key: TabKey | 'more'; label: string; icon: LucideIcon }> = canAccessTraining
@@ -332,6 +341,7 @@ export function DashboardTabs({
     stats: BarChart3,
     educator: UsersRound,
     training: Dumbbell,
+    whatsapp: MessageCircle,
   }
   const mainHeader = (
     <header className="relative z-20 border-b-2 border-[#d4af37] bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] text-white shadow-md">
@@ -537,7 +547,10 @@ export function DashboardTabs({
               ))}
             </nav>
             {statsSection === 'players' && (
-              <PlayerStats players={players} />
+              <div className="flex flex-col gap-4">
+                <TeamStatsSummary stats={{ players, teamTrainingRate }} />
+                <PlayerStats players={players} />
+              </div>
             )}
             {statsSection === 'dynamics' && (
               <TeamFormDynamics matchResults={matchResults} />
@@ -603,6 +616,9 @@ export function DashboardTabs({
               )}
             </div>
           </div>
+        )}
+        {activeTab === 'whatsapp' && educatorIdentity && (
+          <WhatsAppMessageCenter />
         )}
         {activeTab === 'roster' && (
           <PositionBreakdown
@@ -726,8 +742,8 @@ export function DashboardTabs({
             const isE1 = entry.team === 'E1'
             const phaseLabel = phase === 'finished'
               ? 'Récapitulatif à valider'
-              : phase === 'halftime'
-                ? 'Reprendre après la mi-temps'
+              : phase === 'halftime' || phase === 'secondHalftime'
+                ? 'Reprendre après la pause'
                 : 'Reprendre le direct'
             return (
               <button

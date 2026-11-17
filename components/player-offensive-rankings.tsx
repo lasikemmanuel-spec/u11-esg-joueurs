@@ -1,8 +1,8 @@
 'use client'
 
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { PlayerStats } from '@/lib/stats'
-import { Crown, Sparkles, Trophy } from 'lucide-react'
+import { Crown, Search, Sparkles, Trophy, X } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 
 type RankingProps = {
@@ -141,11 +141,27 @@ function Ranking({
 
 export function PlayerOffensiveRankings({ players }: { players: PlayerStats[] }) {
   const [selectedViews, setSelectedViews] = useState<Set<RankingKey>>(() => new Set(['scorers']))
+  const [searchQuery, setSearchQuery] = useState('')
+  const searchedPlayers = useMemo(() => {
+    const query = searchQuery
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLocaleLowerCase('fr-FR')
+    if (!query) return players
+    return players.filter((player) => {
+      const searchable = `${player.name} ${player.number}`
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLocaleLowerCase('fr-FR')
+      return searchable.includes(query)
+    })
+  }, [players, searchQuery])
   const scorerRanking: RankingProps = {
     id: 'top-scorers-title',
     kicker: 'Top 5',
     title: 'Classement buteurs',
-    players,
+    players: searchedPlayers,
     getValue: (player) => player.goals,
     formatValue: (value) => `${value} but${value === 1 ? '' : 's'}`,
     barClass: 'bg-accent',
@@ -157,7 +173,7 @@ export function PlayerOffensiveRankings({ players }: { players: PlayerStats[] })
     id: 'top-assisters-title',
     kicker: 'Top 5',
     title: 'Classement passeurs',
-    players,
+    players: searchedPlayers,
     getValue: (player) => player.assists,
     formatValue: (value) => `${value} passe${value === 1 ? '' : 's'}`,
     barClass: 'bg-primary',
@@ -169,7 +185,7 @@ export function PlayerOffensiveRankings({ players }: { players: PlayerStats[] })
     id: 'top-training-title',
     kicker: 'Top 5',
     title: 'Présence entraînements',
-    players,
+    players: searchedPlayers,
     getValue: (player) => player.trainingRate,
     formatValue: (value) => `${value}%`,
     barClass: 'bg-accent',
@@ -181,7 +197,7 @@ export function PlayerOffensiveRankings({ players }: { players: PlayerStats[] })
     id: 'top-matches-title',
     kicker: 'Top 5',
     title: 'Classement matchs joués',
-    players,
+    players: searchedPlayers,
     getValue: (player) =>
       player.starts === null && player.subs === null
         ? null
@@ -225,6 +241,37 @@ export function PlayerOffensiveRankings({ players }: { players: PlayerStats[] })
 
   return (
     <section aria-label="Classements des joueurs" className="flex flex-col gap-4">
+      <div className="flex flex-col gap-2 rounded-xl border border-border bg-card p-3 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        <label className="sr-only" htmlFor="player-ranking-search">Rechercher un joueur par nom ou numéro</label>
+        <div className="relative min-w-0 flex-1">
+          <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <input
+            id="player-ranking-search"
+            type="text"
+            value={searchQuery}
+            onChange={(event) => setSearchQuery(event.target.value)}
+            placeholder="Nom ou numéro de maillot"
+            autoComplete="off"
+            className="min-h-11 w-full rounded-lg border border-input bg-background py-2 pl-10 pr-10 text-base text-foreground outline-none transition placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring sm:text-sm"
+          />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery('')}
+              aria-label="Effacer la recherche"
+              className="absolute right-2 top-1/2 inline-flex size-8 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <X aria-hidden="true" className="size-4" />
+            </button>
+          )}
+        </div>
+        <p aria-live="polite" className="shrink-0 text-xs text-muted-foreground">
+          {searchQuery.trim()
+            ? `${searchedPlayers.length} joueur${searchedPlayers.length === 1 ? '' : 's'} trouvé${searchedPlayers.length === 1 ? '' : 's'}`
+            : `${players.length} joueur${players.length === 1 ? '' : 's'}`}
+        </p>
+      </div>
+
       <div className="sticky top-2 z-20 flex flex-col gap-2 rounded-xl border border-accent/50 bg-card/95 p-2 shadow-md backdrop-blur xl:hidden">
         <div className="flex items-center justify-between gap-2">
           <p id="player-ranking-picker" className="text-xs font-bold text-primary">Classements à afficher</p>
@@ -260,25 +307,31 @@ export function PlayerOffensiveRankings({ players }: { players: PlayerStats[] })
         </div>
       </div>
 
-      <div className="grid items-start gap-4 xl:grid-cols-2">
-        <div id="player-ranking-scorers" className={`scroll-mt-24 ${selectedViews.has('scorers') ? 'block xl:block' : 'hidden xl:block'}`}>
-          <Ranking {...scorerRanking} />
+      {searchQuery.trim() && searchedPlayers.length === 0 ? (
+        <p role="status" className="rounded-xl border border-dashed border-accent/60 bg-card p-6 text-center text-sm text-muted-foreground">
+          Aucun joueur ne correspond à « {searchQuery.trim()} ».
+        </p>
+      ) : (
+        <div className="grid items-start gap-4 xl:grid-cols-2">
+          <div id="player-ranking-scorers" className={`scroll-mt-24 ${selectedViews.has('scorers') ? 'block xl:block' : 'hidden xl:block'}`}>
+            <Ranking {...scorerRanking} />
+          </div>
+          <div id="player-ranking-assists" className={`scroll-mt-24 ${selectedViews.has('assists') ? 'block xl:block' : 'hidden xl:block'}`}>
+            <Ranking {...passerRanking} />
+          </div>
+          <div id="player-ranking-training" className={`scroll-mt-24 ${selectedViews.has('training') ? 'block xl:block' : 'hidden xl:block'}`}>
+            <Ranking {...trainingRanking} />
+          </div>
+          <div id="player-ranking-matches" className={`scroll-mt-24 ${selectedViews.has('matches') ? 'block xl:block' : 'hidden xl:block'}`}>
+            <Ranking {...matchRanking} />
+          </div>
+          {selectedViews.size === 0 && (
+            <p className="rounded-xl border border-dashed border-accent/60 bg-card p-4 text-center text-sm text-muted-foreground xl:hidden">
+              Sélectionnez au moins un classement ci-dessus.
+            </p>
+          )}
         </div>
-        <div id="player-ranking-assists" className={`scroll-mt-24 ${selectedViews.has('assists') ? 'block xl:block' : 'hidden xl:block'}`}>
-          <Ranking {...passerRanking} />
-        </div>
-        <div id="player-ranking-training" className={`scroll-mt-24 ${selectedViews.has('training') ? 'block xl:block' : 'hidden xl:block'}`}>
-          <Ranking {...trainingRanking} />
-        </div>
-        <div id="player-ranking-matches" className={`scroll-mt-24 ${selectedViews.has('matches') ? 'block xl:block' : 'hidden xl:block'}`}>
-          <Ranking {...matchRanking} />
-        </div>
-        {selectedViews.size === 0 && (
-          <p className="rounded-xl border border-dashed border-accent/60 bg-card p-4 text-center text-sm text-muted-foreground xl:hidden">
-            Sélectionnez au moins un classement ci-dessus.
-          </p>
-        )}
-      </div>
+      )}
     </section>
   )
 }

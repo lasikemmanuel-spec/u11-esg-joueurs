@@ -24,6 +24,8 @@ export type RecentFormMatch = {
   outcome: 'win' | 'draw' | 'loss'
 }
 
+export type TeamCompetitionFilter = 'all' | 'championship' | 'friendly'
+
 export type TeamDynamics = {
   team: 'E1' | 'E2'
   overall: TeamMatchStat
@@ -109,6 +111,24 @@ function buildStat(matches: MatchResult[]): TeamMatchStat {
     avgGoalsAgainst,
     cleanSheets,
   }
+}
+
+function getCompetitionCategory(competition: string | null): Exclude<TeamCompetitionFilter, 'all'> | null {
+  const normalized = competition
+    ?.normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('fr-FR') ?? ''
+  if (/amical|friendly/.test(normalized)) return 'friendly'
+  if (/championnat|championship/.test(normalized)) return 'championship'
+  return null
+}
+
+export function filterMatchesByCompetition(
+  results: MatchResult[],
+  competitionFilter: TeamCompetitionFilter,
+): MatchResult[] {
+  if (competitionFilter === 'all') return results
+  return results.filter((match) => getCompetitionCategory(match.competition) === competitionFilter)
 }
 
 function calculateStreak(sortedChronological: MatchResult[]): {

@@ -19,7 +19,13 @@ import {
 } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import type { TeamMatchResults } from '@/lib/match-results'
-import { calculateTeamDynamics, type RecentFormMatch, type TeamDynamics } from '@/lib/team-dynamics'
+import {
+  calculateTeamDynamics,
+  filterMatchesByCompetition,
+  type RecentFormMatch,
+  type TeamCompetitionFilter,
+  type TeamDynamics,
+} from '@/lib/team-dynamics'
 
 function formatDateFr(dateStr: string): string {
   const iso = dateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
@@ -99,7 +105,7 @@ function TeamCard({ dynamics }: { dynamics: TeamDynamics }) {
             <p className="text-xs text-white/60">
               {overall.matches > 0
                 ? `${overall.matches} match${overall.matches > 1 ? 's' : ''} disputé${overall.matches > 1 ? 's' : ''}`
-                : 'Aucun match officiel enregistré'}
+                : 'Aucun match enregistré pour ce filtre'}
             </p>
           </div>
         </div>
@@ -319,9 +325,24 @@ function TeamCard({ dynamics }: { dynamics: TeamDynamics }) {
 
 export function TeamFormDynamics({ matchResults }: { matchResults: TeamMatchResults }) {
   const [selectedView, setSelectedView] = useState<'both' | 'E1' | 'E2'>('both')
+  const [competitionFilter, setCompetitionFilter] = useState<TeamCompetitionFilter>('all')
 
-  const dynamicsE1 = useMemo(() => calculateTeamDynamics('E1', matchResults.E1), [matchResults.E1])
-  const dynamicsE2 = useMemo(() => calculateTeamDynamics('E2', matchResults.E2), [matchResults.E2])
+  const filteredE1 = useMemo(
+    () => filterMatchesByCompetition(matchResults.E1, competitionFilter),
+    [matchResults.E1, competitionFilter],
+  )
+  const filteredE2 = useMemo(
+    () => filterMatchesByCompetition(matchResults.E2, competitionFilter),
+    [matchResults.E2, competitionFilter],
+  )
+  const dynamicsE1 = useMemo(() => calculateTeamDynamics('E1', filteredE1), [filteredE1])
+  const dynamicsE2 = useMemo(() => calculateTeamDynamics('E2', filteredE2), [filteredE2])
+  const allResults = useMemo(() => [...matchResults.E1, ...matchResults.E2], [matchResults.E1, matchResults.E2])
+  const competitionOptions: Array<{ key: TeamCompetitionFilter; label: string; count: number }> = [
+    { key: 'all', label: 'Toutes', count: allResults.length },
+    { key: 'championship', label: 'Championnat', count: filterMatchesByCompetition(allResults, 'championship').length },
+    { key: 'friendly', label: 'Amicaux', count: filterMatchesByCompetition(allResults, 'friendly').length },
+  ]
 
   return (
     <div className="flex flex-col gap-5" aria-labelledby="dynamics-title">
@@ -373,6 +394,31 @@ export function TeamFormDynamics({ matchResults }: { matchResults: TeamMatchResu
             >
               Équipe 2
             </button>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2 border-t border-white/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-white/55">Type de compétition</p>
+          <div role="group" aria-label="Filtrer par type de compétition" className="grid grid-cols-3 gap-1 rounded-2xl border border-white/15 bg-black/10 p-1">
+            {competitionOptions.map(({ key, label, count }) => (
+              <button
+                key={key}
+                type="button"
+                aria-pressed={competitionFilter === key}
+                onClick={() => setCompetitionFilter(key)}
+                className={[
+                  'flex min-h-10 items-center justify-center gap-1.5 rounded-xl px-2.5 text-[11px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 sm:px-4',
+                  competitionFilter === key
+                    ? 'bg-emerald-300 text-emerald-950 shadow'
+                    : 'text-white/75 hover:bg-white/10 hover:text-white',
+                ].join(' ')}
+              >
+                {label}
+                <span className={competitionFilter === key ? 'rounded-full bg-emerald-950/10 px-1.5 py-0.5 text-[9px]' : 'rounded-full bg-white/10 px-1.5 py-0.5 text-[9px]'}>
+                  {count}
+                </span>
+              </button>
+            ))}
           </div>
         </div>
       </header>

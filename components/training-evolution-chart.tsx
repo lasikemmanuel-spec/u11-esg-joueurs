@@ -3,6 +3,7 @@
 import { useId, useMemo, useState } from 'react'
 import { TrendingUp, CheckCircle2, AlertCircle } from 'lucide-react'
 import type { TrainingAttendanceSession } from '@/lib/training-attendance-shared'
+import { calculateTrainingAttendanceRate, isCountedTrainingStatus } from '@/lib/training-attendance-metrics'
 
 const STATUS_CONFIG: Record<string, { label: string; short: string; color: string }> = {
   P: { label: 'Présent', short: 'P', color: '#059669' },
@@ -45,7 +46,7 @@ export function TrainingEvolutionChart({
       .sort((a, b) => a.date.localeCompare(b.date))
 
     let cumulatedPresents = 0
-    let cumulatedEvaluated = 0
+    let cumulatedCounted = 0
 
     return pastSessions
       .map((session, index) => {
@@ -53,14 +54,12 @@ export function TrainingEvolutionChart({
         const isPresent = rawStatus === 'P'
         const isEvaluated = Boolean(rawStatus && ['P', 'AJ', 'AI', 'B', 'E'].includes(rawStatus))
 
-        if (isEvaluated) {
-          cumulatedEvaluated += 1
+        if (isCountedTrainingStatus(rawStatus)) {
+          cumulatedCounted += 1
           if (isPresent) cumulatedPresents += 1
         }
 
-        const rate = cumulatedEvaluated > 0
-          ? Math.round((cumulatedPresents / cumulatedEvaluated) * 100)
-          : null
+        const rate = calculateTrainingAttendanceRate(cumulatedPresents, cumulatedCounted)
 
         return {
           index,
@@ -72,7 +71,7 @@ export function TrainingEvolutionChart({
           isEvaluated,
           rate,
           cumulatedPresents,
-          cumulatedEvaluated,
+          cumulatedCounted,
         }
       })
       // Ne garder que les séances évaluées pour tracer une vraie courbe d'assiduité
@@ -87,7 +86,7 @@ export function TrainingEvolutionChart({
 
   // Statistiques globales
   const lastPoint = chronologicalData[chronologicalData.length - 1]
-  const totalEvaluated = lastPoint?.cumulatedEvaluated ?? 0
+  const totalCounted = lastPoint?.cumulatedCounted ?? 0
   const totalPresents = lastPoint?.cumulatedPresents ?? 0
   const currentRate = lastPoint?.rate ?? 0
 
@@ -148,7 +147,7 @@ export function TrainingEvolutionChart({
               Évolution assiduité
             </h4>
             <p className="text-[11px] font-bold text-slate-600 dark:text-slate-300">
-              {totalPresents} présence{totalPresents > 1 ? 's' : ''} sur {totalEvaluated} séance{totalEvaluated > 1 ? 's' : ''}
+              {totalPresents} présence{totalPresents > 1 ? 's' : ''} sur {totalCounted} séance{totalCounted > 1 ? 's' : ''} prises en compte
             </p>
           </div>
         </div>

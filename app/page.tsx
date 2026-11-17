@@ -130,6 +130,7 @@ export default async function Page() {
 
       <DashboardTabs
         players={stats.players}
+        teamTrainingRate={stats.teamTrainingRate}
         rosterPlayers={publicPlayers}
         convocations={convocations.players}
         matchesPlayed={convocations.matchesPlayed}

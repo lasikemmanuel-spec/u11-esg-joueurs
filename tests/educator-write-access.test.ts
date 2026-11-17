@@ -73,12 +73,15 @@ function request(path: string, method: string, body?: object, sameOrigin = true)
 describe('write and read access boundaries', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-11-17T12:00:00Z'))
     vi.stubEnv('VERCEL_ENV', 'production')
     vi.mocked(saveOwnEducatorDirectoryEntry).mockResolvedValue({ id: 'entry' })
     vi.mocked(migrateEducatorPhones).mockResolvedValue(0)
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     vi.unstubAllEnvs()
   })
 
@@ -209,11 +212,11 @@ describe('write and read access boundaries', () => {
 
     const response = await deleteMatch(request('/api/match-results', 'DELETE', {
       scope: 'day',
-      date: '2026-11-14',
+      date: '2026-11-20',
     }))
 
     expect(response.status).toBe(200)
-    expect(deleteMatchDay).toHaveBeenCalledWith('2026-11-14')
+    expect(deleteMatchDay).toHaveBeenCalledWith('2026-11-20')
     expect(await response.json()).toMatchObject({ ok: true, deletedMatches: 2 })
   })
 

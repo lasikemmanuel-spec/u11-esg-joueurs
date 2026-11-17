@@ -116,7 +116,7 @@ export function MatchResultForm({
           </div>
         </header>
 
-        <div className="grid min-h-0 grid-cols-2 gap-3 overflow-y-auto p-4">
+        <div className="grid min-h-0 grid-cols-1 gap-3 overflow-y-auto p-4 sm:grid-cols-2">
           <label className="flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554] dark:text-amber-200">
             Équipe
             <select disabled={editingSlot !== null} value={draft.team} onChange={(event) => updateDraft({ team: event.target.value as MatchResultDraft['team'] })} className={inputClass}>
@@ -128,7 +128,7 @@ export function MatchResultForm({
             <span className="flex items-center gap-1"><CalendarDays aria-hidden="true" className="size-3.5 text-[#b58b00] dark:text-amber-400" /> Date</span>
             <input type="date" required min={MATCH_SEASON_START} max={MATCH_SEASON_END} value={draft.date} onChange={(event) => updateDraft({ date: event.target.value })} className={dateTimeInputClass} />
           </label>
-          <label className="col-span-2 flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554] dark:text-amber-200">
+          <label className="col-span-full flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554] dark:text-amber-200">
             Adversaire
             <input required maxLength={80} value={draft.opponent} onChange={(event) => updateDraft({ opponent: event.target.value })} className={inputClass} />
           </label>
@@ -153,12 +153,12 @@ export function MatchResultForm({
             <input type="time" value={draft.meetingTime} onChange={(event) => updateDraft({ meetingTime: event.target.value })} className={dateTimeInputClass} />
           </label>
           {draft.homeAway === 'Extérieur' && (
-            <label className="col-span-2 flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554] dark:text-amber-200">
+            <label className="col-span-full flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554] dark:text-amber-200">
               Adresse du stade extérieur
               <input maxLength={180} value={draft.venueAddress} onChange={(event) => updateDraft({ venueAddress: event.target.value })} placeholder="Rue, code postal, ville" className={inputClass} />
             </label>
           )}
-          <fieldset className="col-span-2 flex min-w-0 items-end gap-3">
+          <fieldset className="col-span-full flex min-w-0 items-end gap-3">
             <legend className="mb-1 text-xs font-bold text-[#172554] dark:text-amber-200">Score</legend>
             <label className="flex min-w-0 flex-1 items-center justify-between gap-2 rounded-xl border border-[#172554]/15 dark:border-amber-400/30 bg-[#172554]/5 dark:bg-[#172554]/40 px-3 py-2 text-xs font-semibold text-[#172554] dark:text-amber-200">
               ESG
@@ -170,14 +170,14 @@ export function MatchResultForm({
               <input type="text" inputMode="numeric" pattern="[0-9]{1,2}" maxLength={2} value={draft.goalsAgainst} onChange={(event) => updateDraft({ goalsAgainst: event.target.value.replace(/\D/g, '').slice(0, 2) })} aria-label="Buts adversaire" className="h-10 w-14 rounded-lg border border-[#d4af37]/60 bg-white dark:bg-slate-900 text-center font-mono text-lg font-black text-[#172554] dark:text-amber-200 outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]" />
             </label>
           </fieldset>
-          <label className="col-span-2 flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554] dark:text-amber-200">
+          <label className="col-span-full flex min-w-0 flex-col gap-1 text-xs font-bold text-[#172554] dark:text-amber-200">
             Résultat
             <select value={draft.resultLabel} onChange={(event) => updateDraft({ resultLabel: event.target.value })} className={inputClass}>
               <option value="">À jouer / aucun résultat</option>
               {MATCH_RESULT_STATUSES.map((label) => <option key={label} value={label}>{label}</option>)}
             </select>
           </label>
-          <div className="col-span-2 space-y-2">
+          <div className="col-span-full space-y-2">
             {error && <p role="alert" className="text-xs font-semibold text-destructive">{error}</p>}
             <p className="text-[11px] text-muted-foreground">Pour planifier : laisse le score et le résultat vides.</p>
           </div>

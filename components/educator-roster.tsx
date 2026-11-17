@@ -708,7 +708,7 @@ export function EducatorRoster({
             type="button"
             aria-pressed={selectedPosition === null}
             onClick={() => setSelectedPosition(null)}
-            className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-bold transition ${
+            className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-bold transition sm:min-h-9 ${
               selectedPosition === null
                 ? 'border-[#172554] bg-[#172554] text-white shadow-sm'
                 : 'border-accent/50 bg-card text-muted-foreground hover:border-primary/40 hover:text-primary'
@@ -722,7 +722,7 @@ export function EducatorRoster({
               type="button"
               aria-pressed={selectedPosition === position}
               onClick={() => setSelectedPosition(position)}
-              className={`inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-bold transition ${
+              className={`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-bold transition sm:min-h-9 ${
                 selectedPosition === position
                   ? 'border-[#172554] bg-[#172554] text-white shadow-sm'
                   : 'border-accent/50 bg-card text-muted-foreground hover:border-primary/40 hover:text-primary'

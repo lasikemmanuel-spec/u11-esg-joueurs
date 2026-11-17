@@ -273,7 +273,7 @@
   .player-stats-summary dt {
     overflow-wrap: anywhere;
     text-wrap: balance;
-    font-size: 8px;
+    font-size: 0.625rem;
     letter-spacing: 0.02em;
   }
 

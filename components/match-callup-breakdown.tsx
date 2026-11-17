@@ -347,7 +347,7 @@ export function MatchCallupBreakdown({
 
         {rows.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full table-fixed border-collapse text-center">
+            <table className="w-full min-w-[560px] table-fixed border-collapse text-center sm:min-w-0">
               <caption className="sr-only">Effectifs convoqués par équipe, journées de cohésion et présences</caption>
               <thead className="bg-primary text-primary-foreground">
                 <tr>

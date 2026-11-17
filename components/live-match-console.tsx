@@ -707,7 +707,7 @@ export function LiveMatchConsole({
                                 disabled={settingsSaving || format.minutesPerPeriod <= 1}
                                 onClick={() => updateDraftFormat(format.id, 'minutesPerPeriod', Math.max(1, format.minutesPerPeriod - 1))}
                                 aria-label={`Diminuer la durée du format ${index + 1}`}
-                                className="flex size-8 shrink-0 items-center justify-center rounded-lg text-white/75 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-30"
+                                className="flex size-11 shrink-0 items-center justify-center rounded-lg text-white/75 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-30 sm:size-8"
                               >
                                 <Minus aria-hidden="true" className="size-4" />
                               </button>
@@ -728,7 +728,7 @@ export function LiveMatchConsole({
                                 disabled={settingsSaving || format.minutesPerPeriod >= 60}
                                 onClick={() => updateDraftFormat(format.id, 'minutesPerPeriod', Math.min(60, format.minutesPerPeriod + 1))}
                                 aria-label={`Augmenter la durée du format ${index + 1}`}
-                                className="flex size-8 shrink-0 items-center justify-center rounded-lg text-white/75 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-30"
+                                className="flex size-11 shrink-0 items-center justify-center rounded-lg text-white/75 transition hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 disabled:opacity-30 sm:size-8"
                               >
                                 <Plus aria-hidden="true" className="size-4" />
                               </button>

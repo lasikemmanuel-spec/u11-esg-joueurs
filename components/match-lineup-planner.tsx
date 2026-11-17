@@ -398,7 +398,7 @@ export function MatchLineupEntry({
             <ul className="grid gap-2">
               {calledPlayers.map((player) => {
                 const currentRole = assignments[player.number]
-                const buttonClass = 'inline-flex size-9 items-center justify-center rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50'
+                const buttonClass = 'inline-flex size-11 items-center justify-center rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:size-9'
                 return (
                   <li key={player.number} className="flex min-h-14 min-w-0 items-center justify-between gap-2 rounded-xl border border-[#172554]/10 bg-white px-2.5 py-2 shadow-sm sm:px-3">
                     <button

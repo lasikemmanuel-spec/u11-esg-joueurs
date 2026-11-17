@@ -450,48 +450,50 @@ export function WhatsAppGroupManager({
               )}
 
               {/* Liste des modèles */}
-              <div className="space-y-2">
-                {templates.map((tpl) => (
-                  <div
-                    key={tpl.id}
-                    className="rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 space-y-2 hover:bg-white/[0.07] transition"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-base">{tpl.icon || '📝'}</span>
-                        <span className="font-bold text-sm text-white">{tpl.title}</span>
+              {!editingTemplateId && (
+                <div className="space-y-2">
+                  {templates.map((tpl) => (
+                    <div
+                      key={tpl.id}
+                      className="rounded-2xl border border-white/10 bg-white/[0.04] p-3.5 space-y-2 hover:bg-white/[0.07] transition"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-base">{tpl.icon || '📝'}</span>
+                          <span className="font-bold text-sm text-white">{tpl.title}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setActiveTab('templates')
+                              setEditingTemplateId(tpl.id)
+                              setTemplateTitle(tpl.title)
+                              setTemplateContent(tpl.content)
+                            }}
+                            className="flex size-8 items-center justify-center rounded-xl bg-white/10 text-white/80 hover:bg-white/20 hover:text-white"
+                            title="Modifier"
+                            aria-label={`Modifier le modèle ${tpl.title}`}
+                          >
+                            <Edit2 className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteTemplate(tpl.id)}
+                            className="flex size-8 items-center justify-center rounded-xl bg-rose-500/15 text-rose-300 hover:bg-rose-500/25 hover:text-rose-200"
+                            title="Supprimer"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setActiveTab('templates')
-                            setEditingTemplateId(tpl.id)
-                            setTemplateTitle(tpl.title)
-                            setTemplateContent(tpl.content)
-                          }}
-                          className="flex size-8 items-center justify-center rounded-xl bg-white/10 text-white/80 hover:bg-white/20 hover:text-white"
-                          title="Modifier"
-                          aria-label={`Modifier le modèle ${tpl.title}`}
-                        >
-                          <Edit2 className="size-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteTemplate(tpl.id)}
-                          className="flex size-8 items-center justify-center rounded-xl bg-rose-500/15 text-rose-300 hover:bg-rose-500/25 hover:text-rose-200"
-                          title="Supprimer"
-                        >
-                          <Trash2 className="size-3.5" />
-                        </button>
-                      </div>
+                      <pre className="max-h-24 overflow-y-auto whitespace-pre-wrap rounded-xl bg-black/25 p-2 font-mono text-[10px] text-white/70 leading-relaxed">
+                        {tpl.content}
+                      </pre>
                     </div>
-                    <pre className="max-h-24 overflow-y-auto whitespace-pre-wrap rounded-xl bg-black/25 p-2 font-mono text-[10px] text-white/70 leading-relaxed">
-                      {tpl.content}
-                    </pre>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>

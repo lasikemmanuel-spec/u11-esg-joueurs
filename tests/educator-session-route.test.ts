@@ -34,7 +34,7 @@ import {
   getLoginAttemptCounts,
   recordLoginFailure,
 } from '@/lib/login-rate-limit'
-import { POST } from '@/app/api/educators/session/route'
+import { DELETE, POST } from '@/app/api/educators/session/route'
 
 const account = {
   username: 'coach@example.com',
@@ -121,5 +121,15 @@ describe('POST /api/educators/session', () => {
 
     expect(response.status).toBe(503)
     expect(createEducatorSession).not.toHaveBeenCalled()
+  })
+
+  it('clears browser cache data on logout', async () => {
+    const response = await DELETE(new Request('http://localhost/api/educators/session', {
+      method: 'DELETE',
+      headers: { origin: 'http://localhost' },
+    }))
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('Clear-Site-Data')).toBe('"cache"')
   })
 })

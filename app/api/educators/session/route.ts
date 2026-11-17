@@ -181,5 +181,6 @@ export async function DELETE(request: Request) {
     maxAge: 0,
     expires: new Date(0),
   })
+  response.headers.set('Clear-Site-Data', '"cache"')
   return response
 }

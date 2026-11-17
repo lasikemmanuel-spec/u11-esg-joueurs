@@ -1,8 +1,7 @@
 // Service Worker ES Genech U11
-const CACHE_NAME = 'esg-u11-v1'
+const CACHE_NAME = 'esg-u11-v2'
 
 const PRECACHE_URLS = [
-  '/',
   '/manifest.webmanifest',
   '/favicon.png',
   '/apple-icon.png',
@@ -31,6 +30,14 @@ self.addEventListener('activate', (event) => {
   )
 })
 
+self.addEventListener('message', (event) => {
+  if (event.data?.type !== 'CLEAR_CACHE') return
+
+  event.waitUntil(
+    caches.delete(CACHE_NAME).then(() => caches.open(CACHE_NAME))
+  )
+})
+
 self.addEventListener('fetch', (event) => {
   const { request } = event
   const url = new URL(request.url)
@@ -45,22 +52,12 @@ self.addEventListener('fetch', (event) => {
     return
   }
 
-  // Pour la navigation HTML (documents) : Network-First avec fallback cache
+  // Les documents peuvent contenir des données personnelles : ils ne sont jamais mis en cache.
   if (request.mode === 'navigate') {
     event.respondWith(
       fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const clone = response.clone()
-            caches.open(CACHE_NAME).then((cache) => cache.put(request, clone))
-          }
-          return response
-        })
+        .then((response) => response)
         .catch(async () => {
-          const cached = await caches.match(request)
-          if (cached) return cached
-          const fallback = await caches.match('/')
-          if (fallback) return fallback
           return new Response('Hors-ligne', {
             status: 503,
             statusText: 'Service Unavailable',

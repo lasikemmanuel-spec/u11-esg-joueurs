@@ -279,6 +279,9 @@ export function DashboardTabs({
       const response = await fetch('/api/educators/session', { method: 'DELETE' })
       const result = await response.json()
       if (!response.ok) throw new Error(result.error ?? 'Déconnexion impossible.')
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.controller?.postMessage({ type: 'CLEAR_CACHE' })
+      }
       setEducatorIdentity(null)
       setApplicationSession('unauthenticated')
       setEducatorAccess('unauthenticated')

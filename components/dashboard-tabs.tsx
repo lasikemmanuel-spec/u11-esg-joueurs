@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
-import { BarChart3, CalendarDays, Dumbbell, Ellipsis, LogOut, MessageCircle, Radio, Shirt, UsersRound, X, type LucideIcon } from 'lucide-react'
+import { BarChart3, CalendarDays, ClipboardList, Dumbbell, Ellipsis, LogOut, MessageCircle, Radio, Shirt, UsersRound, X, type LucideIcon } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import { EducatorAvatar } from '@/components/educator-avatar'
 import { EducatorProfilePhotoEditor } from '@/components/educator-profile-photo-editor'
@@ -17,7 +17,7 @@ import type { TrainingAttendanceSession } from '@/lib/training-attendance'
 import type { CohesionDay } from '@/lib/cohesion'
 import type { PlayerStats as PlayerStat } from '@/lib/stats'
 
-type TabKey = 'roster' | 'educator' | 'training' | 'stats' | 'matches' | 'whatsapp'
+type TabKey = 'roster' | 'educator' | 'training' | 'stats' | 'matches' | 'whatsapp' | 'weekly'
 type StatsSection = 'players' | 'dynamics' | 'matches'
 type MatchFocus = {
   date: string
@@ -65,6 +65,9 @@ const LiveMatchConsole = dynamic(() => import('@/components/live-match-console')
 })
 const WhatsAppMessageCenter = dynamic(() => import('@/components/whatsapp-message-center').then((module) => module.WhatsAppMessageCenter), {
   loading: () => <p role="status" className="p-4 text-sm text-muted-foreground">Chargement des messages WhatsApp…</p>,
+})
+const WeeklyEducatorReport = dynamic(() => import('@/components/weekly-educator-report').then((module) => module.WeeklyEducatorReport), {
+  loading: () => <p role="status" className="p-4 text-sm text-muted-foreground">Chargement du bilan hebdomadaire…</p>,
 })
 
 function isMatchSheetEntry(value: unknown): value is MatchSheetEntry {
@@ -261,7 +264,7 @@ export function DashboardTabs({
       setEducatorAccess(identity.role === 'reader' ? 'unauthenticated' : 'authenticated')
       setApplicationSession('authenticated')
       setLoginPassword('')
-      if (identity.role === 'reader' && (activeTab === 'educator' || activeTab === 'training')) setActiveTab('roster')
+      if (identity.role === 'reader' && (activeTab === 'educator' || activeTab === 'training' || activeTab === 'weekly')) setActiveTab('roster')
       window.dispatchEvent(new Event('educator-session-changed'))
       router.refresh()
     } catch (error) {
@@ -309,7 +312,10 @@ export function DashboardTabs({
 
   const handleEducatorAccessChange = useCallback((status: EducatorAccess) => {
     setEducatorAccess(status)
-    if (status === 'unauthenticated') setApplicationSession('unauthenticated')
+    if (status === 'unauthenticated') {
+      setApplicationSession('unauthenticated')
+      setActiveTab((current) => current === 'weekly' ? 'matches' : current)
+    }
   }, [])
 
   const tabs: { key: TabKey; label: string }[] = [
@@ -321,6 +327,9 @@ export function DashboardTabs({
       : []),
     ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
       ? [{ key: 'training' as const, label: 'Entraînements' }]
+      : []),
+    ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
+      ? [{ key: 'weekly' as const, label: 'Bilan semaine' }]
       : []),
     ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
       ? [{ key: 'whatsapp' as const, label: 'Messages WhatsApp' }]
@@ -345,6 +354,7 @@ export function DashboardTabs({
     educator: UsersRound,
     training: Dumbbell,
     whatsapp: MessageCircle,
+    weekly: ClipboardList,
   }
   const mainHeader = (
     <header className="relative z-20 border-b-2 border-[#d4af37] bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] text-white shadow-md">
@@ -622,6 +632,16 @@ export function DashboardTabs({
         )}
         {activeTab === 'whatsapp' && educatorIdentity && (
           <WhatsAppMessageCenter />
+        )}
+        {activeTab === 'weekly' && educatorAccess === 'authenticated' && educatorIdentity && (
+          <WeeklyEducatorReport
+            players={rosterPlayers}
+            convocations={convocations}
+            matchResults={matchResults.entries}
+            trainingAttendance={trainingAttendance}
+            trainingAttendanceError={trainingAttendanceError}
+            onNavigate={setActiveTab}
+          />
         )}
         {activeTab === 'roster' && (
           <PositionBreakdown

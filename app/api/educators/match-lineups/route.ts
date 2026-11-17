@@ -52,10 +52,10 @@ function dateKey(value: string) {
 export async function GET(request: Request) {
   const access = await educatorAccess(request)
   if (access.response) return access.response
-  if (process.env.VERCEL_ENV !== 'production') return jsonResponse({ lineups: [] })
+  if (process.env.VERCEL_ENV !== 'production') return jsonResponse({ enabled: false, lineups: [] })
   try {
     const matches = await getMatchResults()
-    return jsonResponse({ lineups: await getMatchLineups(matches.entries, { cacheForSeconds: 5 }) })
+    return jsonResponse({ enabled: true, lineups: await getMatchLineups(matches.entries, { cacheForSeconds: 5 }) })
   } catch (error) {
     console.error('Erreur de lecture des feuilles de match:', error)
     return jsonResponse({ error: 'Impossible de charger les feuilles de match.' }, 500)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Plus, Trash2, Edit2, Check, X, Users, MessageSquare, ExternalLink, RotateCcw } from 'lucide-react'
 import {
   DEFAULT_WHATSAPP_GROUPS,
@@ -14,7 +14,6 @@ import {
   type WhatsAppGroup,
   type WhatsAppTemplate,
 } from '@/lib/whatsapp-messages'
-import { useEffect } from 'react'
 
 export function WhatsAppGroupManager({
   onClose,
@@ -37,8 +36,14 @@ export function WhatsAppGroupManager({
   const [editingTemplateId, setEditingTemplateId] = useState<string | null>(null)
   const [templateTitle, setTemplateTitle] = useState('')
   const [templateContent, setTemplateContent] = useState('')
+  const templateEditorRef = useRef<HTMLDivElement>(null)
   const [saving, setSaving] = useState(false)
   const [syncNotice, setSyncNotice] = useState('')
+
+  useEffect(() => {
+    if (!editingTemplateId) return
+    templateEditorRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [editingTemplateId])
 
   useEffect(() => {
     void loadSharedWhatsAppSettings().then((shared) => {
@@ -395,7 +400,7 @@ export function WhatsAppGroupManager({
 
               {/* Formulaire édition / ajout modèle */}
               {editingTemplateId && (
-                <div className="rounded-2xl border border-amber-400/40 bg-white/5 p-4 space-y-3 animate-in fade-in">
+                <div ref={templateEditorRef} className="scroll-mt-3 rounded-2xl border border-amber-400/40 bg-white/5 p-4 space-y-3 animate-in fade-in">
                   <h4 className="text-xs font-black uppercase text-amber-300">
                     {editingTemplateId === 'new' ? 'Ajouter un modèle de message' : 'Modifier le modèle'}
                   </h4>
@@ -460,12 +465,14 @@ export function WhatsAppGroupManager({
                         <button
                           type="button"
                           onClick={() => {
+                            setActiveTab('templates')
                             setEditingTemplateId(tpl.id)
                             setTemplateTitle(tpl.title)
                             setTemplateContent(tpl.content)
                           }}
                           className="flex size-8 items-center justify-center rounded-xl bg-white/10 text-white/80 hover:bg-white/20 hover:text-white"
                           title="Modifier"
+                          aria-label={`Modifier le modèle ${tpl.title}`}
                         >
                           <Edit2 className="size-3.5" />
                         </button>

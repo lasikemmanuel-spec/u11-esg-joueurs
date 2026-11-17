@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect, useLayoutEffect, useCallback, useRef, type FormEvent } from 'react'
 import dynamic from 'next/dynamic'
-import { Search, CheckCircle2, Award, ChevronDown, ChevronUp, ChevronRight, Pencil, Plus, ContactRound, UsersRound, KeyRound, LockKeyhole } from 'lucide-react'
+import { Search, CheckCircle2, Award, ChevronDown, ChevronUp, ChevronRight, Pencil, Plus, ContactRound, UsersRound, KeyRound, LockKeyhole, History } from 'lucide-react'
 import type { PublicPlayer } from '@/lib/players'
 import { matchesSearch } from '@/lib/search'
 import { ParentAvatar } from '@/components/parent-avatar'
@@ -22,7 +22,7 @@ const positionRank = (position: string | null) => {
   return index === -1 ? POSITION_ORDER.length : index
 }
 
-type DirectoryView = 'educators' | 'players' | 'accounts'
+type DirectoryView = 'educators' | 'players' | 'accounts' | 'audit'
 type EducatorSessionStatus = 'checking' | 'unauthenticated' | 'authenticated' | 'unavailable'
 type PhoneEncryptionDiagnostics = {
   keyFormatValid: boolean
@@ -39,6 +39,9 @@ const EducatorDirectory = dynamic(() => import('@/components/educator-directory'
 })
 const EducatorAccountManagement = dynamic(() => import('@/components/educator-account-management').then((module) => module.EducatorAccountManagement), {
   loading: () => <p role="status" className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">Chargement de la gestion des comptes…</p>,
+})
+const ModificationAudit = dynamic(() => import('@/components/modification-audit').then((module) => module.ModificationAudit), {
+  loading: () => <p role="status" className="rounded-xl border border-border bg-card p-4 text-sm text-muted-foreground">Chargement de l’historique…</p>,
 })
 const EducatorRosterDialogs = dynamic(() => import('@/components/educator-roster-dialogs').then((module) => module.EducatorRosterDialogs))
 
@@ -530,7 +533,7 @@ export function EducatorRoster({
           <div className="flex shrink-0 items-center gap-1.5">
             {phoneEncryptionDiagnosticButton}
             {phoneDiagnostics && !phoneDiagnosticError && phoneEncryptionDiagnosticStatus}
-            {educator.role !== 'reader' && directoryView !== 'players' && !query.trim() && (
+            {educator.role !== 'reader' && directoryView !== 'players' && directoryView !== 'audit' && !query.trim() && (
               <button
                 type="button"
                 onClick={requestAddProfile}
@@ -556,12 +559,15 @@ export function EducatorRoster({
             className="h-11 w-full rounded-lg border border-accent/50 bg-background pr-3 pl-10 text-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
           />
         </div>
-        {!query.trim() && <nav aria-label="Choisir un annuaire" className={`grid ${educator.role === 'admin' ? 'grid-cols-3' : 'grid-cols-2'} gap-2 rounded-lg bg-muted/70 p-1`}>
+        {!query.trim() && <nav aria-label="Choisir un annuaire" className={`grid ${educator.role === 'admin' ? 'grid-cols-4' : 'grid-cols-2'} gap-2 rounded-lg bg-muted/70 p-1`}>
           {([
             { key: 'players' as const, label: 'Joueurs', Icon: UsersRound },
             { key: 'educators' as const, label: 'Éducateurs', Icon: ContactRound },
             ...(educator.role === 'admin'
-              ? [{ key: 'accounts' as const, label: 'Comptes', Icon: KeyRound }]
+              ? [
+                  { key: 'accounts' as const, label: 'Comptes', Icon: KeyRound },
+                  { key: 'audit' as const, label: 'Historique', Icon: History },
+                ]
               : []),
           ]).map(({ key, label, Icon }) => {
             const isActive = directoryView === key
@@ -803,6 +809,10 @@ export function EducatorRoster({
           addRequest={accountAddRequest}
           onAddRequestHandled={acknowledgeAccountAddRequest}
         />
+      )}
+
+      {directoryView === 'audit' && educator.role === 'admin' && (
+        <ModificationAudit />
       )}
 
       {educator.role === 'admin' && (addProfileChooserOpen || phoneEditor) && (

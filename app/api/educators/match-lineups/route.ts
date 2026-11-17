@@ -6,6 +6,7 @@ import { getConvocations } from '@/lib/convocations'
 import { getRoster } from '@/lib/players'
 import { getMatchLineups, saveMatchLineup, type MatchLineup } from '@/lib/match-lineups'
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
+import { getClientIp, getUserAgent, logSecurityEvent } from '@/lib/security-logger'
 
 export const runtime = 'nodejs'
 
@@ -23,7 +24,7 @@ async function educatorAccess(request: Request) {
     if (!hasEducatorAccess(educator)) {
       return { response: jsonResponse({ error: 'Accès réservé aux éducateurs.' }, 403) }
     }
-    return { response: null }
+    return { response: null, educator }
   } catch (error) {
     console.error('Erreur de vérification de session éducateur:', error)
     return { response: jsonResponse({ error: 'La connexion éducateur n’est pas disponible.' }, 503) }
@@ -142,6 +143,14 @@ export async function POST(request: Request) {
       roster.players.map((player) => player.number),
     )
     revalidateTag('google-sheet', { expire: 0 })
+    logSecurityEvent({
+      event: 'lineup_saved',
+      username: access.educator.username,
+      ip: getClientIp(request),
+      userAgent: getUserAgent(request),
+      role: access.educator.role,
+      detail: `team=${team} date=${date} starters=${(starters as number[]).length} substitutes=${(substitutes as number[]).length}`,
+    })
     return jsonResponse({ ok: true, lineup: saved })
   } catch (error) {
     console.error('Erreur d’enregistrement de la feuille de match:', error)

@@ -22,6 +22,7 @@ import {
   saveLiveMatchSession,
 } from '@/lib/live-match-store'
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
+import { getClientIp, getUserAgent, logSecurityEvent } from '@/lib/security-logger'
 
 export const runtime = 'nodejs'
 
@@ -39,7 +40,7 @@ async function authorize(request: Request) {
     if (!hasEducatorAccess(educator)) {
       return { response: jsonResponse({ error: 'Accès réservé aux éducateurs.' }, 403) }
     }
-    return { response: null }
+    return { response: null, educator }
   } catch (error) {
     console.error('Erreur de vérification de session pour le match en direct:', error)
     const rateLimited = error instanceof Error && error.message.includes('(429)')
@@ -290,6 +291,14 @@ export async function POST(request: Request) {
         await saveLiveMatchSession(session)
       }
       revalidateTag('google-sheet', { expire: 0 })
+      logSecurityEvent({
+        event: 'live_match_modified',
+        username: access.educator.username,
+        ip: getClientIp(request),
+        userAgent: getUserAgent(request),
+        role: access.educator.role,
+        detail: `action=reset team=${session.team} date=${session.date}`,
+      })
       return jsonResponse({ ok: true, session })
     }
     if (existing && existing.completed) {
@@ -337,6 +346,14 @@ export async function POST(request: Request) {
       }
       await saveLiveMatchSession(session)
       revalidateTag('google-sheet', { expire: 0 })
+      logSecurityEvent({
+        event: 'live_match_modified',
+        username: access.educator.username,
+        ip: getClientIp(request),
+        userAgent: getUserAgent(request),
+        role: access.educator.role,
+        detail: `action=save team=${session.team} date=${session.date} phase=${session.phase}`,
+      })
       return jsonResponse({ ok: true, session })
     }
 
@@ -348,6 +365,14 @@ export async function POST(request: Request) {
     const completedSession = { ...session, completed: true }
     await saveLiveMatchSession(completedSession)
     revalidateTag('google-sheet', { expire: 0 })
+    logSecurityEvent({
+      event: 'live_match_modified',
+      username: access.educator.username,
+      ip: getClientIp(request),
+      userAgent: getUserAgent(request),
+      role: access.educator.role,
+      detail: `action=finalize team=${session.team} date=${session.date}`,
+    })
     return jsonResponse({ ok: true, session: completedSession, summary })
   } catch (error) {
     console.error('Erreur d’enregistrement du match en direct:', error)

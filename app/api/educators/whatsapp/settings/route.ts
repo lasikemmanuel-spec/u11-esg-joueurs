@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { getEducatorSession, hasEducatorAccess, isSameOriginRequest } from '@/lib/educator-auth'
 import { getSavedWhatsAppSettings, isWhatsAppSettings, saveWhatsAppSettings } from '@/lib/whatsapp-settings-store'
+import { getClientIp, getUserAgent, logSecurityEvent } from '@/lib/security-logger'
 
 export const runtime = 'nodejs'
 
@@ -57,6 +58,15 @@ export async function POST(request: Request) {
   try {
     await saveWhatsAppSettings(settings)
     revalidateTag('google-sheet', { expire: 0 })
+    const educator = await getEducatorSession(request)
+    logSecurityEvent({
+      event: 'whatsapp_settings_modified',
+      username: educator?.username,
+      ip: getClientIp(request),
+      userAgent: getUserAgent(request),
+      role: educator?.role,
+      detail: `groups=${settings.groups.length} templates=${settings.templates.length}`,
+    })
     return jsonResponse({ ok: true })
   } catch (error) {
     console.error('Erreur d’enregistrement de la configuration WhatsApp:', error)

@@ -16,6 +16,11 @@ export type SecurityEventType =
   | 'match_modified'
   | 'callup_saved'
   | 'training_attendance_saved'
+  | 'lineup_saved'
+  | 'live_match_modified'
+  | 'directory_modified'
+  | 'profile_photo_modified'
+  | 'whatsapp_settings_modified'
 
 export type SecurityEvent = {
   event: SecurityEventType
@@ -53,11 +58,22 @@ export function logSecurityEvent(event: Omit<SecurityEvent, 'timestamp'>) {
     match_modified: '⚽',
     callup_saved: '📋',
     training_attendance_saved: '📅',
+    lineup_saved: '👕',
+    live_match_modified: '🔴',
+    directory_modified: '📇',
+    profile_photo_modified: '🖼️',
+    whatsapp_settings_modified: '💬',
   }[event.event] ?? '📋'
 
   console.log(
     `[SECURITY] ${icon} ${entry.event.toUpperCase()} | ${entry.timestamp} | ip=${entry.ip} | user=${entry.username ?? 'anonymous'} | role=${entry.role ?? '-'}${entry.detail ? ` | ${entry.detail}` : ''}`,
   )
+
+  void import('@/lib/modification-audit')
+    .then(({ recordModificationEvent }) => recordModificationEvent(entry))
+    .catch((error) => {
+      console.error('Impossible d’enregistrer l’événement dans le journal des modifications:', error)
+    })
 }
 
 /**

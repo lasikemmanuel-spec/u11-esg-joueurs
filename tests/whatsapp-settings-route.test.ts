@@ -18,6 +18,12 @@ vi.mock('next/cache', () => ({
   revalidateTag: vi.fn(),
 }))
 
+vi.mock('@/lib/security-logger', () => ({
+  logSecurityEvent: vi.fn(),
+  getClientIp: vi.fn(() => '127.0.0.1'),
+  getUserAgent: vi.fn(() => 'test'),
+}))
+
 import { getEducatorSession } from '@/lib/educator-auth'
 import {
   getSavedWhatsAppSettings,

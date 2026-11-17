@@ -14,6 +14,12 @@ vi.mock('@/lib/educator-profile-photo', () => ({
   saveEducatorProfilePhoto: vi.fn(),
 }))
 
+vi.mock('@/lib/security-logger', () => ({
+  logSecurityEvent: vi.fn(),
+  getClientIp: vi.fn(() => '127.0.0.1'),
+  getUserAgent: vi.fn(() => 'test'),
+}))
+
 import { findEducator, getEducatorSession } from '@/lib/educator-auth'
 import { getEducatorProfilePhoto, saveEducatorProfilePhoto } from '@/lib/educator-profile-photo'
 import { DELETE, GET, PUT } from '@/app/api/educators/profile-photo/route'

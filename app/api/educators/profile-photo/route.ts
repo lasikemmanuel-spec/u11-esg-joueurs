@@ -6,6 +6,7 @@ import {
   isSameOriginRequest,
 } from '@/lib/educator-auth'
 import { getEducatorProfilePhoto, saveEducatorProfilePhoto } from '@/lib/educator-profile-photo'
+import { getClientIp, getUserAgent, logSecurityEvent } from '@/lib/security-logger'
 
 export const runtime = 'nodejs'
 
@@ -118,6 +119,14 @@ export async function PUT(request: Request) {
 
   try {
     await saveEducatorProfilePhoto(access.educator.username, input.photo)
+    logSecurityEvent({
+      event: 'profile_photo_modified',
+      username: access.educator.username,
+      ip: getClientIp(request),
+      userAgent: getUserAgent(request),
+      role: access.educator.role,
+      detail: 'action=upload',
+    })
     return jsonResponse({ ok: true })
   } catch (error) {
     console.error('Erreur d’enregistrement de la photo de profil éducateur:', error)
@@ -132,6 +141,14 @@ export async function DELETE(request: Request) {
   if (access.error) return access.error
   try {
     await saveEducatorProfilePhoto(access.educator.username, null)
+    logSecurityEvent({
+      event: 'profile_photo_modified',
+      username: access.educator.username,
+      ip: getClientIp(request),
+      userAgent: getUserAgent(request),
+      role: access.educator.role,
+      detail: 'action=delete',
+    })
     return jsonResponse({ ok: true })
   } catch (error) {
     console.error('Erreur de suppression de la photo de profil éducateur:', error)

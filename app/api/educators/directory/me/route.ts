@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { getEducatorSession, isSameOriginRequest } from '@/lib/educator-auth'
 import { saveOwnEducatorDirectoryEntry } from '@/lib/educator-directory'
+import { getClientIp, getUserAgent, logSecurityEvent } from '@/lib/security-logger'
 
 export const runtime = 'nodejs'
 
@@ -48,6 +49,14 @@ export async function PUT(request: Request) {
       phone: input.phone,
     })
     revalidateTag('google-sheet', 'max')
+    logSecurityEvent({
+      event: 'directory_modified',
+      username: educator.username,
+      ip: getClientIp(request),
+      userAgent: getUserAgent(request),
+      role: educator.role,
+      detail: `directory_id=${saved.id}`,
+    })
     return response({ ok: true, ...saved })
   } catch (error) {
     console.error('Erreur de mise à jour de la fiche éducateur:', error)

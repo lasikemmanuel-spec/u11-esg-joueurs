@@ -504,20 +504,13 @@ export function MatchDayHome({
                           })}
                           aria-label={`Lancer le direct, ES Genech ${match.team === 'E1' ? '1' : '2'} contre ${match.opponent || 'adversaire'}`}
                           title={`Lancer le match contre ${match.opponent || 'cet adversaire'}`}
-                          className="mx-2 mb-1.5 inline-flex min-h-9 items-center justify-between gap-1.5 rounded-lg border border-emerald-200/70 bg-gradient-to-r from-emerald-600 to-teal-500 px-2 py-1 text-left text-[10px] font-bold text-white shadow-sm transition hover:brightness-110 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:cursor-wait disabled:opacity-60"
+                          className="relative mb-2 mr-2 ml-auto flex size-11 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl border border-emerald-200/70 bg-gradient-to-br from-emerald-600 to-teal-500 text-[7px] font-black uppercase tracking-wide text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:cursor-wait disabled:opacity-60"
                         >
-                          <span className="flex min-w-0 items-center gap-2">
-                            <span aria-hidden="true" className="flex size-6 shrink-0 items-center justify-center rounded-full bg-amber-300 text-sm shadow-sm motion-safe:animate-bounce">⚽</span>
-                            <span className="flex min-w-0 flex-col leading-tight">
-                              <span className="inline-flex items-center gap-1">
-                                <span aria-hidden="true" className="size-1.5 rounded-full bg-rose-300 motion-safe:animate-pulse" />
-                                Direct
-                              </span>
-                              <span className="max-w-48 truncate text-[8px] font-semibold text-white/80">
-                                ES Genech {match.team === 'E1' ? '1' : '2'} · {match.opponent || 'Adversaire'}
-                              </span>
-                            </span>
+                          <span className="relative text-base leading-none motion-safe:animate-bounce">
+                            ⚽
+                            <span aria-hidden="true" className="absolute -right-1 -top-0.5 size-1.5 rounded-full bg-rose-300 ring-1 ring-emerald-700 motion-safe:animate-pulse" />
                           </span>
+                          <span>Direct</span>
                         </button>
                       )}
                       <ConvocationOverlay

@@ -8,6 +8,7 @@ import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
 import { MatchLineupEntry, useMatchLineups } from '@/components/match-lineup-planner'
 import { LiveMatchConsole } from '@/components/live-match-console'
 import { MatchFamilyMessage } from '@/components/match-family-message'
+import { MatchWeather } from '@/components/match-day-home'
 import { ClubCrest } from '@/components/club-crest'
 import type { MatchSheetEntry } from '@/lib/match-results'
 import type { Convocation } from '@/lib/convocations'
@@ -627,6 +628,14 @@ export function MatchResultEntry({
                                 <Clock3 aria-hidden="true" className="size-3" />
                                 {entry.kickoffTime}
                               </span>
+                            )}
+                            {!isPlayed && !isCancelled && date >= localToday() && (
+                              <MatchWeather
+                                date={date}
+                                homeAway={entry.homeAway}
+                                opponent={entry.opponent}
+                                today={localToday()}
+                              />
                             )}
                           </span>
                         </button>

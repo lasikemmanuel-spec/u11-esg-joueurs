@@ -152,7 +152,7 @@ function daysFromToday(date: string, today: string) {
   return Math.round((dateTime - todayTime) / 86_400_000)
 }
 
-function WeatherIcon({ code, className }: { code: number; className?: string }) {
+export function WeatherIcon({ code, className }: { code: number; className?: string }) {
   if (code === 0) return <Sun aria-hidden="true" className={className} />
   if (code <= 3) return <CloudSun aria-hidden="true" className={className} />
   if (code === 45 || code === 48) return <CloudFog aria-hidden="true" className={className} />
@@ -164,7 +164,7 @@ function WeatherIcon({ code, className }: { code: number; className?: string }) 
   return <Cloud aria-hidden="true" className={className} />
 }
 
-function useMatchWeather(date: string, homeAway: string, opponent: string, today: string): WeatherState {
+export function useMatchWeather(date: string, homeAway: string, opponent: string, today: string): WeatherState {
   const [weather, setWeather] = useState<WeatherState>({ status: 'loading' })
 
   useEffect(() => {
@@ -261,7 +261,7 @@ function useMatchWeather(date: string, homeAway: string, opponent: string, today
   return weather
 }
 
-function MatchWeather({
+export function MatchWeather({
   date,
   homeAway,
   opponent,

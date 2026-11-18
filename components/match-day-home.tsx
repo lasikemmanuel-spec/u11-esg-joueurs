@@ -33,6 +33,15 @@ type WeatherState =
   | { status: 'unavailable' }
   | { status: 'tooEarly' }
 
+function callupPositionRank(position: string | null) {
+  const lower = position?.toLocaleLowerCase('fr-FR') ?? ''
+  if (lower.startsWith('gard')) return 0
+  if (lower.startsWith('déf') || lower.startsWith('def') || lower.startsWith('lat') || lower.startsWith('cent')) return 1
+  if (lower.startsWith('mil') || lower.startsWith('ail')) return 2
+  if (lower.startsWith('att') || lower.startsWith('av')) return 3
+  return 4
+}
+
 function ConvocationOverlay({
   teamName,
   players,
@@ -52,11 +61,7 @@ function ConvocationOverlay({
   const [showLicenseNumbers, setShowLicenseNumbers] = useState(false)
   const orderedPlayers = players
     .map((player, index) => ({ player, index }))
-    .sort((a, b) => {
-      const aIsGoalkeeper = a.player.position?.toLocaleLowerCase('fr-FR').includes('gardien') ?? false
-      const bIsGoalkeeper = b.player.position?.toLocaleLowerCase('fr-FR').includes('gardien') ?? false
-      return Number(bIsGoalkeeper) - Number(aIsGoalkeeper) || a.index - b.index
-    })
+    .sort((a, b) => callupPositionRank(a.player.position) - callupPositionRank(b.player.position) || a.index - b.index)
   return (
     <>
       <button
@@ -75,10 +80,10 @@ function ConvocationOverlay({
             role="dialog"
             aria-modal="true"
             aria-label={`Convocations ${teamName}`}
-            className="w-full max-w-lg overflow-hidden rounded-[1.75rem] border border-amber-200/70 bg-gradient-to-br from-[#172554] via-[#1e3a8a] to-[#101a3d] text-white shadow-2xl animate-in slide-in-from-bottom-4 duration-200"
+            className="flex max-h-[calc(100dvh-1rem)] w-full max-w-lg flex-col overflow-hidden rounded-[1.75rem] border border-amber-200/70 bg-gradient-to-br from-[#172554] via-[#1e3a8a] to-[#101a3d] text-white shadow-2xl animate-in slide-in-from-bottom-4 duration-200"
             onClick={(event) => event.stopPropagation()}
           >
-            <header className="flex items-start justify-between gap-3 border-b border-white/10 p-4 sm:p-5">
+            <header className="flex shrink-0 items-start justify-between gap-3 border-b border-white/10 p-3 sm:p-4">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-200">Jour de match · U11</p>
                 <h3 className="mt-1 text-xl font-black">Les convoqués</h3>
@@ -86,14 +91,14 @@ function ConvocationOverlay({
               </div>
               <button type="button" onClick={() => setOpen(false)} aria-label="Fermer" className="grid size-10 shrink-0 place-items-center rounded-full border border-white/15 bg-white/10 text-xl">×</button>
             </header>
-            <div className="max-h-[55dvh] overflow-y-auto p-4 sm:p-5">
+            <div className="p-3 sm:p-4">
               {hasCallups && players.length > 0 && canShowLicenseNumbers && (
-                <label className="mb-3 inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3 text-[11px] font-semibold text-white/75 transition hover:bg-white/10">
+                <label className="mb-2 inline-flex min-h-8 cursor-pointer items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3 text-[10px] font-semibold text-white/75 transition hover:bg-white/10">
                   <input
                     type="checkbox"
                     checked={showLicenseNumbers}
                     onChange={(event) => setShowLicenseNumbers(event.target.checked)}
-                    className="size-4 accent-[#d4af37]"
+                    className="size-3.5 accent-[#d4af37]"
                   />
                   Afficher les n° de licence
                 </label>
@@ -107,21 +112,18 @@ function ConvocationOverlay({
               ) : players.length === 0 ? (
                 <p className="rounded-2xl bg-white/10 p-4 text-center text-sm font-semibold">Aucun joueur convoqué pour cette équipe.</p>
               ) : (
-                <ul className="grid grid-cols-2 gap-2">
+                <ul className="grid grid-cols-2 gap-1.5">
                   {orderedPlayers.map(({ player, index }) => (
-                    <li key={`${player.name}-${index}`} className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.08] p-2.5 text-xs font-bold">
-                      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-amber-300 text-[#172554]">{player.absent ? '!' : '✓'}</span>
+                    <li key={`${player.name}-${index}`} className="flex min-w-0 items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.08] p-1.5 text-[11px] font-bold leading-tight">
+                      <span className="grid size-6 shrink-0 place-items-center rounded-full bg-amber-300 text-[#172554]">{player.absent ? '!' : '✓'}</span>
                       <span className="min-w-0 break-words">
                         <span className="block">{player.name}{player.absent ? ' · absent' : ''}</span>
                         {player.position && (
-                          <span className="mt-0.5 block text-[10px] font-medium text-white/55">Poste · {player.position}</span>
+                          <span className="mt-0.5 block text-[9px] font-medium text-white/55">Poste · {player.position}</span>
                         )}
                         {showLicenseNumbers && (
-                          <span className="mt-1 block text-[9px] font-semibold leading-tight text-white/50">
-                            N° de licence
-                            <span className="mt-0.5 block whitespace-nowrap text-[10px] font-bold tabular-nums text-white/65">
-                              {player.licenseNumber || 'Non renseigné'}
-                            </span>
+                          <span className="mt-0.5 block whitespace-nowrap text-[9px] font-medium text-white/50">
+                            N° licence · <span className="font-semibold tabular-nums text-white/65">{player.licenseNumber || 'Non renseigné'}</span>
                           </span>
                         )}
                       </span>
@@ -131,7 +133,7 @@ function ConvocationOverlay({
               )}
             </div>
             {canEdit && (
-              <footer className="border-t border-white/10 p-4 sm:p-5">
+              <footer className="shrink-0 border-t border-white/10 p-3 sm:p-4">
                 <button type="button" onClick={() => { setOpen(false); onEdit() }} className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-200 px-4 text-sm font-black text-[#172554] shadow-lg transition hover:brightness-105">
                   <UsersRound aria-hidden="true" className="size-4" /> {hasCallups ? 'Modifier la convocation' : 'Préparer la convocation'} <ArrowRight aria-hidden="true" className="size-4" />
                 </button>

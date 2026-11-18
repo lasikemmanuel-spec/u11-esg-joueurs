@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { History, RefreshCw, Search, ShieldCheck } from 'lucide-react'
+import { ChevronDown, History, LogIn, RefreshCw, Search, ShieldCheck } from 'lucide-react'
 
 type AuditEvent = {
   event: string
@@ -39,6 +39,7 @@ export function ModificationAudit() {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [expandedUsers, setExpandedUsers] = useState<Set<string>>(() => new Set())
 
   const load = async () => {
     setLoading(true)
@@ -70,6 +71,38 @@ export function ModificationAudit() {
       event.ip,
     ].some((value) => value?.toLocaleLowerCase('fr-FR').includes(needle)))
   }, [events, query])
+  const groupedEvents = useMemo(() => {
+    const matchingEvents = new Set(filteredEvents)
+    const groups = new Map<string, {
+      key: string
+      username: string
+      connectionCount: number
+      totalEventCount: number
+      events: AuditEvent[]
+    }>()
+    for (const event of events) {
+      const username = event.username?.trim() || 'Utilisateur inconnu'
+      const key = username.toLocaleLowerCase('fr-FR')
+      const group = groups.get(key) ?? {
+        key,
+        username,
+        connectionCount: 0,
+        totalEventCount: 0,
+        events: [],
+      }
+      group.totalEventCount += 1
+      if (event.event === 'login_success') group.connectionCount += 1
+      if (matchingEvents.has(event)) group.events.push(event)
+      groups.set(key, group)
+    }
+    return [...groups.values()]
+      .filter((group) => group.events.length > 0)
+      .sort((a, b) =>
+        b.connectionCount - a.connectionCount ||
+        b.totalEventCount - a.totalEventCount ||
+        a.username.localeCompare(b.username, 'fr-FR'),
+      )
+  }, [events, filteredEvents])
 
   return (
     <section aria-labelledby="modification-audit-title" className="rounded-2xl border border-accent/50 bg-card p-3 shadow-sm sm:p-4">
@@ -80,7 +113,7 @@ export function ModificationAudit() {
           </span>
           <div>
             <h2 id="modification-audit-title" className="text-base font-black text-primary sm:text-lg">Historique des modifications</h2>
-            <p className="text-xs text-muted-foreground">Dernières actions enregistrées et chiffrées.</p>
+            <p className="text-xs text-muted-foreground">Connexions par personne · touchez une bulle pour afficher ses logs.</p>
           </div>
         </div>
         <button
@@ -113,31 +146,69 @@ export function ModificationAudit() {
           {query ? 'Aucune modification ne correspond à la recherche.' : 'Aucune modification enregistrée.'}
         </p>
       ) : (
-        <ol className="mt-3 space-y-2">
-          {filteredEvents.map((event, index) => (
-            <li key={`${event.timestamp}-${index}`} className="rounded-xl border border-border bg-background p-3">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div className="flex min-w-0 items-start gap-2">
-                  <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
-                  <div className="min-w-0">
-                    <p className="text-sm font-black text-foreground">{eventLabels[event.event] ?? event.event}</p>
-                    <p className="mt-0.5 text-xs font-semibold text-muted-foreground">
-                      {event.username ?? 'Utilisateur inconnu'}{event.role ? ` · ${event.role}` : ''}
-                    </p>
-                  </div>
-                </div>
-                <time dateTime={event.timestamp} className="text-[11px] font-semibold text-muted-foreground">
-                  {new Date(event.timestamp).toLocaleString('fr-FR', {
-                    dateStyle: 'short',
-                    timeStyle: 'medium',
-                    timeZone: 'Europe/Paris',
+        <div className="mt-3 space-y-4">
+          {groupedEvents.map((group, groupIndex) => {
+            const isExpanded = expandedUsers.has(group.key)
+            const logsId = `audit-logs-${groupIndex}`
+            return (
+              <section key={group.key}>
+                <button
+                  type="button"
+                  aria-expanded={isExpanded}
+                  aria-controls={logsId}
+                  onClick={() => setExpandedUsers((current) => {
+                    const next = new Set(current)
+                    if (next.has(group.key)) next.delete(group.key)
+                    else next.add(group.key)
+                    return next
                   })}
-                </time>
-              </div>
-              {event.detail && <p className="mt-2 break-words rounded-lg bg-muted px-2.5 py-2 text-xs font-medium text-foreground">{event.detail}</p>}
-            </li>
-          ))}
-        </ol>
+                  className="flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border border-border bg-muted/70 px-3 py-2 text-left transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-black text-foreground">{group.username}</span>
+                    <span className="mt-0.5 block text-[11px] font-semibold text-muted-foreground">
+                      {group.events.length} log{group.events.length === 1 ? '' : 's'}
+                    </span>
+                  </span>
+                  <span className="flex shrink-0 items-center gap-2">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-black text-primary">
+                      <LogIn aria-hidden="true" className="size-3.5" />
+                      {group.connectionCount} connexion{group.connectionCount === 1 ? '' : 's'}
+                    </span>
+                    <ChevronDown aria-hidden="true" className={`size-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                  </span>
+                </button>
+                {isExpanded && (
+                  <ol id={logsId} className="mt-2 space-y-2">
+                    {group.events.map((event, index) => (
+                      <li key={`${event.timestamp}-${index}`} className="rounded-xl border border-border bg-background p-3">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="flex min-w-0 items-start gap-2">
+                            <ShieldCheck aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                            <div className="min-w-0">
+                              <p className="text-sm font-black text-foreground">{eventLabels[event.event] ?? event.event}</p>
+                              {event.role && (
+                                <p className="mt-0.5 text-xs font-semibold text-muted-foreground">{event.role}</p>
+                              )}
+                            </div>
+                          </div>
+                          <time dateTime={event.timestamp} className="text-[11px] font-semibold text-muted-foreground">
+                            {new Date(event.timestamp).toLocaleString('fr-FR', {
+                              dateStyle: 'short',
+                              timeStyle: 'medium',
+                              timeZone: 'Europe/Paris',
+                            })}
+                          </time>
+                        </div>
+                        {event.detail && <p className="mt-2 break-words rounded-lg bg-muted px-2.5 py-2 text-xs font-medium text-foreground">{event.detail}</p>}
+                      </li>
+                    ))}
+                  </ol>
+                )}
+              </section>
+            )
+          })}
+        </div>
       )}
     </section>
   )

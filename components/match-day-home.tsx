@@ -318,11 +318,11 @@ export function MatchWeather({
   const iconClass = tone === 'dark' ? 'text-amber-300' : 'text-[#8a6400]'
 
   return (
-    <span aria-live="polite" className={`inline-flex min-h-7 max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold ${toneClass}`}>
+    <span aria-live="polite" className={`inline-flex min-h-7 w-fit max-w-full self-start items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-bold ${toneClass}`}>
       {weather.status === 'ready' ? (
         <>
           <WeatherIcon code={weather.weather.weatherCode} className={`size-4 shrink-0 ${iconClass}`} />
-          <span className="truncate">Météo · {weather.weather.location}</span>
+          <span className="truncate"><span className="sr-only">Météo à </span>{weather.weather.location}</span>
           <span className={`shrink-0 text-xs font-black ${tone === 'dark' ? 'text-white' : 'text-[#172554]'}`}>{Math.round(weather.weather.temperature)}°</span>
         </>
       ) : weather.status === 'loading' ? (

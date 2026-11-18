@@ -619,23 +619,23 @@ export function MatchResultEntry({
                               </span>
                             )}
                           </span>
-                          <span className="flex min-w-0 flex-nowrap items-center gap-1 pl-[2.4rem] text-[10px] font-bold sm:pl-[3.1rem]">
-                            <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 ${isE1 ? 'bg-white/15 text-sky-100' : 'bg-white/45 text-blue-950'}`}>
+                          <span className="flex min-w-0 flex-nowrap items-center gap-0.5 pl-7 text-[10px] font-bold sm:pl-10">
+                            <span className={`inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 ${isE1 ? 'bg-white/15 text-sky-100' : 'bg-white/45 text-blue-950'}`}>
                               {entry.competition || 'Type non renseigné'}
                             </span>
-                            <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 ${isE1 ? 'bg-white/10 text-white/90' : 'bg-white/35 text-blue-950'}`}>
+                            <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 ${isE1 ? 'bg-white/10 text-white/90' : 'bg-white/35 text-blue-950'}`}>
                               <span aria-hidden="true">{homeAwayIcon}</span>
                               {entry.homeAway || 'Lieu ?'}
                             </span>
                             {entry.kickoffTime && (
-                              <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 ${isE1 ? 'bg-white/10 text-white/90' : 'bg-white/35 text-blue-950'}`}>
+                              <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 ${isE1 ? 'bg-white/10 text-white/90' : 'bg-white/35 text-blue-950'}`}>
                                 <Clock3 aria-hidden="true" className="size-3" />
                                 {entry.kickoffTime}
                               </span>
                             )}
                           </span>
                           {!isPlayed && !isCancelled && date >= localToday() && (
-                            <span className="ml-[2.4rem] sm:ml-[3.1rem]">
+                            <span className="ml-[2.4rem] w-fit max-w-full self-start sm:ml-[3.1rem]">
                               <MatchWeather
                                 date={date}
                                 homeAway={entry.homeAway}

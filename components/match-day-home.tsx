@@ -18,6 +18,7 @@ import {
 import { ClubCrest } from '@/components/club-crest'
 import type { Convocation } from '@/lib/convocations'
 import type { MatchSheetEntry } from '@/lib/match-results'
+import type { MatchDayPlayer } from '@/lib/players'
 import { getLatestPlayedMatches, getNextPlannedMatchDate, normalizeMatchDate } from '@/lib/match-day-display'
 
 type WeatherResult = {
@@ -35,17 +36,20 @@ type WeatherState =
 function ConvocationOverlay({
   teamName,
   players,
+  canShowLicenseNumbers,
   hasCallups,
   canEdit,
   onEdit,
 }: {
   teamName: string
-  players: { name: string; absent: boolean }[]
+  players: { name: string; absent: boolean; position: string | null; licenseNumber: string | null }[]
+  canShowLicenseNumbers: boolean
   hasCallups: boolean
   canEdit: boolean
   onEdit: () => void
 }) {
   const [open, setOpen] = useState(false)
+  const [showLicenseNumbers, setShowLicenseNumbers] = useState(false)
   return (
     <>
       <button
@@ -76,6 +80,17 @@ function ConvocationOverlay({
               <button type="button" onClick={() => setOpen(false)} aria-label="Fermer" className="grid size-10 shrink-0 place-items-center rounded-full border border-white/15 bg-white/10 text-xl">×</button>
             </header>
             <div className="max-h-[55dvh] overflow-y-auto p-4 sm:p-5">
+              {hasCallups && players.length > 0 && canShowLicenseNumbers && (
+                <label className="mb-3 inline-flex min-h-9 cursor-pointer items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3 text-[11px] font-semibold text-white/75 transition hover:bg-white/10">
+                  <input
+                    type="checkbox"
+                    checked={showLicenseNumbers}
+                    onChange={(event) => setShowLicenseNumbers(event.target.checked)}
+                    className="size-4 accent-[#d4af37]"
+                  />
+                  Afficher les n° de licence
+                </label>
+              )}
               {!hasCallups ? (
                 <div className="rounded-2xl border border-dashed border-white/25 bg-white/5 p-6 text-center">
                   <span className="text-3xl" aria-hidden="true">⚽</span>
@@ -89,7 +104,17 @@ function ConvocationOverlay({
                   {players.map((player, index) => (
                     <li key={`${player.name}-${index}`} className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.08] p-2.5 text-xs font-bold">
                       <span className="grid size-7 shrink-0 place-items-center rounded-full bg-amber-300 text-[#172554]">{player.absent ? '!' : '✓'}</span>
-                      <span className="min-w-0 break-words">{player.name}{player.absent ? ' · absent' : ''}</span>
+                      <span className="min-w-0 break-words">
+                        <span className="block">{player.name}{player.absent ? ' · absent' : ''}</span>
+                        {player.position && (
+                          <span className="mt-0.5 block text-[10px] font-medium text-white/55">Poste · {player.position}</span>
+                        )}
+                        {showLicenseNumbers && (
+                          <span className="mt-0.5 block break-all text-[10px] font-medium text-white/55">
+                            Licence · {player.licenseNumber || 'non renseignée'}
+                          </span>
+                        )}
+                      </span>
                     </li>
                   ))}
                 </ul>
@@ -302,6 +327,7 @@ export function MatchWeather({
 export function MatchDayHome({
   entries,
   convocations,
+  rosterPlayers,
   convocationDates,
   canManageMatches,
   onSelectMatch,
@@ -309,6 +335,7 @@ export function MatchDayHome({
 }: {
   entries: MatchSheetEntry[]
   convocations: Convocation[]
+  rosterPlayers: MatchDayPlayer[]
   convocationDates: string[]
   canManageMatches: boolean
   onSelectMatch: (entry: MatchSheetEntry) => void
@@ -376,7 +403,14 @@ export function MatchDayHome({
                       (item.team === match.team || item.team === 'E1+E2') &&
                       (item.status === 'called' || item.status === 'calledAbsent' || item.status === 'present'),
                     )
-                    return callup ? [{ name: player.name, absent: callup.status === 'calledAbsent' }] : []
+                    if (!callup) return []
+                    const rosterPlayer = rosterPlayers.find((item) => item.number === player.number)
+                    return [{
+                      name: player.name,
+                      absent: callup.status === 'calledAbsent',
+                      position: rosterPlayer?.position ?? null,
+                      licenseNumber: rosterPlayer?.licenseNumber ?? null,
+                    }]
                   })
 
                   return (
@@ -424,6 +458,7 @@ export function MatchDayHome({
                         <ConvocationOverlay
                           teamName={`ES Genech ${match.team === 'E1' ? '1' : '2'}`}
                           players={calledPlayers}
+                          canShowLicenseNumbers={rosterPlayers.length > 0}
                           hasCallups={hasCallups}
                           canEdit={canEditCallups}
                           onEdit={() => onOpenCallups(plannedDate)}

@@ -11,7 +11,7 @@ import { RefreshSheetButton } from '@/components/refresh-sheet-button'
 import { TeamStatsSummary } from '@/components/team-stats-summary'
 import { ThemeToggle } from '@/components/theme-toggle'
 import type { Convocation } from '@/lib/convocations'
-import type { PublicPlayer } from '@/lib/players'
+import type { MatchDayPlayer, PublicPlayer } from '@/lib/players'
 import type { MatchSheetEntry, TeamMatchResults } from '@/lib/match-results'
 import type { TrainingAttendanceSession } from '@/lib/training-attendance'
 import type { CohesionDay } from '@/lib/cohesion'
@@ -94,6 +94,7 @@ export function DashboardTabs({
   players,
   teamTrainingRate,
   rosterPlayers,
+  matchDayPlayers,
   convocations,
   matchesPlayed,
   convocationDates,
@@ -110,6 +111,7 @@ export function DashboardTabs({
   players: PlayerStat[]
   teamTrainingRate: number | null
   rosterPlayers: PublicPlayer[]
+  matchDayPlayers: MatchDayPlayer[]
   convocations: Convocation[]
   matchesPlayed: number
   convocationDates: string[]
@@ -576,6 +578,7 @@ export function DashboardTabs({
             <MatchDayHome
               entries={matchResults.entries}
               convocations={convocations}
+              rosterPlayers={matchDayPlayers}
               convocationDates={convocationDates}
               canManageMatches={educatorAccess === 'authenticated'}
               onSelectMatch={(entry) => {

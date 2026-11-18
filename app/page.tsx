@@ -5,7 +5,7 @@ import { ScrollToTopButton } from '@/components/scroll-to-top-button'
 import Link from 'next/link'
 import { headers } from 'next/headers'
 import { getEducatorSession } from '@/lib/educator-auth'
-import { getRoster, isDateSuspicious, type PublicPlayer, type Roster } from '@/lib/players'
+import { getRoster, isDateSuspicious, type MatchDayPlayer, type PublicPlayer, type Roster } from '@/lib/players'
 import { getStats, type StatsData } from '@/lib/stats'
 import { getConvocations, type ConvocationsData } from '@/lib/convocations'
 import { getMatchResults, type TeamMatchResults } from '@/lib/match-results'
@@ -115,6 +115,13 @@ export default async function Page() {
       transferStatus,
     }),
   )
+  const matchDayPlayers: MatchDayPlayer[] = educator
+    ? roster.players.map(({ number, position, licenseNumber }) => ({
+      number,
+      position,
+      licenseNumber,
+    }))
+    : []
   const matchDataErrors = [
     ...(convocationsResult.error ? ['convocations'] : []),
     ...(matchResultsResult.error ? ['scores'] : []),
@@ -153,6 +160,7 @@ export default async function Page() {
         players={stats.players}
         teamTrainingRate={stats.teamTrainingRate}
         rosterPlayers={publicPlayers}
+        matchDayPlayers={matchDayPlayers}
         convocations={convocations.players}
         matchesPlayed={convocations.matchesPlayed}
         convocationDates={convocations.matchDates}

@@ -579,7 +579,7 @@ export function MatchResultEntry({
                     >
                       <div
                         className={[
-                          'flex min-w-0 flex-col gap-3 border-b-2 px-3 py-3 sm:px-4',
+                          'flex min-w-0 flex-col gap-3 border-b-2 px-3 py-3 sm:px-4 lg:flex-row lg:items-end',
                           isE1
                             ? 'border-[#d4af37] bg-gradient-to-br from-[#172554] via-[#1e3a8a] to-[#172554] text-white'
                             : 'border-[#172554]/15 bg-gradient-to-br from-amber-300 via-amber-400 to-[#e0bd43] text-blue-950',

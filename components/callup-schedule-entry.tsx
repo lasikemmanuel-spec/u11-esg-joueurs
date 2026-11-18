@@ -6,6 +6,7 @@ import { Save, UsersRound, X } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import { CallupPlayerDialog } from '@/components/callup-player-dialog'
 import { CallupPlayerList, type CallupSelection } from '@/components/callup-player-list'
+import { getCallupTrainingSessions } from '@/lib/callup-training-attendance'
 import type { Convocation } from '@/lib/convocations'
 import type { PublicPlayer } from '@/lib/players'
 import type { PlayerStats } from '@/lib/stats'
@@ -140,40 +141,10 @@ export function CallupScheduleEntry({
       .filter((value) => new Date(`${value}T12:00:00`).getDay() === 6),
   )].sort(), [scheduledMatchDates])
   const savedDates = useMemo(() => new Set(convocationDates.map(dateKey).filter(Boolean)), [convocationDates])
-  const sortedTrainingAttendance = useMemo(
-    () => [...trainingAttendance].sort((a, b) => a.date.localeCompare(b.date)),
-    [trainingAttendance],
-  )
   const relevantTrainingDates = useMemo(() => callupTrainingDates(date), [date])
   const relevantTrainingSessions = useMemo(
-    () => {
-      const selectedSessions = new Map<string, TrainingAttendanceSession>()
-      const usedSessionDates = new Set<string>()
-
-      for (const targetDate of [...relevantTrainingDates].sort((a, b) => b.localeCompare(a))) {
-        const session = [...sortedTrainingAttendance].reverse().find(
-          (attendance) => attendance.date <= targetDate && !usedSessionDates.has(attendance.date),
-        )
-        if (session) {
-          selectedSessions.set(targetDate, session)
-          usedSessionDates.add(session.date)
-        }
-      }
-
-      return relevantTrainingDates
-        .map((targetDate) => {
-          const session = selectedSessions.get(targetDate)
-          return {
-            targetDate,
-            date: session?.date ?? targetDate,
-            playerStatuses: session?.playerStatuses,
-            sessionAvailable: Boolean(session),
-            isPrevious: Boolean(session && session.date !== targetDate),
-          }
-        })
-        .sort((a, b) => a.date.localeCompare(b.date))
-    },
-    [relevantTrainingDates, sortedTrainingAttendance],
+    () => getCallupTrainingSessions(relevantTrainingDates, trainingAttendance),
+    [relevantTrainingDates, trainingAttendance],
   )
   const lastCompletedMatchDate = useMemo(() => matchEntries
     .filter((entry) => {
@@ -292,7 +263,7 @@ export function CallupScheduleEntry({
         <ClubCrest className="size-12 ring-2 ring-[#d4af37] sm:size-14" />
         <div className="min-w-0 flex-1">
           <h2 id="callup-entry-title" className="font-bold">Convocations du samedi</h2>
-          <p className="mt-0.5 text-[10px] font-medium text-white/70">Présences d’entraînement : M = mardi · V = vendredi · le dernier match indique aussi son équipe.</p>
+          <p className="mt-0.5 text-[10px] font-medium text-white/70">Présences d’entraînement : M = mardi · V = vendredi · une séance annulée est signalée par un nuage.</p>
         </div>
         <button
           type="button"

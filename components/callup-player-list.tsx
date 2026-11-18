@@ -1,6 +1,7 @@
 'use client'
 
-import { CircleAlert, CircleCheck, CircleHelp, CircleX } from 'lucide-react'
+import { CircleAlert, CircleCheck, CircleHelp, CircleX, CloudRain } from 'lucide-react'
+import type { CallupTrainingSession } from '@/lib/callup-training-attendance'
 import type { EditableCallupStatus } from '@/lib/convocation-management'
 import type { Convocation } from '@/lib/convocations'
 import type { PublicPlayer } from '@/lib/players'
@@ -19,14 +20,6 @@ export const CALLUP_STATUS_OPTIONS: Array<{ value: EditableCallupStatus; label: 
   { value: '🩺 Blessé', label: '🩺 Blessé' },
   { value: 'Pas de licence', label: 'Pas de licence' },
 ]
-
-type TrainingSummary = {
-  targetDate: string
-  date: string
-  playerStatuses?: Record<number, string>
-  sessionAvailable: boolean
-  isPrevious: boolean
-}
 
 function attendanceLabel(status: string | undefined) {
   if (!status) return 'Non renseigné'
@@ -51,7 +44,7 @@ export function CallupPlayerList({
   players: PublicPlayer[]
   playerStats: PlayerStats[]
   selections: Record<number, CallupSelection>
-  trainingSessions: TrainingSummary[]
+  trainingSessions: CallupTrainingSession[]
   lastCompletedMatches: MatchSheetEntry[]
   lastCompletedMatchDate: string
   onSelectPlayer: (playerNumber: number) => void
@@ -114,24 +107,34 @@ export function CallupPlayerList({
                 {player.firstName} <span className="font-black uppercase text-primary">{player.lastName}</span>
               </button>
               <div className="col-span-2 row-start-2 flex flex-wrap items-center gap-1.5 sm:col-start-2 sm:col-span-1 sm:row-start-1">
-                {playerTrainingStatuses.map(({ targetDate, date: sessionDate, status, sessionAvailable, isPrevious }) => {
+                {playerTrainingStatuses.map(({ targetDate, date: sessionDate, status, sessionAvailable, isPrevious, isCancelled }) => {
                   const sessionDateLabel = new Date(`${sessionDate}T12:00:00`).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
                   const weekdayLabel = new Date(`${sessionDate}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'short' })
                   const targetDateLabel = new Date(`${targetDate}T12:00:00`).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })
                   const targetWeekdayLabel = new Date(`${targetDate}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'short' })
-                  const label = sessionAvailable ? attendanceLabel(status) : 'Séance non trouvée'
-                  const AttendanceIcon = !sessionAvailable || !status
-                    ? CircleHelp
-                    : status === 'P'
-                      ? CircleCheck
-                      : CircleAlert
-                  const attendanceIconTone = !sessionAvailable || !status
-                    ? 'border-slate-200 bg-slate-100 text-slate-600'
-                    : status === 'P'
-                      ? 'border-emerald-200 bg-emerald-100 text-emerald-700'
-                      : 'border-orange-200 bg-orange-100 text-orange-700'
-                  const dayInitial = weekdayLabel.toLocaleLowerCase('fr-FR').startsWith('ven') ? 'V' : 'M'
-                  const attendanceDescription = isPrevious
+                  const label = isCancelled
+                    ? 'Séance annulée'
+                    : sessionAvailable
+                      ? attendanceLabel(status)
+                      : 'Séance non trouvée'
+                  const AttendanceIcon = isCancelled
+                    ? CloudRain
+                    : !sessionAvailable || !status
+                      ? CircleHelp
+                      : status === 'P'
+                        ? CircleCheck
+                        : CircleAlert
+                  const attendanceIconTone = isCancelled
+                    ? 'border-sky-200 bg-sky-100 text-sky-700'
+                    : !sessionAvailable || !status
+                      ? 'border-slate-200 bg-slate-100 text-slate-600'
+                      : status === 'P'
+                        ? 'border-emerald-200 bg-emerald-100 text-emerald-700'
+                        : 'border-orange-200 bg-orange-100 text-orange-700'
+                  const dayInitial = targetWeekdayLabel.toLocaleLowerCase('fr-FR').startsWith('ven') ? 'V' : 'M'
+                  const attendanceDescription = isCancelled
+                    ? `${targetWeekdayLabel} ${targetDateLabel} : ${label}`
+                    : isPrevious
                     ? `Séance avant ${targetWeekdayLabel} ${targetDateLabel}, tenue ${weekdayLabel} ${sessionDateLabel} : ${label}`
                     : `${weekdayLabel} ${sessionDateLabel} : ${label}`
                   return (

@@ -75,12 +75,12 @@ function ConvocationOverlay({
         <span className="rounded-full bg-amber-300 px-2 py-0.5 text-[10px] font-black text-[#172554]">{players.length}</span>
       </button>
       {open && (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-[#07102a]/75 p-2 backdrop-blur-sm sm:items-center sm:p-5" onClick={() => setOpen(false)}>
+        <div className="fixed inset-0 z-[100] flex items-end justify-center bg-[#07102a]/75 p-1 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setOpen(false)}>
           <section
             role="dialog"
             aria-modal="true"
             aria-label={`Convocations ${teamName}`}
-            className="flex max-h-[calc(100dvh-1rem)] w-full max-w-lg flex-col overflow-hidden rounded-[1.75rem] border border-amber-200/70 bg-gradient-to-br from-[#172554] via-[#1e3a8a] to-[#101a3d] text-white shadow-2xl animate-in slide-in-from-bottom-4 duration-200"
+            className="flex max-h-[calc(100dvh-0.5rem)] w-full max-w-xl flex-col overflow-hidden rounded-[1.75rem] border border-amber-200/70 bg-gradient-to-br from-[#172554] via-[#1e3a8a] to-[#101a3d] text-white shadow-2xl animate-in slide-in-from-bottom-4 duration-200"
             onClick={(event) => event.stopPropagation()}
           >
             <header className="flex shrink-0 items-start justify-between gap-3 border-b border-white/10 p-3 sm:p-4">
@@ -114,7 +114,7 @@ function ConvocationOverlay({
               ) : (
                 <ul className="grid grid-cols-2 gap-1.5">
                   {orderedPlayers.map(({ player, index }) => (
-                    <li key={`${player.name}-${index}`} className="flex min-w-0 items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.08] p-1.5 text-[11px] font-bold leading-tight">
+                    <li key={`${player.name}-${index}`} className="flex min-w-0 items-center gap-1.5 rounded-xl border border-white/10 bg-white/[0.08] p-2 text-[11px] font-bold leading-tight">
                       <span className="grid size-6 shrink-0 place-items-center rounded-full bg-amber-300 text-[#172554]">{player.absent ? '!' : '✓'}</span>
                       <span className="min-w-0 break-words">
                         <span className="block">{player.name}{player.absent ? ' · absent' : ''}</span>
@@ -122,8 +122,8 @@ function ConvocationOverlay({
                           <span className="mt-0.5 block text-[9px] font-medium text-white/55">Poste · {player.position}</span>
                         )}
                         {showLicenseNumbers && (
-                          <span className="mt-0.5 block whitespace-nowrap text-[9px] font-medium text-white/50">
-                            N° licence · <span className="font-semibold tabular-nums text-white/65">{player.licenseNumber || 'Non renseigné'}</span>
+                          <span className="mt-0.5 block whitespace-nowrap text-[10px] font-medium text-white/70">
+                            N° licence · <span className="font-bold tabular-nums text-white/90">{player.licenseNumber || 'Non renseigné'}</span>
                           </span>
                         )}
                       </span>

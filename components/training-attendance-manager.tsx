@@ -333,9 +333,14 @@ export function TrainingAttendanceManager({
           {!loadError && (
             <section className="rounded-2xl border border-sky-200 bg-card p-4 shadow-sm">
               {!showCancellationForm ? (
-                <button type="button" onClick={() => setShowCancellationForm(true)} disabled={!date || saving} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-sky-300 bg-sky-50 px-4 text-sm font-bold text-sky-950 hover:bg-sky-100 disabled:opacity-50">
-                  <CloudRain aria-hidden="true" className="size-4" />Annuler cette séance
-                </button>
+                <div className="flex flex-wrap gap-2">
+                  <button type="button" onClick={() => setShowCancellationForm(true)} disabled={!date || saving} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-sky-300 bg-sky-50 px-4 text-sm font-bold text-sky-950 hover:bg-sky-100 disabled:opacity-50">
+                    <CloudRain aria-hidden="true" className="size-4" />Annuler cette séance
+                  </button>
+                  <button type="button" onClick={() => onPrepareCancellation(date)} disabled={!date} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#25D366] px-4 text-sm font-bold text-white shadow-sm hover:brightness-105 disabled:opacity-50">
+                    <MessageCircle aria-hidden="true" className="size-4" />Préparer WhatsApp intempéries
+                  </button>
+                </div>
               ) : (
                 <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                   <label className="grid gap-1 text-sm font-bold text-foreground">

@@ -921,16 +921,92 @@ export function LiveMatchConsole({
                     Minute
                     <input type="number" min={1} max={maximumMatchMinute} value={eventMinute} onChange={(event) => setEventMinuteOverride(event.target.value ? Number(event.target.value) : getLiveMinute(session, now))} className="h-9 w-16 rounded-lg border border-white/15 bg-[#101c41] px-2 text-center text-sm text-white" />
                   </label>
+
+                  {/* Remplacement rapide en 2 clics */}
+                  <div className="mb-4 space-y-3 rounded-xl border border-white/10 bg-black/25 p-3">
+                    <div>
+                      <span className="mb-1.5 flex items-center justify-between text-[11px] font-bold text-white/70">
+                        <span>1. Joueur sortant (terrain)</span>
+                        {playerOut && (
+                          <button
+                            type="button"
+                            onClick={() => setPlayerOut('')}
+                            className="text-[10px] text-amber-300 underline"
+                          >
+                            Effacer
+                          </button>
+                        )}
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {activePlayers.map((player) => {
+                          const isSelected = playerOut === String(player.number)
+                          return (
+                            <button
+                              key={player.number}
+                              type="button"
+                              onClick={() => setPlayerOut(isSelected ? '' : String(player.number))}
+                              className={`rounded-lg border px-2.5 py-1 text-xs font-bold transition ${
+                                isSelected
+                                  ? 'border-rose-400 bg-rose-500/30 text-rose-100 ring-2 ring-rose-400'
+                                  : 'border-white/10 bg-white/5 text-white/80 hover:bg-white/10'
+                              }`}
+                            >
+                              ↓ {player.firstName} {player.lastName[0]}.
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="mb-1.5 flex items-center justify-between text-[11px] font-bold text-white/70">
+                        <span>2. Joueur entrant (banc)</span>
+                        {playerIn && (
+                          <button
+                            type="button"
+                            onClick={() => setPlayerIn('')}
+                            className="text-[10px] text-amber-300 underline"
+                          >
+                            Effacer
+                          </button>
+                        )}
+                      </span>
+                      <div className="flex flex-wrap gap-1.5">
+                        {benchPlayers.length === 0 ? (
+                          <p className="text-[11px] italic text-white/45">Aucun remplaçant sur le banc</p>
+                        ) : (
+                          benchPlayers.map((player) => {
+                            const isSelected = playerIn === String(player.number)
+                            return (
+                              <button
+                                key={player.number}
+                                type="button"
+                                onClick={() => setPlayerIn(isSelected ? '' : String(player.number))}
+                                className={`rounded-lg border px-2.5 py-1 text-xs font-bold transition ${
+                                  isSelected
+                                    ? 'border-emerald-400 bg-emerald-500/30 text-emerald-100 ring-2 ring-emerald-400'
+                                    : 'border-white/10 bg-white/5 text-white/80 hover:bg-white/10'
+                                }`}
+                              >
+                                ↑ {player.firstName} {player.lastName[0]}.
+                              </button>
+                            )
+                          })
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="grid gap-2 sm:grid-cols-2">
                     <label className="text-xs font-semibold text-white/70">
-                      Sort
+                      Sort (ou sélectionne ci-dessus)
                       <select value={playerOut} onChange={(event) => setPlayerOut(event.target.value)} className="mt-1 h-10 w-full rounded-lg border border-white/15 bg-[#101c41] px-2 text-sm text-white">
                         <option value="">Joueur sur le terrain</option>
                         {activePlayers.map((player) => <option key={player.number} value={player.number}>{player.firstName} {player.lastName}</option>)}
                       </select>
                     </label>
                     <label className="text-xs font-semibold text-white/70">
-                      Entre
+                      Entre (ou sélectionne ci-dessus)
                       <select value={playerIn} onChange={(event) => setPlayerIn(event.target.value)} className="mt-1 h-10 w-full rounded-lg border border-white/15 bg-[#101c41] px-2 text-sm text-white">
                         <option value="">Joueur sur le banc</option>
                         {benchPlayers.map((player) => <option key={player.number} value={player.number}>{player.firstName} {player.lastName}</option>)}
@@ -939,7 +1015,7 @@ export function LiveMatchConsole({
                   </div>
                   <button type="button" disabled={saving || !playerOut || !playerIn} onClick={() => void addSubstitution().catch(() => undefined)} className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 text-sm font-black disabled:opacity-40">
                     <ArrowLeftRight aria-hidden="true" className="size-4" />
-                    Enregistrer le remplacement
+                    Valider le remplacement
                   </button>
                 </section>
               </>

@@ -620,8 +620,8 @@ export function MatchResultEntry({
                             )}
                           </span>
                           <span className="flex min-w-0 flex-nowrap items-center gap-1 pl-[2.4rem] text-[10px] font-bold sm:pl-[3.1rem]">
-                            <span className={`inline-flex min-w-0 max-w-[48%] shrink items-center rounded-full px-2 py-0.5 ${isE1 ? 'bg-white/15 text-sky-100' : 'bg-white/45 text-blue-950'}`}>
-                              <span className="truncate">{entry.competition || 'Type non renseigné'}</span>
+                            <span className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 ${isE1 ? 'bg-white/15 text-sky-100' : 'bg-white/45 text-blue-950'}`}>
+                              {entry.competition || 'Type non renseigné'}
                             </span>
                             <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 ${isE1 ? 'bg-white/10 text-white/90' : 'bg-white/35 text-blue-950'}`}>
                               <span aria-hidden="true">{homeAwayIcon}</span>

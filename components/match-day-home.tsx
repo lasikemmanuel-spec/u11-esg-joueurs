@@ -450,11 +450,8 @@ export function MatchDayHome({
                           </p>
                         </div>
                         <div className="flex min-w-0 flex-nowrap items-center gap-1 text-[10px] font-semibold text-white/90">
-                          <span
-                            title={match.competition || 'Type non renseigné'}
-                            className="inline-flex min-w-0 max-w-[48%] shrink items-center rounded-full border border-white/15 bg-white/10 px-2 py-0.5 font-bold"
-                          >
-                            <span className="truncate">{match.competition || 'Type non renseigné'}</span>
+                          <span className="inline-flex shrink-0 items-center rounded-full border border-white/15 bg-white/10 px-2 py-0.5 font-bold">
+                            {match.competition || 'Type non renseigné'}
                           </span>
                           <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-black/10 px-2 py-0.5">
                             <MapPin aria-hidden="true" className="size-3" />

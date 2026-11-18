@@ -767,6 +767,63 @@ export function LiveMatchConsole({
                 </div>
               </div>
               <p className="mt-3 font-mono text-4xl font-black tabular-nums text-amber-300">{formatClock(elapsedSeconds)}</p>
+
+              {/* Jauge d'équité et temps de jeu en direct */}
+              {summary && summary.players.length > 0 && (
+                <div className="mt-3 rounded-xl border border-white/10 bg-black/20 p-2.5 text-left">
+                  <div className="mb-2 flex items-center justify-between text-[11px] font-bold text-white/70">
+                    <span className="flex items-center gap-1.5">
+                      <Timer aria-hidden="true" className="size-3.5 text-amber-300" />
+                      Temps de jeu en direct
+                    </span>
+                    <span className="text-[10px] text-white/50">
+                      Objectif équité : ~{Math.round((maximumMatchMinute * 8) / summary.players.length)} min / joueur
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-3 md:grid-cols-4">
+                    {summary.players.map((item) => {
+                      const isOnPitch = onPitch.has(item.number)
+                      const player = players.find((p) => p.number === item.number)
+                      const displayName = player ? `${player.firstName} ${player.lastName[0]}.` : `N°${item.number}`
+                      const targetShareMinutes = (maximumMatchMinute * 8) / summary.players.length
+                      const ratio = targetShareMinutes > 0 ? item.minutes / targetShareMinutes : 0
+                      const badgeColor =
+                        ratio < 0.6
+                          ? 'border-amber-400/30 bg-amber-400/10 text-amber-200'
+                          : ratio <= 1.2
+                            ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
+                            : 'border-sky-400/30 bg-sky-400/10 text-sky-200'
+
+                      return (
+                        <div
+                          key={item.number}
+                          className={`flex items-center justify-between gap-1.5 rounded-lg border px-2 py-1 text-xs transition ${badgeColor}`}
+                        >
+                          <div className="flex min-w-0 items-center gap-1.5">
+                            <span
+                              className={`size-2 shrink-0 rounded-full ${isOnPitch ? 'bg-emerald-400 ring-2 ring-emerald-400/30' : 'bg-white/20'}`}
+                              title={isOnPitch ? 'Sur le terrain' : 'Sur le banc'}
+                            />
+                            <span className="truncate font-semibold text-white/90" title={player ? `${player.firstName} ${player.lastName}` : undefined}>
+                              {displayName}
+                            </span>
+                          </div>
+                          <span className="shrink-0 font-mono font-black tabular-nums">
+                            {item.minutes}&apos;
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                  <div className="mt-2 flex items-center justify-between text-[10px] text-white/50">
+                    <span className="flex items-center gap-1">
+                      <span className="size-1.5 rounded-full bg-emerald-400" /> Terrain
+                      <span className="ml-2 size-1.5 rounded-full bg-white/20" /> Banc
+                    </span>
+                    <span>Temps écoulé : {Math.round(elapsedSeconds / 60)} min</span>
+                  </div>
+                </div>
+              )}
               <div className="mt-4 flex flex-wrap justify-center gap-2">
                 {session.phase === 'ready' || session.phase === 'halftime' || session.runningSince === null && session.phase !== 'finished' ? (
                   <button

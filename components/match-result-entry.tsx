@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, CalendarPlus, Check, ChevronDown, Clock3, Map as GoogleMapIcon, Navigation, Pencil, Plus, Sparkles, Trash2, UsersRound } from 'lucide-react'
+import { CalendarDays, CalendarPlus, Check, ChevronDown, Clock3, Map as GoogleMapIcon, Navigation, Pencil, Plus, Radio, Sparkles, Trash2, UsersRound } from 'lucide-react'
 import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
 import { MatchLineupEntry, useMatchLineups } from '@/components/match-lineup-planner'
 import { LiveMatchConsole } from '@/components/live-match-console'
@@ -647,7 +647,7 @@ export function MatchResultEntry({
                           )}
                         </button>
                         {canManage && (
-                          <div className="flex w-full shrink-0 items-center justify-end gap-1 lg:w-auto">
+                          <div className="flex w-full shrink-0 items-center justify-end gap-1.5 lg:w-auto">
                             {canStartLive && savedLineup && (
                               <button
                                 type="button"
@@ -658,15 +658,13 @@ export function MatchResultEntry({
                                 })}
                                 aria-label={`Lancer le direct, ES Genech ${isE1 ? '1' : '2'} contre ${entry.opponent || 'adversaire'}`}
                                 title="Lancer le match en direct"
-                                className="group inline-flex min-h-11 items-center gap-2 rounded-2xl border-2 border-emerald-200 bg-gradient-to-r from-lime-300 via-emerald-400 to-emerald-500 px-3 text-emerald-950 shadow-lg ring-2 ring-emerald-300/50 transition hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white disabled:cursor-wait disabled:opacity-60 sm:hidden"
+                                className="group inline-flex min-h-10 items-center gap-2 rounded-xl border border-emerald-200/70 bg-gradient-to-r from-emerald-600 to-teal-500 px-3 text-xs font-black text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:cursor-wait disabled:opacity-60 sm:hidden"
                               >
-                                <span aria-hidden="true" className="flex size-8 shrink-0 items-center justify-center rounded-full bg-white text-lg shadow-inner motion-safe:animate-bounce">⚽</span>
-                                <span className="flex flex-col items-start leading-none">
-                                  <span className="text-[11px] font-black normal-case tracking-normal">Coup d’envoi !</span>
-                                  <span className="mt-1 inline-flex items-center gap-1 text-[8px] font-black uppercase tracking-[0.16em]">
-                                    <span aria-hidden="true" className="size-1.5 rounded-full bg-rose-600 motion-safe:animate-pulse" />
-                                    Direct
-                                  </span>
+                                <Radio aria-hidden="true" className="size-4 shrink-0 text-amber-200" />
+                                <span>Coup d’envoi</span>
+                                <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider">
+                                  <span aria-hidden="true" className="size-1.5 rounded-full bg-rose-300 motion-safe:animate-pulse" />
+                                  Direct
                                 </span>
                               </button>
                             )}
@@ -676,12 +674,16 @@ export function MatchResultEntry({
                                 disabled={pending || pendingDeletion !== null}
                                 onClick={() => startEdit(entry)}
                                 aria-label={'Modifier le match contre ' + (entry.opponent || 'cet adversaire')}
+                                title="Modifier le match"
                                 className={[
-                                  'inline-flex size-7 items-center justify-center rounded-md opacity-80 hover:opacity-100 disabled:opacity-50',
-                                  isE1 ? 'bg-white/15 hover:bg-white/25' : 'bg-blue-950/15 hover:bg-blue-950/25',
+                                  'inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border px-2.5 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37] disabled:opacity-50',
+                                  isE1
+                                    ? 'border-white/20 bg-white/10 text-white hover:bg-white/20'
+                                    : 'border-blue-950/15 bg-blue-950/10 text-blue-950 hover:bg-blue-950/20',
                                 ].join(' ')}
                               >
-                                <Pencil aria-hidden="true" className="size-3" />
+                                <Pencil aria-hidden="true" className="size-4" />
+                                <span>Modifier</span>
                               </button>
                             )}
                             {dateInputValue(entry.date) >= localToday() &&

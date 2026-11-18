@@ -313,24 +313,27 @@ export function MatchWeather({
 }) {
   const weather = useMatchWeather(date, homeAway, opponent, today)
   const toneClass = tone === 'dark'
-    ? 'border-white/15 bg-white/10 text-white/85'
-    : 'border-[#172554]/20 bg-[#172554]/10 text-[#172554]'
-  const iconClass = tone === 'dark' ? 'text-amber-300' : 'text-[#8a6400]'
+    ? 'border-amber-300/30 bg-white/10 text-white/80'
+    : 'border-[#172554]/15 bg-white/75 text-[#172554]'
+  const iconClass = 'size-5 shrink-0 rounded-full bg-amber-300 p-1 text-[#172554]'
+  const temperatureClass = tone === 'dark'
+    ? 'bg-amber-300 text-[#172554]'
+    : 'bg-[#172554] text-white'
 
   return (
-    <span aria-live="polite" className={`inline-flex min-h-7 w-fit max-w-full self-start items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-bold sm:min-h-8 sm:gap-1.5 sm:px-2.5 sm:text-xs md:min-h-9 md:px-3 md:text-sm ${toneClass}`}>
+    <span aria-live="polite" className={`inline-flex min-h-7 w-fit max-w-full self-start items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold sm:gap-1.5 sm:px-2 sm:text-[10px] md:text-xs ${toneClass}`}>
       {weather.status === 'ready' ? (
         <>
-          <WeatherIcon code={weather.weather.weatherCode} className={`size-4 shrink-0 ${iconClass}`} />
-          <span className="truncate"><span className="sr-only">Météo à </span>{weather.weather.location}</span>
-          <span className={`shrink-0 text-xs font-black sm:text-sm md:text-base ${tone === 'dark' ? 'text-white' : 'text-[#172554]'}`}>{Math.round(weather.weather.temperature)}°</span>
+          <WeatherIcon code={weather.weather.weatherCode} className={iconClass} />
+          <span className="max-w-32 truncate sm:max-w-40"><span className="sr-only">Météo à </span>{weather.weather.location}</span>
+          <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-black tabular-nums sm:text-xs ${temperatureClass}`}>{Math.round(weather.weather.temperature)}°</span>
         </>
       ) : weather.status === 'loading' ? (
-        <><CloudSun aria-hidden="true" className={`size-4 shrink-0 animate-pulse ${iconClass}`} />Météo…</>
+        <><CloudSun aria-hidden="true" className={`${iconClass} animate-pulse`} />Météo…</>
       ) : weather.status === 'tooEarly' ? (
-        <><CloudSun aria-hidden="true" className={`size-4 shrink-0 ${iconClass}`} />Prévisions à venir</>
+        <><CloudSun aria-hidden="true" className={iconClass} />Prévisions à venir</>
       ) : (
-        <><CloudSun aria-hidden="true" className={`size-4 shrink-0 ${iconClass}`} />Météo indisponible</>
+        <><CloudSun aria-hidden="true" className={iconClass} />Météo indisponible</>
       )}
     </span>
   )

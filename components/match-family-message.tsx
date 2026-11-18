@@ -182,9 +182,9 @@ export function MatchFamilyMessage({
         type="button"
         onClick={() => void openComposer()}
         disabled={preparing}
-        className="inline-flex min-h-9 w-auto min-w-0 items-center justify-center gap-1.5 rounded-xl border border-emerald-300/50 bg-emerald-500/15 px-3 py-1.5 text-xs font-black text-white shadow-sm transition hover:bg-emerald-500/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+        className="inline-flex min-h-10 w-auto min-w-0 items-center justify-center gap-1.5 rounded-xl border border-[#d4af37]/70 bg-[#172554] px-3 py-1.5 text-xs font-black text-white shadow-sm transition hover:bg-[#1e3a8a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37] disabled:opacity-60"
       >
-        <Share2 aria-hidden="true" className="size-4 text-emerald-200" />
+        <Share2 aria-hidden="true" className="size-4 text-[#f4ce45]" />
         {preparing ? 'Préparation…' : 'Message familles'}
       </button>
 

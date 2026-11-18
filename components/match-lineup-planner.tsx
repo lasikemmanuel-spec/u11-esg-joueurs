@@ -333,16 +333,24 @@ export function MatchLineupEntry({
       type="button"
       onClick={() => setDialogOpen(true)}
       aria-haspopup="dialog"
-      className={`mt-2 flex min-h-12 w-full items-center justify-between gap-3 rounded-xl border-l-4 px-3 py-2 text-left text-sm font-semibold shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${match.team === 'E1' ? 'border-l-[#172554] bg-[#172554]/[0.05] text-[#172554]' : 'border-l-amber-400 bg-amber-400/[0.1] text-amber-950'}`}
+      className={`group mt-2 flex min-h-[4.5rem] w-full items-center justify-between gap-3 rounded-2xl border px-3 py-2.5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${match.team === 'E1' ? 'border-[#172554]/15 border-l-4 border-l-[#172554] bg-white/80 text-[#172554] dark:bg-[#172554]/40 dark:text-white' : 'border-amber-400/40 border-l-4 border-l-amber-400 bg-amber-50/90 text-amber-950 dark:bg-amber-400/10 dark:text-amber-100'}`}
     >
-      <span className="flex min-w-0 items-center gap-2">
-        <ClubCrest className="size-8 ring-1 ring-[#d4af37]/70" />
+      <span className="flex min-w-0 items-center gap-3">
+        <ClubCrest className="size-10 shrink-0 ring-2 ring-[#d4af37]/80" />
         <span className="min-w-0">
-          <span className="block font-black">Feuille de match · ES Genech {match.team === 'E1' ? '1' : '2'}</span>
-          <span className="block text-xs font-medium text-muted-foreground">{calledPlayers.length} convoqué{calledPlayers.length === 1 ? '' : 's'} · {match.opponent || 'adversaire'}</span>
+          <span className="block text-sm font-black">Feuille de match</span>
+          <span className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+            <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-black ${match.team === 'E1' ? 'bg-[#172554] text-white dark:bg-amber-300 dark:text-[#172554]' : 'bg-amber-400 text-blue-950'}`}>
+              ES Genech {match.team === 'E1' ? '1' : '2'}
+            </span>
+            <span className="text-xs font-semibold opacity-80">{match.opponent || 'Adversaire à préciser'}</span>
+          </span>
+          <span className="mt-1 block text-xs font-bold opacity-80">
+            {calledPlayers.length} convoqué{calledPlayers.length === 1 ? '' : 's'}
+          </span>
         </span>
       </span>
-      <ChevronRight aria-hidden="true" className="size-5 shrink-0 text-muted-foreground" />
+      <ChevronRight aria-hidden="true" className="size-5 shrink-0 opacity-60 transition group-hover:translate-x-0.5 group-hover:opacity-100" />
     </button>
 
     {dialogOpen && createPortal(

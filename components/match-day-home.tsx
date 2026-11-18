@@ -266,28 +266,34 @@ export function MatchWeather({
   homeAway,
   opponent,
   today,
+  tone = 'dark',
 }: {
   date: string
   homeAway: string
   opponent: string
   today: string
+  tone?: 'dark' | 'light'
 }) {
   const weather = useMatchWeather(date, homeAway, opponent, today)
+  const toneClass = tone === 'dark'
+    ? 'border-white/15 bg-white/10 text-white/85'
+    : 'border-[#172554]/20 bg-[#172554]/10 text-[#172554]'
+  const iconClass = tone === 'dark' ? 'text-amber-300' : 'text-[#8a6400]'
 
   return (
-    <div aria-live="polite" className="mt-2 inline-flex min-h-7 max-w-full items-center gap-1.5 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-bold text-white/85">
+    <div aria-live="polite" className={`inline-flex min-h-7 max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold ${toneClass}`}>
       {weather.status === 'ready' ? (
         <>
-          <WeatherIcon code={weather.weather.weatherCode} className="size-4 shrink-0 text-amber-300" />
+          <WeatherIcon code={weather.weather.weatherCode} className={`size-4 shrink-0 ${iconClass}`} />
           <span className="truncate">Météo · {weather.weather.location}</span>
-          <span className="shrink-0 text-xs font-black text-white">{Math.round(weather.weather.temperature)}°</span>
+          <span className={`shrink-0 text-xs font-black ${tone === 'dark' ? 'text-white' : 'text-[#172554]'}`}>{Math.round(weather.weather.temperature)}°</span>
         </>
       ) : weather.status === 'loading' ? (
-        <><CloudSun aria-hidden="true" className="size-4 shrink-0 animate-pulse text-amber-300" />Météo…</>
+        <><CloudSun aria-hidden="true" className={`size-4 shrink-0 animate-pulse ${iconClass}`} />Météo…</>
       ) : weather.status === 'tooEarly' ? (
-        <><CloudSun aria-hidden="true" className="size-4 shrink-0 text-amber-300" />Prévisions à venir</>
+        <><CloudSun aria-hidden="true" className={`size-4 shrink-0 ${iconClass}`} />Prévisions à venir</>
       ) : (
-        <><CloudSun aria-hidden="true" className="size-4 shrink-0 text-amber-300" />Météo indisponible</>
+        <><CloudSun aria-hidden="true" className={`size-4 shrink-0 ${iconClass}`} />Météo indisponible</>
       )}
     </div>
   )

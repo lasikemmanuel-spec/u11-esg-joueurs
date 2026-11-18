@@ -571,18 +571,18 @@ export function MatchResultEntry({
                       key={entry.team + '-' + entry.slotColumn}
                       id={`match-card-${date}-${entry.team}-${entry.slotColumn}`}
                       className={[
-                        'relative flex min-w-0 flex-col overflow-hidden rounded-2xl border shadow-sm',
+                        'relative flex min-w-0 flex-col overflow-hidden rounded-2xl border shadow-md transition-shadow hover:shadow-lg',
                         isE1
-                          ? 'border-[#172554]/25 bg-gradient-to-b from-[#172554]/8 to-[#172554]/3'
-                          : 'border-amber-400/35 bg-gradient-to-b from-amber-400/8 to-amber-400/3',
+                          ? 'border-[#172554]/25 bg-gradient-to-b from-white to-[#eef2ff]'
+                          : 'border-amber-400/45 bg-gradient-to-b from-white to-amber-50',
                       ].join(' ')}
                     >
                       <div
                         className={[
-                          'flex min-w-0 flex-col gap-2 px-3 py-2',
+                          'flex min-w-0 flex-col gap-3 border-b-2 px-3 py-3 sm:px-4',
                           isE1
-                            ? 'bg-[#172554] text-white'
-                            : 'bg-amber-400 text-blue-950',
+                            ? 'border-[#d4af37] bg-gradient-to-br from-[#172554] via-[#1e3a8a] to-[#172554] text-white'
+                            : 'border-[#172554]/15 bg-gradient-to-br from-amber-300 via-amber-400 to-[#e0bd43] text-blue-950',
                         ].join(' ')}
                       >
                         <button
@@ -595,36 +595,40 @@ export function MatchResultEntry({
                             else next.add(matchKey)
                             return next
                           })}
-                          className="flex min-w-0 flex-1 flex-col items-stretch gap-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d4af37]"
+                          className="group flex min-w-0 flex-1 flex-col items-stretch gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#d4af37]"
                         >
-                          <span className="flex min-w-0 items-center gap-2">
-                            <ChevronDown
-                              aria-hidden="true"
-                              className={`size-4 shrink-0 transition-transform ${isMatchExpanded ? '' : '-rotate-90'}`}
-                            />
-                            <ClubCrest className={['size-6 shrink-0 rounded-full ring-2', isE1 ? 'ring-white/40' : 'ring-blue-950/30'].join(' ')} />
-                            <span className="min-w-0 flex-1 text-[9px] font-black uppercase tracking-widest opacity-80">
-                              ES Genech {isE1 ? '1' : '2'}
+                          <span className="flex min-w-0 items-center gap-2.5">
+                            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-white/15">
+                              <ChevronDown
+                                aria-hidden="true"
+                                className={`size-4 transition-transform ${isMatchExpanded ? '' : '-rotate-90'}`}
+                              />
+                            </span>
+                            <ClubCrest className={['size-9 shrink-0 rounded-full ring-2', isE1 ? 'ring-[#d4af37]' : 'ring-white/80'].join(' ')} />
+                            <span className="min-w-0 flex-1">
+                              <span className="block text-[10px] font-black uppercase tracking-[0.16em] opacity-80">
+                                ES Genech {isE1 ? '1' : '2'}
+                              </span>
+                              <span className="mt-0.5 block whitespace-normal break-words text-lg font-black leading-tight sm:text-xl">
+                                {entry.opponent || 'Adversaire à préciser'}
+                              </span>
                             </span>
                             {(isPlayed || isCancelled) && (
-                              <span className={['shrink-0 rounded-lg px-2 py-1 font-mono text-xs font-black', scoreBg].join(' ')}>
+                              <span className={['shrink-0 rounded-xl px-2.5 py-1.5 font-mono text-sm font-black shadow-sm', scoreBg].join(' ')}>
                                 {scoreLabel}
                               </span>
                             )}
                           </span>
-                          <span className="block whitespace-normal break-words pl-6 text-base font-black leading-snug sm:pl-8 sm:text-lg">
-                            {entry.opponent || 'Adversaire à préciser'}
-                          </span>
-                          <span className="ml-6 flex flex-wrap items-center gap-1.5 text-[10px] font-bold">
-                            <span className={`inline-flex w-fit max-w-full rounded-full px-2 py-0.5 ${isE1 ? 'bg-white/15 text-sky-100' : 'bg-blue-950/10 text-blue-950'}`}>
+                          <span className="flex flex-wrap items-center gap-1.5 pl-[2.4rem] text-[10px] font-bold sm:pl-[3.1rem]">
+                            <span className={`inline-flex w-fit max-w-full rounded-full px-2.5 py-1 ${isE1 ? 'bg-white/15 text-sky-100' : 'bg-white/45 text-blue-950'}`}>
                               {entry.competition || 'Type non renseigné'}
                             </span>
-                            <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${isE1 ? 'bg-white/10 text-white/90' : 'bg-blue-950/10 text-blue-950'}`}>
+                            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 ${isE1 ? 'bg-white/10 text-white/90' : 'bg-white/35 text-blue-950'}`}>
                               <span aria-hidden="true">{homeAwayIcon}</span>
                               {entry.homeAway || 'Lieu ?'}
                             </span>
                             {entry.kickoffTime && (
-                              <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 ${isE1 ? 'bg-white/10 text-white/90' : 'bg-blue-950/10 text-blue-950'}`}>
+                              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 ${isE1 ? 'bg-white/10 text-white/90' : 'bg-white/35 text-blue-950'}`}>
                                 <Clock3 aria-hidden="true" className="size-3" />
                                 {entry.kickoffTime}
                               </span>
@@ -635,6 +639,7 @@ export function MatchResultEntry({
                                 homeAway={entry.homeAway}
                                 opponent={entry.opponent}
                                 today={localToday()}
+                                tone={isE1 ? 'dark' : 'light'}
                               />
                             )}
                           </span>
@@ -699,28 +704,39 @@ export function MatchResultEntry({
                       </div>
                       {isMatchExpanded && (
                         <div id={matchPanelId}>
-                          <div className="flex flex-wrap items-center gap-2 border-b border-border/70 px-3 py-2">
-                            {entry.meetingTime && (
-                              <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-3 py-1.5 text-xs font-black text-amber-950 dark:bg-amber-300/20 dark:text-amber-100">
-                                <Clock3 aria-hidden="true" className="size-3.5" /> Rendez-vous au stade · {entry.meetingTime}
-                              </span>
-                            )}
-                            {entry.homeAway === 'Extérieur' && entry.venueAddress?.trim() && (() => {
-                              const query = encodeURIComponent(entry.venueAddress.trim()).replace(/%20/g, '+')
-                              return (
-                                <>
-                                  <a href={`https://maps.google.com/?q=${query}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-[#4285F4] px-3 text-xs font-black text-white">
-                                    <GoogleMapIcon aria-hidden="true" className="size-4" /> Google Maps
-                                  </a>
-                                  <a href={`https://waze.com/ul?q=${query}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-[#33CCFF] px-3 text-xs font-black text-[#10213f]">
-                                    <Navigation aria-hidden="true" className="size-4" /> Waze
-                                  </a>
-                                </>
-                              )
-                            })()}
-                            {canManage && (
-                              <MatchFamilyMessage match={entry} date={date} calledPlayerNames={calledPlayerNames} />
-                            )}
+                          <div className="space-y-3 border-b border-[#172554]/10 bg-gradient-to-b from-white/80 to-[#eef2ff]/70 px-3 py-3 sm:px-4">
+                            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#172554]/65">
+                              Infos pratiques
+                            </p>
+                            <div className="flex flex-wrap items-center gap-2">
+                              {entry.meetingTime && (
+                                <span className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#d4af37]/60 bg-amber-100 px-3 py-2 text-xs font-black text-amber-950">
+                                  <span className="flex size-7 items-center justify-center rounded-full bg-[#d4af37]/25">
+                                    <Clock3 aria-hidden="true" className="size-4" />
+                                  </span>
+                                  <span>
+                                    <span className="block text-[9px] font-bold uppercase tracking-wide text-amber-900/70">Rendez-vous au stade</span>
+                                    <span className="block text-sm">{entry.meetingTime}</span>
+                                  </span>
+                                </span>
+                              )}
+                              {entry.homeAway === 'Extérieur' && entry.venueAddress?.trim() && (() => {
+                                const query = encodeURIComponent(entry.venueAddress.trim()).replace(/%20/g, '+')
+                                return (
+                                  <>
+                                    <a href={`https://maps.google.com/?q=${query}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#4285F4] px-3 text-xs font-black text-white shadow-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#172554]">
+                                      <GoogleMapIcon aria-hidden="true" className="size-4" /> Google Maps
+                                    </a>
+                                    <a href={`https://waze.com/ul?q=${query}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#33CCFF] px-3 text-xs font-black text-[#10213f] shadow-sm transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#172554]">
+                                      <Navigation aria-hidden="true" className="size-4" /> Waze
+                                    </a>
+                                  </>
+                                )
+                              })()}
+                              {canManage && (
+                                <MatchFamilyMessage match={entry} date={date} calledPlayerNames={calledPlayerNames} />
+                              )}
+                            </div>
                           </div>
                           {canManage && (
                             <div className="px-3 pb-3">

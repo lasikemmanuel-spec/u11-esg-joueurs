@@ -318,7 +318,7 @@ export function MatchWeather({
   const iconClass = tone === 'dark' ? 'text-amber-300' : 'text-[#8a6400]'
 
   return (
-    <div aria-live="polite" className={`inline-flex min-h-7 max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold ${toneClass}`}>
+    <span aria-live="polite" className={`inline-flex min-h-7 max-w-full items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-bold ${toneClass}`}>
       {weather.status === 'ready' ? (
         <>
           <WeatherIcon code={weather.weather.weatherCode} className={`size-4 shrink-0 ${iconClass}`} />
@@ -332,7 +332,7 @@ export function MatchWeather({
       ) : (
         <><CloudSun aria-hidden="true" className={`size-4 shrink-0 ${iconClass}`} />Météo indisponible</>
       )}
-    </div>
+    </span>
   )
 }
 

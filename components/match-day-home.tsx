@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
+import { createPortal } from 'react-dom'
 import {
   ArrowRight,
   Cloud,
@@ -80,7 +81,7 @@ function ConvocationOverlay({
         <UsersRound aria-hidden="true" className="size-3.5 text-amber-200" />
         <span>{players.length}</span>
       </button>
-      {open && (
+      {open && createPortal(
         <div className="fixed inset-0 z-[100] flex items-end justify-center bg-[#07102a]/75 p-1 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setOpen(false)}>
           <section
             role="dialog"
@@ -97,7 +98,7 @@ function ConvocationOverlay({
               </div>
               <button type="button" onClick={() => setOpen(false)} aria-label="Fermer" className="grid size-10 shrink-0 place-items-center rounded-full border border-white/15 bg-white/10 text-xl">×</button>
             </header>
-            <div className="p-3 sm:p-4">
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-3 sm:p-4">
               {hasCallups && players.length > 0 && canShowLicenseNumbers && (
                 <label className="mb-2 inline-flex min-h-8 cursor-pointer items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3 text-[10px] font-semibold text-white/75 transition hover:bg-white/10">
                   <input
@@ -146,7 +147,8 @@ function ConvocationOverlay({
               </footer>
             )}
           </section>
-        </div>
+        </div>,
+        document.body,
       )}
     </>
   )

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, CalendarPlus, Check, ChevronDown, Clock3, Map as GoogleMapIcon, Navigation, Pencil, Plus, Sparkles, Trash2, UsersRound } from 'lucide-react'
+import { CalendarDays, CalendarPlus, Check, ChevronDown, Clock3, Map as GoogleMapIcon, MapPin, Navigation, Pencil, Plus, Sparkles, Trash2, UsersRound } from 'lucide-react'
 import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
 import { MatchLineupEntry, useMatchLineups } from '@/components/match-lineup-planner'
 import { MatchFamilyMessage } from '@/components/match-family-message'
@@ -692,27 +692,52 @@ export function MatchResultEntry({
                             </p>
                             <div className="flex flex-wrap items-center gap-2">
                               {entry.meetingTime && (
-                                <span className="inline-flex min-h-10 items-center gap-2 rounded-xl border border-[#d4af37]/60 bg-amber-100 px-3 py-2 text-xs font-black text-amber-950">
-                                  <span className="flex size-7 items-center justify-center rounded-full bg-[#d4af37]/25">
-                                    <Clock3 aria-hidden="true" className="size-4" />
-                                  </span>
-                                  <span>
-                                    <span className="block text-[9px] font-bold uppercase tracking-wide text-amber-900/70">Rendez-vous au stade</span>
-                                    <span className="block text-sm">{entry.meetingTime}</span>
-                                  </span>
+                                <span className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-[#d4af37]/60 bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-950">
+                                  <Clock3 aria-hidden="true" className="size-3.5" />
+                                  <span>RDV stade</span>
+                                  <span className="font-black tabular-nums">{entry.meetingTime}</span>
                                 </span>
                               )}
-                              {entry.homeAway === 'Extérieur' && entry.venueAddress?.trim() && (() => {
-                                const query = encodeURIComponent(entry.venueAddress.trim()).replace(/%20/g, '+')
+                              {entry.venueAddress?.trim() && (() => {
+                                const address = entry.venueAddress.trim()
+                                const query = encodeURIComponent(address).replace(/%20/g, '+')
                                 return (
-                                  <>
-                                    <a href={`https://maps.google.com/?q=${query}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#4285F4] px-3 text-xs font-black text-white shadow-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#172554]">
-                                      <GoogleMapIcon aria-hidden="true" className="size-4" /> Google Maps
-                                    </a>
-                                    <a href={`https://waze.com/ul?q=${query}`} target="_blank" rel="noopener noreferrer" className="inline-flex min-h-10 items-center gap-2 rounded-xl bg-[#33CCFF] px-3 text-xs font-black text-[#10213f] shadow-sm transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#172554]">
-                                      <Navigation aria-hidden="true" className="size-4" /> Waze
-                                    </a>
-                                  </>
+                                  <div className="flex min-w-0 basis-full items-center gap-2 rounded-xl border border-[#172554]/10 bg-white/70 px-2.5 py-1.5 sm:flex-1">
+                                    <MapPin aria-hidden="true" className="size-4 shrink-0 text-[#172554]" />
+                                    <span className="min-w-0 flex-1 break-words text-xs font-semibold text-[#172554]">{address}</span>
+                                    <div className="flex shrink-0 items-center gap-1">
+                                      <a
+                                        href={`https://maps.google.com/?q=${query}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        aria-label="Ouvrir l’adresse dans Google Maps"
+                                        title="Google Maps"
+                                        className="grid size-8 place-items-center rounded-lg bg-[#4285F4] text-white shadow-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#172554]"
+                                      >
+                                        <GoogleMapIcon aria-hidden="true" className="size-4" />
+                                      </a>
+                                      <a
+                                        href={`https://waze.com/ul?q=${query}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        aria-label="Ouvrir l’adresse dans Waze"
+                                        title="Waze"
+                                        className="grid size-8 place-items-center rounded-lg bg-[#33CCFF] text-[#10213f] shadow-sm transition hover:brightness-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#172554]"
+                                      >
+                                        <Navigation aria-hidden="true" className="size-4" />
+                                      </a>
+                                      <a
+                                        href={`https://maps.apple.com/?q=${query}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        aria-label="Ouvrir l’adresse dans Plans"
+                                        title="Plans"
+                                        className="grid size-8 place-items-center rounded-lg bg-[#172554] text-white shadow-sm transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+                                      >
+                                        <MapPin aria-hidden="true" className="size-4" />
+                                      </a>
+                                    </div>
+                                  </div>
                                 )
                               })()}
                               {canManage && (

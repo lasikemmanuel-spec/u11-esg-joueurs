@@ -50,6 +50,13 @@ function ConvocationOverlay({
 }) {
   const [open, setOpen] = useState(false)
   const [showLicenseNumbers, setShowLicenseNumbers] = useState(false)
+  const orderedPlayers = players
+    .map((player, index) => ({ player, index }))
+    .sort((a, b) => {
+      const aIsGoalkeeper = a.player.position?.toLocaleLowerCase('fr-FR').includes('gardien') ?? false
+      const bIsGoalkeeper = b.player.position?.toLocaleLowerCase('fr-FR').includes('gardien') ?? false
+      return Number(bIsGoalkeeper) - Number(aIsGoalkeeper) || a.index - b.index
+    })
   return (
     <>
       <button
@@ -101,7 +108,7 @@ function ConvocationOverlay({
                 <p className="rounded-2xl bg-white/10 p-4 text-center text-sm font-semibold">Aucun joueur convoqué pour cette équipe.</p>
               ) : (
                 <ul className="grid grid-cols-2 gap-2">
-                  {players.map((player, index) => (
+                  {orderedPlayers.map(({ player, index }) => (
                     <li key={`${player.name}-${index}`} className="flex min-w-0 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.08] p-2.5 text-xs font-bold">
                       <span className="grid size-7 shrink-0 place-items-center rounded-full bg-amber-300 text-[#172554]">{player.absent ? '!' : '✓'}</span>
                       <span className="min-w-0 break-words">
@@ -110,8 +117,11 @@ function ConvocationOverlay({
                           <span className="mt-0.5 block text-[10px] font-medium text-white/55">Poste · {player.position}</span>
                         )}
                         {showLicenseNumbers && (
-                          <span className="mt-0.5 block break-all text-[10px] font-medium text-white/55">
-                            Licence · {player.licenseNumber || 'non renseignée'}
+                          <span className="mt-1 block text-[9px] font-semibold leading-tight text-white/50">
+                            N° de licence
+                            <span className="mt-0.5 block whitespace-nowrap text-[10px] font-bold tabular-nums text-white/65">
+                              {player.licenseNumber || 'Non renseigné'}
+                            </span>
                           </span>
                         )}
                       </span>

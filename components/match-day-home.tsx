@@ -67,7 +67,7 @@ function ConvocationOverlay({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="absolute bottom-2 right-2 z-10 inline-flex min-h-8 min-w-9 items-center justify-center gap-1 rounded-full border border-white/20 bg-[#172554]/65 px-2 text-[10px] font-black text-white shadow-sm backdrop-blur transition hover:border-amber-200/70 hover:bg-[#172554]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
+        className="absolute right-2 top-2 z-10 inline-flex min-h-8 min-w-9 items-center justify-center gap-1 rounded-full border border-white/20 bg-[#172554]/65 px-2 text-[10px] font-black text-white shadow-sm backdrop-blur transition hover:border-amber-200/70 hover:bg-[#172554]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
         aria-haspopup="dialog"
         aria-label={`Voir les ${players.length} convoqués de ${teamName}`}
       >
@@ -432,7 +432,7 @@ export function MatchDayHome({
                         onClick={() => onSelectMatch(match)}
                         aria-label={`Ouvrir la feuille de match, ES Genech ${match.team === 'E1' ? '1' : '2'} contre ${match.opponent || 'adversaire à préciser'}`}
                         className={[
-                          'group flex w-full min-w-0 items-center gap-2.5 rounded-2xl border p-2.5 pb-10 text-left shadow-md backdrop-blur-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:flex-1',
+                          'group flex w-full min-w-0 items-center gap-2.5 rounded-2xl border p-2.5 text-left shadow-md backdrop-blur-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:flex-1',
                           match.team === 'E1'
                             ? 'border-sky-300/50 bg-gradient-to-br from-sky-400/20 to-blue-950/20 hover:border-sky-200'
                             : 'border-amber-300/60 bg-gradient-to-br from-amber-400/20 to-blue-950/20 hover:border-amber-200',
@@ -443,7 +443,7 @@ export function MatchDayHome({
                           match.team === 'E1' ? 'ring-sky-300' : 'ring-amber-300',
                         ].join(' ')} />
                         <div className="min-w-0 flex-1">
-                          <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 text-base font-black leading-tight sm:text-lg">
+                          <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 pr-10 text-base font-black leading-tight sm:text-lg">
                             <span className="break-words">ES Genech {match.team === 'E1' ? '1' : '2'}</span>
                             <span aria-hidden="true" className="text-xs font-bold text-white/60">vs</span>
                             <span className="break-words">{match.opponent || 'Adversaire à préciser'}</span>

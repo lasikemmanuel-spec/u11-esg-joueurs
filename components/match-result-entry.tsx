@@ -519,6 +519,15 @@ export function MatchResultEntry({
                   const isE1 = entry.team === 'E1'
                   const isPlayed = entry.goalsFor !== null && entry.goalsAgainst !== null && entry.resultLabel !== 'Annulé'
                   const isCancelled = entry.resultLabel === 'Annulé'
+                  const dateIsUpcoming = date >= localToday()
+                  const showWeather = !isPlayed && !isCancelled && dateIsUpcoming
+                  const canEditMatch = canManage && !isCancelled && dateIsUpcoming
+                  const canDeleteMatch = canManage &&
+                    dateIsUpcoming &&
+                    !hasStartedConvocation &&
+                    !entry.resultLabel &&
+                    entry.goalsFor === null &&
+                    entry.goalsAgainst === null
                   const result = isPlayed ? getEditableResult(entry) : null
                   const scoreLabel = isCancelled
                     ? 'Annulé'
@@ -567,7 +576,7 @@ export function MatchResultEntry({
                     >
                       <div
                         className={[
-                          'flex min-w-0 flex-col gap-3 border-b-2 px-3 py-3 sm:px-4 lg:flex-row lg:items-end',
+                          'flex min-w-0 flex-col gap-2 border-b-2 px-3 py-3 sm:px-4',
                           isE1
                             ? 'border-[#d4af37] bg-gradient-to-br from-[#172554] via-[#1e3a8a] to-[#172554] text-white'
                             : 'border-[#172554]/15 bg-gradient-to-br from-amber-300 via-amber-400 to-[#e0bd43] text-blue-950',
@@ -622,55 +631,55 @@ export function MatchResultEntry({
                               </span>
                             )}
                           </span>
-                          {!isPlayed && !isCancelled && date >= localToday() && (
-                            <span className="ml-[2.4rem] w-fit max-w-full self-start sm:ml-[3.1rem]">
-                              <MatchWeather
-                                date={date}
-                                homeAway={entry.homeAway}
-                                opponent={entry.opponent}
-                                today={localToday()}
-                                tone={isE1 ? 'dark' : 'light'}
-                              />
-                            </span>
-                          )}
                         </button>
-                        {canManage && (
-                          <div className="flex w-full shrink-0 items-center justify-end gap-1.5 lg:w-auto">
-                            {entry.resultLabel !== 'Annulé' && dateInputValue(entry.date) >= localToday() && (
-                              <button
-                                type="button"
-                                disabled={pending || pendingDeletion !== null}
-                                onClick={() => startEdit(entry)}
-                                aria-label={'Modifier le match contre ' + (entry.opponent || 'cet adversaire')}
-                                title="Modifier le match"
-                                className={[
-                                  'inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border px-2.5 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37] disabled:opacity-50',
-                                  isE1
-                                    ? 'border-white/20 bg-white/10 text-white hover:bg-white/20'
-                                    : 'border-blue-950/15 bg-blue-950/10 text-blue-950 hover:bg-blue-950/20',
-                                ].join(' ')}
-                              >
-                                <Pencil aria-hidden="true" className="size-4" />
-                                <span>Modifier</span>
-                              </button>
+                        {(showWeather || canEditMatch || canDeleteMatch) && (
+                          <div className={`flex min-w-0 items-center gap-2 pl-7 sm:pl-10 ${showWeather ? 'justify-between' : 'justify-end'}`}>
+                            {showWeather && (
+                              <span className="min-w-0 flex-1">
+                                <MatchWeather
+                                  date={date}
+                                  homeAway={entry.homeAway}
+                                  opponent={entry.opponent}
+                                  today={localToday()}
+                                  tone={isE1 ? 'dark' : 'light'}
+                                />
+                              </span>
                             )}
-                            {dateInputValue(entry.date) >= localToday() &&
-                              !hasStartedConvocation &&
-                              !entry.resultLabel &&
-                              entry.goalsFor === null &&
-                              entry.goalsAgainst === null && (
-                              <button
-                                type="button"
-                                disabled={pending || pendingDeletion !== null}
-                                onClick={() => removeMatch(date, entry)}
-                                aria-label={'Supprimer le match contre ' + (entry.opponent || 'cet adversaire')}
-                                className={[
-                                  'inline-flex size-7 items-center justify-center rounded-md opacity-85 transition hover:bg-red-500/30 hover:text-red-100 disabled:opacity-50',
-                                  isE1 ? 'bg-white/15' : 'bg-blue-950/15',
-                                ].join(' ')}
-                              >
-                                <Trash2 aria-hidden="true" className="size-3.5" />
-                              </button>
+                            {(canEditMatch || canDeleteMatch) && (
+                              <div className="flex shrink-0 items-center gap-1.5">
+                                {canEditMatch && (
+                                  <button
+                                    type="button"
+                                    disabled={pending || pendingDeletion !== null}
+                                    onClick={() => startEdit(entry)}
+                                    aria-label={'Modifier le match contre ' + (entry.opponent || 'cet adversaire')}
+                                    title="Modifier le match"
+                                    className={[
+                                      'inline-flex min-h-8 items-center justify-center gap-1 rounded-lg border px-2 text-[10px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37] disabled:opacity-50',
+                                      isE1
+                                        ? 'border-white/20 bg-white/10 text-white hover:bg-white/20'
+                                        : 'border-blue-950/15 bg-blue-950/10 text-blue-950 hover:bg-blue-950/20',
+                                    ].join(' ')}
+                                  >
+                                    <Pencil aria-hidden="true" className="size-3.5" />
+                                    <span>Modifier</span>
+                                  </button>
+                                )}
+                                {canDeleteMatch && (
+                                  <button
+                                    type="button"
+                                    disabled={pending || pendingDeletion !== null}
+                                    onClick={() => removeMatch(date, entry)}
+                                    aria-label={'Supprimer le match contre ' + (entry.opponent || 'cet adversaire')}
+                                    className={[
+                                      'inline-flex size-7 items-center justify-center rounded-md opacity-85 transition hover:bg-red-500/30 hover:text-red-100 disabled:opacity-50',
+                                      isE1 ? 'bg-white/15' : 'bg-blue-950/15',
+                                    ].join(' ')}
+                                  >
+                                    <Trash2 aria-hidden="true" className="size-3.5" />
+                                  </button>
+                                )}
+                              </div>
                             )}
                           </div>
                         )}

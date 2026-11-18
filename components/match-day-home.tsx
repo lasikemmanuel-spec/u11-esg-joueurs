@@ -450,17 +450,20 @@ export function MatchDayHome({
                   })
 
                   return (
-                    <div key={`${match.team}-${match.slotColumn}`} className="relative flex min-w-0 flex-col sm:h-full">
+                    <div
+                      key={`${match.team}-${match.slotColumn}`}
+                      className={[
+                        'relative flex min-w-0 flex-col overflow-hidden rounded-2xl border shadow-md backdrop-blur-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-xl sm:h-full',
+                        match.team === 'E1'
+                          ? 'border-sky-300/50 bg-gradient-to-br from-sky-400/20 to-blue-950/20 hover:border-sky-200'
+                          : 'border-amber-300/60 bg-gradient-to-br from-amber-400/20 to-blue-950/20 hover:border-amber-200',
+                      ].join(' ')}
+                    >
                       <button
                         type="button"
                         onClick={() => onSelectMatch(match)}
                         aria-label={`Ouvrir la feuille de match, ES Genech ${match.team === 'E1' ? '1' : '2'} contre ${match.opponent || 'adversaire à préciser'}`}
-                        className={[
-                          'group flex w-full min-w-0 flex-col items-stretch gap-2 rounded-2xl border p-2.5 text-left shadow-md backdrop-blur-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:flex-1',
-                          match.team === 'E1'
-                            ? 'border-sky-300/50 bg-gradient-to-br from-sky-400/20 to-blue-950/20 hover:border-sky-200'
-                            : 'border-amber-300/60 bg-gradient-to-br from-amber-400/20 to-blue-950/20 hover:border-amber-200',
-                        ].join(' ')}
+                        className="group flex w-full min-w-0 flex-1 flex-col items-stretch gap-2 p-2.5 text-left transition hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
                       >
                         <div className="flex min-w-0 items-center gap-2.5">
                           <ClubCrest className={[
@@ -499,13 +502,20 @@ export function MatchDayHome({
                             lineup: savedLineup,
                           })}
                           aria-label={`Lancer le direct, ES Genech ${match.team === 'E1' ? '1' : '2'} contre ${match.opponent || 'adversaire'}`}
-                          title="Lancer le match en direct"
-                          className="mt-1 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-emerald-200/70 bg-gradient-to-r from-emerald-600 to-teal-500 px-3 text-xs font-black text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:cursor-wait disabled:opacity-60"
+                          title={`Lancer le match contre ${match.opponent || 'cet adversaire'}`}
+                          className="mx-2 mb-1.5 inline-flex min-h-9 items-center justify-between gap-1.5 rounded-lg border border-emerald-200/70 bg-gradient-to-r from-emerald-600 to-teal-500 px-2 py-1 text-left text-[10px] font-bold text-white shadow-sm transition hover:brightness-110 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:cursor-wait disabled:opacity-60"
                         >
-                          <Radio aria-hidden="true" className="size-4 shrink-0 text-amber-200" />
-                          <span>Coup d’envoi</span>
-                          <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider">
-                            <span aria-hidden="true" className="size-1.5 rounded-full bg-rose-300 motion-safe:animate-pulse" />
+                          <span className="flex min-w-0 items-center gap-2">
+                            <Radio aria-hidden="true" className="size-3.5 shrink-0 text-amber-200" />
+                            <span className="flex min-w-0 flex-col leading-tight">
+                              <span>Coup d’envoi</span>
+                              <span className="max-w-48 truncate text-[8px] font-semibold text-white/80">
+                                ES Genech {match.team === 'E1' ? '1' : '2'} · {match.opponent || 'Adversaire'}
+                              </span>
+                            </span>
+                          </span>
+                          <span className="inline-flex items-center gap-0.5 rounded-full bg-white/15 px-1 py-0.5 text-[7px] font-black uppercase tracking-wider">
+                            <span aria-hidden="true" className="size-1 rounded-full bg-rose-300 motion-safe:animate-pulse" />
                             Direct
                           </span>
                         </button>

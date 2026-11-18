@@ -504,7 +504,7 @@ export function MatchDayHome({
                           })}
                           aria-label={`Lancer le direct, ES Genech ${match.team === 'E1' ? '1' : '2'} contre ${match.opponent || 'adversaire'}`}
                           title={`Lancer le match contre ${match.opponent || 'cet adversaire'}`}
-                          className="relative mb-2 mr-2 ml-auto flex size-11 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl border border-emerald-200/70 bg-gradient-to-br from-emerald-600 to-teal-500 text-[7px] font-black uppercase tracking-wide text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:cursor-wait disabled:opacity-60"
+                          className="relative mb-2 mr-2 ml-auto flex size-11 shrink-0 flex-col items-center justify-center gap-0.5 rounded-xl border border-emerald-200/70 bg-gradient-to-br from-emerald-600 to-teal-500 text-[7px] font-black uppercase tracking-wide text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:cursor-wait disabled:opacity-60 sm:hidden"
                         >
                           <span className="relative text-base leading-none motion-safe:animate-bounce">
                             ⚽

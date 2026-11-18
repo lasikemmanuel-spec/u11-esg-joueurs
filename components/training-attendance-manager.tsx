@@ -73,6 +73,8 @@ export function TrainingAttendanceManager({
   const router = useRouter()
   const [date, setDate] = useState('')
   const [query, setQuery] = useState('')
+  const [quickEntryMode, setQuickEntryMode] = useState(false)
+  const [quickStatus, setQuickStatus] = useState<TrainingAttendanceStatus | null>(null)
   const [statuses, setStatuses] = useState<Record<number, TrainingAttendanceStatus | ''>>({})
   const [saving, setSaving] = useState(false)
   const [cancellationSaving, setCancellationSaving] = useState(false)
@@ -100,6 +102,8 @@ export function TrainingAttendanceManager({
         : ''
     }
     setStatuses(next)
+    setQuickEntryMode(false)
+    setQuickStatus(null)
     setMessage('')
     setError('')
     setShowCancellationForm(false)
@@ -128,6 +132,8 @@ export function TrainingAttendanceManager({
   const setAllPresent = () => {
     const next = Object.fromEntries(players.map((player) => [player.number, 'P' as const]))
     setStatuses(next)
+    setQuickEntryMode(true)
+    setQuickStatus(null)
     if (date) {
       saveOfflineAttendance(date, players.map((p) => ({ number: p.number, status: 'P' })))
     }
@@ -138,6 +144,8 @@ export function TrainingAttendanceManager({
   const resetAttendance = () => {
     const next = Object.fromEntries(players.map((player) => [player.number, '' as const]))
     setStatuses(next)
+    setQuickEntryMode(false)
+    setQuickStatus(null)
     if (date) {
       saveOfflineAttendance(date, players.map((p) => ({ number: p.number, status: '' })))
     }
@@ -288,13 +296,56 @@ export function TrainingAttendanceManager({
           </div>
         </div>
       <div className="mt-2 flex flex-col gap-1.5 sm:flex-row sm:justify-end sm:gap-2 xl:mt-4 xl:border-t xl:border-white/10 xl:pt-4">
-        <button type="button" onClick={setAllPresent} disabled={!players.length || loadError || Boolean(savedSession?.cancellation)} aria-label="Marquer tous les joueurs présents" title="Remplace les statuts saisis par Présent pour toute l’équipe ; enregistre ensuite." className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-3 text-xs font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-5 sm:text-sm">
+        <button type="button" onClick={setAllPresent} disabled={!players.length || loadError || Boolean(savedSession?.cancellation)} aria-label="Marquer tous les joueurs présents" title="Marque toute l’équipe présente puis ouvre la correction rapide des exceptions." className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-3 text-xs font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-5 sm:text-sm">
           <UsersRound aria-hidden="true" className="size-4 shrink-0" /><span className="whitespace-nowrap">Marquer tous les joueurs présents</span>
+        </button>
+        <button
+          type="button"
+          aria-pressed={quickEntryMode}
+          onClick={() => {
+            setQuickEntryMode((current) => !current)
+            setQuickStatus(null)
+          }}
+          disabled={!players.length || loadError || Boolean(savedSession?.cancellation)}
+          className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border px-3 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-4 sm:text-sm ${quickEntryMode ? 'border-sky-200 bg-sky-100 text-sky-950' : 'border-white/25 bg-white/10 text-white hover:bg-white/20'}`}
+        >
+          <HeartPulse aria-hidden="true" className="size-4 shrink-0" />
+          {quickEntryMode ? 'Terminer les corrections' : 'Corriger les exceptions'}
         </button>
         <button type="button" onClick={resetAttendance} disabled={!players.length || loadError || counts.filled === 0 || Boolean(savedSession?.cancellation)} title="Efface les choix de cette saisie à l’écran ; le classeur n’est pas modifié." className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 text-[11px] font-bold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 sm:text-xs">
           <RefreshCw aria-hidden="true" className="size-3.5" />Réinitialiser la feuille
         </button>
       </div>
+      {quickEntryMode && (
+        <div className="mt-2 rounded-xl border border-sky-200/20 bg-white/[0.05] p-3">
+          <p className="text-[11px] font-semibold text-white/80">
+            {quickStatus
+              ? quickStatus === 'P'
+                ? 'Touchez les joueurs à remettre présents.'
+                : `Touchez les joueurs à marquer « ${STATUS_PRESENTATION[quickStatus].label} ». Retouchez-les pour les remettre présents.`
+              : 'Choisissez un statut, puis touchez les joueurs concernés.'}
+          </p>
+          <div className="mt-2 grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap">
+            {TRAINING_ATTENDANCE_STATUSES.map((status) => {
+              const presentation = STATUS_PRESENTATION[status.value]
+              const StatusIcon = presentation.icon
+              const selected = quickStatus === status.value
+              return (
+                <button
+                  key={status.value}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => setQuickStatus(status.value)}
+                  className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border px-2 py-1 text-[10px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:text-xs ${selected ? `${presentation.active} ring-2 ring-white/70` : presentation.idle}`}
+                >
+                  <StatusIcon aria-hidden="true" className="size-3.5 shrink-0" />
+                  {status.shortLabel}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      )}
         </>
         )}
       </header>
@@ -387,49 +438,88 @@ export function TrainingAttendanceManager({
             <p role="status" className="rounded-xl bg-muted p-4 text-sm">Aucun joueur ne correspond à « {query} ».</p>
           ) : (
           <ul className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
-            {visiblePlayers.map((player) => (
-              <li key={player.number} className={`group relative overflow-hidden rounded-2xl border bg-card p-3.5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-4 ${statuses[player.number] === 'P' ? 'border-emerald-300/80' : 'border-border'}`}>
-                {statuses[player.number] === 'P' && <div aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-300 to-lime-400" />}
-                <div className="mb-3 flex items-start gap-3">
-                  <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#14234e] to-[#26478c] text-lg font-black text-amber-300 shadow-md ring-2 ring-amber-300/50">{player.number}</span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                      <p className="whitespace-normal break-words text-sm font-black leading-snug text-foreground sm:text-base">{player.firstName} {player.lastName}</p>
-                      {statuses[player.number] ? (
-                        <span className={`inline-flex max-w-full items-center gap-1 whitespace-normal rounded-full border px-2 py-1 text-[9px] font-black leading-tight sm:text-[10px] ${STATUS_PRESENTATION[statuses[player.number] as TrainingAttendanceStatus].idle}`}>
-                          {statuses[player.number] === 'P' && <Check aria-hidden="true" className="size-3 shrink-0" />}
-                          {STATUS_PRESENTATION[statuses[player.number] as TrainingAttendanceStatus].label}
+            {visiblePlayers.map((player) => {
+              const currentStatus = statuses[player.number]
+              const selectedQuickStatus = quickStatus !== null && currentStatus === quickStatus
+              return (
+                <li key={player.number} className={`group relative overflow-hidden rounded-2xl border bg-card p-3.5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-4 ${currentStatus === 'P' ? 'border-emerald-300/80' : 'border-border'} ${quickEntryMode && selectedQuickStatus ? 'ring-2 ring-sky-400' : ''}`}>
+                  {!quickEntryMode && currentStatus === 'P' && <div aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-300 to-lime-400" />}
+                  {quickEntryMode ? (
+                    <button
+                      type="button"
+                      disabled={!quickStatus}
+                      aria-pressed={selectedQuickStatus}
+                      aria-label={quickStatus
+                        ? currentStatus === quickStatus && quickStatus !== 'P'
+                          ? `Remettre ${player.firstName} ${player.lastName} présent`
+                          : `Marquer ${player.firstName} ${player.lastName} : ${STATUS_PRESENTATION[quickStatus].label}`
+                        : `Choisir un statut pour ${player.firstName} ${player.lastName}`}
+                      onClick={() => {
+                        if (!quickStatus) return
+                        const nextStatus: TrainingAttendanceStatus =
+                          quickStatus === 'P' || currentStatus === quickStatus ? 'P' : quickStatus
+                        setStatuses((current) => ({ ...current, [player.number]: nextStatus }))
+                        setMessage('')
+                        setError('')
+                      }}
+                      className="flex min-h-14 w-full items-center gap-3 text-left disabled:cursor-not-allowed"
+                    >
+                      <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#14234e] to-[#26478c] text-lg font-black text-amber-300 shadow-md ring-2 ring-amber-300/50">{player.number}</span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block break-words text-sm font-black leading-snug text-foreground sm:text-base">{player.firstName} {player.lastName}</span>
+                        <span className={`mt-1 inline-flex max-w-full rounded-full border px-2 py-1 text-[9px] font-black leading-tight sm:text-[10px] ${currentStatus ? STATUS_PRESENTATION[currentStatus].idle : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
+                          {currentStatus ? STATUS_PRESENTATION[currentStatus].label : 'À noter'}
                         </span>
-                      ) : <span className="inline-flex rounded-full bg-amber-100 px-2 py-1 text-[9px] font-black text-amber-900 sm:text-[10px]">À noter</span>}
-                    </div>
-                  </div>
-                </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {TRAINING_ATTENDANCE_STATUSES.map((status) => {
-                    const presentation = STATUS_PRESENTATION[status.value]
-                    const StatusIcon = presentation.icon
-                    const selected = statuses[player.number] === status.value
-                    return (
-                      <button
-                        key={status.value}
-                        type="button"
-                        aria-pressed={selected}
-                        aria-label={`Marquer ${player.firstName} ${player.lastName} : ${status.label}`}
-                        onClick={() => {
-                          setStatuses((current) => ({ ...current, [player.number]: status.value }))
-                          setMessage('')
-                          setError('')
-                        }}
-                        className={`flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl border px-2 text-[10px] font-black leading-tight transition active:scale-95 sm:text-[11px] ${selected ? `${presentation.active} shadow-sm ring-2 ring-current/15` : `${presentation.idle} hover:-translate-y-0.5`}`}
-                      >
-                        <StatusIcon aria-hidden="true" className="size-4" />
-                        <span>{status.shortLabel}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              </li>
-            ))}
+                      </span>
+                      <span className={`shrink-0 rounded-lg px-2 py-1 text-[9px] font-black ${selectedQuickStatus ? 'bg-sky-100 text-sky-900' : 'bg-muted text-muted-foreground'}`}>
+                        {selectedQuickStatus ? '✓ Fait' : quickStatus ? 'Marquer' : 'Choisir'}
+                      </span>
+                    </button>
+                  ) : (
+                    <>
+                      <div className="mb-3 flex items-start gap-3">
+                        <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#14234e] to-[#26478c] text-lg font-black text-amber-300 shadow-md ring-2 ring-amber-300/50">{player.number}</span>
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <p className="whitespace-normal break-words text-sm font-black leading-snug text-foreground sm:text-base">{player.firstName} {player.lastName}</p>
+                            {currentStatus ? (
+                              <span className={`inline-flex max-w-full items-center gap-1 whitespace-normal rounded-full border px-2 py-1 text-[9px] font-black leading-tight sm:text-[10px] ${STATUS_PRESENTATION[currentStatus].idle}`}>
+                                {currentStatus === 'P' && <Check aria-hidden="true" className="size-3 shrink-0" />}
+                                {STATUS_PRESENTATION[currentStatus].label}
+                              </span>
+                            ) : <span className="inline-flex rounded-full bg-amber-100 px-2 py-1 text-[9px] font-black text-amber-900 sm:text-[10px]">À noter</span>}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        {TRAINING_ATTENDANCE_STATUSES.map((status) => {
+                          const presentation = STATUS_PRESENTATION[status.value]
+                          const StatusIcon = presentation.icon
+                          const selected = currentStatus === status.value
+                          return (
+                            <button
+                              key={status.value}
+                              type="button"
+                              aria-pressed={selected}
+                              aria-label={`Marquer ${player.firstName} ${player.lastName} : ${status.label}`}
+                              onClick={() => {
+                                setStatuses((current) => ({ ...current, [player.number]: status.value }))
+                                setMessage('')
+                                setError('')
+                              }}
+                              className={`flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl border px-2 text-[10px] font-black leading-tight transition active:scale-95 sm:text-[11px] ${selected ? `${presentation.active} shadow-sm ring-2 ring-current/15` : `${presentation.idle} hover:-translate-y-0.5`}`}
+                            >
+                              <StatusIcon aria-hidden="true" className="size-4" />
+                              <span>{status.shortLabel}</span>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    </>
+                  )}
+                </li>
+              )
+            })}
           </ul>
           )}
 

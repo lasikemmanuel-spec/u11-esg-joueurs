@@ -42,7 +42,7 @@ export function TrainingEvolutionChart({
 
     // Exclure les séances futures
     const pastSessions = sessions
-      .filter((session) => session.date <= today)
+      .filter((session) => !session.cancellation && session.date <= today)
       .sort((a, b) => a.date.localeCompare(b.date))
 
     let cumulatedPresents = 0

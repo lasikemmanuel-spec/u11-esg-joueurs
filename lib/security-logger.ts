@@ -16,6 +16,8 @@ export type SecurityEventType =
   | 'match_modified'
   | 'callup_saved'
   | 'training_attendance_saved'
+  | 'training_session_cancelled'
+  | 'training_session_reinstated'
   | 'lineup_saved'
   | 'live_match_modified'
   | 'directory_modified'
@@ -58,6 +60,8 @@ export function logSecurityEvent(event: Omit<SecurityEvent, 'timestamp'>) {
     match_modified: '⚽',
     callup_saved: '📋',
     training_attendance_saved: '📅',
+    training_session_cancelled: '🌧️',
+    training_session_reinstated: '✅',
     lineup_saved: '👕',
     live_match_modified: '🔴',
     directory_modified: '📇',

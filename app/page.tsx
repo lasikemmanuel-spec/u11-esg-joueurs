@@ -11,6 +11,7 @@ import { getConvocations, type ConvocationsData } from '@/lib/convocations'
 import { getMatchResults, type TeamMatchResults } from '@/lib/match-results'
 import { getCohesionDays, type CohesionDay } from '@/lib/cohesion'
 import { getTrainingAttendance, type TrainingAttendanceSession } from '@/lib/training-attendance'
+import { calculateTrainingAttendanceRate, getTrainingAttendanceCounts } from '@/lib/training-attendance-metrics'
 
 export const dynamic = 'force-dynamic'
 
@@ -82,7 +83,27 @@ export default async function Page() {
     }) : { data: fallbackTrainingAttendance, error: false },
   ])
   const roster = rosterResult.data
-  const stats = statsResult.data
+  const trainingAttendance = trainingAttendanceResult.data
+  const hasTrainingCancellation = trainingAttendance.some((session) => session.cancellation)
+  const stats = hasTrainingCancellation
+    ? (() => {
+      let presents = 0
+      let countedSessions = 0
+      const players = statsResult.data.players.map((player) => {
+        const counts = getTrainingAttendanceCounts(trainingAttendance, player.number)
+        presents += counts.presents
+        countedSessions += counts.countedSessions
+        return {
+          ...player,
+          trainingRate: calculateTrainingAttendanceRate(counts.presents, counts.countedSessions),
+        }
+      })
+      return {
+        players,
+        teamTrainingRate: calculateTrainingAttendanceRate(presents, countedSessions),
+      }
+    })()
+    : statsResult.data
   const convocations = convocationsResult.data
   const matchResults = matchResultsResult.data
   const publicPlayers: PublicPlayer[] = roster.players.map(
@@ -137,7 +158,7 @@ export default async function Page() {
         convocationDates={convocations.matchDates}
         presentCounts={convocations.presentCounts}
         matchResults={matchResults}
-        trainingAttendance={trainingAttendanceResult.data}
+        trainingAttendance={trainingAttendance}
         trainingAttendanceError={trainingAttendanceResult.error}
         cohesionDays={cohesionResult.data}
         matchDataErrors={matchDataErrors}

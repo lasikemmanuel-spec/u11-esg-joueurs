@@ -33,6 +33,7 @@ type ActiveLiveMatch = {
   match: MatchSheetEntry
   phase: 'firstHalf' | 'halftime' | 'secondHalf' | 'secondHalftime' | 'thirdPeriod' | 'finished'
 }
+type WhatsAppPrefill = { templateId: string; date: string; requestId: number }
 
 const EMPTY_PLAYER_NUMBERS: number[] = []
 
@@ -124,6 +125,7 @@ export function DashboardTabs({
 }) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabKey>('matches')
+  const [whatsAppPrefill, setWhatsAppPrefill] = useState<WhatsAppPrefill | null>(null)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [statsSection, setStatsSection] = useState<StatsSection>('players')
   const [matchFocuses, setMatchFocuses] = useState<Partial<Record<'E1' | 'E2', MatchFocus>>>({})
@@ -620,7 +622,7 @@ export function DashboardTabs({
           </div>
         )}
         {activeTab === 'whatsapp' && educatorIdentity && (
-          <WhatsAppMessageCenter />
+          <WhatsAppMessageCenter prefill={whatsAppPrefill} />
         )}
         {activeTab === 'roster' && (
           <PositionBreakdown
@@ -633,7 +635,19 @@ export function DashboardTabs({
           />
         )}
         {activeTab === 'training' && educatorAccess === 'authenticated' && educatorIdentity && (
-          <TrainingAttendanceManager players={rosterPlayers} sessions={trainingAttendance} loadError={trainingAttendanceError} />
+          <TrainingAttendanceManager
+            players={rosterPlayers}
+            sessions={trainingAttendance}
+            loadError={trainingAttendanceError}
+            onPrepareCancellation={(date) => {
+              setWhatsAppPrefill({
+                templateId: 'tpl-annulation',
+                date,
+                requestId: Date.now(),
+              })
+              setActiveTab('whatsapp')
+            }}
+          />
         )}
         {activeTab === 'educator' && (
           <div className="flex flex-col gap-4">

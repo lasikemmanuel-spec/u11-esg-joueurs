@@ -6,6 +6,7 @@ import {
   updateAuthenticatedSheetValues,
 } from '@/lib/google-sheets'
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
+import { getTrainingCancellations } from '@/lib/training-cancellations'
 import type { TrainingAttendanceEntry, TrainingAttendanceSession } from '@/lib/training-attendance-shared'
 
 export type { TrainingAttendanceEntry, TrainingAttendanceSession } from '@/lib/training-attendance-shared'
@@ -53,7 +54,8 @@ export async function getTrainingAttendance(): Promise<TrainingAttendanceSession
     sessionsByDate.set(date, { date, playerStatuses: {} })
   })
 
-  if (sessionsByDate.size === 0) {
+  const cancellations = await getTrainingCancellations()
+  if (sessionsByDate.size === 0 && cancellations.length === 0) {
     throw new Error('Aucune séance datée dans l’onglet « ' + TAB + ' ».')
   }
 
@@ -64,6 +66,15 @@ export async function getTrainingAttendance(): Promise<TrainingAttendanceSession
       const column = rows[headerRowIndex].findIndex((header) => sessionDate(header) === date)
       session.playerStatuses[number] = row[column]?.trim() ?? ''
     }
+  }
+
+  for (const cancellation of cancellations) {
+    const session = sessionsByDate.get(cancellation.date) ?? {
+      date: cancellation.date,
+      playerStatuses: {},
+    }
+    session.cancellation = cancellation
+    sessionsByDate.set(cancellation.date, session)
   }
 
   return [...sessionsByDate.values()].sort((a, b) => a.date.localeCompare(b.date))

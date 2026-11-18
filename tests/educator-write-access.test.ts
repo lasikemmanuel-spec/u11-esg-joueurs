@@ -34,6 +34,14 @@ vi.mock('@/lib/convocations', () => ({
 vi.mock('@/lib/players', () => ({
   getRoster: vi.fn(),
 }))
+vi.mock('@/lib/training-attendance', () => ({
+  saveTrainingAttendance: vi.fn(),
+}))
+vi.mock('@/lib/training-cancellations', () => ({
+  getTrainingCancellations: vi.fn(),
+  removeTrainingCancellation: vi.fn(),
+  saveTrainingCancellation: vi.fn(),
+}))
 vi.mock('@/lib/security-logger', () => ({
   logSecurityEvent: vi.fn(),
   getClientIp: vi.fn(() => '127.0.0.1'),
@@ -44,6 +52,8 @@ vi.mock('next/cache', () => ({
 }))
 
 import { getEducatorSession } from '@/lib/educator-auth'
+import { getTrainingCancellations as getStoredTrainingCancellations } from '@/lib/training-cancellations'
+import { saveTrainingAttendance } from '@/lib/training-attendance'
 import { saveOwnEducatorDirectoryEntry } from '@/lib/educator-directory'
 import { migrateEducatorPhones } from '@/lib/educator-phones'
 import { GET as getLineups } from '@/app/api/educators/match-lineups/route'
@@ -52,6 +62,16 @@ import { DELETE as deleteMatch, POST as saveMatchResult } from '@/app/api/match-
 import { deleteMatchDay, deleteMatchResult, writeMatchResult } from '@/lib/match-results'
 import { PUT as saveOwnDirectoryEntry } from '@/app/api/educators/directory/me/route'
 import { POST as migrateContacts } from '@/app/api/educators/contacts/migrate/route'
+import {
+  DELETE as reinstateTrainingSession,
+  GET as getTrainingCancellations,
+  POST as cancelTrainingSession,
+} from '@/app/api/educators/training-cancellations/route'
+import { POST as saveTrainingSessionAttendance } from '@/app/api/educators/training-attendance/route'
+import {
+  removeTrainingCancellation,
+  saveTrainingCancellation,
+} from '@/lib/training-cancellations'
 
 type Session = { username: string; displayName: string; role: 'reader' | 'educator' | 'admin' }
 
@@ -78,6 +98,7 @@ describe('write and read access boundaries', () => {
     vi.stubEnv('VERCEL_ENV', 'production')
     vi.mocked(saveOwnEducatorDirectoryEntry).mockResolvedValue({ id: 'entry' })
     vi.mocked(migrateEducatorPhones).mockResolvedValue(0)
+    vi.mocked(getStoredTrainingCancellations).mockResolvedValue([])
   })
 
   afterEach(() => {
@@ -105,6 +126,101 @@ describe('write and read access boundaries', () => {
     const response = await saveCallups(request('/api/educators/callups', 'POST', {}))
 
     expect(response.status).toBe(status)
+  })
+
+  it.each([
+    ['public', null, 401],
+    ['reader', reader, 403],
+  ] as const)('denies %s access to reading training cancellations', async (_label, session, status) => {
+    vi.mocked(getEducatorSession).mockResolvedValue(session)
+
+    const response = await getTrainingCancellations(request('/api/educators/training-cancellations', 'GET'))
+
+    expect(response.status).toBe(status)
+  })
+
+  it.each([
+    ['public', null, 401],
+    ['reader', reader, 403],
+  ] as const)('denies %s access to cancelling a training session', async (_label, session, status) => {
+    vi.mocked(getEducatorSession).mockResolvedValue(session)
+
+    const response = await cancelTrainingSession(request('/api/educators/training-cancellations', 'POST', {
+      date: '2026-11-17',
+      reason: 'Météo',
+    }))
+
+    expect(response.status).toBe(status)
+    expect(saveTrainingCancellation).not.toHaveBeenCalled()
+  })
+
+  it('requires same-origin requests when cancelling a training session', async () => {
+    vi.mocked(getEducatorSession).mockResolvedValue(educator)
+
+    const response = await cancelTrainingSession(request(
+      '/api/educators/training-cancellations',
+      'POST',
+      { date: '2026-11-17', reason: 'Météo' },
+      false,
+    ))
+
+    expect(response.status).toBe(403)
+    expect(saveTrainingCancellation).not.toHaveBeenCalled()
+  })
+
+  it('validates cancellation input before writing', async () => {
+    vi.mocked(getEducatorSession).mockResolvedValue(educator)
+
+    const response = await cancelTrainingSession(request('/api/educators/training-cancellations', 'POST', {
+      date: '2026-02-30',
+      reason: 'Météo',
+    }))
+
+    expect(response.status).toBe(400)
+    expect(saveTrainingCancellation).not.toHaveBeenCalled()
+  })
+
+  it('allows educators to cancel and reinstate a training session', async () => {
+    vi.mocked(getEducatorSession).mockResolvedValue(educator)
+    vi.mocked(saveTrainingCancellation).mockResolvedValue(undefined)
+    vi.mocked(removeTrainingCancellation).mockResolvedValue(true)
+
+    const cancelResponse = await cancelTrainingSession(request('/api/educators/training-cancellations', 'POST', {
+      date: '2026-11-17',
+      reason: 'Météo',
+    }))
+    const reinstateResponse = await reinstateTrainingSession(request(
+      '/api/educators/training-cancellations?date=2026-11-17',
+      'DELETE',
+    ))
+
+    expect(cancelResponse.status).toBe(200)
+    expect(reinstateResponse.status).toBe(200)
+    expect(saveTrainingCancellation).toHaveBeenCalledWith(
+      '2026-11-17',
+      'Météo',
+      'coach',
+      expect.any(String),
+    )
+    expect(removeTrainingCancellation).toHaveBeenCalledWith('2026-11-17')
+  })
+
+  it('prevents saving attendance for a cancelled training session', async () => {
+    vi.mocked(getEducatorSession).mockResolvedValue(educator)
+    vi.mocked(getStoredTrainingCancellations).mockResolvedValue([{
+      date: '2026-11-17',
+      reason: 'Météo',
+      cancelledBy: 'coach',
+      cancelledAt: '2026-11-17T12:00:00.000Z',
+    }])
+
+    const response = await saveTrainingSessionAttendance(request('/api/educators/training-attendance', 'POST', {
+      date: '2026-11-17',
+      entries: [{ number: 7, status: 'P' }],
+    }))
+
+    expect(response.status).toBe(409)
+    expect(saveTrainingAttendance).not.toHaveBeenCalled()
   })
 
   it.each([

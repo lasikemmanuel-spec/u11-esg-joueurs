@@ -19,6 +19,7 @@ export function getTrainingAttendanceCounts(
   let countedSessions = 0
 
   for (const session of sessions) {
+    if (session.cancellation) continue
     const status = session.playerStatuses[playerNumber]?.trim() ?? ''
     if (!isCountedTrainingStatus(status)) continue
     countedSessions += 1

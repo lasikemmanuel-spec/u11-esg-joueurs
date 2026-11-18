@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { getEducatorSession, hasEducatorAccess, isSameOriginRequest } from '@/lib/educator-auth'
 import { getRoster } from '@/lib/players'
+import { getTrainingCancellations } from '@/lib/training-cancellations'
 import { saveTrainingAttendance } from '@/lib/training-attendance'
 import { TRAINING_ATTENDANCE_STATUSES, type TrainingAttendanceEntry } from '@/lib/training-attendance-shared'
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
@@ -91,6 +92,11 @@ export async function POST(request: Request) {
   }
 
   try {
+    const cancellations = await getTrainingCancellations()
+    if (cancellations.some((cancellation) => cancellation.date === date)) {
+      return response({ error: 'Cette séance est annulée. Rétablis-la avant de saisir les présences.' }, 409)
+    }
+
     const roster = await getRoster()
     const rosterNumbers = new Set(roster.players.map((player) => player.number))
     if (

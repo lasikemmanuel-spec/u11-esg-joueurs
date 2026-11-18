@@ -43,4 +43,22 @@ describe('training attendance metrics', () => {
     expect(counts).toEqual({ presents: 0, countedSessions: 0 })
     expect(calculateTrainingAttendanceRate(counts.presents, counts.countedSessions)).toBeNull()
   })
+
+  it('excludes cancelled sessions even if statuses were recorded before cancellation', () => {
+    const sessions: TrainingAttendanceSession[] = [
+      { date: '2026-11-16', playerStatuses: { 1: 'P' } },
+      {
+        date: '2026-11-17',
+        playerStatuses: { 1: 'AI' },
+        cancellation: {
+          date: '2026-11-17',
+          reason: 'Météo',
+          cancelledBy: 'coach',
+          cancelledAt: '2026-11-17T12:00:00.000Z',
+        },
+      },
+    ]
+
+    expect(getTrainingAttendanceCounts(sessions, 1)).toEqual({ presents: 1, countedSessions: 1 })
+  })
 })

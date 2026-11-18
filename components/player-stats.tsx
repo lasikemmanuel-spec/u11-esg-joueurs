@@ -75,10 +75,11 @@ function TrainingHistory({ sessions, playerNumber }: { sessions: TrainingAttenda
   const today = localToday()
   // Exclure les séances futures
   const pastSessions = sessions.filter((session) => session.date <= today)
+  const activeSessions = pastSessions.filter((session) => !session.cancellation)
   if (pastSessions.length === 0) return null
   const orderedSessions = [...pastSessions].sort((a, b) => b.date.localeCompare(a.date))
-  const recordedCount = pastSessions.filter((session) => Boolean(session.playerStatuses[playerNumber]?.trim())).length
-  const presentCount = pastSessions.filter((session) => session.playerStatuses[playerNumber]?.trim() === 'P').length
+  const recordedCount = activeSessions.filter((session) => Boolean(session.playerStatuses[playerNumber]?.trim())).length
+  const presentCount = activeSessions.filter((session) => session.playerStatuses[playerNumber]?.trim() === 'P').length
 
   return (
     <section className="flex flex-col gap-3 border-t pt-3" aria-label="Historique des entraînements">
@@ -86,7 +87,7 @@ function TrainingHistory({ sessions, playerNumber }: { sessions: TrainingAttenda
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h4 className="text-xs font-bold text-primary">Détail des séances</h4>
-          <p className="text-[10px] text-muted-foreground">{presentCount} présence{presentCount === 1 ? '' : 's'} · {recordedCount}/{pastSessions.length} statuts renseignés</p>
+          <p className="text-[10px] text-muted-foreground">{presentCount} présence{presentCount === 1 ? '' : 's'} · {recordedCount}/{activeSessions.length} statuts renseignés</p>
         </div>
         {pastSessions.length > 5 && (
           <button
@@ -101,6 +102,15 @@ function TrainingHistory({ sessions, playerNumber }: { sessions: TrainingAttenda
       </div>
       <ol className="flex flex-wrap gap-1.5">
         {orderedSessions.slice(0, showAll ? undefined : 5).map((session) => {
+          if (session.cancellation) {
+            const [year, month, day] = session.date.split('-')
+            return (
+              <li key={session.date} title={`${day}/${month}/${year} : séance annulée · ${session.cancellation.reason}`} className="flex min-w-20 max-w-32 flex-col items-center rounded-lg border border-slate-300 bg-slate-100 px-2 py-1 text-center text-[10px] leading-tight text-slate-600">
+                <span className="font-mono">{day}/{month}</span>
+                <span className="font-bold">Annulée</span>
+              </li>
+            )
+          }
           const status = session.playerStatuses[playerNumber]?.trim() ?? ''
           const style = TRAINING_STYLES[status] ?? { label: 'Non saisi', className: 'border border-slate-300 bg-slate-100 text-slate-600' }
           const [year, month, day] = session.date.split('-')

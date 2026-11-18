@@ -26,7 +26,21 @@ function todayLabel() {
   }).format(new Date())
 }
 
-export function WhatsAppMessageCenter() {
+function formatDateLabel(date: string) {
+  return new Intl.DateTimeFormat('fr-FR', {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'Europe/Paris',
+  }).format(new Date(`${date}T12:00:00Z`))
+}
+
+export function WhatsAppMessageCenter({
+  prefill,
+}: {
+  prefill?: { templateId: string; date: string; requestId: number } | null
+}) {
   const [groups, setGroups] = useState<WhatsAppGroup[]>(DEFAULT_WHATSAPP_GROUPS)
   const [templates, setTemplates] = useState<WhatsAppTemplate[]>(DEFAULT_WHATSAPP_TEMPLATES)
   const [selectedGroupId, setSelectedGroupId] = useState('')
@@ -34,7 +48,7 @@ export function WhatsAppMessageCenter() {
   const [message, setMessage] = useState('')
   const [showManager, setShowManager] = useState(false)
   const [notice, setNotice] = useState('')
-  const [dateLabel] = useState(todayLabel)
+  const [dateLabel, setDateLabel] = useState(todayLabel)
 
   useEffect(() => {
     const storedGroups = getStoredWhatsAppGroups()
@@ -63,6 +77,21 @@ export function WhatsAppMessageCenter() {
       setSelectedTemplateId(storedTemplates[0]?.id ?? '')
     }
   }, [])
+
+  useEffect(() => {
+    if (!prefill) return
+    const template = templates.find((item) => item.id === prefill.templateId)
+    if (!template) {
+      setNotice('Le modèle demandé n’est plus disponible. Choisis un modèle dans la liste.')
+      return
+    }
+    setSelectedTemplateId(template.id)
+    setDateLabel(formatDateLabel(prefill.date))
+    if (template.defaultGroupId && groups.some((group) => group.id === template.defaultGroupId)) {
+      setSelectedGroupId(template.defaultGroupId)
+    }
+    setNotice('Message d’annulation préparé. Vérifie son contenu avant de l’envoyer.')
+  }, [prefill, templates, groups])
 
   const selectedTemplate = useMemo(
     () => templates.find((template) => template.id === selectedTemplateId) ?? templates[0],

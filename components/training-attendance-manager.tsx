@@ -5,10 +5,13 @@ import { useRouter } from 'next/navigation'
 import {
   CalendarDays,
   Check,
+  CloudRain,
   CircleCheck,
   CircleHelp,
   HeartPulse,
+  MessageCircle,
   RefreshCw,
+  RotateCcw,
   Save,
   Search,
   ShieldCheck,
@@ -60,16 +63,22 @@ export function TrainingAttendanceManager({
   players,
   sessions,
   loadError,
+  onPrepareCancellation,
 }: {
   players: PublicPlayer[]
   sessions: TrainingAttendanceSession[]
   loadError: boolean
+  onPrepareCancellation: (date: string) => void
 }) {
   const router = useRouter()
   const [date, setDate] = useState('')
   const [query, setQuery] = useState('')
   const [statuses, setStatuses] = useState<Record<number, TrainingAttendanceStatus | ''>>({})
   const [saving, setSaving] = useState(false)
+  const [cancellationSaving, setCancellationSaving] = useState(false)
+  const [showCancellationForm, setShowCancellationForm] = useState(false)
+  const [cancellationReason, setCancellationReason] = useState('Météo')
+  const [cancellationError, setCancellationError] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
@@ -85,7 +94,7 @@ export function TrainingAttendanceManager({
 
     for (const player of players) {
       const serverValue = savedSession?.playerStatuses[player.number]
-      const value = serverValue ?? offlineMap?.[player.number] ?? ''
+      const value = savedSession?.cancellation ? '' : serverValue ?? offlineMap?.[player.number] ?? ''
       next[player.number] = TRAINING_ATTENDANCE_STATUSES.some((status) => status.value === value)
         ? value as TrainingAttendanceStatus
         : ''
@@ -93,6 +102,8 @@ export function TrainingAttendanceManager({
     setStatuses(next)
     setMessage('')
     setError('')
+    setShowCancellationForm(false)
+    setCancellationError('')
   }, [date, savedSession, players])
 
   const counts = useMemo(() => {
@@ -134,7 +145,50 @@ export function TrainingAttendanceManager({
     setError('')
   }
 
+  const cancelSession = async () => {
+    if (!date || !cancellationReason.trim()) return
+    setCancellationSaving(true)
+    setCancellationError('')
+    try {
+      const response = await fetch('/api/educators/training-cancellations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date, reason: cancellationReason }),
+      })
+      const result = await response.json() as { error?: string }
+      if (!response.ok) throw new Error(result.error ?? 'Impossible d’annuler la séance.')
+      setShowCancellationForm(false)
+      removePendingAttendance(date)
+      saveOfflineAttendance(date, players.map((player) => ({ number: player.number, status: '' })))
+      setStatuses(Object.fromEntries(players.map((player) => [player.number, ''])))
+      router.refresh()
+    } catch (cause) {
+      setCancellationError(cause instanceof Error ? cause.message : 'Impossible d’annuler la séance.')
+    } finally {
+      setCancellationSaving(false)
+    }
+  }
+
+  const reinstateSession = async () => {
+    if (!date) return
+    setCancellationSaving(true)
+    setCancellationError('')
+    try {
+      const response = await fetch(`/api/educators/training-cancellations?date=${encodeURIComponent(date)}`, {
+        method: 'DELETE',
+      })
+      const result = await response.json() as { error?: string }
+      if (!response.ok) throw new Error(result.error ?? 'Impossible de rétablir la séance.')
+      router.refresh()
+    } catch (cause) {
+      setCancellationError(cause instanceof Error ? cause.message : 'Impossible de rétablir la séance.')
+    } finally {
+      setCancellationSaving(false)
+    }
+  }
+
   const save = async () => {
+    if (savedSession?.cancellation) return
     setSaving(true)
     setMessage('')
     setError('')
@@ -176,7 +230,7 @@ export function TrainingAttendanceManager({
     }
   }
 
-  const canSave = Boolean(date) && !loadError && players.length > 0 && counts.missing === 0 && !saving
+  const canSave = Boolean(date) && !loadError && !savedSession?.cancellation && players.length > 0 && counts.missing === 0 && !saving && !cancellationSaving
   const completion = players.length ? Math.round(counts.filled / players.length * 100) : 0
 
   return (
@@ -208,7 +262,13 @@ export function TrainingAttendanceManager({
           </div>
         </div>
 
-        <div className="mt-3 grid gap-3 rounded-2xl border border-white/10 bg-white/[0.07] p-3 sm:mt-6 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-4 sm:p-5">
+        {savedSession?.cancellation ? (
+          <p className="mt-3 rounded-2xl border border-sky-200/30 bg-sky-100/10 p-4 text-sm font-bold text-sky-100 sm:mt-6">
+            Séance annulée · exclue des statistiques de présence
+          </p>
+        ) : (
+        <>
+          <div className="mt-3 grid gap-3 rounded-2xl border border-white/10 bg-white/[0.07] p-3 sm:mt-6 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-4 sm:p-5">
           <div>
             <div className="flex flex-wrap items-end justify-between gap-2">
               <div>
@@ -228,13 +288,15 @@ export function TrainingAttendanceManager({
           </div>
         </div>
       <div className="mt-2 flex flex-col gap-1.5 sm:flex-row sm:justify-end sm:gap-2 xl:mt-4 xl:border-t xl:border-white/10 xl:pt-4">
-        <button type="button" onClick={setAllPresent} disabled={!players.length || loadError} aria-label="Marquer tous les joueurs présents" title="Remplace les statuts saisis par Présent pour toute l’équipe ; enregistre ensuite." className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-3 text-xs font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-5 sm:text-sm">
+        <button type="button" onClick={setAllPresent} disabled={!players.length || loadError || Boolean(savedSession?.cancellation)} aria-label="Marquer tous les joueurs présents" title="Remplace les statuts saisis par Présent pour toute l’équipe ; enregistre ensuite." className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-3 text-xs font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-5 sm:text-sm">
           <UsersRound aria-hidden="true" className="size-4 shrink-0" /><span className="whitespace-nowrap">Marquer tous les joueurs présents</span>
         </button>
-        <button type="button" onClick={resetAttendance} disabled={!players.length || loadError || counts.filled === 0} title="Efface les choix de cette saisie à l’écran ; le classeur n’est pas modifié." className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 text-[11px] font-bold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 sm:text-xs">
+        <button type="button" onClick={resetAttendance} disabled={!players.length || loadError || counts.filled === 0 || Boolean(savedSession?.cancellation)} title="Efface les choix de cette saisie à l’écran ; le classeur n’est pas modifié." className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 text-[11px] font-bold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 sm:text-xs">
           <RefreshCw aria-hidden="true" className="size-3.5" />Réinitialiser la feuille
         </button>
       </div>
+        </>
+        )}
       </header>
 
       {loadError && (
@@ -245,7 +307,59 @@ export function TrainingAttendanceManager({
         </div>
       )}
 
-      {players.length === 0 ? (
+      {savedSession?.cancellation ? (
+        <section className="rounded-2xl border border-sky-300 bg-sky-50 p-4 text-sky-950 shadow-sm sm:p-5" aria-labelledby="training-cancelled-title">
+          <div className="flex items-start gap-3">
+            <CloudRain aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-sky-700" />
+            <div className="min-w-0 flex-1">
+              <h3 id="training-cancelled-title" className="font-black">Séance annulée · {formatDate(date)}</h3>
+              <p className="mt-1 text-sm">Motif : {savedSession.cancellation.reason}</p>
+              <p className="mt-1 text-xs text-sky-800">Cette séance est exclue des statistiques de présence.</p>
+              <p className="mt-1 text-xs text-sky-800">Enregistrée par {savedSession.cancellation.cancelledBy}.</p>
+            </div>
+          </div>
+          <div className="mt-4 flex flex-wrap gap-2 pl-8">
+            <button type="button" onClick={() => onPrepareCancellation(date)} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#25D366] px-4 text-sm font-bold text-white shadow-sm hover:brightness-105">
+              <MessageCircle aria-hidden="true" className="size-4" />Préparer le message WhatsApp
+            </button>
+            <button type="button" onClick={() => void reinstateSession()} disabled={cancellationSaving || loadError} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-sky-300 bg-white px-4 text-sm font-bold text-sky-950 hover:bg-sky-100 disabled:opacity-50">
+              <RotateCcw aria-hidden="true" className="size-4" />{cancellationSaving ? 'Rétablissement…' : 'Rétablir la séance'}
+            </button>
+          </div>
+          {cancellationError && <p role="alert" className="mt-3 pl-8 text-sm font-semibold text-rose-700">{cancellationError}</p>}
+        </section>
+      ) : (
+        <>
+          {!loadError && (
+            <section className="rounded-2xl border border-sky-200 bg-card p-4 shadow-sm">
+              {!showCancellationForm ? (
+                <button type="button" onClick={() => setShowCancellationForm(true)} disabled={!date || saving} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-sky-300 bg-sky-50 px-4 text-sm font-bold text-sky-950 hover:bg-sky-100 disabled:opacity-50">
+                  <CloudRain aria-hidden="true" className="size-4" />Annuler cette séance
+                </button>
+              ) : (
+                <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                  <label className="grid gap-1 text-sm font-bold text-foreground">
+                    Motif de l’annulation
+                    <input
+                      type="text"
+                      maxLength={240}
+                      value={cancellationReason}
+                      onChange={(event) => setCancellationReason(event.target.value)}
+                      className="h-11 rounded-xl border border-border bg-background px-3 font-normal"
+                    />
+                  </label>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setShowCancellationForm(false)} disabled={cancellationSaving} className="min-h-11 rounded-xl px-4 text-sm font-bold text-muted-foreground hover:bg-muted disabled:opacity-50">Retour</button>
+                    <button type="button" onClick={() => void cancelSession()} disabled={!date || !cancellationReason.trim() || saving || cancellationSaving} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-sky-700 px-4 text-sm font-bold text-white hover:bg-sky-800 disabled:opacity-50">
+                      <CloudRain aria-hidden="true" className="size-4" />{cancellationSaving ? 'Enregistrement…' : 'Confirmer l’annulation'}
+                    </button>
+                  </div>
+                </div>
+              )}
+              {cancellationError && <p role="alert" className="mt-3 text-sm font-semibold text-rose-700">{cancellationError}</p>}
+            </section>
+          )}
+          {players.length === 0 ? (
         <p role="status" className="rounded-xl bg-muted p-4 text-sm">Aucun joueur dans l’effectif.</p>
       ) : (
         <>
@@ -325,6 +439,8 @@ export function TrainingAttendanceManager({
           </footer>
           {message && <p role="status" className="rounded-lg bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900">{message}</p>}
           {error && <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{error}</p>}
+        </>
+      )}
         </>
       )}
     </section>

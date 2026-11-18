@@ -1,3 +1,5 @@
+import type { TrainingCancellation } from '@/lib/training-cancellations-shared'
+
 export const TRAINING_ATTENDANCE_STATUSES = [
   { value: 'P', label: 'Présent', shortLabel: 'Présent' },
   { value: 'AJ', label: 'Absence justifiée', shortLabel: 'Absence justifiée' },
@@ -11,6 +13,7 @@ export type TrainingAttendanceStatus = (typeof TRAINING_ATTENDANCE_STATUSES)[num
 export type TrainingAttendanceSession = {
   date: string
   playerStatuses: Record<number, string>
+  cancellation?: TrainingCancellation
 }
 
 export type TrainingAttendanceEntry = {

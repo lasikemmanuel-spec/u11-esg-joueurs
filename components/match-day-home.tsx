@@ -67,11 +67,11 @@ function ConvocationOverlay({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="absolute bottom-2.5 right-3 z-10 inline-flex min-h-9 min-w-10 items-center justify-center gap-1.5 rounded-full border border-white/20 bg-[#172554]/65 px-2.5 text-[11px] font-black text-white shadow-sm backdrop-blur transition hover:border-amber-200/70 hover:bg-[#172554]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
+        className="absolute bottom-2 right-2 z-10 inline-flex min-h-8 min-w-9 items-center justify-center gap-1 rounded-full border border-white/20 bg-[#172554]/65 px-2 text-[10px] font-black text-white shadow-sm backdrop-blur transition hover:border-amber-200/70 hover:bg-[#172554]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
         aria-haspopup="dialog"
         aria-label={`Voir les ${players.length} convoqués de ${teamName}`}
       >
-        <UsersRound aria-hidden="true" className="size-4 text-amber-200" />
+        <UsersRound aria-hidden="true" className="size-3.5 text-amber-200" />
         <span>{players.length}</span>
       </button>
       {open && (
@@ -407,7 +407,7 @@ export function MatchDayHome({
                   year: 'numeric',
                 })}
               </p>
-              <div className="mt-4 grid items-stretch gap-2 sm:grid-cols-2">
+              <div className="mt-3 grid items-stretch gap-1.5 sm:grid-cols-2">
                 {matchesOnPlannedDate.map((match) => {
                   const calledPlayers = convocations.flatMap((player) => {
                     const callup = player.matches.find((item) =>
@@ -432,14 +432,14 @@ export function MatchDayHome({
                         onClick={() => onSelectMatch(match)}
                         aria-label={`Ouvrir la feuille de match, ES Genech ${match.team === 'E1' ? '1' : '2'} contre ${match.opponent || 'adversaire à préciser'}`}
                         className={[
-                          'group flex w-full min-w-0 items-center gap-3 rounded-2xl border p-3 pb-12 text-left shadow-md backdrop-blur-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:flex-1',
+                          'group flex w-full min-w-0 items-center gap-2.5 rounded-2xl border p-2.5 pb-10 text-left shadow-md backdrop-blur-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:flex-1',
                           match.team === 'E1'
                             ? 'border-sky-300/50 bg-gradient-to-br from-sky-400/20 to-blue-950/20 hover:border-sky-200'
                             : 'border-amber-300/60 bg-gradient-to-br from-amber-400/20 to-blue-950/20 hover:border-amber-200',
                         ].join(' ')}
                       >
                         <ClubCrest className={[
-                          'size-12 shrink-0 rounded-full ring-2 shadow-md transition-transform group-hover:scale-105',
+                          'size-11 shrink-0 rounded-full ring-2 shadow-md transition-transform group-hover:scale-105',
                           match.team === 'E1' ? 'ring-sky-300' : 'ring-amber-300',
                         ].join(' ')} />
                         <div className="min-w-0 flex-1">
@@ -448,16 +448,16 @@ export function MatchDayHome({
                             <span aria-hidden="true" className="text-xs font-bold text-white/60">vs</span>
                             <span className="break-words">{match.opponent || 'Adversaire à préciser'}</span>
                           </p>
-                          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] font-semibold text-white/90">
-                            <span className="inline-flex max-w-full rounded-full border border-white/15 bg-white/10 px-2 py-1 font-bold">
+                          <div className="mt-1 flex flex-wrap items-center gap-1 text-[10px] font-semibold text-white/90">
+                            <span className="inline-flex max-w-full rounded-full border border-white/15 bg-white/10 px-2 py-0.5 font-bold">
                               {match.competition || 'Type non renseigné'}
                             </span>
-                            <span className="inline-flex items-center gap-1 rounded-full bg-black/10 px-2 py-1">
+                            <span className="inline-flex items-center gap-1 rounded-full bg-black/10 px-2 py-0.5">
                               <MapPin aria-hidden="true" className="size-3" />
                               {match.homeAway || 'Lieu à préciser'}
                             </span>
                             {match.kickoffTime && (
-                              <span className="inline-flex items-center gap-1 rounded-full bg-black/10 px-2 py-1">
+                              <span className="inline-flex items-center gap-1 rounded-full bg-black/10 px-2 py-0.5">
                                 <Clock3 aria-hidden="true" className="size-3" />
                                 {match.kickoffTime}
                               </span>

@@ -997,22 +997,6 @@ export function LiveMatchConsole({
                     </div>
                   </div>
 
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    <label className="text-xs font-semibold text-white/70">
-                      Sort (ou sélectionne ci-dessus)
-                      <select value={playerOut} onChange={(event) => setPlayerOut(event.target.value)} className="mt-1 h-10 w-full rounded-lg border border-white/15 bg-[#101c41] px-2 text-sm text-white">
-                        <option value="">Joueur sur le terrain</option>
-                        {activePlayers.map((player) => <option key={player.number} value={player.number}>{player.firstName} {player.lastName}</option>)}
-                      </select>
-                    </label>
-                    <label className="text-xs font-semibold text-white/70">
-                      Entre (ou sélectionne ci-dessus)
-                      <select value={playerIn} onChange={(event) => setPlayerIn(event.target.value)} className="mt-1 h-10 w-full rounded-lg border border-white/15 bg-[#101c41] px-2 text-sm text-white">
-                        <option value="">Joueur sur le banc</option>
-                        {benchPlayers.map((player) => <option key={player.number} value={player.number}>{player.firstName} {player.lastName}</option>)}
-                      </select>
-                    </label>
-                  </div>
                   <button type="button" disabled={saving || !playerOut || !playerIn} onClick={() => void addSubstitution().catch(() => undefined)} className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/10 text-sm font-black disabled:opacity-40">
                     <ArrowLeftRight aria-hidden="true" className="size-4" />
                     Valider le remplacement

@@ -67,7 +67,7 @@ function ConvocationOverlay({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="absolute right-2 top-2 z-10 inline-flex min-h-8 min-w-9 items-center justify-center gap-1 rounded-full border border-white/20 bg-[#172554]/65 px-2 text-[10px] font-black text-white shadow-sm backdrop-blur transition hover:border-amber-200/70 hover:bg-[#172554]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
+        className="absolute right-2 top-2 z-10 inline-flex min-h-8 min-w-9 items-center justify-center gap-1 rounded-full border border-white/20 bg-[#172554]/65 px-2 text-[10px] font-black text-white shadow-sm backdrop-blur transition hover:border-amber-200/70 hover:bg-[#172554]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200 sm:text-xs"
         aria-haspopup="dialog"
         aria-label={`Voir les ${players.length} convoqués de ${teamName}`}
       >
@@ -318,12 +318,12 @@ export function MatchWeather({
   const iconClass = tone === 'dark' ? 'text-amber-300' : 'text-[#8a6400]'
 
   return (
-    <span aria-live="polite" className={`inline-flex min-h-7 w-fit max-w-full self-start items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-bold ${toneClass}`}>
+    <span aria-live="polite" className={`inline-flex min-h-7 w-fit max-w-full self-start items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-bold sm:min-h-8 sm:gap-1.5 sm:px-2.5 sm:text-xs md:min-h-9 md:px-3 md:text-sm ${toneClass}`}>
       {weather.status === 'ready' ? (
         <>
           <WeatherIcon code={weather.weather.weatherCode} className={`size-4 shrink-0 ${iconClass}`} />
           <span className="truncate"><span className="sr-only">Météo à </span>{weather.weather.location}</span>
-          <span className={`shrink-0 text-xs font-black ${tone === 'dark' ? 'text-white' : 'text-[#172554]'}`}>{Math.round(weather.weather.temperature)}°</span>
+          <span className={`shrink-0 text-xs font-black sm:text-sm md:text-base ${tone === 'dark' ? 'text-white' : 'text-[#172554]'}`}>{Math.round(weather.weather.temperature)}°</span>
         </>
       ) : weather.status === 'loading' ? (
         <><CloudSun aria-hidden="true" className={`size-4 shrink-0 animate-pulse ${iconClass}`} />Météo…</>
@@ -443,23 +443,23 @@ export function MatchDayHome({
                             'size-11 shrink-0 rounded-full ring-2 shadow-md transition-transform group-hover:scale-105',
                             match.team === 'E1' ? 'ring-sky-300' : 'ring-amber-300',
                           ].join(' ')} />
-                          <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 pr-10 text-base font-black leading-tight sm:text-lg">
+                          <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 pr-10 text-base font-black leading-tight sm:text-lg md:text-xl">
                             <span className="break-words">ES Genech {match.team === 'E1' ? '1' : '2'}</span>
                             <span aria-hidden="true" className="text-xs font-bold text-white/60">vs</span>
                             <span className="break-words">{match.opponent || 'Adversaire à préciser'}</span>
                           </p>
                         </div>
-                        <div className="flex min-w-0 flex-nowrap items-center gap-1 text-[10px] font-semibold text-white/90">
-                          <span className="inline-flex shrink-0 items-center rounded-full border border-white/15 bg-white/10 px-2 py-0.5 font-bold">
+                        <div className="flex min-w-0 flex-nowrap items-center gap-1 text-[10px] font-semibold text-white/90 sm:gap-1.5 sm:text-xs md:gap-2 md:text-sm">
+                          <span className="inline-flex shrink-0 items-center rounded-full border border-white/15 bg-white/10 px-2 py-0.5 font-bold sm:px-2.5 sm:py-1">
                             {match.competition || 'Type non renseigné'}
                           </span>
-                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-black/10 px-2 py-0.5">
-                            <MapPin aria-hidden="true" className="size-3" />
+                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-black/10 px-2 py-0.5 sm:px-2.5 sm:py-1">
+                            <MapPin aria-hidden="true" className="size-3 sm:size-3.5 md:size-4" />
                             {match.homeAway || 'Lieu à préciser'}
                           </span>
                           {match.kickoffTime && (
-                            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-black/10 px-2 py-0.5">
-                              <Clock3 aria-hidden="true" className="size-3" />
+                            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-black/10 px-2 py-0.5 sm:px-2.5 sm:py-1">
+                              <Clock3 aria-hidden="true" className="size-3 sm:size-3.5 md:size-4" />
                               {match.kickoffTime}
                             </span>
                           )}

@@ -606,10 +606,10 @@ export function MatchResultEntry({
                             </span>
                             <ClubCrest className={['size-9 shrink-0 rounded-full ring-2', isE1 ? 'ring-[#d4af37]' : 'ring-white/80'].join(' ')} />
                             <span className="min-w-0 flex-1">
-                              <span className="block text-[10px] font-black uppercase tracking-[0.16em] opacity-80">
+                              <span className="block text-[10px] font-black uppercase tracking-[0.16em] opacity-80 sm:text-xs md:text-sm">
                                 ES Genech {isE1 ? '1' : '2'}
                               </span>
-                              <span className="mt-0.5 block whitespace-normal break-words text-lg font-black leading-tight sm:text-xl">
+                              <span className="mt-0.5 block whitespace-normal break-words text-lg font-black leading-tight sm:text-xl md:text-2xl">
                                 {entry.opponent || 'Adversaire à préciser'}
                               </span>
                             </span>
@@ -619,16 +619,16 @@ export function MatchResultEntry({
                               </span>
                             )}
                           </span>
-                          <span className="flex min-w-0 flex-nowrap items-center gap-0.5 pl-7 text-[10px] font-bold sm:pl-10">
-                            <span className={`inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 ${isE1 ? 'bg-white/15 text-sky-100' : 'bg-white/45 text-blue-950'}`}>
+                          <span className="flex min-w-0 flex-nowrap items-center gap-0.5 pl-7 text-[10px] font-bold sm:gap-1 sm:pl-10 sm:text-xs md:gap-1.5 md:text-[13px]">
+                            <span className={`inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 sm:px-2 sm:py-1 md:px-2 ${isE1 ? 'bg-white/15 text-sky-100' : 'bg-white/45 text-blue-950'}`}>
                               {entry.competition || 'Type non renseigné'}
                             </span>
-                            <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 ${isE1 ? 'bg-white/10 text-white/90' : 'bg-white/35 text-blue-950'}`}>
+                            <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 sm:px-2 sm:py-1 md:px-2 ${isE1 ? 'bg-white/10 text-white/90' : 'bg-white/35 text-blue-950'}`}>
                               <span aria-hidden="true">{homeAwayIcon}</span>
                               {entry.homeAway || 'Lieu ?'}
                             </span>
                             {entry.kickoffTime && (
-                              <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 ${isE1 ? 'bg-white/10 text-white/90' : 'bg-white/35 text-blue-950'}`}>
+                              <span className={`inline-flex shrink-0 items-center gap-1 rounded-full px-1.5 py-0.5 sm:px-2 sm:py-1 md:px-2 ${isE1 ? 'bg-white/10 text-white/90' : 'bg-white/35 text-blue-950'}`}>
                                 <Clock3 aria-hidden="true" className="size-3" />
                                 {entry.kickoffTime}
                               </span>

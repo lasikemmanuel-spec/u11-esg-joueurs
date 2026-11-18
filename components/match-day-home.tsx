@@ -67,12 +67,12 @@ function ConvocationOverlay({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex min-h-10 w-full min-w-0 items-center justify-center gap-1.5 rounded-xl border border-white/20 bg-white/10 px-2 py-2 text-[11px] font-black text-white shadow-sm transition hover:border-amber-200/70 hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:gap-2 sm:px-3 sm:text-xs"
+        className="absolute bottom-2.5 right-3 z-10 inline-flex min-h-9 min-w-10 items-center justify-center gap-1.5 rounded-full border border-white/20 bg-[#172554]/65 px-2.5 text-[11px] font-black text-white shadow-sm backdrop-blur transition hover:border-amber-200/70 hover:bg-[#172554]/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-200"
         aria-haspopup="dialog"
+        aria-label={`Voir les ${players.length} convoqués de ${teamName}`}
       >
         <UsersRound aria-hidden="true" className="size-4 text-amber-200" />
-        Convocations
-        <span className="rounded-full bg-amber-300 px-2 py-0.5 text-[10px] font-black text-[#172554]">{players.length}</span>
+        <span>{players.length}</span>
       </button>
       {open && (
         <div className="fixed inset-0 z-[100] flex items-end justify-center bg-[#07102a]/75 p-1 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setOpen(false)}>
@@ -426,13 +426,13 @@ export function MatchDayHome({
                   })
 
                   return (
-                    <div key={`${match.team}-${match.slotColumn}`} className="flex min-w-0 flex-col gap-2 sm:h-full">
+                    <div key={`${match.team}-${match.slotColumn}`} className="relative flex min-w-0 flex-col sm:h-full">
                       <button
                         type="button"
                         onClick={() => onSelectMatch(match)}
                         aria-label={`Ouvrir la feuille de match, ES Genech ${match.team === 'E1' ? '1' : '2'} contre ${match.opponent || 'adversaire à préciser'}`}
                         className={[
-                          'group flex w-full min-w-0 items-center gap-3 rounded-2xl border p-3 text-left shadow-md backdrop-blur-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:flex-1',
+                          'group flex w-full min-w-0 items-center gap-3 rounded-2xl border p-3 pb-12 text-left shadow-md backdrop-blur-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:flex-1',
                           match.team === 'E1'
                             ? 'border-sky-300/50 bg-gradient-to-br from-sky-400/20 to-blue-950/20 hover:border-sky-200'
                             : 'border-amber-300/60 bg-gradient-to-br from-amber-400/20 to-blue-950/20 hover:border-amber-200',
@@ -466,16 +466,14 @@ export function MatchDayHome({
                           <MatchWeather date={plannedDate} homeAway={match.homeAway} opponent={match.opponent} today={today} />
                         </div>
                       </button>
-                      <div className="mt-auto grid w-full grid-cols-1 items-center gap-2 pl-1">
-                        <ConvocationOverlay
-                          teamName={`ES Genech ${match.team === 'E1' ? '1' : '2'}`}
-                          players={calledPlayers}
-                          canShowLicenseNumbers={rosterPlayers.length > 0}
-                          hasCallups={hasCallups}
-                          canEdit={canEditCallups}
-                          onEdit={() => onOpenCallups(plannedDate)}
-                        />
-                      </div>
+                      <ConvocationOverlay
+                        teamName={`ES Genech ${match.team === 'E1' ? '1' : '2'}`}
+                        players={calledPlayers}
+                        canShowLicenseNumbers={rosterPlayers.length > 0}
+                        hasCallups={hasCallups}
+                        canEdit={canEditCallups}
+                        onEdit={() => onOpenCallups(plannedDate)}
+                      />
                     </div>
                   )
                 })}

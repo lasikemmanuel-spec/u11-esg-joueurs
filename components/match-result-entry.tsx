@@ -683,6 +683,7 @@ export function MatchResultEntry({
                               </button>
                             )}
                             {dateInputValue(entry.date) >= localToday() &&
+                              !hasStartedConvocation &&
                               !entry.resultLabel &&
                               entry.goalsFor === null &&
                               entry.goalsAgainst === null && (

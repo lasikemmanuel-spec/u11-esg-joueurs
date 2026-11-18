@@ -578,6 +578,7 @@ export function DashboardTabs({
             <MatchDayHome
               entries={matchResults.entries}
               convocations={convocations}
+              players={rosterPlayers}
               rosterPlayers={matchDayPlayers}
               convocationDates={convocationDates}
               canManageMatches={educatorAccess === 'authenticated'}

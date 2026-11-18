@@ -1,6 +1,8 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
+import { useRouter } from 'next/navigation'
 import {
   ArrowRight,
   Cloud,
@@ -11,15 +13,20 @@ import {
   CloudSun,
   Clock3,
   MapPin,
+  Radio,
   Sun,
   Trophy,
   UsersRound,
 } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
+import { useMatchLineups } from '@/components/match-lineup-planner'
 import type { Convocation } from '@/lib/convocations'
 import type { MatchSheetEntry } from '@/lib/match-results'
-import type { MatchDayPlayer } from '@/lib/players'
+import type { MatchDayPlayer, PublicPlayer } from '@/lib/players'
+import type { MatchLineup } from '@/lib/match-lineups'
 import { getLatestPlayedMatches, getNextPlannedMatchDate, normalizeMatchDate } from '@/lib/match-day-display'
+
+const LiveMatchConsole = dynamic(() => import('@/components/live-match-console').then((module) => module.LiveMatchConsole))
 
 type WeatherResult = {
   temperature: number
@@ -342,6 +349,7 @@ export function MatchWeather({
 export function MatchDayHome({
   entries,
   convocations,
+  players,
   rosterPlayers,
   convocationDates,
   canManageMatches,
@@ -350,12 +358,19 @@ export function MatchDayHome({
 }: {
   entries: MatchSheetEntry[]
   convocations: Convocation[]
+  players: PublicPlayer[]
   rosterPlayers: MatchDayPlayer[]
   convocationDates: string[]
   canManageMatches: boolean
   onSelectMatch: (entry: MatchSheetEntry) => void
   onOpenCallups: (date: string) => void
 }) {
+  const router = useRouter()
+  const [lineupToStartLive, setLineupToStartLive] = useState<{
+    match: MatchSheetEntry
+    lineup: MatchLineup
+  } | null>(null)
+  const matchLineups = useMatchLineups(canManageMatches)
   const today = localToday()
   const plannedDate = getNextPlannedMatchDate(entries, today)
   const latestResults = getLatestPlayedMatches(entries, today)
@@ -412,6 +427,12 @@ export function MatchDayHome({
               </p>
               <div className="mt-3 grid items-stretch gap-1.5 sm:grid-cols-2">
                 {matchesOnPlannedDate.map((match) => {
+                  const savedLineup = matchLineups.lineups.find((lineup) =>
+                    normalizeMatchDate(lineup.date) === plannedDate &&
+                    lineup.team === match.team &&
+                    lineup.slotColumn === match.slotColumn,
+                  )
+                  const lineupSaveKey = `${plannedDate}-${match.team}-${match.slotColumn}`
                   const calledPlayers = convocations.flatMap((player) => {
                     const callup = player.matches.find((item) =>
                       normalizeMatchDate(item.date) === plannedDate &&
@@ -469,6 +490,26 @@ export function MatchDayHome({
                         </div>
                         <MatchWeather date={plannedDate} homeAway={match.homeAway} opponent={match.opponent} today={today} />
                       </button>
+                      {canManageMatches && savedLineup?.starters.length && (
+                        <button
+                          type="button"
+                          disabled={matchLineups.pendingKeys.has(lineupSaveKey)}
+                          onClick={() => setLineupToStartLive({
+                            match: { ...match, date: plannedDate },
+                            lineup: savedLineup,
+                          })}
+                          aria-label={`Lancer le direct, ES Genech ${match.team === 'E1' ? '1' : '2'} contre ${match.opponent || 'adversaire'}`}
+                          title="Lancer le match en direct"
+                          className="mt-1 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border border-emerald-200/70 bg-gradient-to-r from-emerald-600 to-teal-500 px-3 text-xs font-black text-white shadow-md transition hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:cursor-wait disabled:opacity-60"
+                        >
+                          <Radio aria-hidden="true" className="size-4 shrink-0 text-amber-200" />
+                          <span>Coup d’envoi</span>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-1.5 py-0.5 text-[8px] font-black uppercase tracking-wider">
+                            <span aria-hidden="true" className="size-1.5 rounded-full bg-rose-300 motion-safe:animate-pulse" />
+                            Direct
+                          </span>
+                        </button>
+                      )}
                       <ConvocationOverlay
                         teamName={`ES Genech ${match.team === 'E1' ? '1' : '2'}`}
                         players={calledPlayers}
@@ -546,6 +587,19 @@ export function MatchDayHome({
           )}
         </div>
       </div>
+      {lineupToStartLive && (
+        <LiveMatchConsole
+          match={lineupToStartLive.match}
+          players={players}
+          starters={lineupToStartLive.lineup.starters}
+          substitutes={lineupToStartLive.lineup.substitutes}
+          onClose={() => setLineupToStartLive(null)}
+          onFinalized={() => {
+            setLineupToStartLive(null)
+            router.refresh()
+          }}
+        />
+      )}
     </section>
   )
 }

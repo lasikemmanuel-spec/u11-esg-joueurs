@@ -154,6 +154,11 @@ async function save(request: Request, editing: boolean) {
   } catch (error) {
     console.error('Erreur lors de l’enregistrement du match:', error)
     const message = error instanceof Error ? error.message : 'Impossible d’enregistrer le match.'
+    if (message.includes('(429)')) {
+      return jsonResponse({
+        error: 'Google Sheets limite temporairement les requêtes. Attends une minute puis réessaie.',
+      }, 503)
+    }
     const status = message.includes('existe déjà') ? 409 : message.includes('n’existe plus') ? 404 : 500
     return jsonResponse({ error: status === 500 ? 'Impossible d’enregistrer le match dans la feuille.' : message }, status)
   }
@@ -239,6 +244,11 @@ export async function DELETE(request: Request) {
   } catch (error) {
     console.error('Erreur lors de la suppression du match:', error)
     const message = error instanceof Error ? error.message : 'Impossible de supprimer le match.'
+    if (message.includes('(429)')) {
+      return jsonResponse({
+        error: 'Google Sheets limite temporairement les requêtes. Attends une minute puis réessaie.',
+      }, 503)
+    }
     const status = message.includes('n’existe plus') || message.includes('Aucun match')
       ? 404
       : message.includes('a changé') || message.includes('n’est plus en planification')

@@ -263,6 +263,30 @@ describe('write and read access boundaries', () => {
     expect(writeMatchResult).not.toHaveBeenCalled()
   })
 
+  it('returns a retryable response when Google Sheets rate-limits match saving', async () => {
+    vi.mocked(getEducatorSession).mockResolvedValue(educator)
+    vi.mocked(writeMatchResult).mockRejectedValue(new Error('Impossible de lire l’onglet protégé (429).'))
+
+    const response = await saveMatchResult(request('/api/match-results', 'POST', {
+      team: 'E1',
+      date: '2026-11-21',
+      opponent: 'Club',
+      competition: 'Championnat',
+      homeAway: 'Domicile',
+      kickoffTime: '',
+      meetingTime: '',
+      venueAddress: '',
+      resultLabel: '',
+      goalsFor: null,
+      goalsAgainst: null,
+    }))
+
+    expect(response.status).toBe(503)
+    expect(await response.json()).toMatchObject({
+      error: 'Google Sheets limite temporairement les requêtes. Attends une minute puis réessaie.',
+    })
+  })
+
   it.each([
     ['public', null, 401],
     ['reader', reader, 403],

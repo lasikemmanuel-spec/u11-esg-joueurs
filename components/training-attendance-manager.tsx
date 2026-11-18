@@ -338,7 +338,7 @@ export function TrainingAttendanceManager({
                     <CloudRain aria-hidden="true" className="size-4" />Annuler cette séance
                   </button>
                   <button type="button" onClick={() => onPrepareCancellation(date)} disabled={!date} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#25D366] px-4 text-sm font-bold text-white shadow-sm hover:brightness-105 disabled:opacity-50">
-                    <MessageCircle aria-hidden="true" className="size-4" />Préparer WhatsApp intempéries
+                    <MessageCircle aria-hidden="true" className="size-4" />Message Intempérie
                   </button>
                 </div>
               ) : (

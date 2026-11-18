@@ -15,7 +15,7 @@ const SETTINGS_HEADERS = ['Réglage', 'Valeur']
 
 async function getSettingsRows() {
   await ensureAuthenticatedSheetTab(SETTINGS_TAB)
-  const { sheetTitle, rows } = await getAuthenticatedSheetRows(SETTINGS_TAB)
+  const { sheetTitle, rows } = await getAuthenticatedSheetRows(SETTINGS_TAB, { cacheForSeconds: 60 })
   if (rows.length === 0 || !rows[0].some(Boolean)) {
     const initialRows = [SETTINGS_HEADERS, ['Formats', JSON.stringify(DEFAULT_LIVE_MATCH_SETTINGS)]]
     await updateAuthenticatedSheetValues([{

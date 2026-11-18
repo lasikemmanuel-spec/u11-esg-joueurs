@@ -183,14 +183,16 @@ export function LiveMatchConsole({
       try {
         let settings = DEFAULT_LIVE_MATCH_SETTINGS
         try {
-          const settingsResponse = await fetch('/api/educators/live-match/settings', { cache: 'no-store' })
+          const settingsResponse = await fetch('/api/educators/live-match/settings')
           const settingsResult = await settingsResponse.json() as { error?: string; settings?: unknown }
-          if (!settingsResponse.ok) throw new Error(settingsResult.error ?? 'Impossible de charger les formats de match.')
-          if (!isLiveMatchSettings(settingsResult.settings)) throw new Error('Les formats de match reçus sont invalides.')
-          settings = settingsResult.settings
+          if (settingsResponse.ok && isLiveMatchSettings(settingsResult.settings)) {
+            settings = settingsResult.settings
+          }
         } catch (settingsLoadError) {
-          if (typeof navigator === 'undefined' || navigator.onLine) throw settingsLoadError
-          setOfflineNotice(true)
+          console.warn('Impossible de charger les réglages distants, utilisation des formats par défaut:', settingsLoadError)
+          if (typeof navigator !== 'undefined' && !navigator.onLine) {
+            setOfflineNotice(true)
+          }
         }
         if (!active) return
         setLiveMatchSettings(settings)

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useSyncExternalStore } from 'react'
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react'
 import type { LiveMatchSession } from '@/lib/live-match-shared'
 
 export type OfflinePendingLiveMatch = {
@@ -88,8 +88,13 @@ function notifyListeners() {
 
 function subscribe(callback: () => void) {
   listeners.add(callback)
+  const onStorage = (event: StorageEvent) => {
+    if (event.key?.startsWith(STORAGE_PREFIX) || event.key === null) callback()
+  }
+  if (typeof window !== 'undefined') window.addEventListener('storage', onStorage)
   return () => {
     listeners.delete(callback)
+    if (typeof window !== 'undefined') window.removeEventListener('storage', onStorage)
   }
 }
 
@@ -295,6 +300,23 @@ export async function syncAllPendingData(): Promise<{
     return { synced: 0, failed: 0, errors: ['Appareil hors ligne.'] }
   }
 
+  const pendingCount = getTotalPendingOfflineCount()
+  try {
+    const sessionResponse = await fetch('/api/educators/session', { cache: 'no-store' })
+    if (sessionResponse.status === 401) {
+      return { synced: 0, failed: pendingCount, errors: ['Reconnecte-toi à ton compte éducateur pour envoyer ces saisies.'] }
+    }
+    if (!sessionResponse.ok) {
+      return { synced: 0, failed: pendingCount, errors: ['Impossible de vérifier la session éducateur. Réessaie plus tard.'] }
+    }
+    const session = await sessionResponse.json() as { educator?: { role?: string } }
+    if (session.educator?.role === 'reader') {
+      return { synced: 0, failed: pendingCount, errors: ['Un compte en lecture seule ne peut pas synchroniser les saisies.'] }
+    }
+  } catch {
+    return { synced: 0, failed: pendingCount, errors: ['Impossible de joindre le serveur. Les saisies restent sur cet appareil.'] }
+  }
+
   let synced = 0
   let failed = 0
   const errors: string[] = []
@@ -410,31 +432,37 @@ export function useOnlineStatus() {
     failed: number
     errors: string[]
   } | null>(null)
+  const [sessionRevision, setSessionRevision] = useState(0)
+  const syncingRef = useRef(false)
 
-  // Auto-sync quand la connexion revient et qu'il y a des données en attente
   useEffect(() => {
-    if (isOnline && pendingCount > 0 && !syncing) {
-      setSyncing(true)
-      syncAllPendingData()
-        .then((result) => {
-          setSyncResult(result)
-        })
-        .finally(() => {
-          setSyncing(false)
-        })
-    }
-  }, [isOnline, pendingCount, syncing])
+    const onSessionChange = () => setSessionRevision((revision) => revision + 1)
+    window.addEventListener('educator-session-changed', onSessionChange)
+    return () => window.removeEventListener('educator-session-changed', onSessionChange)
+  }, [])
 
-  const triggerSync = async () => {
-    if (syncing || !isOnline) return
+  const runSync = useCallback(async () => {
+    if (syncingRef.current || !isOnline) return undefined
+    syncingRef.current = true
     setSyncing(true)
+    setSyncResult(null)
     try {
       const result = await syncAllPendingData()
       setSyncResult(result)
       return result
     } finally {
+      syncingRef.current = false
       setSyncing(false)
     }
+  }, [isOnline])
+
+  // Auto-sync quand la connexion revient et qu'il y a des données en attente
+  useEffect(() => {
+    if (isOnline && pendingCount > 0) void runSync()
+  }, [isOnline, pendingCount, sessionRevision, runSync])
+
+  const triggerSync = async () => {
+    return runSync()
   }
 
   return {

@@ -553,7 +553,7 @@ export function MatchDayHome({
                   const isWin = result.goalsFor > result.goalsAgainst
                   const isDraw = result.goalsFor === result.goalsAgainst
                   const teamName = `ES Genech ${team === 'E1' ? '1' : '2'}`
-                  const teamLabel = `Équipe ${team === 'E1' ? '1' : '2'}`
+                  const teamLabel = teamName
                   const scoreStyle = isWin
                     ? 'bg-emerald-300 text-emerald-950'
                     : isDraw

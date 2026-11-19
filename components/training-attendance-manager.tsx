@@ -382,14 +382,14 @@ export function TrainingAttendanceManager({
       ) : (
         <>
           {!loadError && (
-            <section className="rounded-2xl border border-sky-200 bg-card p-4 shadow-sm">
+            <section className="rounded-2xl border border-sky-200/70 bg-gradient-to-br from-sky-50/70 to-white/90 p-3 shadow-sm sm:p-4">
               {!showCancellationForm ? (
-                <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => setShowCancellationForm(true)} disabled={!date || saving} className="inline-flex min-h-11 items-center gap-2 rounded-xl border border-sky-300 bg-sky-50 px-4 text-sm font-bold text-sky-950 hover:bg-sky-100 disabled:opacity-50">
-                    <CloudRain aria-hidden="true" className="size-4" />Annuler cette séance
+                <div className="grid grid-cols-2 gap-2">
+                  <button type="button" onClick={() => setShowCancellationForm(true)} disabled={!date || saving} aria-label="Annuler cette séance" className="inline-flex min-h-12 min-w-0 items-center justify-center gap-1.5 rounded-xl border border-sky-200 bg-white/80 px-2 text-[11px] font-bold text-sky-950 shadow-sm transition hover:border-sky-300 hover:bg-sky-100 active:scale-[0.98] disabled:opacity-50 sm:gap-2 sm:px-3 sm:text-xs">
+                    <CloudRain aria-hidden="true" className="size-4 shrink-0" /><span>Annuler séance</span>
                   </button>
-                  <button type="button" onClick={() => onPrepareCancellation(date)} disabled={!date} className="inline-flex min-h-11 items-center gap-2 rounded-xl bg-[#25D366] px-4 text-sm font-bold text-white shadow-sm hover:brightness-105 disabled:opacity-50">
-                    <MessageCircle aria-hidden="true" className="size-4" />Message Intempérie
+                  <button type="button" onClick={() => onPrepareCancellation(date)} disabled={!date} aria-label="Préparer le message d’intempérie" title="Préparer le message d’intempérie" className="inline-flex min-h-12 min-w-0 items-center justify-center gap-1.5 rounded-xl border border-emerald-200 bg-gradient-to-r from-emerald-100 to-teal-100 px-2 text-[11px] font-bold text-emerald-950 shadow-sm transition hover:border-emerald-300 hover:from-emerald-200 hover:to-teal-200 active:scale-[0.98] disabled:opacity-50 sm:gap-2 sm:px-3 sm:text-xs">
+                    <MessageCircle aria-hidden="true" className="size-4 shrink-0" /><span>Message intempérie</span>
                   </button>
                 </div>
               ) : (

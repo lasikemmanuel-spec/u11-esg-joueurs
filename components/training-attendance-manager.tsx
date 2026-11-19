@@ -79,6 +79,7 @@ export function TrainingAttendanceManager({
   const [allPresentNotice, setAllPresentNotice] = useState(false)
   const [playerStatusFilter, setPlayerStatusFilter] = useState<PlayerStatusFilter>('all')
   const [statuses, setStatuses] = useState<Record<number, TrainingAttendanceStatus | ''>>({})
+  const [savedStatuses, setSavedStatuses] = useState<Record<number, TrainingAttendanceStatus | ''>>({})
   const [saving, setSaving] = useState(false)
   const [cancellationSaving, setCancellationSaving] = useState(false)
   const [showCancellationForm, setShowCancellationForm] = useState(false)
@@ -105,6 +106,7 @@ export function TrainingAttendanceManager({
         : ''
     }
     setStatuses(next)
+    setSavedStatuses(next)
     setQuickEntryMode(false)
     setQuickStatus(null)
     setAllPresentNotice(false)
@@ -125,6 +127,11 @@ export function TrainingAttendanceManager({
     }
     return { filled, present, missing: players.length - filled }
   }, [players.length, statuses])
+
+  const hasUnsavedChanges = useMemo(
+    () => players.some((player) => (statuses[player.number] ?? '') !== (savedStatuses[player.number] ?? '')),
+    [players, savedStatuses, statuses],
+  )
 
   const statusCounts = useMemo(() => {
     const next: Record<TrainingAttendanceStatus, number> = { P: 0, AJ: 0, AI: 0, B: 0, E: 0 }
@@ -189,7 +196,11 @@ export function TrainingAttendanceManager({
       setShowCancellationForm(false)
       removePendingAttendance(date)
       saveOfflineAttendance(date, players.map((player) => ({ number: player.number, status: '' })))
-      setStatuses(Object.fromEntries(players.map((player) => [player.number, ''])))
+      const emptyStatuses: Record<number, TrainingAttendanceStatus | ''> = Object.fromEntries(
+        players.map((player) => [player.number, '']),
+      )
+      setStatuses(emptyStatuses)
+      setSavedStatuses(emptyStatuses)
       router.refresh()
     } catch (cause) {
       setCancellationError(cause instanceof Error ? cause.message : 'Impossible d’annuler la séance.')
@@ -222,10 +233,12 @@ export function TrainingAttendanceManager({
     setMessage('')
     setError('')
     const entries = players.map((player) => ({ number: player.number, status: statuses[player.number] }))
+    const savedSnapshot = Object.fromEntries(entries.map((entry) => [entry.number, entry.status ?? '']))
     saveOfflineAttendance(date, entries)
 
     if (typeof navigator !== 'undefined' && !navigator.onLine) {
       queuePendingAttendance(date, entries)
+      setSavedStatuses(savedSnapshot)
       setMessage('Présences sauvegardées localement (mode hors-ligne) 📡. Elles seront transmises automatiquement dès la reconnexion.')
       setSaving(false)
       return
@@ -240,6 +253,7 @@ export function TrainingAttendanceManager({
       const result = await response.json()
       if (!response.ok) throw new Error(result.error ?? 'Enregistrement impossible.')
       removePendingAttendance(date)
+      setSavedStatuses(savedSnapshot)
       setMessage('Présences enregistrées dans le classeur Google.')
       router.refresh()
     } catch (cause) {
@@ -250,6 +264,7 @@ export function TrainingAttendanceManager({
 
       if (isNetwork) {
         queuePendingAttendance(date, entries)
+        setSavedStatuses(savedSnapshot)
         setMessage('Connexion coupée : présences enregistrées localement (mode hors-ligne) 📡. Elles seront envoyées dès le retour du réseau.')
       } else {
         setError(cause instanceof Error ? cause.message : 'Enregistrement impossible.')
@@ -284,10 +299,23 @@ export function TrainingAttendanceManager({
                 min={MATCH_SEASON_START}
                 max={MATCH_SEASON_END}
                 value={date}
-                onChange={(event) => setDate(event.target.value)}
+                onChange={(event) => {
+                  const nextDate = event.target.value
+                  if (!nextDate || nextDate === date) return
+                  if (
+                    hasUnsavedChanges &&
+                    !window.confirm('Tu as des modifications non enregistrées. Changer de date les abandonnera. Continuer ?')
+                  ) return
+                  setDate(nextDate)
+                }}
                 className="h-10 min-w-0 rounded-xl border border-white/20 bg-white/10 px-3 text-sm font-bold text-white outline-none focus-visible:ring-2 focus-visible:ring-amber-300 [color-scheme:dark] sm:h-12"
               />
             </label>
+            {hasUnsavedChanges && (
+              <p role="status" className="rounded-lg border border-amber-300/30 bg-amber-300/10 px-3 py-2 text-xs font-semibold text-amber-100">
+                Modifications non enregistrées
+              </p>
+            )}
           </div>
         </div>
 

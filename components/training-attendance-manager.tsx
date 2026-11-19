@@ -74,6 +74,7 @@ export function TrainingAttendanceManager({
   const [query, setQuery] = useState('')
   const [quickEntryMode, setQuickEntryMode] = useState(false)
   const [quickStatus, setQuickStatus] = useState<TrainingAttendanceStatus | null>(null)
+  const [allPresentNotice, setAllPresentNotice] = useState(false)
   const [statuses, setStatuses] = useState<Record<number, TrainingAttendanceStatus | ''>>({})
   const [saving, setSaving] = useState(false)
   const [cancellationSaving, setCancellationSaving] = useState(false)
@@ -103,6 +104,7 @@ export function TrainingAttendanceManager({
     setStatuses(next)
     setQuickEntryMode(false)
     setQuickStatus(null)
+    setAllPresentNotice(false)
     setMessage('')
     setError('')
     setShowCancellationForm(false)
@@ -139,8 +141,9 @@ export function TrainingAttendanceManager({
   const setAllPresent = () => {
     const next = Object.fromEntries(players.map((player) => [player.number, 'P' as const]))
     setStatuses(next)
-    setQuickEntryMode(true)
+    setQuickEntryMode(false)
     setQuickStatus(null)
+    setAllPresentNotice(true)
     if (date) {
       saveOfflineAttendance(date, players.map((p) => ({ number: p.number, status: 'P' })))
     }
@@ -153,6 +156,7 @@ export function TrainingAttendanceManager({
     setStatuses(next)
     setQuickEntryMode(false)
     setQuickStatus(null)
+    setAllPresentNotice(false)
     if (date) {
       saveOfflineAttendance(date, players.map((p) => ({ number: p.number, status: '' })))
     }
@@ -314,6 +318,7 @@ export function TrainingAttendanceManager({
           onClick={() => {
             setQuickEntryMode((current) => !current)
             setQuickStatus(null)
+            setAllPresentNotice(false)
           }}
           disabled={!players.length || loadError || Boolean(savedSession?.cancellation)}
           className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border px-3 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-4 sm:text-sm ${quickEntryMode ? 'border-sky-200 bg-sky-100 text-sky-950' : 'border-white/25 bg-white/10 text-white hover:bg-white/20'}`}
@@ -357,6 +362,11 @@ export function TrainingAttendanceManager({
             })}
           </div>
         </div>
+      )}
+      {allPresentNotice && !quickEntryMode && (
+        <p role="status" className="mt-2 rounded-xl border border-emerald-200/30 bg-emerald-100/10 px-3 py-2 text-xs font-semibold text-emerald-100">
+          Toute l’équipe est marquée présente. Les menus de chaque joueur restent disponibles pour corriger une absence ou un autre statut.
+        </p>
       )}
         </>
         )}
@@ -513,6 +523,7 @@ export function TrainingAttendanceManager({
                           onChange={(event) => {
                             const nextStatus = TRAINING_ATTENDANCE_STATUSES.find((status) => status.value === event.target.value)?.value ?? ''
                             setStatuses((current) => ({ ...current, [player.number]: nextStatus }))
+                            setAllPresentNotice(false)
                             setMessage('')
                             setError('')
                           }}

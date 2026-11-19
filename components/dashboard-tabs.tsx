@@ -330,10 +330,10 @@ export function DashboardTabs({
       : []),
   ]
   const canAccessTraining = educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
-  const mobileMainTabs: Array<{ key: TabKey | 'more'; label: string; icon: LucideIcon }> = canAccessTraining
+  const mobileMainTabs: Array<{ key: TabKey | 'more'; label: string; shortLabel?: string; icon: LucideIcon }> = canAccessTraining
     ? [
         { key: 'matches', label: 'Matchs', icon: CalendarDays },
-        { key: 'training', label: 'Entraînements', icon: Dumbbell },
+        { key: 'training', label: 'Entraînements', shortLabel: 'Présences', icon: Dumbbell },
         { key: 'roster', label: 'Joueurs', icon: Shirt },
         { key: 'more', label: 'Plus', icon: Ellipsis },
       ]
@@ -729,6 +729,7 @@ export function DashboardTabs({
                 type="button"
                 aria-pressed={isActive}
                 aria-label={tab.label}
+                title={tab.label}
                 aria-controls={isMore ? 'mobile-more-menu' : undefined}
                 aria-expanded={isMore ? moreMenuOpen : undefined}
                 onClick={() => {
@@ -748,7 +749,7 @@ export function DashboardTabs({
                 ].join(' ')}
               >
                 <Icon aria-hidden="true" className="size-5 shrink-0" />
-                <span className="max-w-full truncate whitespace-nowrap">{tab.label}</span>
+                <span className="max-w-full whitespace-nowrap">{tab.shortLabel ?? tab.label}</span>
               </button>
             )
           })}

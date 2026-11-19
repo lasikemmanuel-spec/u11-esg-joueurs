@@ -508,11 +508,11 @@ export function TrainingAttendanceManager({
                             setMessage('')
                             setError('')
                           }}
-                          className={`h-9 w-24 rounded-xl border px-2 text-xs font-black outline-none transition focus-visible:ring-2 focus-visible:ring-[#d4af37] ${currentStatus ? STATUS_PRESENTATION[currentStatus].idle : 'border-amber-200 bg-amber-50 text-amber-900'}`}
+                          className={`h-9 w-44 rounded-xl border px-2 text-xs font-black outline-none transition focus-visible:ring-2 focus-visible:ring-[#d4af37] sm:w-48 ${currentStatus ? STATUS_PRESENTATION[currentStatus].idle : 'border-amber-200 bg-amber-50 text-amber-900'}`}
                         >
                           <option value="">À noter</option>
                           {TRAINING_ATTENDANCE_STATUSES.map((status) => (
-                            <option key={status.value} value={status.value}>{status.value}</option>
+                            <option key={status.value} value={status.value}>{status.label}</option>
                           ))}
                         </select>
                       </label>

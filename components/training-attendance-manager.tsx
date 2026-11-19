@@ -34,11 +34,11 @@ import {
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
 
 const STATUS_PRESENTATION = {
-  P: { icon: CircleCheck, label: 'Présent', active: 'border-emerald-400 bg-emerald-500 text-white', idle: 'border-emerald-200 bg-emerald-50/70 text-emerald-800 hover:bg-emerald-100' },
-  AJ: { icon: ShieldCheck, label: 'Absence justifiée', active: 'border-amber-400 bg-amber-400 text-amber-950', idle: 'border-amber-200 bg-amber-50/70 text-amber-900 hover:bg-amber-100' },
-  AI: { icon: X, label: 'Absence injustifiée', active: 'border-rose-400 bg-rose-500 text-white', idle: 'border-rose-200 bg-rose-50/70 text-rose-800 hover:bg-rose-100' },
-  B: { icon: HeartPulse, label: 'Blessé', active: 'border-sky-400 bg-sky-500 text-white', idle: 'border-sky-200 bg-sky-50/70 text-sky-800 hover:bg-sky-100' },
-  E: { icon: CircleHelp, label: 'Exempt', active: 'border-violet-400 bg-violet-500 text-white', idle: 'border-violet-200 bg-violet-50/70 text-violet-800 hover:bg-violet-100' },
+  P: { icon: CircleCheck, label: 'Présent', active: 'border-emerald-400 bg-emerald-500 text-white', idle: 'border-emerald-200 bg-emerald-50/70 text-emerald-800 hover:bg-emerald-100', accent: 'border-l-emerald-400' },
+  AJ: { icon: ShieldCheck, label: 'Absence justifiée', active: 'border-amber-400 bg-amber-400 text-amber-950', idle: 'border-amber-200 bg-amber-50/70 text-amber-900 hover:bg-amber-100', accent: 'border-l-amber-400' },
+  AI: { icon: X, label: 'Absence injustifiée', active: 'border-rose-400 bg-rose-500 text-white', idle: 'border-rose-200 bg-rose-50/70 text-rose-800 hover:bg-rose-100', accent: 'border-l-rose-400' },
+  B: { icon: HeartPulse, label: 'Blessé', active: 'border-sky-400 bg-sky-500 text-white', idle: 'border-sky-200 bg-sky-50/70 text-sky-800 hover:bg-sky-100', accent: 'border-l-sky-400' },
+  E: { icon: CircleHelp, label: 'Exempt', active: 'border-violet-400 bg-violet-500 text-white', idle: 'border-violet-200 bg-violet-50/70 text-violet-800 hover:bg-violet-100', accent: 'border-l-violet-400' },
 } as const
 
 function nextTrainingDate() {
@@ -461,8 +461,7 @@ export function TrainingAttendanceManager({
               const currentStatus = statuses[player.number]
               const selectedQuickStatus = quickStatus !== null && currentStatus === quickStatus
               return (
-                <li key={player.number} className={`group relative overflow-hidden rounded-2xl border bg-card p-3.5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-4 ${currentStatus === 'P' ? 'border-emerald-300/80' : 'border-border'} ${quickEntryMode && selectedQuickStatus ? 'ring-2 ring-sky-400' : ''}`}>
-                  {!quickEntryMode && currentStatus === 'P' && <div aria-hidden="true" className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-300 to-lime-400" />}
+                <li key={player.number} className={`group relative overflow-hidden rounded-2xl border border-border/70 border-l-4 bg-card/90 p-2.5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-3 ${currentStatus ? STATUS_PRESENTATION[currentStatus].accent : 'border-l-transparent'} ${quickEntryMode && selectedQuickStatus ? 'ring-2 ring-sky-400' : ''}`}>
                   {quickEntryMode ? (
                     <button
                       type="button"

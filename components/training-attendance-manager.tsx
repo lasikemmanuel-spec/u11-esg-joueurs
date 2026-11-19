@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   CalendarDays,
-  Check,
   CloudRain,
   CircleCheck,
   CircleHelp,
@@ -431,6 +430,21 @@ export function TrainingAttendanceManager({
               className="h-12 w-full rounded-2xl border border-accent/40 bg-card pr-4 pl-12 text-sm shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring"
             />
           </label>
+          {!quickEntryMode && (
+            <div aria-label="Légende des statuts" className="flex flex-wrap gap-1.5">
+              {TRAINING_ATTENDANCE_STATUSES.map((status) => {
+                const presentation = STATUS_PRESENTATION[status.value]
+                const StatusIcon = presentation.icon
+                return (
+                  <span key={status.value} className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[9px] font-bold ${presentation.idle}`}>
+                    <StatusIcon aria-hidden="true" className="size-3" />
+                    <span className="font-black">{status.value}</span>
+                    <span>{status.shortLabel}</span>
+                  </span>
+                )
+              })}
+            </div>
+          )}
           {savedSession && <p className="hidden w-fit max-w-full rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900 sm:block">Séance déjà enregistrée · tes changements remplaceront les anciennes valeurs</p>}
           {query && <p aria-live="polite" className="-mt-3 text-xs text-muted-foreground">{visiblePlayers.length} joueur{visiblePlayers.length === 1 ? '' : 's'} trouvé{visiblePlayers.length === 1 ? '' : 's'}</p>}
 
@@ -477,44 +491,29 @@ export function TrainingAttendanceManager({
                     </button>
                   ) : (
                     <>
-                      <div className="mb-3 flex items-start gap-3">
-                        <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#14234e] to-[#26478c] text-lg font-black text-amber-300 shadow-md ring-2 ring-amber-300/50">{player.number}</span>
-                        <div className="min-w-0 flex-1">
-                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                            <p className="whitespace-normal break-words text-sm font-black leading-snug text-foreground sm:text-base">{player.firstName} {player.lastName}</p>
-                            {currentStatus ? (
-                              <span className={`inline-flex max-w-full items-center gap-1 whitespace-normal rounded-full border px-2 py-1 text-[9px] font-black leading-tight sm:text-[10px] ${STATUS_PRESENTATION[currentStatus].idle}`}>
-                                {currentStatus === 'P' && <Check aria-hidden="true" className="size-3 shrink-0" />}
-                                {STATUS_PRESENTATION[currentStatus].label}
-                              </span>
-                            ) : <span className="inline-flex rounded-full bg-amber-100 px-2 py-1 text-[9px] font-black text-amber-900 sm:text-[10px]">À noter</span>}
-                          </div>
-                        </div>
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#14234e] to-[#26478c] text-base font-black text-amber-300 shadow-sm ring-2 ring-amber-300/50">{player.number}</span>
+                        <p className="min-w-0 break-words text-sm font-black leading-snug text-foreground sm:text-base">{player.firstName} {player.lastName}</p>
                       </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        {TRAINING_ATTENDANCE_STATUSES.map((status) => {
-                          const presentation = STATUS_PRESENTATION[status.value]
-                          const StatusIcon = presentation.icon
-                          const selected = currentStatus === status.value
-                          return (
-                            <button
-                              key={status.value}
-                              type="button"
-                              aria-pressed={selected}
-                              aria-label={`Marquer ${player.firstName} ${player.lastName} : ${status.label}`}
-                              onClick={() => {
-                                setStatuses((current) => ({ ...current, [player.number]: status.value }))
-                                setMessage('')
-                                setError('')
-                              }}
-                              className={`flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-xl border px-2 text-[10px] font-black leading-tight transition active:scale-95 sm:text-[11px] ${selected ? `${presentation.active} shadow-sm ring-2 ring-current/15` : `${presentation.idle} hover:-translate-y-0.5`}`}
-                            >
-                              <StatusIcon aria-hidden="true" className="size-4" />
-                              <span>{status.shortLabel}</span>
-                            </button>
-                          )
-                        })}
-                      </div>
+                      <label className="mt-3 block">
+                        <span className="sr-only">Statut de {player.firstName} {player.lastName}</span>
+                        <select
+                          aria-label={`Statut de ${player.firstName} ${player.lastName}`}
+                          value={currentStatus}
+                          onChange={(event) => {
+                            const nextStatus = TRAINING_ATTENDANCE_STATUSES.find((status) => status.value === event.target.value)?.value ?? ''
+                            setStatuses((current) => ({ ...current, [player.number]: nextStatus }))
+                            setMessage('')
+                            setError('')
+                          }}
+                          className={`h-10 w-full rounded-xl border px-3 text-xs font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-[#d4af37] ${currentStatus ? STATUS_PRESENTATION[currentStatus].idle : 'border-amber-200 bg-amber-50 text-amber-900'}`}
+                        >
+                          <option value="">À noter</option>
+                          {TRAINING_ATTENDANCE_STATUSES.map((status) => (
+                            <option key={status.value} value={status.value}>{status.label}</option>
+                          ))}
+                        </select>
+                      </label>
                     </>
                   )}
                 </li>

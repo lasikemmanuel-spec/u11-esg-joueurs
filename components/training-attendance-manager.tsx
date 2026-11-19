@@ -278,17 +278,17 @@ export function TrainingAttendanceManager({
   const completion = players.length ? Math.round(counts.filled / players.length * 100) : 0
 
   return (
-    <section className="flex flex-col gap-3 sm:gap-5" aria-labelledby="training-attendance-title">
-      <header className="relative isolate overflow-hidden rounded-[2rem] border border-[#e0bd43]/60 bg-gradient-to-br from-[#101b40] via-[#1d397f] to-[#12224e] p-3 text-white shadow-xl sm:p-7 lg:p-8 xl:p-6 2xl:p-8">
+    <section className="flex flex-col gap-2 sm:gap-5" aria-labelledby="training-attendance-title">
+      <header className="relative isolate overflow-hidden rounded-[1.5rem] border border-[#e0bd43]/60 bg-gradient-to-br from-[#101b40] via-[#1d397f] to-[#12224e] p-2.5 text-white shadow-xl sm:rounded-[2rem] sm:p-7 lg:p-8 xl:p-6 2xl:p-8">
         <div aria-hidden="true" className="pointer-events-none absolute -top-20 -right-14 -z-10 size-64 rounded-full bg-sky-300/10 blur-3xl" />
-        <div className="flex flex-col gap-4 sm:gap-6 xl:flex-row xl:items-center xl:justify-between xl:gap-8">
-          <div className="flex items-center gap-3 sm:gap-5 xl:min-w-0 xl:flex-[1.1]">
-            <ClubCrest className="size-12 ring-4 ring-[#e0bd43] sm:size-20" />
+        <div className="flex flex-col gap-3 sm:gap-6 xl:flex-row xl:items-center xl:justify-between xl:gap-8">
+          <div className="flex items-center gap-2.5 sm:gap-5 xl:min-w-0 xl:flex-[1.1]">
+            <ClubCrest className="size-10 ring-4 ring-[#e0bd43] sm:size-20" />
             <div className="min-w-0">
               <p className="flex items-center gap-1.5 text-[10px] font-black uppercase tracking-[0.2em] text-amber-300 sm:text-xs">
                 <Sparkles aria-hidden="true" className="size-3.5" />ES Genech · U11
               </p>
-              <h2 id="training-attendance-title" className="mt-1 text-xl font-black leading-tight sm:text-3xl lg:text-4xl xl:whitespace-nowrap xl:text-3xl 2xl:text-4xl">Feuille de présence</h2>
+              <h2 id="training-attendance-title" className="mt-1 text-lg font-black leading-tight sm:text-3xl lg:text-4xl xl:whitespace-nowrap xl:text-3xl 2xl:text-4xl">Feuille de présence</h2>
             </div>
           </div>
           <div className="grid min-w-0 gap-2 xl:w-full xl:max-w-[32rem] xl:flex-1 xl:rounded-2xl xl:border xl:border-white/15 xl:bg-white/[0.06] xl:p-4">
@@ -325,7 +325,7 @@ export function TrainingAttendanceManager({
           </p>
         ) : (
         <>
-          <div className="mt-3 grid gap-3 rounded-2xl border border-white/10 bg-white/[0.07] p-3 sm:mt-6 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-4 sm:p-5">
+          <div className="mt-2 grid gap-2 rounded-2xl border border-white/10 bg-white/[0.07] p-2.5 sm:mt-6 sm:grid-cols-[1fr_auto] sm:items-center sm:gap-4 sm:p-5">
           <div>
             <div className="flex flex-wrap items-end justify-between gap-2">
               <div>
@@ -339,12 +339,12 @@ export function TrainingAttendanceManager({
                 {counts.missing ? `Encore ${counts.missing} à renseigner` : players.length ? 'Groupe complet · prêt pour le terrain !' : 'Effectif indisponible'}
               </p>
             </div>
-            <div className="mt-2 h-2 overflow-hidden rounded-full bg-black/25 sm:mt-3 sm:h-2.5" role="progressbar" aria-label="Présences renseignées" aria-valuemin={0} aria-valuemax={players.length} aria-valuenow={counts.filled}>
+            <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-black/25 sm:mt-3 sm:h-2.5" role="progressbar" aria-label="Présences renseignées" aria-valuemin={0} aria-valuemax={players.length} aria-valuenow={counts.filled}>
               <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-lime-300 transition-[width] duration-500" style={{ width: `${completion}%` }} />
             </div>
           </div>
         </div>
-      <div className="mt-2 grid grid-cols-2 gap-1.5 sm:flex sm:justify-end sm:gap-2 xl:mt-4 xl:border-t xl:border-white/10 xl:pt-4">
+      <div className="mt-1.5 grid grid-cols-2 gap-1.5 sm:flex sm:justify-end sm:gap-2 xl:mt-4 xl:border-t xl:border-white/10 xl:pt-4">
         <button type="button" onClick={setAllPresent} disabled={!players.length || loadError || Boolean(savedSession?.cancellation)} aria-label="Marquer tous les joueurs présents" title="Marque toute l’équipe présente puis ouvre la correction rapide des exceptions." className="col-span-2 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-3 text-xs font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-1 sm:min-h-12 sm:px-5 sm:text-sm">
           <UsersRound aria-hidden="true" className="size-4 shrink-0" />
           <span className="sm:hidden">Marquer tous présents</span>
@@ -442,7 +442,7 @@ export function TrainingAttendanceManager({
       ) : (
         <>
           {!loadError && (
-            <section className="rounded-2xl border border-sky-200/70 bg-gradient-to-br from-sky-50/70 to-white/90 p-3 shadow-sm sm:p-4">
+            <section className="rounded-2xl border border-sky-200/70 bg-gradient-to-br from-sky-50/70 to-white/90 p-2.5 shadow-sm sm:p-4">
               {!showCancellationForm ? (
                 <div className="grid grid-cols-2 gap-2">
                   <button type="button" onClick={() => setShowCancellationForm(true)} disabled={!date || saving} aria-label="Annuler cette séance" className="inline-flex min-h-12 min-w-0 items-center justify-center gap-1.5 rounded-xl border border-sky-200 bg-white/80 px-2 text-[11px] font-bold text-sky-950 shadow-sm transition hover:border-sky-300 hover:bg-sky-100 active:scale-[0.98] disabled:opacity-50 sm:gap-2 sm:px-3 sm:text-xs">
@@ -488,7 +488,7 @@ export function TrainingAttendanceManager({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Rechercher un joueur…"
-              className="h-12 w-full rounded-2xl border border-accent/40 bg-card pr-4 pl-12 text-sm shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring"
+              className="h-11 w-full rounded-2xl border border-accent/40 bg-card pr-4 pl-12 text-sm shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring"
             />
           </label>
           <div role="group" aria-label="Filtrer les joueurs par statut" className="flex flex-wrap gap-1.5">
@@ -539,12 +539,12 @@ export function TrainingAttendanceManager({
                   : 'Aucun joueur ne correspond à ce statut.'}
             </p>
           ) : (
-          <ul className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
+          <ul className="grid gap-2 sm:gap-3 sm:grid-cols-2 2xl:grid-cols-3">
             {visiblePlayers.map((player) => {
               const currentStatus = statuses[player.number]
               const selectedQuickStatus = quickStatus !== null && currentStatus === quickStatus
               return (
-                <li key={player.number} className={`group relative overflow-hidden rounded-2xl border border-border/70 border-l-4 bg-card/90 p-2.5 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:p-3 ${currentStatus ? STATUS_PRESENTATION[currentStatus].accent : 'border-l-transparent'} ${quickEntryMode && selectedQuickStatus ? 'ring-2 ring-sky-400' : ''}`}>
+                <li key={player.number} className={`group relative overflow-hidden rounded-xl border border-border/70 border-l-4 bg-card/90 p-2 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md sm:rounded-2xl sm:p-3 ${currentStatus ? STATUS_PRESENTATION[currentStatus].accent : 'border-l-transparent'} ${quickEntryMode && selectedQuickStatus ? 'ring-2 ring-sky-400' : ''}`}>
                   {quickEntryMode ? (
                     <button
                       type="button"

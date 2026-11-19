@@ -14,6 +14,7 @@ import {
   CloudSun,
   Clock3,
   MapPin,
+  Radio,
   Sun,
   Trophy,
   UsersRound,
@@ -492,27 +493,27 @@ export function MatchDayHome({
                             </span>
                           )}
                         </div>
-                        <MatchWeather date={plannedDate} homeAway={match.homeAway} opponent={match.opponent} today={today} />
                       </button>
-                      {canManageMatches && savedLineup?.starters.length && (
-                        <button
-                          type="button"
-                          disabled={matchLineups.pendingKeys.has(lineupSaveKey)}
-                          onClick={() => setLineupToStartLive({
-                            match: { ...match, date: plannedDate },
-                            lineup: savedLineup,
-                          })}
-                          aria-label={`Lancer le direct, ES Genech ${match.team === 'E1' ? '1' : '2'} contre ${match.opponent || 'adversaire'}`}
-                          title={`Lancer le match contre ${match.opponent || 'cet adversaire'}`}
-                          className="relative mb-2 mr-2 ml-auto flex size-12 shrink-0 -translate-y-2 flex-col items-center justify-center gap-0.5 rounded-xl border border-emerald-200/70 bg-gradient-to-br from-emerald-600 to-teal-500 text-[8px] font-black uppercase tracking-wide text-white shadow-md transition hover:-translate-y-2.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:cursor-wait disabled:opacity-60 sm:hidden"
-                        >
-                          <span className="relative text-lg leading-none motion-safe:animate-bounce">
-                            ⚽
-                            <span aria-hidden="true" className="absolute -right-1 -top-0.5 size-1.5 rounded-full bg-rose-300 ring-1 ring-emerald-700 motion-safe:animate-pulse" />
-                          </span>
-                          <span>Direct</span>
-                        </button>
-                      )}
+                      <div className="flex min-w-0 items-center justify-between gap-2 px-2.5 pb-2.5">
+                        <MatchWeather date={plannedDate} homeAway={match.homeAway} opponent={match.opponent} today={today} />
+                        {canManageMatches && savedLineup?.starters.length && (
+                          <button
+                            type="button"
+                            disabled={matchLineups.pendingKeys.has(lineupSaveKey)}
+                            onClick={() => setLineupToStartLive({
+                              match: { ...match, date: plannedDate },
+                              lineup: savedLineup,
+                            })}
+                            aria-label={`Lancer le direct, ES Genech ${match.team === 'E1' ? '1' : '2'} contre ${match.opponent || 'adversaire'}`}
+                            title={`Lancer le match contre ${match.opponent || 'cet adversaire'}`}
+                            className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border border-emerald-200/40 bg-emerald-400/15 px-3 text-[10px] font-black uppercase tracking-wider text-emerald-100 shadow-sm transition hover:bg-emerald-400/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:cursor-wait disabled:opacity-60 sm:hidden"
+                          >
+                            <span aria-hidden="true" className="size-1.5 rounded-full bg-rose-300 shadow-[0_0_0_2px_rgba(252,165,165,0.2)] motion-safe:animate-pulse" />
+                            <Radio aria-hidden="true" className="size-4" />
+                            <span>Direct</span>
+                          </button>
+                        )}
+                      </div>
                       <ConvocationOverlay
                         teamName={`ES Genech ${match.team === 'E1' ? '1' : '2'}`}
                         players={calledPlayers}

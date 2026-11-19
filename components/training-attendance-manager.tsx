@@ -294,9 +294,11 @@ export function TrainingAttendanceManager({
             </div>
           </div>
         </div>
-      <div className="mt-2 flex flex-col gap-1.5 sm:flex-row sm:justify-end sm:gap-2 xl:mt-4 xl:border-t xl:border-white/10 xl:pt-4">
-        <button type="button" onClick={setAllPresent} disabled={!players.length || loadError || Boolean(savedSession?.cancellation)} aria-label="Marquer tous les joueurs présents" title="Marque toute l’équipe présente puis ouvre la correction rapide des exceptions." className="inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-3 text-xs font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-5 sm:text-sm">
-          <UsersRound aria-hidden="true" className="size-4 shrink-0" /><span className="whitespace-nowrap">Marquer tous les joueurs présents</span>
+      <div className="mt-2 grid grid-cols-2 gap-1.5 sm:flex sm:justify-end sm:gap-2 xl:mt-4 xl:border-t xl:border-white/10 xl:pt-4">
+        <button type="button" onClick={setAllPresent} disabled={!players.length || loadError || Boolean(savedSession?.cancellation)} aria-label="Marquer tous les joueurs présents" title="Marque toute l’équipe présente puis ouvre la correction rapide des exceptions." className="col-span-2 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-3 text-xs font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-1 sm:min-h-12 sm:px-5 sm:text-sm">
+          <UsersRound aria-hidden="true" className="size-4 shrink-0" />
+          <span className="sm:hidden">Marquer tous présents</span>
+          <span className="hidden whitespace-nowrap sm:inline">Marquer tous les joueurs présents</span>
         </button>
         <button
           type="button"
@@ -309,10 +311,13 @@ export function TrainingAttendanceManager({
           className={`inline-flex min-h-10 items-center justify-center gap-2 rounded-xl border px-3 text-xs font-black transition disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-12 sm:px-4 sm:text-sm ${quickEntryMode ? 'border-sky-200 bg-sky-100 text-sky-950' : 'border-white/25 bg-white/10 text-white hover:bg-white/20'}`}
         >
           <HeartPulse aria-hidden="true" className="size-4 shrink-0" />
-          {quickEntryMode ? 'Terminer les corrections' : 'Corriger les exceptions'}
+          <span className="sm:hidden">{quickEntryMode ? 'Terminer' : 'Corriger'}</span>
+          <span className="hidden whitespace-nowrap sm:inline">{quickEntryMode ? 'Terminer les corrections' : 'Corriger les exceptions'}</span>
         </button>
         <button type="button" onClick={resetAttendance} disabled={!players.length || loadError || counts.filled === 0 || Boolean(savedSession?.cancellation)} title="Efface les choix de cette saisie à l’écran ; le classeur n’est pas modifié." className="inline-flex min-h-9 items-center justify-center gap-2 rounded-xl border border-white/25 bg-white/10 px-4 text-[11px] font-bold text-white transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 sm:text-xs">
-          <RefreshCw aria-hidden="true" className="size-3.5" />Réinitialiser la feuille
+          <RefreshCw aria-hidden="true" className="size-3.5 shrink-0" />
+          <span className="sm:hidden">Réinitialiser</span>
+          <span className="hidden whitespace-nowrap sm:inline">Réinitialiser la feuille</span>
         </button>
       </div>
       {quickEntryMode && (

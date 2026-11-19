@@ -490,12 +490,10 @@ export function TrainingAttendanceManager({
                       </span>
                     </button>
                   ) : (
-                    <>
-                      <div className="flex min-w-0 items-center gap-3">
-                        <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#14234e] to-[#26478c] text-base font-black text-amber-300 shadow-sm ring-2 ring-amber-300/50">{player.number}</span>
-                        <p className="min-w-0 break-words text-sm font-black leading-snug text-foreground sm:text-base">{player.firstName} {player.lastName}</p>
-                      </div>
-                      <label className="mt-3 block">
+                    <div className="flex min-w-0 items-center gap-2">
+                      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#14234e] to-[#26478c] text-sm font-black text-amber-300 shadow-sm ring-2 ring-amber-300/50">{player.number}</span>
+                      <p className="min-w-0 flex-1 break-words text-sm font-black leading-snug text-foreground sm:text-base">{player.firstName} {player.lastName}</p>
+                      <label className="shrink-0">
                         <span className="sr-only">Statut de {player.firstName} {player.lastName}</span>
                         <select
                           aria-label={`Statut de ${player.firstName} ${player.lastName}`}
@@ -506,15 +504,15 @@ export function TrainingAttendanceManager({
                             setMessage('')
                             setError('')
                           }}
-                          className={`h-10 w-full rounded-xl border px-3 text-xs font-bold outline-none transition focus-visible:ring-2 focus-visible:ring-[#d4af37] ${currentStatus ? STATUS_PRESENTATION[currentStatus].idle : 'border-amber-200 bg-amber-50 text-amber-900'}`}
+                          className={`h-9 w-24 rounded-xl border px-2 text-xs font-black outline-none transition focus-visible:ring-2 focus-visible:ring-[#d4af37] ${currentStatus ? STATUS_PRESENTATION[currentStatus].idle : 'border-amber-200 bg-amber-50 text-amber-900'}`}
                         >
                           <option value="">À noter</option>
                           {TRAINING_ATTENDANCE_STATUSES.map((status) => (
-                            <option key={status.value} value={status.value}>{status.label}</option>
+                            <option key={status.value} value={status.value}>{status.value}</option>
                           ))}
                         </select>
                       </label>
-                    </>
+                    </div>
                   )}
                 </li>
               )

@@ -120,6 +120,14 @@ export function TrainingAttendanceManager({
     return { filled, present, missing: players.length - filled }
   }, [players.length, statuses])
 
+  const statusCounts = useMemo(() => {
+    const next: Record<TrainingAttendanceStatus, number> = { P: 0, AJ: 0, AI: 0, B: 0, E: 0 }
+    for (const value of Object.values(statuses)) {
+      if (value) next[value] += 1
+    }
+    return next
+  }, [statuses])
+
   const visiblePlayers = useMemo(() => {
     const term = normalizeSearch(query)
     if (!term) return players
@@ -528,6 +536,16 @@ export function TrainingAttendanceManager({
             <div className="min-w-0">
               <p className="truncate text-sm font-black text-primary">{date ? formatDate(date) : 'Choisis une date'}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">{counts.filled}/{players.length} réponses · {counts.missing ? `${counts.missing} à compléter` : 'tout est prêt'}</p>
+              <div aria-label="Récapitulatif avant enregistrement" className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-muted-foreground sm:grid-cols-3">
+                {TRAINING_ATTENDANCE_STATUSES.map((status) => (
+                  <span key={status.value}>
+                    {status.shortLabel} <strong className="tabular-nums text-foreground">{statusCounts[status.value]}</strong>
+                  </span>
+                ))}
+                <span>
+                  À renseigner <strong className="tabular-nums text-foreground">{counts.missing}</strong>
+                </span>
+              </div>
             </div>
             <button type="button" onClick={() => void save()} disabled={!canSave} className="min-h-12 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-6 font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50">
               <Save aria-hidden="true" className="mr-2 inline size-4" />{saving ? 'Enregistrement…' : savedSession ? 'Mettre à jour la séance' : 'Enregistrer les présences'}

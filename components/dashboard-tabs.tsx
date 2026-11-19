@@ -333,7 +333,7 @@ export function DashboardTabs({
   const mobileMainTabs: Array<{ key: TabKey | 'more'; label: string; shortLabel?: string; icon: LucideIcon }> = canAccessTraining
     ? [
         { key: 'matches', label: 'Matchs', icon: CalendarDays },
-        { key: 'training', label: 'Entraînements', shortLabel: 'Présences', icon: Dumbbell },
+        { key: 'training', label: 'Entraînements', icon: Dumbbell },
         { key: 'roster', label: 'Joueurs', icon: Shirt },
         { key: 'more', label: 'Plus', icon: Ellipsis },
       ]
@@ -715,7 +715,7 @@ export function DashboardTabs({
             })}
           </div>
         )}
-        <div className={`mx-auto grid w-full max-w-lg gap-1 rounded-2xl bg-muted/90 p-1 ${mobileMainTabs.length === 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
+        <div className={`mx-auto grid w-full max-w-lg gap-1 rounded-2xl bg-muted/90 p-1 ${mobileMainTabs.length === 4 ? 'grid-cols-[1fr_1.35fr_1fr_1fr]' : 'grid-cols-3'}`}>
           {mobileMainTabs.map((tab) => {
             const Icon = tab.icon
             const isMore = tab.key === 'more'
@@ -741,7 +741,7 @@ export function DashboardTabs({
                   setActiveTab(tab.key)
                 }}
                 className={[
-                  'flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[10px] leading-tight transition-all sm:text-[11px]',
+                  'flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-[9px] leading-tight transition-all sm:text-[11px]',
                   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
                   isActive
                     ? 'border border-amber-400/45 bg-gradient-to-br from-[#172554] via-[#1e3a8a] to-[#172554] font-extrabold text-amber-300 shadow-md'
@@ -749,7 +749,7 @@ export function DashboardTabs({
                 ].join(' ')}
               >
                 <Icon aria-hidden="true" className="size-5 shrink-0" />
-                <span className="max-w-full whitespace-nowrap">{tab.shortLabel ?? tab.label}</span>
+                <span className="max-w-full whitespace-nowrap">{tab.label}</span>
               </button>
             )
           })}

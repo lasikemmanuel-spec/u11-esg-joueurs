@@ -23,6 +23,8 @@ export type SecurityEventType =
   | 'directory_modified'
   | 'profile_photo_modified'
   | 'whatsapp_settings_modified'
+  | 'team_planning_event_created'
+  | 'team_planning_event_updated'
 
 export type SecurityEvent = {
   event: SecurityEventType
@@ -67,6 +69,8 @@ export function logSecurityEvent(event: Omit<SecurityEvent, 'timestamp'>) {
     directory_modified: '📇',
     profile_photo_modified: '🖼️',
     whatsapp_settings_modified: '💬',
+    team_planning_event_created: '📅',
+    team_planning_event_updated: '📅',
   }[event.event] ?? '📋'
 
   console.log(

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
-import { BarChart3, CalendarDays, Dumbbell, Ellipsis, LogOut, MessageCircle, Radio, Shirt, UsersRound, X, type LucideIcon } from 'lucide-react'
+import { BarChart3, CalendarDays, CalendarRange, Dumbbell, Ellipsis, LogOut, MessageCircle, Radio, Shirt, UsersRound, X, type LucideIcon } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import { EducatorAvatar } from '@/components/educator-avatar'
 import { EducatorProfilePhotoEditor } from '@/components/educator-profile-photo-editor'
@@ -17,7 +17,7 @@ import type { TrainingAttendanceSession } from '@/lib/training-attendance'
 import type { CohesionDay } from '@/lib/cohesion'
 import type { PlayerStats as PlayerStat } from '@/lib/stats'
 
-type TabKey = 'roster' | 'educator' | 'training' | 'stats' | 'matches' | 'whatsapp'
+type TabKey = 'roster' | 'educator' | 'training' | 'stats' | 'matches' | 'planning' | 'whatsapp'
 type StatsSection = 'players' | 'dynamics' | 'matches'
 type MatchFocus = {
   date: string
@@ -66,6 +66,9 @@ const LiveMatchConsole = dynamic(() => import('@/components/live-match-console')
 })
 const WhatsAppMessageCenter = dynamic(() => import('@/components/whatsapp-message-center').then((module) => module.WhatsAppMessageCenter), {
   loading: () => <p role="status" className="p-4 text-sm text-muted-foreground">Chargement des messages WhatsApp…</p>,
+})
+const TeamPlanning = dynamic(() => import('@/components/team-planning').then((module) => module.TeamPlanning), {
+  loading: () => <p role="status" className="p-4 text-sm text-muted-foreground">Chargement du planning…</p>,
 })
 function isMatchSheetEntry(value: unknown): value is MatchSheetEntry {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
@@ -317,6 +320,7 @@ export function DashboardTabs({
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'matches', label: 'Matchs' },
+    { key: 'planning', label: 'Planning' },
     { key: 'roster', label: 'Fiches joueurs' },
     { key: 'stats', label: 'Statistiques U11' },
     ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
@@ -333,20 +337,23 @@ export function DashboardTabs({
   const mobileMainTabs: Array<{ key: TabKey | 'more'; label: string; shortLabel?: string; icon: LucideIcon }> = canAccessTraining
     ? [
         { key: 'matches', label: 'Matchs', icon: CalendarDays },
+        { key: 'planning', label: 'Planning', icon: CalendarRange },
         { key: 'training', label: 'Entraînements', icon: Dumbbell },
-        { key: 'roster', label: 'Joueurs', icon: Shirt },
         { key: 'more', label: 'Plus', icon: Ellipsis },
       ]
     : [
         { key: 'matches', label: 'Matchs', icon: CalendarDays },
+        { key: 'planning', label: 'Planning', icon: CalendarRange },
         { key: 'stats', label: 'Stats', icon: BarChart3 },
-        { key: 'roster', label: 'Joueurs', icon: Shirt },
+        { key: 'more', label: 'Plus', icon: Ellipsis },
       ]
   const moreMenuTabs = tabs.filter((tab) => !mobileMainTabs.some((mobileTab) => mobileTab.key === tab.key))
   const moreMenuIcons: Partial<Record<TabKey, LucideIcon>> = {
+    roster: Shirt,
     stats: BarChart3,
     educator: UsersRound,
     training: Dumbbell,
+    planning: CalendarRange,
     whatsapp: MessageCircle,
   }
   const mainHeader = (
@@ -492,7 +499,7 @@ export function DashboardTabs({
     {mainHeader}
     <main className="relative z-20 mx-auto flex max-w-7xl flex-col gap-4 px-4 pt-6 pb-24 md:gap-6 md:px-6 md:pt-8 md:pb-24 xl:pb-8">
     <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm xl:grid xl:grid-cols-[220px_minmax(0,1fr)]">
-      <nav aria-label="Statistiques" className="hidden border-b border-border bg-card p-2 xl:block xl:border-r xl:border-b-0 xl:p-3">
+      <nav aria-label="Navigation principale" className="hidden border-b border-border bg-card p-2 xl:block xl:border-r xl:border-b-0 xl:p-3">
         <div className="mx-auto flex max-w-3xl gap-2 rounded-full bg-muted p-1 xl:flex-col xl:rounded-xl">
           {tabs.map((tab) => {
             const isActive = activeTab === tab.key
@@ -624,6 +631,11 @@ export function DashboardTabs({
               )}
             </div>
           </div>
+        )}
+        {activeTab === 'planning' && (
+          <TeamPlanning
+            canManage={educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'}
+          />
         )}
         {activeTab === 'whatsapp' && educatorIdentity && (
           <WhatsAppMessageCenter prefill={whatsAppPrefill} />

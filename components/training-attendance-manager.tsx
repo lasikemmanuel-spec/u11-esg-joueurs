@@ -592,7 +592,7 @@ export function TrainingAttendanceManager({
           </ul>
           )}
 
-          <footer className="sticky bottom-20 z-10 flex flex-col gap-3 rounded-2xl border border-accent/50 bg-card/95 p-3 shadow-xl backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:px-5 xl:bottom-3">
+          <footer className={`z-10 flex flex-col gap-3 rounded-2xl border border-accent/50 bg-card/95 p-3 shadow-xl backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:px-5 ${playerStatusFilter === 'all' && !query ? 'sticky bottom-20 xl:bottom-3' : 'relative'}`}>
             <div className="min-w-0">
               <p className="truncate text-sm font-black text-primary">{date ? formatDate(date) : 'Choisis une date'}</p>
               <p className="mt-0.5 text-xs text-muted-foreground">{counts.filled}/{players.length} réponses · {counts.missing ? `${counts.missing} à compléter` : 'tout est prêt'}</p>

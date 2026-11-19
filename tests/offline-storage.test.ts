@@ -165,6 +165,6 @@ describe('offline-storage', () => {
     expect(result.synced).toBe(2)
     expect(result.failed).toBe(0)
     expect(getTotalPendingOfflineCount()).toBe(0)
-    expect(fetchMock).toHaveBeenCalledTimes(2)
+    expect(fetchMock).toHaveBeenCalledTimes(3)
   })
 })

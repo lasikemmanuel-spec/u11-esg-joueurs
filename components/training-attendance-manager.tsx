@@ -58,7 +58,7 @@ function normalizeSearch(value: string) {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr-FR').trim()
 }
 
-type PlayerStatusFilter = 'all' | 'todo' | 'absent' | TrainingAttendanceStatus
+type PlayerStatusFilter = 'all' | 'todo' | TrainingAttendanceStatus
 
 export function TrainingAttendanceManager({
   players,
@@ -142,9 +142,7 @@ export function TrainingAttendanceManager({
         ? true
         : playerStatusFilter === 'todo'
           ? !status
-          : playerStatusFilter === 'absent'
-            ? status === 'AJ' || status === 'AI'
-            : status === playerStatusFilter
+          : status === playerStatusFilter
       const matchesSearch = !term || normalizeSearch(`${player.firstName} ${player.lastName} ${player.number}`).includes(term)
       return matchesFilter && matchesSearch
     })
@@ -482,14 +480,6 @@ export function TrainingAttendanceManager({
               >
                 À renseigner <span className="tabular-nums">{counts.missing}</span>
               </button>
-              <button
-                type="button"
-                aria-pressed={playerStatusFilter === 'absent'}
-                onClick={() => setPlayerStatusFilter('absent')}
-                className={`inline-flex min-h-9 items-center gap-1 rounded-full border px-3 py-1 text-[10px] font-bold transition ${playerStatusFilter === 'absent' ? 'border-rose-500 bg-rose-100 text-rose-950' : 'border-rose-200 bg-rose-50/70 text-rose-900 hover:bg-rose-100'}`}
-              >
-                Absents <span className="tabular-nums">{statusCounts.AJ + statusCounts.AI}</span>
-              </button>
               {TRAINING_ATTENDANCE_STATUSES.map((status) => {
                 const presentation = STATUS_PRESENTATION[status.value]
                 const StatusIcon = presentation.icon
@@ -516,11 +506,9 @@ export function TrainingAttendanceManager({
             <p role="status" className="rounded-xl bg-muted p-4 text-sm">
               {query
                 ? `Aucun joueur ne correspond à « ${query} ».`
-                : playerStatusFilter === 'absent'
-                  ? 'Aucun joueur absent pour cette séance.'
-                  : playerStatusFilter === 'todo'
-                    ? 'Tous les joueurs ont un statut.'
-                    : 'Aucun joueur ne correspond à ce statut.'}
+                : playerStatusFilter === 'todo'
+                  ? 'Tous les joueurs ont un statut.'
+                  : 'Aucun joueur ne correspond à ce statut.'}
             </p>
           ) : (
           <ul className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
@@ -593,21 +581,7 @@ export function TrainingAttendanceManager({
           )}
 
           <footer className={`z-10 flex flex-col gap-3 rounded-2xl border border-accent/50 bg-card/95 p-3 shadow-xl backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:px-5 ${playerStatusFilter === 'all' && !query ? 'sticky bottom-20 xl:bottom-3' : 'relative'}`}>
-            <div className="min-w-0">
-              <p className="truncate text-sm font-black text-primary">{date ? formatDate(date) : 'Choisis une date'}</p>
-              <p className="mt-0.5 text-xs text-muted-foreground">{counts.filled}/{players.length} réponses · {counts.missing ? `${counts.missing} à compléter` : 'tout est prêt'}</p>
-              <div aria-label="Récapitulatif avant enregistrement" className="mt-2 grid grid-cols-2 gap-x-3 gap-y-1 text-[11px] text-muted-foreground sm:grid-cols-3">
-                {TRAINING_ATTENDANCE_STATUSES.map((status) => (
-                  <span key={status.value}>
-                    {status.shortLabel} <strong className="tabular-nums text-foreground">{statusCounts[status.value]}</strong>
-                  </span>
-                ))}
-                <span>
-                  À renseigner <strong className="tabular-nums text-foreground">{counts.missing}</strong>
-                </span>
-              </div>
-            </div>
-            <button type="button" onClick={() => void save()} disabled={!canSave} className="min-h-12 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-6 font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50">
+            <button type="button" onClick={() => void save()} disabled={!canSave} className="min-h-12 w-full rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-6 font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:min-w-64">
               <Save aria-hidden="true" className="mr-2 inline size-4" />{saving ? 'Enregistrement…' : savedSession ? 'Mettre à jour la séance' : 'Enregistrer les présences'}
             </button>
           </footer>

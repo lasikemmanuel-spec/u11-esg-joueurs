@@ -58,6 +58,8 @@ function normalizeSearch(value: string) {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr-FR').trim()
 }
 
+type PlayerStatusFilter = 'all' | 'todo' | 'absent' | TrainingAttendanceStatus
+
 export function TrainingAttendanceManager({
   players,
   sessions,
@@ -75,6 +77,7 @@ export function TrainingAttendanceManager({
   const [quickEntryMode, setQuickEntryMode] = useState(false)
   const [quickStatus, setQuickStatus] = useState<TrainingAttendanceStatus | null>(null)
   const [allPresentNotice, setAllPresentNotice] = useState(false)
+  const [playerStatusFilter, setPlayerStatusFilter] = useState<PlayerStatusFilter>('all')
   const [statuses, setStatuses] = useState<Record<number, TrainingAttendanceStatus | ''>>({})
   const [saving, setSaving] = useState(false)
   const [cancellationSaving, setCancellationSaving] = useState(false)
@@ -105,6 +108,7 @@ export function TrainingAttendanceManager({
     setQuickEntryMode(false)
     setQuickStatus(null)
     setAllPresentNotice(false)
+    setPlayerStatusFilter('all')
     setMessage('')
     setError('')
     setShowCancellationForm(false)
@@ -132,11 +136,19 @@ export function TrainingAttendanceManager({
 
   const visiblePlayers = useMemo(() => {
     const term = normalizeSearch(query)
-    if (!term) return players
-    return players.filter((player) =>
-      normalizeSearch(`${player.firstName} ${player.lastName} ${player.number}`).includes(term),
-    )
-  }, [players, query])
+    return players.filter((player) => {
+      const status = statuses[player.number]
+      const matchesFilter = playerStatusFilter === 'all'
+        ? true
+        : playerStatusFilter === 'todo'
+          ? !status
+          : playerStatusFilter === 'absent'
+            ? status === 'AJ' || status === 'AI'
+            : status === playerStatusFilter
+      const matchesSearch = !term || normalizeSearch(`${player.firstName} ${player.lastName} ${player.number}`).includes(term)
+      return matchesFilter && matchesSearch
+    })
+  }, [players, query, playerStatusFilter, statuses])
 
   const setAllPresent = () => {
     const next = Object.fromEntries(players.map((player) => [player.number, 'P' as const]))
@@ -454,16 +466,47 @@ export function TrainingAttendanceManager({
             />
           </label>
           {!quickEntryMode && (
-            <div aria-label="Légende des statuts" className="flex flex-wrap gap-1.5">
+            <div role="group" aria-label="Filtrer les joueurs par statut" className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                aria-pressed={playerStatusFilter === 'all'}
+                onClick={() => setPlayerStatusFilter('all')}
+                className={`inline-flex min-h-9 items-center gap-1 rounded-full border px-3 py-1 text-[10px] font-bold transition ${playerStatusFilter === 'all' ? 'border-[#172554] bg-[#172554] text-white' : 'border-border bg-card text-foreground hover:bg-muted'}`}
+              >
+                Tous <span className="tabular-nums">{players.length}</span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={playerStatusFilter === 'todo'}
+                onClick={() => setPlayerStatusFilter('todo')}
+                className={`inline-flex min-h-9 items-center gap-1 rounded-full border px-3 py-1 text-[10px] font-bold transition ${playerStatusFilter === 'todo' ? 'border-amber-500 bg-amber-100 text-amber-950' : 'border-amber-200 bg-amber-50/70 text-amber-900 hover:bg-amber-100'}`}
+              >
+                À renseigner <span className="tabular-nums">{counts.missing}</span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={playerStatusFilter === 'absent'}
+                onClick={() => setPlayerStatusFilter('absent')}
+                className={`inline-flex min-h-9 items-center gap-1 rounded-full border px-3 py-1 text-[10px] font-bold transition ${playerStatusFilter === 'absent' ? 'border-rose-500 bg-rose-100 text-rose-950' : 'border-rose-200 bg-rose-50/70 text-rose-900 hover:bg-rose-100'}`}
+              >
+                Absents <span className="tabular-nums">{statusCounts.AJ + statusCounts.AI}</span>
+              </button>
               {TRAINING_ATTENDANCE_STATUSES.map((status) => {
                 const presentation = STATUS_PRESENTATION[status.value]
                 const StatusIcon = presentation.icon
+                const selected = playerStatusFilter === status.value
                 return (
-                  <span key={status.value} className={`inline-flex items-center gap-1 rounded-full border px-2 py-1 text-[9px] font-bold ${presentation.idle}`}>
+                  <button
+                    key={status.value}
+                    type="button"
+                    aria-pressed={selected}
+                    onClick={() => setPlayerStatusFilter(status.value)}
+                    className={`inline-flex min-h-9 items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold transition ${selected ? presentation.active : presentation.idle}`}
+                  >
                     <StatusIcon aria-hidden="true" className="size-3" />
-                    <span className="font-black">{status.value}</span>
                     <span>{status.shortLabel}</span>
-                  </span>
+                    <span className="tabular-nums">{statusCounts[status.value]}</span>
+                  </button>
                 )
               })}
             </div>
@@ -472,7 +515,15 @@ export function TrainingAttendanceManager({
           {query && <p aria-live="polite" className="-mt-3 text-xs text-muted-foreground">{visiblePlayers.length} joueur{visiblePlayers.length === 1 ? '' : 's'} trouvé{visiblePlayers.length === 1 ? '' : 's'}</p>}
 
           {visiblePlayers.length === 0 ? (
-            <p role="status" className="rounded-xl bg-muted p-4 text-sm">Aucun joueur ne correspond à « {query} ».</p>
+            <p role="status" className="rounded-xl bg-muted p-4 text-sm">
+              {query
+                ? `Aucun joueur ne correspond à « ${query} ».`
+                : playerStatusFilter === 'absent'
+                  ? 'Aucun joueur absent pour cette séance.'
+                  : playerStatusFilter === 'todo'
+                    ? 'Tous les joueurs ont un statut.'
+                    : 'Aucun joueur ne correspond à ce statut.'}
+            </p>
           ) : (
           <ul className="grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
             {visiblePlayers.map((player) => {

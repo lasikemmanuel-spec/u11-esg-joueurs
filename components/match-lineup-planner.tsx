@@ -333,7 +333,7 @@ export function MatchLineupEntry({
       type="button"
       onClick={() => setDialogOpen(true)}
       aria-haspopup="dialog"
-      className={`group mt-2 flex min-h-[4.5rem] w-full items-center justify-between gap-3 rounded-2xl border px-3 py-2.5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${match.team === 'E1' ? 'border-[#172554]/15 border-l-4 border-l-[#172554] bg-white/80 text-[#172554] dark:bg-[#172554]/40 dark:text-white' : 'border-amber-400/40 border-l-4 border-l-amber-400 bg-amber-50/90 text-amber-950 dark:bg-amber-400/10 dark:text-amber-100'}`}
+      className={`group mt-2 flex min-h-[4.5rem] w-full items-center justify-between gap-3 rounded-2xl border px-3 py-2.5 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${match.team === 'E1' ? 'border-[#172554]/15 border-l-4 border-l-[#172554] bg-white text-[#172554]' : 'border-amber-400/40 border-l-4 border-l-amber-400 bg-amber-50 text-amber-950'}`}
     >
       <span className="flex min-w-0 items-center gap-3">
         <ClubCrest className="size-10 shrink-0 ring-2 ring-[#d4af37]/80" />

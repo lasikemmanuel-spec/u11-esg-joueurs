@@ -320,7 +320,6 @@ export function DashboardTabs({
 
   const tabs: { key: TabKey; label: string }[] = [
     { key: 'matches', label: 'Matchs' },
-    { key: 'planning', label: 'Planning' },
     { key: 'roster', label: 'Fiches joueurs' },
     { key: 'stats', label: 'Statistiques U11' },
     ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
@@ -332,18 +331,17 @@ export function DashboardTabs({
     ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
       ? [{ key: 'whatsapp' as const, label: 'Messages WhatsApp' }]
       : []),
+    { key: 'planning', label: 'Planning' },
   ]
   const canAccessTraining = educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
   const mobileMainTabs: Array<{ key: TabKey | 'more'; label: string; shortLabel?: string; icon: LucideIcon }> = canAccessTraining
     ? [
         { key: 'matches', label: 'Matchs', icon: CalendarDays },
-        { key: 'planning', label: 'Planning', icon: CalendarRange },
         { key: 'training', label: 'Entraînements', icon: Dumbbell },
         { key: 'more', label: 'Plus', icon: Ellipsis },
       ]
     : [
         { key: 'matches', label: 'Matchs', icon: CalendarDays },
-        { key: 'planning', label: 'Planning', icon: CalendarRange },
         { key: 'stats', label: 'Stats', icon: BarChart3 },
         { key: 'more', label: 'Plus', icon: Ellipsis },
       ]

@@ -539,7 +539,7 @@ export function TrainingAttendanceManager({
                   : 'Aucun joueur ne correspond à ce statut.'}
             </p>
           ) : (
-          <ul className="grid gap-2 sm:gap-3 sm:grid-cols-2 2xl:grid-cols-3">
+          <ul className={`grid gap-2 sm:gap-3 sm:grid-cols-2 2xl:grid-cols-3 ${playerStatusFilter === 'all' && !query ? 'pb-28' : ''}`}>
             {visiblePlayers.map((player) => {
               const currentStatus = statuses[player.number]
               const selectedQuickStatus = quickStatus !== null && currentStatus === quickStatus

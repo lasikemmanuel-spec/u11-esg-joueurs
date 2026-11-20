@@ -96,6 +96,25 @@ function trainingSessionHeader(date: string) {
   return `Séance (${day}/${month}/${year})`
 }
 
+function findEmptyNumberedSessionColumn(
+  rows: string[][],
+  headerRowIndex: number,
+  playerRows: Map<number, number>,
+  datedColumns: Set<number>,
+) {
+  const playerRowIndexes = [...playerRows.values()]
+  return rows[headerRowIndex].findIndex((header, column) => {
+    const normalizedHeader = header
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLocaleLowerCase('fr-FR')
+      .trim()
+    return /^seance\s+\d+$/.test(normalizedHeader) &&
+      !datedColumns.has(column) &&
+      playerRowIndexes.every((rowIndex) => !(rows[rowIndex][column] ?? '').trim())
+  })
+}
+
 export async function saveTrainingAttendance(
   date: string,
   entries: TrainingAttendanceEntry[],
@@ -126,20 +145,56 @@ export async function saveTrainingAttendance(
   })
 
   const existingColumn = dateColumns.get(date)
-  let targetColumn = existingColumn
-  if (targetColumn === undefined) {
+  const emptySessionColumn = findEmptyNumberedSessionColumn(
+    rows,
+    headerRowIndex,
+    playerRows,
+    new Set(dateColumns.values()),
+  )
+  const moveExistingColumn = existingColumn !== undefined &&
+    emptySessionColumn >= 0 &&
+    emptySessionColumn < existingColumn
+
+  let targetColumn: number
+  if (existingColumn !== undefined && !moveExistingColumn) {
+    targetColumn = existingColumn
+  } else if (emptySessionColumn >= 0) {
+    targetColumn = emptySessionColumn
+  } else {
     targetColumn = Math.max(-1, ...dateColumns.values()) + 1
-    while (rows.some((row) => (row[targetColumn!] ?? '').trim() !== '')) targetColumn += 1
+    while (rows.some((row) => (row[targetColumn] ?? '').trim() !== '')) targetColumn += 1
   }
 
   const escapedTitle = sheetTitle.replace(/'/g, "''")
   await ensureAuthenticatedSheetColumnCount(sheetTitle, targetColumn + 1)
   const column = columnName(targetColumn)
   const updates: Array<{ range: string; values: string[][] }> = []
-  if (existingColumn === undefined) {
+  if (existingColumn === undefined || moveExistingColumn) {
     updates.push({
       range: `'${escapedTitle}'!${column}${headerRowIndex + 1}`,
       values: [[trainingSessionHeader(date)]],
+    })
+  }
+  if (moveExistingColumn && existingColumn !== undefined) {
+    const oldColumn = columnName(existingColumn)
+    for (const rowIndex of playerRows.values()) {
+      const value = rows[rowIndex][existingColumn] ?? ''
+      if (value.trim()) {
+        updates.push({
+          range: `'${escapedTitle}'!${column}${rowIndex + 1}`,
+          values: [[value]],
+        })
+      }
+      if (value.trim()) {
+        updates.push({
+          range: `'${escapedTitle}'!${oldColumn}${rowIndex + 1}`,
+          values: [['']],
+        })
+      }
+    }
+    updates.push({
+      range: `'${escapedTitle}'!${oldColumn}${headerRowIndex + 1}`,
+      values: [['']],
     })
   }
   for (const entry of entries) {

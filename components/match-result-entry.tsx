@@ -702,9 +702,11 @@ export function MatchResultEntry({
                                 const address = entry.venueAddress.trim()
                                 const query = encodeURIComponent(address).replace(/%20/g, '+')
                                 return (
-                                  <div className="flex min-w-0 basis-full items-center gap-2 rounded-xl border border-[#172554]/10 bg-white/70 px-2.5 py-1.5 sm:flex-1">
-                                    <MapPin aria-hidden="true" className="size-4 shrink-0 text-[#172554]" />
-                                    <span className="min-w-0 flex-1 break-words text-xs font-semibold text-[#172554]">{address}</span>
+                                  <div className="flex min-w-0 basis-full flex-col gap-2 rounded-xl border border-[#172554]/10 bg-white/70 px-2.5 py-1.5 sm:flex-1 sm:flex-row sm:items-center">
+                                    <div className="flex min-w-0 items-center gap-2 sm:flex-1">
+                                      <MapPin aria-hidden="true" className="size-4 shrink-0 text-[#172554]" />
+                                      <span className="min-w-0 flex-1 break-words text-xs font-semibold text-[#172554]">{address}</span>
+                                    </div>
                                     <div className="flex shrink-0 items-center gap-1">
                                       <a
                                         href={`https://maps.google.com/?q=${query}`}

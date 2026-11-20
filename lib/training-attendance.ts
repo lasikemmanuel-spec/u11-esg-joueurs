@@ -91,9 +91,35 @@ function columnName(columnIndex: number) {
   return column
 }
 
-function trainingSessionHeader(date: string) {
+function numberedSession(header: string) {
+  const normalizedHeader = header
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('fr-FR')
+    .trim()
+  const match = normalizedHeader.match(/^seance\s+(\d+)(?:\s*\(|$)/)
+  return match ? Number(match[1]) : undefined
+}
+
+function sessionNumberForColumn(headers: string[], column: number) {
+  const currentNumber = numberedSession(headers[column] ?? '')
+  if (currentNumber !== undefined) return currentNumber
+
+  for (let index = column - 1; index >= 0; index -= 1) {
+    const previousNumber = numberedSession(headers[index] ?? '')
+    if (previousNumber !== undefined) return previousNumber + 1
+  }
+  for (let index = column + 1; index < headers.length; index += 1) {
+    const nextNumber = numberedSession(headers[index] ?? '')
+    if (nextNumber !== undefined) return Math.max(1, nextNumber - 1)
+  }
+
+  return Math.max(0, ...headers.map(numberedSession).filter((value): value is number => value !== undefined)) + 1
+}
+
+function trainingSessionHeader(date: string, sessionNumber: number) {
   const [year, month, day] = date.split('-')
-  return `Séance (${day}/${month}/${year})`
+  return `Séance ${sessionNumber} (${day}/${month}/${year})`
 }
 
 function findEmptyNumberedSessionColumn(
@@ -169,10 +195,14 @@ export async function saveTrainingAttendance(
   await ensureAuthenticatedSheetColumnCount(sheetTitle, targetColumn + 1)
   const column = columnName(targetColumn)
   const updates: Array<{ range: string; values: string[][] }> = []
-  if (existingColumn === undefined || moveExistingColumn) {
+  const targetHeader = trainingSessionHeader(
+    date,
+    sessionNumberForColumn(rows[headerRowIndex], targetColumn),
+  )
+  if (rows[headerRowIndex][targetColumn] !== targetHeader) {
     updates.push({
       range: `'${escapedTitle}'!${column}${headerRowIndex + 1}`,
-      values: [[trainingSessionHeader(date)]],
+      values: [[targetHeader]],
     })
   }
   if (moveExistingColumn && existingColumn !== undefined) {

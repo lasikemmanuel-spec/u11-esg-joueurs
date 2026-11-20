@@ -43,7 +43,7 @@ describe('saveTrainingAttendance', () => {
     await saveTrainingAttendance('2026-11-20', [{ number: 7, status: 'P' }])
 
     expect(updateAuthenticatedSheetValues).toHaveBeenCalledWith([
-      { range: "'📅 Présences Entraînement'!E2", values: [['Séance (20/11/2026)']] },
+      { range: "'📅 Présences Entraînement'!E2", values: [['Séance 5 (20/11/2026)']] },
       { range: "'📅 Présences Entraînement'!E3", values: [['P']] },
     ])
     expect(ensureAuthenticatedSheetColumnCount).toHaveBeenCalledWith('📅 Présences Entraînement', 5)
@@ -60,7 +60,7 @@ describe('saveTrainingAttendance', () => {
     await saveTrainingAttendance('2026-11-20', [{ number: 7, status: 'P' }])
 
     expect(updateAuthenticatedSheetValues).toHaveBeenCalledWith([
-      { range: "'📅 Présences Entraînement'!F2", values: [['Séance (20/11/2026)']] },
+      { range: "'📅 Présences Entraînement'!F2", values: [['Séance 6 (20/11/2026)']] },
       { range: "'📅 Présences Entraînement'!F3", values: [['P']] },
     ])
   })
@@ -76,6 +76,7 @@ describe('saveTrainingAttendance', () => {
     await saveTrainingAttendance('2026-11-20', [{ number: 7, status: 'AJ' }])
 
     expect(updateAuthenticatedSheetValues).toHaveBeenCalledWith([
+      { range: "'📅 Présences Entraînement'!E2", values: [['Séance 5 (20/11/2026)']] },
       { range: "'📅 Présences Entraînement'!E3", values: [['AJ']] },
     ])
   })
@@ -95,7 +96,7 @@ describe('saveTrainingAttendance', () => {
     const updates = updateAuthenticatedSheetValues.mock.calls[0][0]
     expect(updates).toContainEqual({
       range: "'📅 Présences Entraînement'!E2",
-      values: [['Séance (20/11/2026)']],
+      values: [['Séance 5 (20/11/2026)']],
     })
     expect(updates).toContainEqual({ range: "'📅 Présences Entraînement'!E3", values: [['P']] })
     expect(updates).toContainEqual({ range: "'📅 Présences Entraînement'!E4", values: [['P']] })

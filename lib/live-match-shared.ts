@@ -170,6 +170,42 @@ export function getLivePlayersAtEvent(
   throw new Error('Action introuvable dans le match.')
 }
 
+export function swapLiveMatchStarterAndSubstitute(
+  session: LiveMatchSession,
+  starterNumber: number,
+  substituteNumber: number,
+): LiveMatchSession {
+  if (
+    starterNumber === substituteNumber ||
+    !session.starters.includes(starterNumber) ||
+    !session.substitutes.includes(substituteNumber)
+  ) {
+    throw new Error('Sélectionne un titulaire et un remplaçant différents.')
+  }
+  const swap = (number: number) =>
+    number === starterNumber ? substituteNumber :
+      number === substituteNumber ? starterNumber : number
+  const swapOptional = (number: number | undefined) =>
+    number === undefined ? undefined : swap(number)
+
+  return {
+    ...session,
+    starters: session.starters.map(swap),
+    substitutes: session.substitutes.map(swap),
+    events: session.events.map((event) => event.kind === 'goal'
+      ? {
+          ...event,
+          scorerNumber: swapOptional(event.scorerNumber),
+          assistNumber: swapOptional(event.assistNumber),
+        }
+      : {
+          ...event,
+          playerOut: swap(event.playerOut),
+          playerIn: swap(event.playerIn),
+        }),
+  }
+}
+
 function elapsedSecondsAtMinute(minute: number, format: LiveMatchFormat) {
   if (minute <= 0) return 0
   const period = Math.floor((minute - 1) / format.minutesPerPeriod)

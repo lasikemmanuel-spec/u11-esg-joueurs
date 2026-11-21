@@ -40,6 +40,7 @@ import {
   getLiveMatchMaximumSeconds,
   getLiveMinute,
   getLivePlayersOnPitch,
+  swapLiveMatchStarterAndSubstitute,
   type LiveMatchEvent,
   type LiveMatchSession,
 } from '@/lib/live-match-shared'
@@ -103,6 +104,9 @@ export function LiveMatchConsole({
   const [editingEventMinute, setEditingEventMinute] = useState('')
   const [editingEventScorerNumber, setEditingEventScorerNumber] = useState('')
   const [editingEventAssistNumber, setEditingEventAssistNumber] = useState('')
+  const [lineupCorrectionOpen, setLineupCorrectionOpen] = useState(false)
+  const [correctionStarterNumber, setCorrectionStarterNumber] = useState('')
+  const [correctionSubstituteNumber, setCorrectionSubstituteNumber] = useState('')
   const autoPauseRef = useRef(false)
   const lastLocalMutationAt = useRef(0)
 
@@ -478,6 +482,28 @@ export function LiveMatchConsole({
     setAssistNumber('')
     setPlayerOut('')
     setPlayerIn('')
+  }
+
+  const correctStarterSubstituteSwap = async () => {
+    if (!session || !correctionStarterNumber || !correctionSubstituteNumber) return
+    const starterNumber = Number(correctionStarterNumber)
+    const substituteNumber = Number(correctionSubstituteNumber)
+    const starterName = playerName(players, starterNumber)
+    const substituteName = playerName(players, substituteNumber)
+    if (!window.confirm(
+      `Permuter ${starterName} et ${substituteName} dans la composition et toutes les actions enregistrées (buts, passes et remplacements) ?`,
+    )) return
+
+    try {
+      const correctedSession = swapLiveMatchStarterAndSubstitute(session, starterNumber, substituteNumber)
+      calculateLiveMatchSummary(correctedSession, now)
+      await persistSession(correctedSession)
+      setLineupCorrectionOpen(false)
+      setCorrectionStarterNumber('')
+      setCorrectionSubstituteNumber('')
+    } catch (correctionError) {
+      setError(correctionError instanceof Error ? correctionError.message : 'Impossible de corriger la composition.')
+    }
   }
 
   useEffect(() => {
@@ -858,6 +884,59 @@ export function LiveMatchConsole({
                     </span>
                     <span>Temps écoulé : {Math.round(elapsedSeconds / 60)} min</span>
                   </div>
+                  {session.phase !== 'ready' && !session.completed && (
+                    <details
+                      className="mt-3 rounded-xl border border-amber-200/20 bg-white/[0.04] p-3 text-left"
+                      open={lineupCorrectionOpen}
+                      onToggle={(event) => setLineupCorrectionOpen(event.currentTarget.open)}
+                    >
+                      <summary className="cursor-pointer text-xs font-bold text-amber-100">
+                        Corriger une inversion titulaire / remplaçant
+                      </summary>
+                      <p className="mt-2 text-[11px] leading-relaxed text-white/60">
+                        Permute les deux joueurs dans la composition et dans toute la chronologie. La correction est acceptée seulement si elle correspond à la feuille officielle.
+                      </p>
+                      <div className="mt-3 grid gap-2 sm:grid-cols-2">
+                        <label className="text-xs font-semibold text-white/70">
+                          Joueur enregistré titulaire
+                          <select
+                            value={correctionStarterNumber}
+                            onChange={(event) => setCorrectionStarterNumber(event.target.value)}
+                            disabled={saving}
+                            className="mt-1 h-10 w-full rounded-lg border border-white/15 bg-[#101c41] px-2 text-sm text-white"
+                          >
+                            <option value="">Choisir un joueur</option>
+                            {session.starters.map((number) => (
+                              <option key={number} value={number}>{playerName(players, number)}</option>
+                            ))}
+                          </select>
+                        </label>
+                        <label className="text-xs font-semibold text-white/70">
+                          Joueur enregistré remplaçant
+                          <select
+                            value={correctionSubstituteNumber}
+                            onChange={(event) => setCorrectionSubstituteNumber(event.target.value)}
+                            disabled={saving}
+                            className="mt-1 h-10 w-full rounded-lg border border-white/15 bg-[#101c41] px-2 text-sm text-white"
+                          >
+                            <option value="">Choisir un joueur</option>
+                            {session.substitutes.map((number) => (
+                              <option key={number} value={number}>{playerName(players, number)}</option>
+                            ))}
+                          </select>
+                        </label>
+                      </div>
+                      <button
+                        type="button"
+                        disabled={saving || !correctionStarterNumber || !correctionSubstituteNumber}
+                        onClick={() => void correctStarterSubstituteSwap().catch(() => undefined)}
+                        className="mt-3 inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-amber-300 px-3 text-xs font-black text-blue-950 disabled:opacity-40"
+                      >
+                        <ArrowLeftRight aria-hidden="true" className="size-4" />
+                        Permuter et recalculer
+                      </button>
+                    </details>
+                  )}
                 </div>
               )}
               <div className="mt-4 flex flex-wrap justify-center gap-2">

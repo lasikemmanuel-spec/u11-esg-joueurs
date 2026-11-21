@@ -366,8 +366,13 @@ export async function POST(request: Request) {
         const isStartingWithRefreshedLineup = session.phase === 'firstHalf' &&
           session.elapsedSeconds === 0 &&
           session.runningSince !== null
-        if (!canRefreshLiveMatchLineup(existing) || !isStartingWithRefreshedLineup) {
-          return jsonResponse({ error: 'La composition du match a changé. Réinitialise le direct avant de le démarrer.' }, 409)
+        const isStartedLineupCorrection = !canRefreshLiveMatchLineup(existing) &&
+          sameNumberSet(
+            [...existing.starters, ...existing.substitutes],
+            [...session.starters, ...session.substitutes],
+          )
+        if (!isStartedLineupCorrection && (!canRefreshLiveMatchLineup(existing) || !isStartingWithRefreshedLineup)) {
+            return jsonResponse({ error: 'La composition du match ne peut pas être modifiée de cette manière.' }, 409)
         }
         const lineups = await getMatchLineups(results.entries, { cacheForSeconds: 0 })
         const lineup = lineups.find((item) =>
@@ -378,7 +383,7 @@ export async function POST(request: Request) {
           !sameNumberSet(lineup.starters, session.starters) ||
           !sameNumberSet(lineup.substitutes, session.substitutes)
         ) {
-          return jsonResponse({ error: 'La composition doit correspondre à la feuille de match avant le démarrage.' }, 409)
+          return jsonResponse({ error: 'La composition corrigée doit correspondre à la feuille de match enregistrée.' }, 409)
         }
       }
       if (getLiveElapsedSeconds(session) + 2 < getLiveElapsedSeconds(existing)) {

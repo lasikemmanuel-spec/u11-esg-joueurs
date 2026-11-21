@@ -9,6 +9,7 @@ import {
   getLiveMatchFormat,
   formatLiveMinute,
   getLiveMinute,
+  swapLiveMatchStarterAndSubstitute,
 } from '@/lib/live-match-shared'
 
 function session() {
@@ -67,6 +68,31 @@ describe('live match calculations', () => {
     ]
 
     expect([...getLivePlayersAtEvent(match, 'goal')]).toEqual([2, 3, 4, 5, 6, 7, 8, 9])
+  })
+
+  it('swaps a starter and substitute throughout the lineup and event history', () => {
+    const match = session()
+    match.phase = 'finished'
+    match.elapsedSeconds = 50 * 60
+    match.events = [
+      { id: 'goal', kind: 'goal', side: 'for', minute: 5, scorerNumber: 1, assistNumber: 2 },
+      { id: 'sub', kind: 'substitution', minute: 11, playerOut: 1, playerIn: 9 },
+    ]
+
+    const corrected = swapLiveMatchStarterAndSubstitute(match, 1, 9)
+
+    expect(corrected.starters).toContain(9)
+    expect(corrected.substitutes).toContain(1)
+    expect(corrected.events).toEqual([
+      { id: 'goal', kind: 'goal', side: 'for', minute: 5, scorerNumber: 9, assistNumber: 2 },
+      { id: 'sub', kind: 'substitution', minute: 11, playerOut: 9, playerIn: 1 },
+    ])
+    expect(calculateLiveMatchSummary(corrected).players).toEqual(
+      expect.arrayContaining([
+        { number: 9, minutes: 11, goals: 1, assists: 0 },
+        { number: 1, minutes: 39, goals: 0, assists: 0 },
+      ]),
+    )
   })
 
   it('starts second-half event minutes at 1+25', () => {

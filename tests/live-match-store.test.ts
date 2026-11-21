@@ -97,6 +97,30 @@ describe('live match sheet persistence', () => {
     ]))
   })
 
+  it('writes player statistics to columns even when the sheet headers are reordered', async () => {
+    const rows = matchSheetRows()
+    rows[10][3] = 'BUT'
+    rows[10][4] = 'PASSE'
+    rows[10][5] = 'MN'
+    getAuthenticatedSheetRows.mockResolvedValue({
+      sheetTitle: MATCH_TABS.E1,
+      rows,
+    })
+
+    await finalizeLiveMatch(session(), {
+      goalsFor: 2,
+      goalsAgainst: 1,
+      elapsedSeconds: 50 * 60,
+      players: [{ number: 1, minutes: 50, goals: 1, assists: 1 }],
+    })
+
+    expect(updateAuthenticatedSheetValues).toHaveBeenCalledWith(expect.arrayContaining([
+      { range: "'⚽ Feuille de Match Equipe 1'!D12", values: [['1']] },
+      { range: "'⚽ Feuille de Match Equipe 1'!E12", values: [['1']] },
+      { range: "'⚽ Feuille de Match Equipe 1'!F12", values: [['50']] },
+    ]))
+  })
+
   it('refuses to write when the match block has unexpected stat headers', async () => {
     const rows = matchSheetRows()
     rows[10][5] = 'Temps'
@@ -107,7 +131,7 @@ describe('live match sheet persistence', () => {
       goalsAgainst: 0,
       elapsedSeconds: 50 * 60,
       players: [{ number: 1, minutes: 50, goals: 0, assists: 0 }],
-    })).rejects.toThrow('ne sont pas dans l’ordre attendu')
+    })).rejects.toThrow('doivent apparaître une seule fois')
     expect(updateAuthenticatedSheetValues).not.toHaveBeenCalled()
   })
 })

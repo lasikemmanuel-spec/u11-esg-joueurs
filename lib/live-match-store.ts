@@ -137,12 +137,18 @@ function findMatchRows(rows: string[][], match: LiveMatchSession) {
   )
   if (roleHeaderRowIndex < 0) throw new Error('Les colonnes de la feuille de match sont introuvables.')
   const headers = rows[roleHeaderRowIndex]
-  if (
-    normalizeHeader(headers[match.slotColumn + 1] ?? '') !== 'mn' ||
-    normalizeHeader(headers[match.slotColumn + 2] ?? '') !== 'but' ||
-    normalizeHeader(headers[match.slotColumn + 3] ?? '') !== 'passe'
-  ) {
-    throw new Error('Les colonnes Tit/Rem, MN, BUT et PASSE ne sont pas dans l’ordre attendu. Aucune donnée n’a été modifiée.')
+  const statColumns = [match.slotColumn + 1, match.slotColumn + 2, match.slotColumn + 3]
+  const findStatColumn = (header: string) => {
+    const matches = statColumns.filter((column) => normalizeHeader(headers[column] ?? '') === header)
+    if (matches.length !== 1) {
+      throw new Error('Les colonnes MN, BUT et PASSE doivent apparaître une seule fois après Tit/Rem. Aucune donnée n’a été modifiée.')
+    }
+    return matches[0]
+  }
+  const statColumnIndexes = {
+    minutes: findStatColumn('mn'),
+    goals: findStatColumn('but'),
+    assists: findStatColumn('passe'),
   }
   const playerRows = new Map<number, number>()
   for (let rowIndex = roleHeaderRowIndex + 1; rowIndex < rows.length; rowIndex += 1) {
@@ -151,13 +157,13 @@ function findMatchRows(rows: string[][], match: LiveMatchSession) {
     if (playerRows.has(number)) throw new Error(`Le joueur n°${number} apparaît plusieurs fois dans la feuille.`)
     playerRows.set(number, rowIndex)
   }
-  return { dateRowIndex, playerRows }
+  return { dateRowIndex, playerRows, statColumnIndexes }
 }
 
 export async function finalizeLiveMatch(session: LiveMatchSession, summary: LiveMatchSummary) {
   const tab = MATCH_TABS[session.team]
   const { sheetTitle, rows } = await getAuthenticatedSheetRows(tab)
-  const { dateRowIndex, playerRows } = findMatchRows(rows, session)
+  const { dateRowIndex, playerRows, statColumnIndexes } = findMatchRows(rows, session)
   const resultRow = dateRowIndex + 3
   const goalsForRow = dateRowIndex + 4
   const goalsAgainstRow = dateRowIndex + 5
@@ -194,15 +200,19 @@ export async function finalizeLiveMatch(session: LiveMatchSession, summary: Live
     if (rowIndex === undefined) {
       throw new Error(`Le joueur n°${player.number} est introuvable dans la feuille ${session.team}.`)
     }
-    const values = [String(player.minutes), String(player.goals), String(player.assists)]
-    const currentValues = [1, 2, 3].map((offset) => rows[rowIndex][session.slotColumn + offset] ?? '')
-    if (currentValues.some(Boolean) && !currentValues.every((value, index) => value === values[index])) {
+    const statValues = [
+      { column: statColumnIndexes.minutes, value: String(player.minutes) },
+      { column: statColumnIndexes.goals, value: String(player.goals) },
+      { column: statColumnIndexes.assists, value: String(player.assists) },
+    ]
+    const currentValues = statValues.map(({ column }) => rows[rowIndex][column] ?? '')
+    if (currentValues.some(Boolean) && !currentValues.every((value, index) => value === statValues[index].value)) {
       throw new Error(`Des statistiques existent déjà pour le joueur n°${player.number}. Aucune statistique n’a été remplacée.`)
     }
-    if (currentValues.every((value, index) => value === values[index])) continue
-    values.forEach((value, index) => {
+    if (currentValues.every((value, index) => value === statValues[index].value)) continue
+    statValues.forEach(({ column, value }) => {
       updates.push({
-        range: cellRange(session.slotColumn + index + 1, rowIndex),
+        range: cellRange(column, rowIndex),
         values: [[value]],
       })
     })

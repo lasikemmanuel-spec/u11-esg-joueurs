@@ -156,6 +156,20 @@ export function getLivePlayersOnPitch(session: LiveMatchSession) {
   return onPitch
 }
 
+export function getLivePlayersAtEvent(
+  session: Pick<LiveMatchSession, 'starters' | 'events'>,
+  eventId: string,
+) {
+  const onPitch = new Set(session.starters)
+  for (const event of session.events) {
+    if (event.id === eventId) return onPitch
+    if (event.kind !== 'substitution') continue
+    onPitch.delete(event.playerOut)
+    onPitch.add(event.playerIn)
+  }
+  throw new Error('Action introuvable dans le match.')
+}
+
 function elapsedSecondsAtMinute(minute: number, format: LiveMatchFormat) {
   if (minute <= 0) return 0
   const period = Math.floor((minute - 1) / format.minutesPerPeriod)

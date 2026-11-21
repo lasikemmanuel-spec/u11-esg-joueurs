@@ -5,6 +5,7 @@ import {
   calculateLiveMatchSummary,
   createLiveMatchSession,
   getLiveElapsedSeconds,
+  getLivePlayersAtEvent,
   getLiveMatchFormat,
   formatLiveMinute,
   getLiveMinute,
@@ -56,6 +57,16 @@ describe('live match calculations', () => {
         { number: 10, minutes: 10, goals: 0, assists: 0 },
       ]),
     })
+  })
+
+  it('only offers players who were on the pitch when editing a goal', () => {
+    const match = session()
+    match.events = [
+      { id: 'sub', kind: 'substitution', minute: 10, playerOut: 1, playerIn: 9 },
+      { id: 'goal', kind: 'goal', side: 'for', minute: 11 },
+    ]
+
+    expect([...getLivePlayersAtEvent(match, 'goal')]).toEqual([2, 3, 4, 5, 6, 7, 8, 9])
   })
 
   it('starts second-half event minutes at 1+25', () => {

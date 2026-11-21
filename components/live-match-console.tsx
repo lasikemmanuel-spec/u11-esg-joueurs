@@ -101,6 +101,8 @@ export function LiveMatchConsole({
   const [showReview, setShowReview] = useState(false)
   const [editingEventId, setEditingEventId] = useState<string | null>(null)
   const [editingEventMinute, setEditingEventMinute] = useState('')
+  const [editingEventScorerNumber, setEditingEventScorerNumber] = useState('')
+  const [editingEventAssistNumber, setEditingEventAssistNumber] = useState('')
   const autoPauseRef = useRef(false)
   const lastLocalMutationAt = useRef(0)
 
@@ -384,12 +386,31 @@ export function LiveMatchConsole({
       setError(`Saisis une minute entre 1 et ${getLiveMinute(session, now)}.`)
       return
     }
+    if (
+      editingEventScorerNumber &&
+      editingEventAssistNumber &&
+      editingEventScorerNumber === editingEventAssistNumber
+    ) {
+      setError('Le buteur et le passeur doivent être deux joueurs différents.')
+      return
+    }
     const events = session.events
-      .map((event) => event.id === eventId ? { ...event, minute } : event)
+      .map((event) => {
+        if (event.id !== eventId) return event
+        if (event.kind !== 'goal' || event.side !== 'for') return { ...event, minute }
+        return {
+          ...event,
+          minute,
+          scorerNumber: editingEventScorerNumber ? Number(editingEventScorerNumber) : undefined,
+          assistNumber: editingEventAssistNumber ? Number(editingEventAssistNumber) : undefined,
+        }
+      })
       .sort((left, right) => left.minute - right.minute)
     await persistSession({ ...session, events })
     setEditingEventId(null)
     setEditingEventMinute('')
+    setEditingEventScorerNumber('')
+    setEditingEventAssistNumber('')
   }
 
   const startOrResume = async () => {
@@ -1026,9 +1047,27 @@ export function LiveMatchConsole({
               saving={saving}
               editingEventId={editingEventId}
               editingEventMinute={editingEventMinute}
+              editingEventScorerNumber={editingEventScorerNumber}
+              editingEventAssistNumber={editingEventAssistNumber}
               onEditingMinuteChange={setEditingEventMinute}
-              onEdit={(eventId, minute) => { setEditingEventId(eventId); setEditingEventMinute(String(minute)); setError('') }}
-              onCancelEdit={() => { setEditingEventId(null); setEditingEventMinute('') }}
+              onEditingScorerChange={(number) => {
+                setEditingEventScorerNumber(number)
+                if (number === editingEventAssistNumber) setEditingEventAssistNumber('')
+              }}
+              onEditingAssistChange={setEditingEventAssistNumber}
+              onEdit={(event) => {
+                setEditingEventId(event.id)
+                setEditingEventMinute(String(event.minute))
+                setEditingEventScorerNumber(event.kind === 'goal' && event.side === 'for' && event.scorerNumber ? String(event.scorerNumber) : '')
+                setEditingEventAssistNumber(event.kind === 'goal' && event.side === 'for' && event.assistNumber ? String(event.assistNumber) : '')
+                setError('')
+              }}
+              onCancelEdit={() => {
+                setEditingEventId(null)
+                setEditingEventMinute('')
+                setEditingEventScorerNumber('')
+                setEditingEventAssistNumber('')
+              }}
               onSaveMinute={(eventId) => void saveEventMinute(eventId).catch(() => undefined)}
               onRemove={(eventId) => void removeEvent(eventId).catch(() => undefined)}
             />

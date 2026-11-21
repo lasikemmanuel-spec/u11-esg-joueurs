@@ -9,7 +9,6 @@ import {
   DEFAULT_LIVE_MATCH_FORMAT,
   getLiveElapsedSeconds,
   getLiveMinute,
-  getLiveMatchMaximumSeconds,
   isLiveMatchFormat,
   type LiveMatchEvent,
   type LiveMatchSession,
@@ -64,7 +63,7 @@ function isPlayerNumber(value: unknown): value is number {
 
 function isLiveEvent(value: unknown): value is LiveMatchEvent {
   if (!isRecord(value) || typeof value.id !== 'string' || value.id.length > 80) return false
-  if (!Number.isSafeInteger(value.minute) || (value.minute as number) < 1 || (value.minute as number) > 180) return false
+  if (!Number.isSafeInteger(value.minute) || (value.minute as number) < 1) return false
   if (value.kind === 'goal') {
     return (value.side === 'for' || value.side === 'against') &&
       (value.scorerNumber === undefined || isPlayerNumber(value.scorerNumber)) &&
@@ -109,7 +108,6 @@ function isLiveSession(value: unknown): value is LiveMatchSession {
     typeof value.elapsedSeconds === 'number' &&
     Number.isSafeInteger(value.elapsedSeconds) &&
     value.elapsedSeconds >= 0 &&
-    value.elapsedSeconds <= getLiveMatchMaximumSeconds(resolvedFormat) &&
     (value.runningSince === null || (
       typeof value.runningSince === 'string' && Number.isFinite(Date.parse(value.runningSince))
     )) &&

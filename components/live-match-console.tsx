@@ -321,10 +321,13 @@ export function LiveMatchConsole({
   const elapsedSeconds = session ? getLiveElapsedSeconds(session, now) : 0
   const sessionFormat = session ? getLiveMatchFormat(session) : DEFAULT_LIVE_MATCH_FORMAT
   const maximumMatchMinute = sessionFormat.periods * sessionFormat.minutesPerPeriod
+  const currentMatchMinute = session ? getLiveMinute(session, now) : 1
   const periodTitle = !session
     ? ''
     : session.phase === 'finished'
       ? 'Fin du match'
+      : elapsedSeconds > getLiveMatchMaximumSeconds(sessionFormat)
+        ? 'Prolongations'
       : session.phase === 'halftime' || session.phase === 'secondHalftime'
         ? `Pause après la période ${session.phase === 'halftime' ? 1 : 2}`
         : `Période ${session.phase === 'thirdPeriod' ? 3 : session.phase === 'secondHalf' ? 2 : 1}`
@@ -340,7 +343,7 @@ export function LiveMatchConsole({
     }
   }, [now, session])
   const summary = summaryState.summary
-  const eventMinute = session ? eventMinuteOverride ?? getLiveMinute(session, now) : 1
+  const eventMinute = session ? eventMinuteOverride ?? currentMatchMinute : 1
   const onPitch = useMemo(
     () => session ? getLivePlayersOnPitch(session) : new Set<number>(),
     [session],
@@ -407,10 +410,10 @@ export function LiveMatchConsole({
     const elapsed = getLiveElapsedSeconds(session, now)
     const phase = session.phase === 'firstHalf' && elapsed >= format.minutesPerPeriod * 60
       ? 'halftime'
-      : session.phase === 'secondHalf' && elapsed >= format.minutesPerPeriod * 2 * 60
-        ? format.periods === 3 ? 'secondHalftime' : 'finished'
-        : session.phase === 'thirdPeriod' && elapsed >= getLiveMatchMaximumSeconds(format)
-          ? 'finished'
+      : session.phase === 'secondHalf' &&
+          format.periods === 3 &&
+          elapsed >= format.minutesPerPeriod * 2 * 60
+        ? 'secondHalftime'
         : session.phase
     await persistSession({ ...session, elapsedSeconds: elapsed, runningSince: null, phase })
   }
@@ -450,23 +453,20 @@ export function LiveMatchConsole({
       const elapsed = getLiveElapsedSeconds(session)
       setNow(Date.now())
       const firstPeriodEnded = session.phase === 'firstHalf' && elapsed >= format.minutesPerPeriod * 60
-      const secondPeriodEnded = session.phase === 'secondHalf' && elapsed >= format.minutesPerPeriod * 2 * 60
-      const finalPeriodEnded = session.phase === 'thirdPeriod' && elapsed >= getLiveMatchMaximumSeconds(format)
-      if ((firstPeriodEnded || secondPeriodEnded || finalPeriodEnded) && !autoPauseRef.current) {
+      const secondPeriodEnded = session.phase === 'secondHalf' &&
+        format.periods === 3 &&
+        elapsed >= format.minutesPerPeriod * 2 * 60
+      if ((firstPeriodEnded || secondPeriodEnded) && !autoPauseRef.current) {
         autoPauseRef.current = true
         const nextSession: LiveMatchSession = {
           ...session,
           elapsedSeconds: firstPeriodEnded
             ? format.minutesPerPeriod * 60
-            : secondPeriodEnded
-              ? format.minutesPerPeriod * 2 * 60
-              : getLiveMatchMaximumSeconds(format),
+            : format.minutesPerPeriod * 2 * 60,
           runningSince: null,
           phase: firstPeriodEnded
             ? 'halftime'
-            : secondPeriodEnded && format.periods === 3
-              ? 'secondHalftime'
-              : 'finished',
+            : 'secondHalftime',
         }
         void persistSession(nextSession).finally(() => { autoPauseRef.current = false })
       }
@@ -883,7 +883,7 @@ export function LiveMatchConsole({
                       <input
                         type="number"
                         min={1}
-                        max={maximumMatchMinute}
+                        max={currentMatchMinute}
                         value={eventMinute}
                         onChange={(event) => setEventMinuteOverride(event.target.value ? Number(event.target.value) : getLiveMinute(session, now))}
                         className="h-9 w-16 rounded-lg border border-white/15 bg-[#101c41] px-2 text-center text-sm text-white"
@@ -919,7 +919,7 @@ export function LiveMatchConsole({
                   </div>
                   <label className="mb-3 flex items-center gap-2 text-xs font-bold text-white/70">
                     Minute
-                    <input type="number" min={1} max={maximumMatchMinute} value={eventMinute} onChange={(event) => setEventMinuteOverride(event.target.value ? Number(event.target.value) : getLiveMinute(session, now))} className="h-9 w-16 rounded-lg border border-white/15 bg-[#101c41] px-2 text-center text-sm text-white" />
+                    <input type="number" min={1} max={currentMatchMinute} value={eventMinute} onChange={(event) => setEventMinuteOverride(event.target.value ? Number(event.target.value) : currentMatchMinute)} className="h-9 w-16 rounded-lg border border-white/15 bg-[#101c41] px-2 text-center text-sm text-white" />
                   </label>
 
                   {/* Remplacement rapide en 2 clics */}

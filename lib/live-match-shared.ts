@@ -86,17 +86,19 @@ function periodForPhase(phase: LiveMatchSession['phase'], format: LiveMatchForma
 }
 
 export function getLiveElapsedSeconds(session: LiveMatchSession, now = Date.now()) {
-  const maximumSeconds = getLiveMatchMaximumSeconds(getLiveMatchFormat(session))
   const runningSince = session.runningSince ? Date.parse(session.runningSince) : NaN
   const addedSeconds = Number.isFinite(runningSince)
     ? Math.max(0, Math.floor((now - runningSince) / 1000))
     : 0
-  return Math.min(maximumSeconds, session.elapsedSeconds + addedSeconds)
+  return session.elapsedSeconds + addedSeconds
 }
 
 export function getLiveMinute(session: LiveMatchSession, now = Date.now()) {
   const format = getLiveMatchFormat(session)
   const elapsedSeconds = getLiveElapsedSeconds(session, now)
+  if (elapsedSeconds > getLiveMatchMaximumSeconds(format)) {
+    return Math.ceil(elapsedSeconds / 60)
+  }
   const period = periodForPhase(session.phase, format, elapsedSeconds)
   const periodStartSeconds = (period - 1) * format.minutesPerPeriod * 60
   const periodMinute = session.phase === 'halftime' || session.phase === 'secondHalftime' ||
@@ -177,11 +179,12 @@ export function calculateLiveMatchSummary(session: LiveMatchSession, now = Date.
   const goals = new Map<number, number>()
   const assists = new Map<number, number>()
   const format = getLiveMatchFormat(session)
+  const currentMinute = getLiveMinute(session, now)
   let goalsFor = 0
   let goalsAgainst = 0
 
   for (const event of session.events) {
-    if (!Number.isSafeInteger(event.minute) || event.minute < 1 || event.minute > format.periods * format.minutesPerPeriod) {
+    if (!Number.isSafeInteger(event.minute) || event.minute < 1 || event.minute > currentMinute) {
       throw new Error('Une action contient une minute invalide.')
     }
 

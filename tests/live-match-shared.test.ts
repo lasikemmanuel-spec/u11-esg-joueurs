@@ -3,6 +3,7 @@ import {
   areLiveSessionsEqual,
   calculateLiveMatchSummary,
   createLiveMatchSession,
+  getLiveElapsedSeconds,
   getLiveMatchFormat,
   formatLiveMinute,
   getLiveMinute,
@@ -92,6 +93,25 @@ describe('live match calculations', () => {
 
     expect(getLiveMinute(match)).toBe(31)
     expect(formatLiveMinute(getLiveMinute(match), getLiveMatchFormat(match))).toBe('1+30′')
+  })
+
+  it('keeps counting into overtime and allows events after regulation', () => {
+    const match = session()
+    match.phase = 'secondHalf'
+    match.elapsedSeconds = 50 * 60
+    match.runningSince = new Date(50 * 60 * 1000).toISOString()
+
+    expect(getLiveElapsedSeconds(match, 51 * 60 * 1000 + 1000)).toBe(51 * 60 + 1)
+    expect(getLiveMinute(match, 51 * 60 * 1000 + 1000)).toBe(52)
+    expect(formatLiveMinute(getLiveMinute(match, 51 * 60 * 1000 + 1000))).toBe('2+50′')
+
+    match.runningSince = null
+    match.phase = 'finished'
+    match.elapsedSeconds = 52 * 60
+    match.events = [
+      { id: 'overtime-goal', kind: 'goal', side: 'for', minute: 51, scorerNumber: 1 },
+    ]
+    expect(calculateLiveMatchSummary(match).goalsFor).toBe(1)
   })
 
   it('calculates playing time over all three configured periods', () => {

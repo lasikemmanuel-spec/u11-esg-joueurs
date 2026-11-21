@@ -31,6 +31,7 @@ import {
 } from '@/lib/offline-storage'
 import {
   areLiveSessionsEqual,
+  canRefreshLiveMatchLineup,
   calculateLiveMatchSummary,
   createLiveMatchSession,
   DEFAULT_LIVE_MATCH_FORMAT,
@@ -203,7 +204,11 @@ export function LiveMatchConsole({
         if (!response.ok) throw new Error(result.error ?? 'Impossible de charger le match.')
         const saved = result.session ?? offlineCached
         const initial = saved
-          ? { ...saved, format: saved.format ?? DEFAULT_LIVE_MATCH_FORMAT }
+          ? {
+              ...saved,
+              ...(canRefreshLiveMatchLineup(saved) ? { starters, substitutes } : {}),
+              format: saved.format ?? DEFAULT_LIVE_MATCH_FORMAT,
+            }
           : createLiveMatchSession({
               date: match.date,
               team: match.team,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   areLiveSessionsEqual,
+  canRefreshLiveMatchLineup,
   calculateLiveMatchSummary,
   createLiveMatchSession,
   getLiveElapsedSeconds,
@@ -20,6 +21,18 @@ function session() {
 }
 
 describe('live match calculations', () => {
+  it('only refreshes the lineup before a live match has started', () => {
+    const match = session()
+    expect(canRefreshLiveMatchLineup(match)).toBe(true)
+
+    match.phase = 'firstHalf'
+    expect(canRefreshLiveMatchLineup(match)).toBe(false)
+
+    match.phase = 'ready'
+    match.events.push({ id: 'goal', kind: 'goal', side: 'for', minute: 1 })
+    expect(canRefreshLiveMatchLineup(match)).toBe(false)
+  })
+
   it('counts goals, assists, and playing time through repeated substitutions', () => {
     const match = session()
     match.phase = 'finished'

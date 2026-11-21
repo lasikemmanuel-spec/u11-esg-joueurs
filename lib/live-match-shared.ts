@@ -69,6 +69,16 @@ export function getLiveMatchFormat(session: Pick<LiveMatchSession, 'format'>): L
   return session.format ?? DEFAULT_LIVE_MATCH_FORMAT
 }
 
+export function canRefreshLiveMatchLineup(
+  session: Pick<LiveMatchSession, 'phase' | 'elapsedSeconds' | 'runningSince' | 'events' | 'completed'>,
+) {
+  return session.phase === 'ready' &&
+    session.elapsedSeconds === 0 &&
+    session.runningSince === null &&
+    session.events.length === 0 &&
+    !session.completed
+}
+
 export function getLiveMatchMaximumSeconds(format: LiveMatchFormat) {
   return format.periods * format.minutesPerPeriod * 60
 }

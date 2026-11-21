@@ -5,6 +5,7 @@ import { getMatchResults } from '@/lib/match-results'
 import { getRoster } from '@/lib/players'
 import { getMatchLineups } from '@/lib/match-lineups'
 import {
+  canRefreshLiveMatchLineup,
   calculateLiveMatchSummary,
   DEFAULT_LIVE_MATCH_FORMAT,
   getLiveElapsedSeconds,
@@ -313,11 +314,26 @@ export async function POST(request: Request) {
     }
 
     if (existing) {
-      if (
-        !sameNumberSet(existing.starters, session.starters) ||
+      const lineupChanged = !sameNumberSet(existing.starters, session.starters) ||
         !sameNumberSet(existing.substitutes, session.substitutes)
-      ) {
-        return jsonResponse({ error: 'La composition du match a changé. Recharge le match avant de continuer.' }, 409)
+      if (lineupChanged) {
+        const isStartingWithRefreshedLineup = session.phase === 'firstHalf' &&
+          session.elapsedSeconds === 0 &&
+          session.runningSince !== null
+        if (!canRefreshLiveMatchLineup(existing) || !isStartingWithRefreshedLineup) {
+          return jsonResponse({ error: 'La composition du match a changé. Réinitialise le direct avant de le démarrer.' }, 409)
+        }
+        const lineups = await getMatchLineups(results.entries, { cacheForSeconds: 0 })
+        const lineup = lineups.find((item) =>
+          item.date === session.date && item.team === session.team && item.slotColumn === session.slotColumn,
+        )
+        if (
+          !lineup ||
+          !sameNumberSet(lineup.starters, session.starters) ||
+          !sameNumberSet(lineup.substitutes, session.substitutes)
+        ) {
+          return jsonResponse({ error: 'La composition doit correspondre à la feuille de match avant le démarrage.' }, 409)
+        }
       }
       if (getLiveElapsedSeconds(session) + 2 < getLiveElapsedSeconds(existing)) {
         return jsonResponse({ error: 'Le chronomètre ne peut pas reculer.' }, 409)

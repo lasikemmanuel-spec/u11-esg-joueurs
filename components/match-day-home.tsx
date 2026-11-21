@@ -14,6 +14,8 @@ import {
   CloudSun,
   Clock3,
   MapPin,
+  Pencil,
+  RotateCcw,
   Radio,
   Sun,
   Trophy,
@@ -404,30 +406,38 @@ export function MatchDayHome({
   return (
     <section
       aria-labelledby="match-day-home-title"
-      className="overflow-hidden rounded-3xl border border-[#d4af37]/50 bg-gradient-to-br from-[#172554] via-[#1e3a8a] to-[#172554] text-white shadow-xl"
+      className="overflow-hidden rounded-[1.75rem] border border-[#d4af37]/45 bg-gradient-to-br from-[#172554] via-[#1e3a8a] to-[#172554] text-white shadow-xl"
     >
-      <div className="relative overflow-hidden p-4 sm:p-6">
+      <div className="relative overflow-hidden p-3 sm:p-4">
         <div aria-hidden="true" className="pointer-events-none absolute -right-10 -top-12 opacity-10">
           <ClubCrest className="size-56" />
         </div>
         <div className="relative">
-          <p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#d4af37] sm:text-xs">
-            ES Genech · Jour de match
-          </p>
-          <h2 id="match-day-home-title" className="mt-1 text-2xl font-black sm:text-3xl">
-            {plannedDate ? 'Prochain rendez-vous' : 'Le calendrier des matchs'}
-          </h2>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-[9px] font-black uppercase tracking-[0.22em] text-[#d4af37] sm:text-[10px]">
+                ES Genech · Jour de match
+              </p>
+              <h2 id="match-day-home-title" className="mt-0.5 text-xl font-black sm:text-2xl">
+                {plannedDate ? 'Prochain rendez-vous' : 'Le calendrier des matchs'}
+              </h2>
+            </div>
+            {plannedDate && (
+              <span className="shrink-0 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-white/80">
+                U11
+              </span>
+            )}
+          </div>
           {plannedDate ? (
             <>
-              <p className="mt-2 text-sm font-bold capitalize text-white/85 sm:text-base">
+              <p className="mt-1 text-xs font-bold capitalize text-white/80 sm:text-sm">
                 {new Date(`${plannedDate}T12:00:00`).toLocaleDateString('fr-FR', {
                   weekday: 'long',
                   day: 'numeric',
                   month: 'long',
-                  year: 'numeric',
                 })}
               </p>
-              <div className="mt-3 grid items-stretch gap-1.5 sm:grid-cols-2">
+              <div className="mt-2 grid items-stretch gap-2 sm:grid-cols-2">
                 {matchesOnPlannedDate.map((match) => {
                   const savedLineup = matchLineups.lineups.find((lineup) =>
                     normalizeMatchDate(lineup.date) === plannedDate &&
@@ -455,48 +465,106 @@ export function MatchDayHome({
                     <div
                       key={`${match.team}-${match.slotColumn}`}
                       className={[
-                        'relative flex min-w-0 flex-col overflow-hidden rounded-2xl border shadow-md backdrop-blur-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-xl sm:h-full',
+                        'relative flex min-w-0 flex-col overflow-hidden rounded-[1.35rem] border p-2.5 shadow-lg backdrop-blur-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-xl sm:h-full',
                         match.team === 'E1'
-                          ? 'border-sky-300/50 bg-gradient-to-br from-sky-400/20 to-blue-950/20 hover:border-sky-200'
-                          : 'border-amber-300/60 bg-gradient-to-br from-amber-400/20 to-blue-950/20 hover:border-amber-200',
+                          ? 'border-sky-300/45 bg-gradient-to-br from-[#1d4ed8] to-[#172554] text-white'
+                          : 'border-amber-200/80 bg-gradient-to-br from-[#ffd23f] to-[#fbbf24] text-[#172554]',
                       ].join(' ')}
                     >
                       <button
                         type="button"
                         onClick={() => onSelectMatch(match)}
                         aria-label={`Ouvrir la feuille de match, ES Genech ${match.team === 'E1' ? '1' : '2'} contre ${match.opponent || 'adversaire à préciser'}`}
-                        className="group flex w-full min-w-0 flex-1 flex-col items-stretch gap-2 p-2.5 text-left transition hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white"
+                        className="group flex w-full min-w-0 flex-1 flex-col items-stretch gap-2 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-current"
                       >
-                        <div className="flex min-w-0 items-center gap-2.5">
+                        <div className="flex min-w-0 items-center gap-2.5 pr-8">
                           <ClubCrest className={[
-                            'size-11 shrink-0 rounded-full ring-2 shadow-md transition-transform group-hover:scale-105',
-                            match.team === 'E1' ? 'ring-sky-300' : 'ring-amber-300',
+                            'size-10 shrink-0 rounded-full ring-2 shadow-md transition-transform group-hover:scale-105',
+                            match.team === 'E1' ? 'ring-sky-300' : 'ring-white/90',
                           ].join(' ')} />
-                          <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 pr-10 text-base font-black leading-tight sm:text-lg md:text-xl">
-                            <span className="break-words">ES Genech {match.team === 'E1' ? '1' : '2'}</span>
-                            <span aria-hidden="true" className="text-xs font-bold text-white/60">vs</span>
-                            <span className="break-words">{match.opponent || 'Adversaire à préciser'}</span>
-                          </p>
+                          <div className="min-w-0 flex-1">
+                            <p className={[
+                              'text-[9px] font-black uppercase tracking-[0.16em]',
+                              match.team === 'E1' ? 'text-sky-200' : 'text-[#1e3a8a]',
+                            ].join(' ')}>
+                              ES Genech {match.team === 'E1' ? '1' : '2'}
+                            </p>
+                            <p className="mt-0.5 truncate text-base font-black leading-tight sm:text-lg">
+                              {match.opponent || 'Adversaire à préciser'}
+                            </p>
+                          </div>
                         </div>
-                        <div className="flex min-w-0 flex-nowrap items-center gap-1 text-[10px] font-semibold text-white/90 sm:gap-1.5 sm:text-xs md:gap-2 md:text-sm">
-                          <span className="inline-flex shrink-0 items-center rounded-full border border-white/15 bg-white/10 px-2 py-0.5 font-bold sm:px-2.5 sm:py-1">
+                        <div className="flex min-w-0 flex-wrap items-center gap-1 text-[9px] font-bold sm:text-[10px]">
+                          <span className={[
+                            'inline-flex shrink-0 items-center rounded-full px-2 py-1',
+                            match.team === 'E1' ? 'border border-sky-200/25 bg-white/10' : 'bg-white/65',
+                          ].join(' ')}>
                             {match.competition || 'Type non renseigné'}
                           </span>
-                          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-black/10 px-2 py-0.5 sm:px-2.5 sm:py-1">
+                          <span className={[
+                            'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1',
+                            match.team === 'E1' ? 'border border-white/10 bg-black/10' : 'bg-white/55',
+                          ].join(' ')}>
                             <MapPin aria-hidden="true" className="size-3 sm:size-3.5 md:size-4" />
                             {match.homeAway || 'Lieu à préciser'}
                           </span>
                           {match.kickoffTime && (
-                            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-black/10 px-2 py-0.5 sm:px-2.5 sm:py-1">
+                            <span className={[
+                              'inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 tabular-nums',
+                              match.team === 'E1' ? 'border border-white/10 bg-black/10' : 'bg-white/55',
+                            ].join(' ')}>
                               <Clock3 aria-hidden="true" className="size-3 sm:size-3.5 md:size-4" />
                               {match.kickoffTime}
                             </span>
                           )}
                         </div>
                       </button>
-                      <div className="flex min-w-0 items-center justify-between gap-2 px-2.5 pb-2.5">
-                        <MatchWeather date={plannedDate} homeAway={match.homeAway} opponent={match.opponent} today={today} />
-                        {canManageMatches && savedLineup?.starters.length && (
+                      <div className="mt-2 grid grid-cols-2 gap-1.5">
+                        <button
+                          type="button"
+                          onClick={() => onSelectMatch(match)}
+                          className={[
+                            'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border px-2 text-[11px] font-black transition',
+                            match.team === 'E1'
+                              ? 'border-sky-200/30 bg-white/10 text-white hover:bg-white/15'
+                              : 'border-[#172554]/25 bg-white/45 text-[#172554] hover:bg-white/70',
+                          ].join(' ')}
+                        >
+                          <RotateCcw aria-hidden="true" className="size-3.5" />
+                          Feuille
+                        </button>
+                        {canManageMatches ? (
+                          <button
+                            type="button"
+                            onClick={() => onSelectMatch(match)}
+                            className={[
+                              'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border px-2 text-[11px] font-black transition',
+                              match.team === 'E1'
+                                ? 'border-sky-200/30 bg-white/10 text-white hover:bg-white/15'
+                                : 'border-[#172554]/25 bg-white/45 text-[#172554] hover:bg-white/70',
+                            ].join(' ')}
+                          >
+                            <Pencil aria-hidden="true" className="size-3.5" />
+                            Modifier
+                          </button>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => onOpenCallups(plannedDate)}
+                            className={[
+                              'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border px-2 text-[11px] font-black transition',
+                              match.team === 'E1'
+                                ? 'border-sky-200/30 bg-white/10 text-white hover:bg-white/15'
+                                : 'border-[#172554]/25 bg-white/45 text-[#172554] hover:bg-white/70',
+                            ].join(' ')}
+                          >
+                            <UsersRound aria-hidden="true" className="size-3.5" />
+                            Convoqués
+                          </button>
+                        )}
+                      </div>
+                      {canManageMatches && savedLineup?.starters.length && (
+                        <div className="mt-1.5 flex justify-end">
                           <button
                             type="button"
                             disabled={matchLineups.pendingKeys.has(lineupSaveKey)}
@@ -512,8 +580,8 @@ export function MatchDayHome({
                             <Radio aria-hidden="true" className="size-4" />
                             <span>Direct</span>
                           </button>
-                        )}
-                      </div>
+                        </div>
+                      )}
                       <ConvocationOverlay
                         teamName={`ES Genech ${match.team === 'E1' ? '1' : '2'}`}
                         players={calledPlayers}

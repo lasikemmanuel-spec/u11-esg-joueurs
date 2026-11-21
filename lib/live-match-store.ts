@@ -138,17 +138,19 @@ function findMatchRows(rows: string[][], match: LiveMatchSession) {
   if (roleHeaderRowIndex < 0) throw new Error('Les colonnes de la feuille de match sont introuvables.')
   const headers = rows[roleHeaderRowIndex]
   const statColumns = [match.slotColumn + 1, match.slotColumn + 2, match.slotColumn + 3]
-  const findStatColumn = (header: string) => {
-    const matches = statColumns.filter((column) => normalizeHeader(headers[column] ?? '') === header)
+  const findStatColumn = (acceptedHeaders: string[]) => {
+    const matches = statColumns.filter((column) =>
+      acceptedHeaders.includes(normalizeHeader(headers[column] ?? '')),
+    )
     if (matches.length !== 1) {
-      throw new Error('Les colonnes MN, BUT et PASSE doivent apparaître une seule fois après Tit/Rem. Aucune donnée n’a été modifiée.')
+      throw new Error('Les colonnes Min/MN, Buts/BUT et Passes/PASSE doivent apparaître une seule fois après Tit/Rem. Aucune donnée n’a été modifiée.')
     }
     return matches[0]
   }
   const statColumnIndexes = {
-    minutes: findStatColumn('mn'),
-    goals: findStatColumn('but'),
-    assists: findStatColumn('passe'),
+    minutes: findStatColumn(['min', 'mn', 'minutes']),
+    goals: findStatColumn(['but', 'buts']),
+    assists: findStatColumn(['passe', 'passes']),
   }
   const playerRows = new Map<number, number>()
   for (let rowIndex = roleHeaderRowIndex + 1; rowIndex < rows.length; rowIndex += 1) {

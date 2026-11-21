@@ -121,6 +121,30 @@ describe('live match sheet persistence', () => {
     ]))
   })
 
+  it('accepts the Min, Buts, Passes headers used in the match sheet', async () => {
+    const rows = matchSheetRows()
+    rows[10][3] = 'Min'
+    rows[10][4] = 'Buts'
+    rows[10][5] = 'Passes'
+    getAuthenticatedSheetRows.mockResolvedValue({
+      sheetTitle: MATCH_TABS.E1,
+      rows,
+    })
+
+    await finalizeLiveMatch(session(), {
+      goalsFor: 2,
+      goalsAgainst: 1,
+      elapsedSeconds: 50 * 60,
+      players: [{ number: 1, minutes: 50, goals: 1, assists: 1 }],
+    })
+
+    expect(updateAuthenticatedSheetValues).toHaveBeenCalledWith(expect.arrayContaining([
+      { range: "'⚽ Feuille de Match Equipe 1'!D12", values: [['50']] },
+      { range: "'⚽ Feuille de Match Equipe 1'!E12", values: [['1']] },
+      { range: "'⚽ Feuille de Match Equipe 1'!F12", values: [['1']] },
+    ]))
+  })
+
   it('refuses to write when the match block has unexpected stat headers', async () => {
     const rows = matchSheetRows()
     rows[10][5] = 'Temps'
@@ -131,7 +155,7 @@ describe('live match sheet persistence', () => {
       goalsAgainst: 0,
       elapsedSeconds: 50 * 60,
       players: [{ number: 1, minutes: 50, goals: 0, assists: 0 }],
-    })).rejects.toThrow('doivent apparaître une seule fois')
+    })).rejects.toThrow('Min/MN, Buts/BUT et Passes/PASSE')
     expect(updateAuthenticatedSheetValues).not.toHaveBeenCalled()
   })
 })

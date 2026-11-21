@@ -26,6 +26,8 @@ export type LiveMatchSession = {
   date: string
   team: LiveMatchTeam
   slotColumn: number
+  startedAt?: string
+  historyStartedAt?: string
   phase: 'ready' | 'firstHalf' | 'halftime' | 'secondHalf' | 'secondHalftime' | 'thirdPeriod' | 'finished'
   elapsedSeconds: number
   runningSince: string | null
@@ -34,6 +36,18 @@ export type LiveMatchSession = {
   substitutes: number[]
   events: LiveMatchEvent[]
   completed: boolean
+}
+
+export type LiveMatchHistoryEntry = {
+  id: string
+  archivedAt: string
+  match: {
+    opponent: string
+    competition: string
+    homeAway: string
+    kickoffTime: string
+  }
+  session: LiveMatchSession
 }
 
 export type LivePlayerSummary = {
@@ -279,6 +293,8 @@ export function areLiveSessionsEqual(
     left.team !== right.team ||
     left.slotColumn !== right.slotColumn ||
     left.phase !== right.phase ||
+    left.startedAt !== right.startedAt ||
+    left.historyStartedAt !== right.historyStartedAt ||
     getLiveMatchFormat(left).periods !== getLiveMatchFormat(right).periods ||
     getLiveMatchFormat(left).minutesPerPeriod !== getLiveMatchFormat(right).minutesPerPeriod ||
     left.completed !== right.completed ||

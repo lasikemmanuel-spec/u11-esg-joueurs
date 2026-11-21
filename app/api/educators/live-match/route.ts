@@ -12,10 +12,13 @@ import {
   getLiveMinute,
   isLiveMatchFormat,
   type LiveMatchEvent,
+  type LiveMatchHistoryEntry,
   type LiveMatchSession,
 } from '@/lib/live-match-shared'
 import {
+  archiveLiveMatchHistory,
   finalizeLiveMatch,
+  getSavedLiveMatchHistory,
   getSavedLiveMatches,
   getSavedLiveMatch,
   resetFinalizedLiveMatch,
@@ -112,6 +115,12 @@ function isLiveSession(value: unknown): value is LiveMatchSession {
     (value.runningSince === null || (
       typeof value.runningSince === 'string' && Number.isFinite(Date.parse(value.runningSince))
     )) &&
+    (value.startedAt === undefined || (
+      typeof value.startedAt === 'string' && Number.isFinite(Date.parse(value.startedAt))
+    )) &&
+    (value.historyStartedAt === undefined || (
+      typeof value.historyStartedAt === 'string' && Number.isFinite(Date.parse(value.historyStartedAt))
+    )) &&
     Array.isArray(value.starters) &&
     value.starters.length > 0 &&
     value.starters.length <= 8 &&
@@ -127,6 +136,21 @@ function isLiveSession(value: unknown): value is LiveMatchSession {
     new Set(value.events.map((event) => (event as LiveMatchEvent).id)).size === value.events.length &&
     typeof value.completed === 'boolean' &&
     (!value.completed || value.phase === 'finished')
+}
+
+function isLiveMatchHistoryEntry(value: unknown): value is LiveMatchHistoryEntry {
+  if (!isRecord(value) || typeof value.id !== 'string' ||
+    typeof value.archivedAt !== 'string' || !Number.isFinite(Date.parse(value.archivedAt)) ||
+    !isRecord(value.match) || !isLiveSession(value.session)) return false
+  const { session, match } = value
+  return session.completed &&
+    typeof session.historyStartedAt === 'string' &&
+    Number.isFinite(Date.parse(session.historyStartedAt)) &&
+    value.id === `${session.date}-${session.team}-${session.slotColumn}-${session.historyStartedAt}` &&
+    typeof match.opponent === 'string' &&
+    typeof match.competition === 'string' &&
+    typeof match.homeAway === 'string' &&
+    typeof match.kickoffTime === 'string'
 }
 
 function isValidMatchDate(value: string) {
@@ -185,6 +209,28 @@ export async function GET(request: Request) {
   if (process.env.VERCEL_ENV !== 'production') {
     if (params.get('active') === '1') return jsonResponse({ matches: [] })
     return jsonResponse({ error: 'Le mode match en direct est désactivé dans cette prévisualisation.' }, 403)
+  }
+
+  if (params.get('history') === '1') {
+    try {
+      const savedHistory = await getSavedLiveMatchHistory({ cacheForSeconds: 0 })
+      const history = savedHistory.map((entry) => {
+        if (!isLiveMatchHistoryEntry(entry)) {
+          throw new Error('Une feuille de match archivée est invalide.')
+        }
+        validateEventTimeline(entry.session)
+        return { ...entry, summary: calculateLiveMatchSummary(entry.session) }
+      }).sort((left, right) => Date.parse(right.archivedAt) - Date.parse(left.archivedAt))
+      return jsonResponse({ history })
+    } catch (error) {
+      console.error('Erreur de lecture de l’historique des feuilles de match:', error)
+      const rateLimited = error instanceof Error && error.message.includes('(429)')
+      return jsonResponse({
+        error: rateLimited
+          ? 'Google Sheets limite temporairement les lectures. Réessaie dans quelques instants.'
+          : 'Impossible de charger l’historique des feuilles de match.',
+      }, rateLimited ? 429 : 500)
+    }
   }
 
   if (params.get('active') === '1') {
@@ -377,6 +423,12 @@ export async function POST(request: Request) {
     const summary = calculateLiveMatchSummary(session)
     await finalizeLiveMatch(session, summary)
     const completedSession = { ...session, completed: true }
+    await archiveLiveMatchHistory(completedSession, {
+      opponent: match.opponent,
+      competition: match.competition,
+      homeAway: match.homeAway,
+      kickoffTime: match.kickoffTime,
+    })
     await saveLiveMatchSession(completedSession)
     revalidateTag('google-sheet', { expire: 0 })
     logSecurityEvent({

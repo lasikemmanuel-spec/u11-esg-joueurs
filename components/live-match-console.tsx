@@ -401,8 +401,16 @@ export function LiveMatchConsole({
         : session.phase === 'secondHalftime'
           ? 'thirdPeriod'
           : session.phase
+    const startedAt = session.startedAt ?? (
+      session.phase === 'ready' ? new Date().toISOString() : undefined
+    )
+    const historyStartedAt = session.historyStartedAt ?? (
+      session.phase === 'ready' ? startedAt : undefined
+    )
     await persistSession({
       ...session,
+      ...(startedAt ? { startedAt } : {}),
+      ...(historyStartedAt ? { historyStartedAt } : {}),
       phase,
       elapsedSeconds: getLiveElapsedSeconds(session, now),
       runningSince: new Date().toISOString(),

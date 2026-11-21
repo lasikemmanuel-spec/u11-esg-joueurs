@@ -4,11 +4,13 @@ import {
   getAuthenticatedSheetRows,
   updateAuthenticatedSheetValues,
 } from '@/lib/google-sheets'
-import type { LiveMatchSession, LiveMatchSummary } from '@/lib/live-match-shared'
+import type { LiveMatchHistoryEntry, LiveMatchSession, LiveMatchSummary } from '@/lib/live-match-shared'
 import { MATCH_TABS, type MatchSheetEntry } from '@/lib/match-results'
 
 const LIVE_MATCH_TAB = '⚽ Matchs en direct'
 const LIVE_MATCH_HEADERS = ['Clé du match', 'Date', 'Équipe', 'Colonne', 'Données live']
+const LIVE_MATCH_HISTORY_TAB = '⚽ Historique feuilles de match'
+const LIVE_MATCH_HISTORY_HEADERS = ['Clé historique', 'Archivé le', 'Date', 'Équipe', 'Feuille complète']
 
 function columnName(columnIndex: number) {
   let value = columnIndex + 1
@@ -36,6 +38,54 @@ async function getLiveRows(options: { cacheForSeconds?: number } = {}) {
     return { sheetTitle, rows: [LIVE_MATCH_HEADERS, ...rows.slice(1)] }
   }
   return { sheetTitle, rows }
+}
+
+async function getHistoryRows(options: { cacheForSeconds?: number } = {}) {
+  await ensureAuthenticatedSheetTab(LIVE_MATCH_HISTORY_TAB)
+  const { sheetTitle, rows } = await getAuthenticatedSheetRows(LIVE_MATCH_HISTORY_TAB, options)
+  if (rows.length === 0 || !rows[0].some(Boolean)) {
+    await updateAuthenticatedSheetValues([{
+      range: `'${sheetTitle.replace(/'/g, "''")}'!A1:E1`,
+      values: [LIVE_MATCH_HISTORY_HEADERS],
+    }])
+    return { sheetTitle, rows: [LIVE_MATCH_HISTORY_HEADERS, ...rows.slice(1)] }
+  }
+  return { sheetTitle, rows }
+}
+
+export async function archiveLiveMatchHistory(
+  session: LiveMatchSession,
+  match: Pick<MatchSheetEntry, 'opponent' | 'competition' | 'homeAway' | 'kickoffTime'>,
+) {
+  if (!session.completed || !session.historyStartedAt) return
+  const entry: LiveMatchHistoryEntry = {
+    id: `${session.date}-${session.team}-${session.slotColumn}-${session.historyStartedAt}`,
+    archivedAt: new Date().toISOString(),
+    match,
+    session,
+  }
+  const { sheetTitle, rows } = await getHistoryRows()
+  if (rows.some((row, index) => index > 0 && row[0] === entry.id)) return
+
+  const rowIndex = rows.length
+  const escapedTitle = sheetTitle.replace(/'/g, "''")
+  await updateAuthenticatedSheetValues([{
+    range: `'${escapedTitle}'!A${rowIndex + 1}:E${rowIndex + 1}`,
+    values: [[entry.id, entry.archivedAt, session.date, session.team, JSON.stringify(entry)]],
+  }])
+}
+
+export async function getSavedLiveMatchHistory(options: { cacheForSeconds?: number } = {}) {
+  const { rows } = await getHistoryRows(options)
+  return rows.flatMap((row, index) => {
+    if (index === 0 || !row[4]) return []
+    try {
+      return [JSON.parse(row[4]) as LiveMatchHistoryEntry]
+    } catch (error) {
+      console.error('Les données archivées d’une feuille de match sont illisibles:', error)
+      throw new Error('Les données archivées d’une feuille de match sont illisibles.')
+    }
+  })
 }
 
 export async function getSavedLiveMatch(

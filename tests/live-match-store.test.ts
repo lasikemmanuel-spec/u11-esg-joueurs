@@ -13,7 +13,7 @@ vi.mock('@/lib/google-sheets', () => ({
   updateAuthenticatedSheetValues,
 }))
 
-import { finalizeLiveMatch, getSavedLiveMatch } from '@/lib/live-match-store'
+import { archiveLiveMatchHistory, finalizeLiveMatch, getSavedLiveMatch } from '@/lib/live-match-store'
 import { MATCH_TABS } from '@/lib/match-results'
 import type { LiveMatchSession, LiveMatchSummary } from '@/lib/live-match-shared'
 
@@ -68,6 +68,53 @@ describe('live match sheet persistence', () => {
       team: 'E1',
       slotColumn: 2,
     })).resolves.toEqual(saved)
+  })
+
+  it('archives a completed match once with its full session', async () => {
+    const historyRows: string[][] = []
+    getAuthenticatedSheetRows.mockImplementation(async (tab: string) => ({
+      sheetTitle: tab,
+      rows: tab === '⚽ Historique feuilles de match' ? historyRows : [],
+    }))
+    updateAuthenticatedSheetValues.mockImplementation(async (updates: Array<{ range: string; values: string[][] }>) => {
+      for (const update of updates) {
+        const rowNumber = Number(update.range.match(/!A(\d+):E\d+$/)?.[1])
+        if (rowNumber > 0) historyRows[rowNumber - 1] = update.values[0]
+      }
+    })
+    const completed = {
+      ...session(),
+      startedAt: '2026-11-21T14:00:00.000Z',
+      historyStartedAt: '2026-11-21T14:00:00.000Z',
+      completed: true,
+    }
+
+    await archiveLiveMatchHistory(completed, {
+      opponent: 'Adversaire',
+      competition: 'Amical',
+      homeAway: 'Domicile',
+      kickoffTime: '15:00',
+    })
+    await archiveLiveMatchHistory(completed, {
+      opponent: 'Adversaire',
+      competition: 'Amical',
+      homeAway: 'Domicile',
+      kickoffTime: '15:00',
+    })
+
+    expect(historyRows).toHaveLength(2)
+    expect(historyRows[0]).toEqual([
+      'Clé historique',
+      'Archivé le',
+      'Date',
+      'Équipe',
+      'Feuille complète',
+    ])
+    expect(JSON.parse(historyRows[1][4])).toMatchObject({
+      session: { completed: true, starters: [1] },
+      match: { opponent: 'Adversaire' },
+    })
+    expect(updateAuthenticatedSheetValues).toHaveBeenCalledTimes(2)
   })
 
   it('writes score and player statistics to the verified match block', async () => {

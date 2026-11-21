@@ -384,7 +384,6 @@ export function MatchResultEntry({
             </label>
             {canManage && (
               <>
-                <LiveMatchHistory players={players} compact />
                 <button
                   type="button"
                   disabled={pending || pendingDeletion !== null}
@@ -636,7 +635,7 @@ export function MatchResultEntry({
                             )}
                           </span>
                         </button>
-                        {(showWeather || canEditMatch || canDeleteMatch) && (
+                        {(showWeather || canEditMatch || canDeleteMatch || (canManage && isPlayed)) && (
                           <div className={`flex min-w-0 items-center gap-2 pl-7 sm:pl-10 ${showWeather ? 'justify-between' : 'justify-end'}`}>
                             {showWeather && (
                               <span className="min-w-0 flex-1">
@@ -649,8 +648,22 @@ export function MatchResultEntry({
                                 />
                               </span>
                             )}
-                            {(canEditMatch || canDeleteMatch) && (
+                            {(canEditMatch || canDeleteMatch || (canManage && isPlayed)) && (
                               <div className="flex shrink-0 items-center gap-1.5">
+                                {canManage && isPlayed && (
+                                  <LiveMatchHistory
+                                    players={players}
+                                    compact
+                                    tone={isE1 ? 'dark' : 'light'}
+                                    match={{
+                                      date,
+                                      team: entry.team,
+                                      slotColumn: entry.slotColumn,
+                                      opponent: entry.opponent || 'cet adversaire',
+                                      score: scoreLabel,
+                                    }}
+                                  />
+                                )}
                                 {canEditMatch && (
                                   <button
                                     type="button"

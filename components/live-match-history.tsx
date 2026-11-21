@@ -68,9 +68,19 @@ function describeEvent(event: LiveMatchEvent, item: HistoryItem, players: Public
 export function LiveMatchHistory({
   players,
   compact = false,
+  tone = 'dark',
+  match,
 }: {
   players: PublicPlayer[]
   compact?: boolean
+  tone?: 'dark' | 'light'
+  match: {
+    date: string
+    team: LiveMatchTeam
+    slotColumn: number
+    opponent: string
+    score: string
+  }
 }) {
   const [open, setOpen] = useState(false)
   const [history, setHistory] = useState<HistoryItem[] | null>(null)
@@ -106,11 +116,16 @@ export function LiveMatchHistory({
       if (!isHistoryItems(historyItems)) {
         throw new Error('L’historique reçu est invalide.')
       }
-      setHistory(historyItems)
+      const matchHistory = historyItems.filter((item) =>
+        item.session.date === match.date &&
+        item.session.team === match.team &&
+        item.session.slotColumn === match.slotColumn,
+      )
+      setHistory(matchHistory)
       setSelectedId((current) =>
-        historyItems.some((item) => item.id === current)
+        matchHistory.some((item) => item.id === current)
           ? current
-          : historyItems[0]?.id ?? '',
+          : matchHistory[0]?.id ?? '',
       )
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Impossible de charger l’historique.')
@@ -128,15 +143,18 @@ export function LiveMatchHistory({
       <button
         type="button"
         onClick={() => void openHistory()}
+        aria-label={`Voir la feuille du match contre ${match.opponent}, ${match.score}`}
         className={[
           'inline-flex min-h-10 shrink-0 items-center gap-2 text-xs font-black transition',
           compact
-            ? 'rounded-xl border border-white/20 bg-white/10 px-3 text-white hover:bg-white/15'
+            ? tone === 'dark'
+              ? 'rounded-xl border border-white/20 bg-white/10 px-3 text-white hover:bg-white/15'
+              : 'rounded-xl border border-blue-950/15 bg-blue-950/10 px-3 text-blue-950 hover:bg-blue-950/20'
             : 'mt-4 rounded-full border border-white/20 bg-white/10 px-4 text-white hover:bg-white/15',
         ].join(' ')}
       >
-        <History aria-hidden="true" className="size-4 text-amber-200" />
-        {compact ? 'Historique' : 'Historique des feuilles'}
+        <History aria-hidden="true" className={`size-4 ${tone === 'dark' ? 'text-amber-200' : 'text-blue-950'}`} />
+        {compact ? 'Feuille' : 'Historique des feuilles'}
       </button>
       {open && createPortal(
         <div
@@ -154,7 +172,7 @@ export function LiveMatchHistory({
             <header className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 p-4">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-[0.18em] text-amber-200">Archives du direct</p>
-                <h2 id="live-match-history-title" className="mt-1 text-xl font-black">Historique des feuilles</h2>
+                <h2 id="live-match-history-title" className="mt-1 text-xl font-black">Feuille du match</h2>
               </div>
               <button
                 type="button"
@@ -170,13 +188,13 @@ export function LiveMatchHistory({
               {error && <p role="alert" className="rounded-xl border border-rose-200/30 bg-rose-400/10 p-3 text-sm text-rose-100">{error}</p>}
               {history?.length === 0 && !loading && (
                 <p className="rounded-xl border border-white/10 bg-white/5 p-4 text-center text-sm text-white/70">
-                  Les feuilles validées à partir de maintenant apparaîtront ici.
+                  Aucune feuille archivée pour ce match. Les feuilles des matchs terminés avant l’activation de l’historique ne sont pas disponibles.
                 </p>
               )}
               {history && history.length > 0 && (
                 <div className="space-y-4">
                   <label className="block text-xs font-bold text-white/70">
-                    Match archivé
+                    Feuille enregistrée
                     <select
                       value={selected?.id ?? ''}
                       onChange={(event) => setSelectedId(event.target.value)}

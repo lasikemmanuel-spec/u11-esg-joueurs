@@ -66,10 +66,12 @@ export function MatchFamilyMessage({
   match,
   date,
   calledPlayerNames,
+  className,
 }: {
   match: MatchSheetEntry
   date: string
   calledPlayerNames: string[]
+  className?: string
 }) {
   const dialogRef = useRef<HTMLDialogElement>(null)
   const titleId = `match-family-message-title-${match.team}-${match.slotColumn}`
@@ -182,7 +184,7 @@ export function MatchFamilyMessage({
         type="button"
         onClick={() => void openComposer()}
         disabled={preparing}
-        className="inline-flex min-h-10 w-auto min-w-0 items-center justify-center gap-1.5 rounded-xl border border-[#d4af37]/70 bg-[#172554] px-3 py-1.5 text-xs font-black text-white shadow-sm transition hover:bg-[#1e3a8a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37] disabled:opacity-60"
+        className={`inline-flex min-h-10 w-full min-w-0 items-center justify-center gap-1.5 rounded-xl border border-[#d4af37]/70 bg-[#172554] px-3 py-1.5 text-xs font-black text-white shadow-sm transition hover:bg-[#1e3a8a] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37] disabled:opacity-60 sm:w-auto ${className ?? ''}`}
       >
         <Share2 aria-hidden="true" className="size-4 text-[#f4ce45]" />
         {preparing ? 'Préparation…' : 'Message familles'}

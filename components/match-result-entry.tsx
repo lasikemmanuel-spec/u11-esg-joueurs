@@ -707,9 +707,9 @@ export function MatchResultEntry({
                             <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#172554]/65">
                               Infos pratiques
                             </p>
-                            <div className="flex flex-wrap items-center gap-2">
+                            <div className="grid grid-cols-2 items-center gap-2 sm:flex sm:flex-wrap">
                               {entry.meetingTime && (
-                                <span className="inline-flex min-h-8 items-center gap-1.5 rounded-lg border border-[#d4af37]/60 bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-950">
+                                <span className="inline-flex min-h-8 w-full items-center justify-center gap-1.5 rounded-lg border border-[#d4af37]/60 bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-950 sm:w-auto">
                                   <Clock3 aria-hidden="true" className="size-3.5" />
                                   <span>RDV stade</span>
                                   <span className="font-black tabular-nums">{entry.meetingTime}</span>
@@ -719,7 +719,7 @@ export function MatchResultEntry({
                                 const address = entry.venueAddress.trim()
                                 const query = encodeURIComponent(address).replace(/%20/g, '+')
                                 return (
-                                  <div className="flex min-w-0 basis-full flex-col gap-2 rounded-xl border border-[#172554]/10 bg-white/70 px-2.5 py-1.5 sm:flex-1 sm:flex-row sm:items-center">
+                                  <div className="col-span-2 flex min-w-0 basis-full flex-col gap-2 rounded-xl border border-[#172554]/10 bg-white/70 px-2.5 py-1.5 sm:flex-1 sm:flex-row sm:items-center">
                                     <div className="flex min-w-0 items-center gap-2 sm:flex-1">
                                       <MapPin aria-hidden="true" className="size-4 shrink-0 text-[#172554]" />
                                       <span className="min-w-0 flex-1 break-words text-xs font-semibold text-[#172554]">{address}</span>
@@ -760,7 +760,12 @@ export function MatchResultEntry({
                                 )
                               })()}
                               {canManage && (
-                                <MatchFamilyMessage match={entry} date={date} calledPlayerNames={calledPlayerNames} />
+                                <MatchFamilyMessage
+                                  match={entry}
+                                  date={date}
+                                  calledPlayerNames={calledPlayerNames}
+                                  className={`${entry.meetingTime ? 'col-start-2' : 'col-start-1'} sm:col-start-auto`}
+                                />
                               )}
                             </div>
                           </div>

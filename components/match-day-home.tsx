@@ -563,7 +563,7 @@ export function MatchDayHome({
                           </button>
                         )}
                       </div>
-                      {canManageMatches && savedLineup?.starters.length && (
+                      {canManageMatches && savedLineup && savedLineup.starters.length > 0 && (
                         <div className="mt-1.5 flex justify-end">
                           <button
                             type="button"

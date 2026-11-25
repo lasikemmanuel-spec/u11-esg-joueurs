@@ -452,18 +452,20 @@ export function TrainingAttendanceManager({
         <p role="status" className="rounded-xl bg-muted p-4 text-sm">Aucun joueur dans l’effectif.</p>
       ) : (
         <>
-          <label className="relative block sm:max-w-xl">
-            <span className="sr-only">Rechercher un joueur par nom, prénom ou numéro</span>
-            <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
-            <input
-              type="search"
-              aria-label="Rechercher un joueur par nom, prénom ou numéro"
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="Rechercher un joueur…"
-              className="h-11 w-full rounded-2xl border border-accent/40 bg-card pr-4 pl-12 text-sm shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring"
-            />
-          </label>
+          {(!quickEntryMode || quickStatus) && (
+            <label className="relative block sm:max-w-xl">
+              <span className="sr-only">Rechercher un joueur par nom, prénom ou numéro</span>
+              <Search aria-hidden="true" className="pointer-events-none absolute top-1/2 left-4 size-5 -translate-y-1/2 text-muted-foreground" />
+              <input
+                type="search"
+                aria-label="Rechercher un joueur par nom, prénom ou numéro"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Rechercher un joueur…"
+                className="h-11 w-full rounded-2xl border border-accent/40 bg-card pr-4 pl-12 text-sm shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring"
+              />
+            </label>
+          )}
           <div role="group" aria-label={quickEntryMode ? 'Choisir le statut à appliquer' : 'Filtrer les joueurs par statut'} className="flex flex-wrap gap-1.5">
               {!quickEntryMode && (
                 <>
@@ -517,7 +519,11 @@ export function TrainingAttendanceManager({
           {savedSession && <p className="hidden w-fit max-w-full rounded-full border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-900 sm:block">Séance déjà enregistrée · tes changements remplaceront les anciennes valeurs</p>}
           {query && <p aria-live="polite" className="-mt-3 text-xs text-muted-foreground">{visiblePlayers.length} joueur{visiblePlayers.length === 1 ? '' : 's'} trouvé{visiblePlayers.length === 1 ? '' : 's'}</p>}
 
-          {visiblePlayers.length === 0 ? (
+          {quickEntryMode && !quickStatus ? (
+            <p role="status" className="rounded-xl border border-dashed border-sky-300/40 bg-sky-100/5 px-4 py-5 text-center text-sm font-semibold text-muted-foreground">
+              Choisis un statut dans les compteurs ci-dessus pour afficher les joueurs.
+            </p>
+          ) : visiblePlayers.length === 0 ? (
             <p role="status" className="rounded-xl bg-muted p-4 text-sm">
               {query
                 ? `Aucun joueur ne correspond à « ${query} ».`

@@ -343,7 +343,7 @@ export function TrainingAttendanceManager({
           </div>
         </div>
       <div className="mt-1.5 grid grid-cols-2 gap-1.5 sm:flex sm:justify-end sm:gap-2 xl:mt-4 xl:border-t xl:border-white/10 xl:pt-4">
-        <button type="button" onClick={setAllPresent} disabled={!players.length || loadError || Boolean(savedSession?.cancellation)} aria-label="Marquer tous les joueurs présents" title="Marque toute l’équipe présente puis ouvre la correction rapide des exceptions." className="col-span-2 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-3 text-xs font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-1 sm:min-h-12 sm:px-5 sm:text-sm">
+        <button type="button" onClick={setAllPresent} disabled={!players.length || loadError || Boolean(savedSession?.cancellation)} aria-label="Marquer tous les joueurs présents" title="Marque toute l’équipe présente puis ouvre la correction rapide des exceptions." className={`col-span-2 inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-3 text-xs font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 sm:col-span-1 sm:min-h-12 sm:px-5 sm:text-sm ${counts.filled === 0 && !quickEntryMode ? 'motion-safe:animate-pulse' : ''}`}>
           <UsersRound aria-hidden="true" className="size-4 shrink-0" />
           <span className="sm:hidden">Marquer tous présents</span>
           <span className="hidden whitespace-nowrap sm:inline">Marquer tous les joueurs présents</span>
@@ -453,9 +453,10 @@ export function TrainingAttendanceManager({
           ) : (
             <>
               {!quickEntryMode && (
-                <p role="status" className="rounded-xl border border-dashed border-accent/40 bg-card/70 px-4 py-6 text-center text-sm font-semibold text-muted-foreground">
-                  Commence par marquer tout le monde présent ou ouvre les corrections pour une séance déjà commencée.
-                </p>
+                <div role="status" className="rounded-xl border border-dashed border-accent/40 bg-card/70 px-4 py-5 text-center">
+                  <p className="text-sm font-bold text-foreground">Commence par marquer tous les joueurs présents.</p>
+                  <p className="mt-1 text-xs text-muted-foreground">Pour une séance déjà commencée, appuie sur « Corriger ».</p>
+                </div>
               )}
               {quickEntryMode && (
                 <>

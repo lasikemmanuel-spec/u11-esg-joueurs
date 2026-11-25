@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import {
+  Ban,
   CalendarDays,
   CalendarPlus,
   ChevronLeft,
@@ -78,6 +79,24 @@ function formatDate(dateKey: string, options: Intl.DateTimeFormatOptions = {}) {
 
 function formatWeekday(dateKey: string) {
   return new Date(`${dateKey}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'long' })
+}
+
+function formatWeekRange(startDate: string, endDate: string) {
+  const shortDate = (date: string, includeYear = false) => new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    ...(includeYear ? { year: 'numeric' } : {}),
+  })
+  return `${shortDate(startDate)} – ${shortDate(endDate, true)}`
+}
+
+function getDateParts(dateKey: string) {
+  const date = new Date(`${dateKey}T12:00:00`)
+  return {
+    weekday: date.toLocaleDateString('fr-FR', { weekday: 'short' }).replace(/\.$/, ''),
+    day: date.toLocaleDateString('fr-FR', { day: 'numeric' }),
+    month: date.toLocaleDateString('fr-FR', { month: 'short' }).replace(/\.$/, ''),
+  }
 }
 
 function sortEvents(events: PlanningEvent[]) {
@@ -296,10 +315,10 @@ export function TeamPlanning({
         <div>
           <h2 className="flex items-center gap-2 text-xl font-black text-foreground">
             <CalendarDays aria-hidden="true" className="size-6 text-primary" />
-            Planning de l’équipe
+            Planning
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Matchs, entraînements et tournois à venir. Les événements ajoutés au calendrier incluent un rappel 24 h avant.
+            Matchs · entraînements · tournois
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -563,7 +582,7 @@ export function TeamPlanning({
               <ChevronLeft aria-hidden="true" className="size-4" />
             </button>
             <p className="min-w-36 text-center text-sm font-bold capitalize">
-              {formatDate(weekStart, { weekday: undefined })} – {formatDate(addDays(weekStart, 6))}
+              {formatWeekRange(weekStart, addDays(weekStart, 6))}
             </p>
             <button
               type="button"
@@ -591,99 +610,143 @@ export function TeamPlanning({
         </div>
       ) : (
         <ul className="grid gap-3">
-          {visibleEvents.map((event) => (
-            <li key={event.id} className={`rounded-xl border bg-card p-4 shadow-sm ${event.status === 'cancelled' ? 'border-destructive/40 opacity-80' : 'border-border'}`}>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">{TYPE_LABELS[event.type]}</span>
-                    <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold">{event.team === 'both' ? 'E1 et E2' : event.team}</span>
-                    <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${event.status === 'confirmed' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : event.status === 'postponed' ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300' : 'bg-destructive/10 text-destructive'}`}>
-                      {STATUS_LABELS[event.status]}
-                    </span>
-                    {event.recurrenceGroupId && (
-                      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
-                        <Repeat aria-hidden="true" className="size-3.5" />
-                        Chaque {formatWeekday(event.date)}
+          {visibleEvents.map((event) => {
+            const dateParts = getDateParts(event.date)
+            const accentClass = event.status === 'cancelled'
+              ? 'border-l-destructive opacity-75'
+              : event.type === 'training'
+                ? 'border-l-emerald-500'
+                : event.type === 'match'
+                  ? 'border-l-blue-500'
+                  : 'border-l-amber-500'
+            const iconButtonClass = 'inline-flex size-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
+
+            return (
+              <li
+                key={event.id}
+                className={`rounded-2xl border border-l-[3px] bg-card p-3 shadow-sm transition hover:shadow-md ${accentClass}`}
+              >
+                <div className="flex min-w-0 items-start gap-3">
+                  <time
+                    dateTime={event.date}
+                    aria-label={formatDate(event.date)}
+                    className="flex w-12 shrink-0 flex-col items-center rounded-xl bg-muted/60 px-1.5 py-2 text-center leading-none"
+                  >
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground">{dateParts.weekday}</span>
+                    <span className="mt-1 text-xl font-black tabular-nums text-foreground">{dateParts.day}</span>
+                    <span className="mt-1 text-[10px] font-semibold capitalize text-muted-foreground">{dateParts.month}</span>
+                  </time>
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                        {TYPE_LABELS[event.type]}
                       </span>
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold">
+                        {event.team === 'both' ? 'E1 + E2' : event.team}
+                      </span>
+                      {event.status !== 'confirmed' && (
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${event.status === 'postponed' ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300' : 'bg-destructive/10 text-destructive'}`}>
+                          {STATUS_LABELS[event.status]}
+                        </span>
+                      )}
+                      {event.recurrenceGroupId && (
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                          <Repeat aria-hidden="true" className="size-3" />
+                          Chaque {formatWeekday(event.date)}
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className={`mt-1 truncate text-base font-black leading-snug ${event.status === 'cancelled' ? 'line-through' : ''}`}>
+                      {event.title}
+                    </h3>
+                    <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                      <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                        <Clock3 aria-hidden="true" className="size-3.5 shrink-0" />
+                        {event.startTime}–{event.endTime}
+                        {event.meetingTime && ` · RDV ${event.meetingTime}`}
+                      </span>
+                      <span className="inline-flex min-w-0 items-center gap-1">
+                        <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
+                        <span className="truncate">{event.location}</span>
+                      </span>
+                    </div>
+                    {event.notes && (
+                      <p title={event.notes} className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                        {event.notes}
+                      </p>
                     )}
                   </div>
-                  <h3 className={`mt-2 text-lg font-black ${event.status === 'cancelled' ? 'line-through' : ''}`}>{event.title}</h3>
-                  <p className="mt-1 text-sm font-semibold capitalize">{formatDate(event.date)}</p>
-                  <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                    <span className="inline-flex items-center gap-1.5">
-                      <Clock3 aria-hidden="true" className="size-4" />
-                      {event.startTime}–{event.endTime}
-                      {event.meetingTime && ` · rendez-vous ${event.meetingTime}`}
-                    </span>
-                    <span className="inline-flex items-center gap-1.5">
-                      <MapPin aria-hidden="true" className="size-4" />
-                      {event.location}
-                    </span>
-                  </div>
-                  {event.notes && <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{event.notes}</p>}
                 </div>
-                <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
+
+                <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-2">
                   {canManage &&
                     event.type === 'training' &&
                     event.status !== 'cancelled' &&
                     event.date >= MATCH_SEASON_START &&
-                    event.date <= MATCH_SEASON_END && (
-                      <button
-                        type="button"
-                        onClick={() => onOpenTraining(event.date)}
-                        className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 text-sm font-semibold text-primary hover:bg-primary/10"
-                      >
-                        <ClipboardCheck aria-hidden="true" className="size-4" />
-                        Faire l’appel
-                      </button>
-                    )}
-                  <button
-                    type="button"
-                    onClick={() => downloadCalendarFile(event)}
-                    title="Le fichier calendrier inclut un rappel 24 h avant."
-                    className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-border px-3 text-sm font-semibold hover:bg-muted"
-                  >
-                    <CalendarPlus aria-hidden="true" className="size-4" />
-                    <span className="sm:hidden">Calendrier</span>
-                    <span className="hidden sm:inline">Ajouter à mon calendrier</span>
-                  </button>
-                  {canManage && (
+                    event.date <= MATCH_SEASON_END ? (
                     <button
                       type="button"
-                      onClick={() => editEvent(event)}
-                      aria-label={`Modifier ${event.title}`}
-                      className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-border px-3 text-sm font-semibold hover:bg-muted"
+                      onClick={() => onOpenTraining(event.date)}
+                      title="Ouvrir la feuille de présence à cette date"
+                      className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground transition hover:opacity-90"
                     >
-                      <Pencil aria-hidden="true" className="size-4" />
-                      Modifier
+                      <ClipboardCheck aria-hidden="true" className="size-4" />
+                      Appel
                     </button>
-                  )}
-                  {canManage && event.recurrenceGroupId && (
-                    <>
+                  ) : <span aria-hidden="true" />}
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => downloadCalendarFile(event)}
+                      aria-label={`Ajouter ${event.title} au calendrier avec un rappel 24 h avant`}
+                      title="Ajouter au calendrier · rappel 24 h avant"
+                      className={iconButtonClass}
+                    >
+                      <CalendarPlus aria-hidden="true" className="size-4" />
+                    </button>
+                    {canManage && (
                       <button
                         type="button"
-                        onClick={() => editEvent(event, true)}
-                        aria-label={`Modifier toute la série ${event.title}`}
-                        className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-primary/30 px-3 text-sm font-semibold text-primary hover:bg-primary/5"
+                        onClick={() => editEvent(event)}
+                        aria-label={`Modifier ${event.title}`}
+                        title="Modifier cet événement"
+                        className={iconButtonClass}
                       >
-                        <Repeat aria-hidden="true" className="size-4" />
-                        Modifier la série
+                        <Pencil aria-hidden="true" className="size-4" />
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => void cancelSeries(event)}
-                        disabled={pendingSeriesId === event.recurrenceGroupId}
-                        className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-destructive/30 px-3 text-sm font-semibold text-destructive hover:bg-destructive/5 disabled:opacity-50"
-                      >
-                        {pendingSeriesId === event.recurrenceGroupId ? 'Annulation…' : 'Annuler la série'}
-                      </button>
-                    </>
-                  )}
+                    )}
+                    {canManage && event.recurrenceGroupId && (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => editEvent(event, true)}
+                          aria-label={`Modifier toute la série ${event.title}`}
+                          title="Modifier toute la série"
+                          className={`${iconButtonClass} border-primary/30 text-primary`}
+                        >
+                          <Repeat aria-hidden="true" className="size-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => void cancelSeries(event)}
+                          disabled={pendingSeriesId === event.recurrenceGroupId}
+                          aria-label={`Annuler la série ${event.title}`}
+                          title="Annuler toute la série"
+                          className={`${iconButtonClass} border-destructive/30 text-destructive hover:bg-destructive/5 disabled:opacity-50`}
+                        >
+                          {pendingSeriesId === event.recurrenceGroupId
+                            ? <RefreshCw aria-hidden="true" className="size-4 animate-spin" />
+                            : <Ban aria-hidden="true" className="size-4" />}
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            </li>
-          ))}
+              </li>
+            )
+          })}
         </ul>
       )}
     </section>

@@ -405,6 +405,7 @@ export function MatchDayHome({
   const canEditCallups = Boolean(
     canManageMatches && plannedDate && new Date(`${plannedDate}T12:00:00`).getDay() === 6,
   )
+  const daysUntilPlannedMatch = plannedDate ? daysFromToday(plannedDate, today) : null
   const hasCallups = plannedDate !== null && convocationDates.some(
     (date) => normalizeMatchDate(date) === plannedDate,
   )
@@ -435,13 +436,24 @@ export function MatchDayHome({
           </div>
           {plannedDate ? (
             <>
-              <p className="mt-1 text-xs font-bold capitalize text-white/80 sm:text-sm">
-                {new Date(`${plannedDate}T12:00:00`).toLocaleDateString('fr-FR', {
-                  weekday: 'long',
-                  day: 'numeric',
-                  month: 'long',
-                })}
-              </p>
+              <div className="mt-1 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs font-bold capitalize text-white/80 sm:text-sm">
+                  {new Date(`${plannedDate}T12:00:00`).toLocaleDateString('fr-FR', {
+                    weekday: 'long',
+                    day: 'numeric',
+                    month: 'long',
+                  })}
+                </p>
+                {daysUntilPlannedMatch !== null && (
+                  <span className="inline-flex items-center gap-1 rounded-full border border-amber-200/20 bg-amber-200/10 px-2.5 py-1 text-[10px] font-black text-amber-100 sm:text-xs">
+                    ⚽ {daysUntilPlannedMatch === 0
+                      ? 'Aujourd’hui'
+                      : daysUntilPlannedMatch === 1
+                        ? 'Demain'
+                        : `Dans ${daysUntilPlannedMatch} jours`}
+                  </span>
+                )}
+              </div>
               <div className="mt-2 grid items-stretch gap-2 sm:grid-cols-2">
                 {matchesOnPlannedDate.map((match) => {
                   const savedLineup = matchLineups.lineups.find((lineup) =>
@@ -523,6 +535,18 @@ export function MatchDayHome({
                             </span>
                           )}
                         </div>
+                        {daysUntilPlannedMatch !== null &&
+                          daysUntilPlannedMatch >= 0 &&
+                          daysUntilPlannedMatch <= 15 &&
+                          (match.homeAway === 'Domicile' || match.homeAway === 'Extérieur') && (
+                            <MatchWeather
+                              date={plannedDate}
+                              homeAway={match.homeAway}
+                              opponent={match.opponent}
+                              today={today}
+                              tone={match.team === 'E1' ? 'dark' : 'light'}
+                            />
+                          )}
                       </button>
                       <div className="mt-2 grid grid-cols-2 gap-1.5">
                         <button

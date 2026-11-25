@@ -555,9 +555,11 @@ export function TrainingAttendanceManager({
                       <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-[#14234e] to-[#26478c] text-lg font-black text-amber-300 shadow-md ring-2 ring-amber-300/50">{player.number}</span>
                       <span className="min-w-0 flex-1">
                         <span className="block break-words text-sm font-black leading-snug text-foreground sm:text-base">{player.firstName} {player.lastName}</span>
-                        <span className={`mt-1 inline-flex max-w-full rounded-full border px-2 py-1 text-[9px] font-black leading-tight sm:text-[10px] ${currentStatus ? STATUS_PRESENTATION[currentStatus].idle : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
-                          {currentStatus ? STATUS_PRESENTATION[currentStatus].label : 'À noter'}
-                        </span>
+                        {currentStatus && (
+                          <span className={`mt-1 inline-flex max-w-full rounded-full border px-2 py-1 text-[9px] font-black leading-tight sm:text-[10px] ${STATUS_PRESENTATION[currentStatus].idle}`}>
+                            {STATUS_PRESENTATION[currentStatus].label}
+                          </span>
+                        )}
                       </span>
                       <span className={`shrink-0 rounded-lg px-2 py-1 text-[9px] font-black ${selectedQuickStatus ? 'bg-sky-100 text-sky-900' : 'bg-muted text-muted-foreground'}`}>
                         {selectedQuickStatus ? '✓ Fait' : quickStatus ? 'Marquer' : 'Choisir'}

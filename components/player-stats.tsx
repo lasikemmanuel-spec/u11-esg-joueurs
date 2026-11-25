@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { X, Sparkles, Trophy, Timer, Shirt, Users, Star, ArrowUpRight } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
@@ -8,7 +9,11 @@ import { PlayerOffensiveRankings } from '@/components/player-offensive-rankings'
 import { ireStatus, type IreStatus, type PlayerStats as Stats } from '@/lib/stats-shared'
 import type { Convocation, MatchStatus } from '@/lib/convocations'
 import type { PublicPlayer } from '@/lib/players'
-import type { TrainingAttendanceSession } from '@/lib/training-attendance-shared'
+import {
+  TRAINING_ATTENDANCE_STATUSES,
+  type TrainingAttendanceSession,
+  type TrainingAttendanceStatus,
+} from '@/lib/training-attendance-shared'
 
 const MATCH_STYLES: Record<MatchStatus, { label: string; className: string }> = {
   called: { label: 'Convoqué', className: 'bg-emerald-600 text-white' },
@@ -72,15 +77,52 @@ function localToday() {
 }
 
 function TrainingHistory({ sessions, playerNumber }: { sessions: TrainingAttendanceSession[]; playerNumber: number }) {
+  const router = useRouter()
   const [showAll, setShowAll] = useState(false)
+  const [editingDate, setEditingDate] = useState('')
+  const [draftStatus, setDraftStatus] = useState<TrainingAttendanceStatus | ''>('')
+  const [statusOverrides, setStatusOverrides] = useState<Record<string, TrainingAttendanceStatus | ''>>({})
+  const [saving, setSaving] = useState(false)
+  const [editError, setEditError] = useState('')
   const today = localToday()
   // Exclure les séances futures
   const pastSessions = sessions.filter((session) => session.date <= today)
   const activeSessions = pastSessions.filter((session) => !session.cancellation)
   if (pastSessions.length === 0) return null
   const orderedSessions = [...pastSessions].sort((a, b) => b.date.localeCompare(a.date))
-  const recordedCount = activeSessions.filter((session) => Boolean(session.playerStatuses[playerNumber]?.trim())).length
-  const presentCount = activeSessions.filter((session) => session.playerStatuses[playerNumber]?.trim() === 'P').length
+  const statusForSession = (session: TrainingAttendanceSession) =>
+    statusOverrides[session.date] ?? session.playerStatuses[playerNumber]?.trim() ?? ''
+  const recordedCount = activeSessions.filter((session) => Boolean(statusForSession(session))).length
+  const presentCount = activeSessions.filter((session) => statusForSession(session) === 'P').length
+
+  const saveStatus = async (date: string) => {
+    if (!draftStatus) {
+      setEditError('Choisis un statut.')
+      return
+    }
+    setSaving(true)
+    setEditError('')
+    try {
+      const response = await fetch('/api/educators/training-attendance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date,
+          entries: [{ number: playerNumber, status: draftStatus }],
+        }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error ?? 'Impossible de modifier le statut.')
+      setStatusOverrides((current) => ({ ...current, [date]: draftStatus }))
+      setEditingDate('')
+      setDraftStatus('')
+      router.refresh()
+    } catch (error) {
+      setEditError(error instanceof Error ? error.message : 'Impossible de modifier le statut.')
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
     <section className="flex flex-col gap-3 border-t pt-3" aria-label="Historique des entraînements">
@@ -101,24 +143,81 @@ function TrainingHistory({ sessions, playerNumber }: { sessions: TrainingAttenda
           </button>
         )}
       </div>
+      {editError && (
+        <p role="alert" className="rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-[11px] font-semibold text-red-800">
+          {editError}
+        </p>
+      )}
       <ol className="flex flex-wrap gap-1.5">
         {orderedSessions.slice(0, showAll ? undefined : 5).map((session) => {
           if (session.cancellation) {
             const [year, month, day] = session.date.split('-')
+            const weekdayInitial = new Date(`${session.date}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'long' }).charAt(0).toUpperCase()
             return (
               <li key={session.date} title={`${day}/${month}/${year} : séance annulée · ${session.cancellation.reason}`} className="flex min-w-20 max-w-32 flex-col items-center rounded-lg border border-slate-300 bg-slate-100 px-2 py-1 text-center text-[10px] leading-tight text-slate-600">
-                <span className="font-mono">{day}/{month}</span>
+                <span className="font-mono">{weekdayInitial} {day}/{month}</span>
                 <span className="font-bold">Annulée</span>
               </li>
             )
           }
-          const status = session.playerStatuses[playerNumber]?.trim() ?? ''
+          const status = statusForSession(session)
           const style = TRAINING_STYLES[status] ?? { label: 'Non saisi', className: 'border border-slate-300 bg-slate-100 text-slate-600' }
           const [year, month, day] = session.date.split('-')
+          const weekdayInitial = new Date(`${session.date}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'long' }).charAt(0).toUpperCase()
+          const isEditing = editingDate === session.date
           return (
-            <li key={session.date} title={`${day}/${month}/${year} : ${style.label}`} className={`flex min-w-20 max-w-32 flex-col items-center rounded-lg px-2 py-1 text-center text-[10px] leading-tight ${style.className}`}>
-              <span className="font-mono">{day}/{month}</span>
-              <span className="font-bold">{style.label}</span>
+            <li key={session.date} title={`${day}/${month}/${year} : ${style.label}`} className={`flex min-w-20 max-w-40 flex-col items-center rounded-lg px-2 py-1 text-center text-[10px] leading-tight ${style.className}`}>
+              <button
+                type="button"
+                onClick={() => {
+                  setEditingDate(isEditing ? '' : session.date)
+                  setDraftStatus(isEditing ? '' : status as TrainingAttendanceStatus)
+                  setEditError('')
+                }}
+                className="flex flex-col items-center outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+                aria-label={`Modifier le statut du ${weekdayInitial} ${day}/${month}`}
+              >
+                <span className="font-mono">{weekdayInitial} {day}/{month}</span>
+                <span className="font-bold">{style.label}</span>
+              </button>
+              {isEditing && (
+                <div className="mt-1.5 flex w-full flex-col gap-1" onClick={(event) => event.stopPropagation()}>
+                  <select
+                    value={draftStatus}
+                    onChange={(event) => setDraftStatus(event.target.value as TrainingAttendanceStatus)}
+                    className="h-8 w-full rounded border border-current/30 bg-white px-1 text-[10px] font-bold text-[#172554]"
+                    aria-label={`Statut du ${weekdayInitial} ${day}/${month}`}
+                  >
+                    <option value="" disabled>Choisir…</option>
+                    {TRAINING_ATTENDANCE_STATUSES.map((option) => (
+                      <option key={option.value} value={option.value}>{option.shortLabel}</option>
+                    ))}
+                  </select>
+                  <div className="flex gap-1">
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => saveStatus(session.date)}
+                      className="min-h-7 flex-1 rounded bg-[#172554] px-1 font-bold text-white disabled:opacity-50"
+                    >
+                      OK
+                    </button>
+                    <button
+                      type="button"
+                      disabled={saving}
+                      onClick={() => {
+                        setEditingDate('')
+                        setDraftStatus('')
+                        setEditError('')
+                      }}
+                      className="size-7 rounded border border-current/30 font-bold"
+                      aria-label="Annuler"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              )}
             </li>
           )
         })}

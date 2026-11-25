@@ -99,12 +99,13 @@ export async function POST(request: Request) {
 
     const roster = await getRoster()
     const rosterNumbers = new Set(roster.players.map((player) => player.number))
-    if (
-      rosterNumbers.size !== roster.players.length ||
-      rosterNumbers.size !== submittedNumbers.size ||
-      [...rosterNumbers].some((number) => !submittedNumbers.has(number))
-    ) {
-      return response({ error: 'L’effectif a changé. Actualise la page avant d’enregistrer.' }, 409)
+    if (rosterNumbers.size !== roster.players.length) {
+      return response({ error: 'L’effectif contient des doublons. Actualise la page avant d’enregistrer.' }, 409)
+    }
+    for (const number of submittedNumbers) {
+      if (!rosterNumbers.has(number)) {
+        return response({ error: 'Ce joueur n’est plus dans l’effectif. Actualise la page avant d’enregistrer.' }, 409)
+      }
     }
 
     const saved = await saveTrainingAttendance(date, entries)

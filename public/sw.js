@@ -1,5 +1,5 @@
 // Service Worker ES Genech U11
-const CACHE_NAME = 'esg-u11-v2'
+const CACHE_NAME = 'esg-u11-v3'
 
 const PRECACHE_URLS = [
   '/manifest.webmanifest',

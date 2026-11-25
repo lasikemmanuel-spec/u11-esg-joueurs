@@ -72,6 +72,11 @@ function ConvocationOverlay({
   const orderedPlayers = players
     .map((player, index) => ({ player, index }))
     .sort((a, b) => callupPositionRank(a.player.position) - callupPositionRank(b.player.position) || a.index - b.index)
+
+  if (players.length === 0) {
+    return null
+  }
+
   return (
     <>
       <button

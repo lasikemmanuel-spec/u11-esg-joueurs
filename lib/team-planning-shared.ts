@@ -19,12 +19,16 @@ export type PlanningEventFields = {
   status: PlanningStatus
 }
 
-export type PlanningEvent = PlanningEventFields & { id: string }
+export type PlanningEvent = PlanningEventFields & {
+  id: string
+  recurrenceGroupId?: string
+  recurrenceEndDate?: string
+}
 
 export const MAX_WEEKLY_RECURRENCE_EVENTS = 52
 
 export function getWeeklyRecurrenceDates(startDate: string, endDate: string): string[] | null {
-  if (!isValidDate(startDate) || !isValidDate(endDate) || endDate <= startDate) return null
+  if (!isValidPlanningDate(startDate) || !isValidPlanningDate(endDate) || endDate <= startDate) return null
 
   const dates: string[] = []
   let date = startDate
@@ -40,7 +44,7 @@ export function getWeeklyRecurrenceDates(startDate: string, endDate: string): st
   return dates
 }
 
-function isValidDate(value: string) {
+export function isValidPlanningDate(value: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
   const date = new Date(`${value}T00:00:00Z`)
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
@@ -56,7 +60,7 @@ export function parsePlanningEventFields(input: unknown): PlanningEventFields | 
   const value = input as Record<string, unknown>
   if (
     typeof value.date !== 'string' ||
-    !isValidDate(value.date) ||
+    !isValidPlanningDate(value.date) ||
     typeof value.type !== 'string' ||
     !PLANNING_EVENT_TYPES.includes(value.type as PlanningEventType) ||
     typeof value.team !== 'string' ||
@@ -99,9 +103,21 @@ export function parsePlanningEventFields(input: unknown): PlanningEventFields | 
 export function isPlanningEvent(value: unknown): value is PlanningEvent {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) return false
   const event = value as Record<string, unknown>
-  return typeof event.id === 'string' &&
-    /^[0-9a-f-]{36}$/i.test(event.id) &&
-    parsePlanningEventFields(event) !== null
+  if (
+    typeof event.id !== 'string' ||
+    !/^[0-9a-f-]{36}$/i.test(event.id) ||
+    parsePlanningEventFields(event) === null
+  ) return false
+
+  const hasSeriesMetadata = event.recurrenceGroupId !== undefined || event.recurrenceEndDate !== undefined
+  if (!hasSeriesMetadata) return true
+
+  return typeof event.recurrenceGroupId === 'string' &&
+    /^[0-9a-f-]{36}$/i.test(event.recurrenceGroupId) &&
+    typeof event.recurrenceEndDate === 'string' &&
+    isValidPlanningDate(event.recurrenceEndDate) &&
+    typeof event.date === 'string' &&
+    event.date <= event.recurrenceEndDate
 }
 
 function escapeCalendarText(value: string) {
@@ -154,6 +170,15 @@ export function createCalendarFile(event: PlanningEvent) {
     `LOCATION:${escapeCalendarText(event.location)}`,
     `DESCRIPTION:${escapeCalendarText(description)}`,
     `STATUS:${status}`,
+    ...(event.status === 'cancelled'
+      ? []
+      : [
+          'BEGIN:VALARM',
+          'TRIGGER:-PT24H',
+          'ACTION:DISPLAY',
+          `DESCRIPTION:${escapeCalendarText(`Rappel : ${event.title}`)}`,
+          'END:VALARM',
+        ]),
     'END:VEVENT',
     'END:VCALENDAR',
   ]

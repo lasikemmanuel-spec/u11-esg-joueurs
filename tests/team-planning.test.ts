@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   createCalendarFile,
   getWeeklyRecurrenceDates,
+  isPlanningEvent,
   parsePlanningEventFields,
   type PlanningEvent,
 } from '@/lib/team-planning-shared'
@@ -17,6 +18,7 @@ vi.mock('@/lib/team-planning', () => ({
   getTeamPlanningEvents: vi.fn(),
   saveTeamPlanningEvent: vi.fn(),
   saveTeamPlanningEvents: vi.fn(),
+  updateTeamPlanningSeries: vi.fn(),
 }))
 vi.mock('@/lib/security-logger', () => ({
   logSecurityEvent: vi.fn(),
@@ -27,7 +29,12 @@ vi.mock('next/cache', () => ({ revalidateTag: vi.fn() }))
 
 import { POST, PUT, GET } from '@/app/api/team-planning/route'
 import { getEducatorSession } from '@/lib/educator-auth'
-import { getTeamPlanningEvents, saveTeamPlanningEvent, saveTeamPlanningEvents } from '@/lib/team-planning'
+import {
+  getTeamPlanningEvents,
+  saveTeamPlanningEvent,
+  saveTeamPlanningEvents,
+  updateTeamPlanningSeries,
+} from '@/lib/team-planning'
 
 const educator = { username: 'coach', displayName: 'Coach', role: 'educator' as const }
 const reader = { username: 'reader', displayName: 'Reader', role: 'reader' as const }
@@ -49,6 +56,12 @@ const planningEvent: PlanningEvent = {
   team: 'E1',
   status: 'confirmed',
   id: '550e8400-e29b-41d4-a716-446655440000',
+}
+const recurrenceGroupId = 'c3e6eac0-d48c-4c72-a374-b458239d14c8'
+const recurringPlanningEvent: PlanningEvent = {
+  ...planningEvent,
+  recurrenceGroupId,
+  recurrenceEndDate: '2026-12-05',
 }
 
 function request(path: string, method: string, body?: object, sameOrigin = true) {
@@ -92,17 +105,27 @@ describe('team planning', () => {
     expect(getWeeklyRecurrenceDates('2026-11-21', '2027-11-20')).toBeNull()
   })
 
+  it('accepts recurrence metadata only when the series is valid', () => {
+    expect(isPlanningEvent(recurringPlanningEvent)).toBe(true)
+    expect(isPlanningEvent({ ...recurringPlanningEvent, recurrenceEndDate: '2026-11-20' })).toBe(false)
+    expect(isPlanningEvent({ ...recurringPlanningEvent, recurrenceGroupId: 'invalid' })).toBe(false)
+  })
+
   it('creates a Europe/Paris calendar file and escapes event text', () => {
     const calendar = createCalendarFile({
       ...planningEvent,
       title: 'Match, puis goûter',
-      status: 'cancelled',
     })
 
     expect(calendar).toContain('TZID:Europe/Paris')
     expect(calendar).toContain('DTSTART;TZID=Europe/Paris:20261121T100000')
     expect(calendar).toContain('SUMMARY:Match\\, puis goûter')
-    expect(calendar).toContain('STATUS:CANCELLED')
+    expect(calendar).toContain('STATUS:CONFIRMED')
+    expect(calendar).toContain('BEGIN:VALARM\r\nTRIGGER:-PT24H\r\nACTION:DISPLAY')
+
+    const cancelledCalendar = createCalendarFile({ ...planningEvent, status: 'cancelled' })
+    expect(cancelledCalendar).toContain('STATUS:CANCELLED')
+    expect(cancelledCalendar).not.toContain('BEGIN:VALARM')
   })
 
   it('allows readers to view the planning', async () => {
@@ -160,17 +183,22 @@ describe('team planning', () => {
 
     const response = await POST(request('/api/team-planning', 'POST', {
       ...fields,
-      recurrence: { frequency: 'weekly', endDate: '2026-12-05' },
+      date: '2026-11-24',
+      type: 'training',
+      title: 'Entraînement',
+      recurrence: { frequency: 'weekly', endDate: '2026-12-08' },
     }))
     const result = await response.json() as { events: PlanningEvent[] }
 
     expect(response.status).toBe(201)
     expect(result.events.map((event) => event.date)).toEqual([
-      '2026-11-21',
-      '2026-11-28',
-      '2026-12-05',
+      '2026-11-24',
+      '2026-12-01',
+      '2026-12-08',
     ])
     expect(new Set(result.events.map((event) => event.id)).size).toBe(3)
+    expect(new Set(result.events.map((event) => event.recurrenceGroupId)).size).toBe(1)
+    expect(result.events.every((event) => event.recurrenceEndDate === '2026-12-08')).toBe(true)
     expect(saveTeamPlanningEvents).toHaveBeenCalledWith(result.events)
   })
 
@@ -214,5 +242,45 @@ describe('team planning', () => {
       { ...planningEvent, title: 'Match reporté', status: 'postponed' },
       'update',
     )
+  })
+
+  it('updates all occurrences when asked to update a series', async () => {
+    vi.mocked(getEducatorSession).mockResolvedValue(educator)
+    const updatedEvents = [
+      recurringPlanningEvent,
+      { ...recurringPlanningEvent, id: '550e8400-e29b-41d4-a716-446655440001', date: '2026-11-28' },
+    ]
+    vi.mocked(updateTeamPlanningSeries).mockResolvedValue(updatedEvents)
+
+    const response = await PUT(request('/api/team-planning', 'PUT', {
+      ...fields,
+      scope: 'series',
+      seriesId: recurrenceGroupId,
+      status: 'cancelled',
+    }))
+    const result = await response.json() as { events: PlanningEvent[] }
+
+    expect(response.status).toBe(200)
+    expect(result.events).toEqual(updatedEvents)
+    expect(updateTeamPlanningSeries).toHaveBeenCalledWith(recurrenceGroupId, {
+      ...fields,
+      status: 'cancelled',
+    })
+  })
+
+  it('preserves recurrence metadata when updating one occurrence', async () => {
+    vi.mocked(getEducatorSession).mockResolvedValue(educator)
+    vi.mocked(saveTeamPlanningEvent).mockResolvedValue(true)
+
+    const response = await PUT(request('/api/team-planning', 'PUT', {
+      ...recurringPlanningEvent,
+      title: 'Entraînement déplacé',
+    }))
+
+    expect(response.status).toBe(200)
+    expect(saveTeamPlanningEvent).toHaveBeenCalledWith({
+      ...recurringPlanningEvent,
+      title: 'Entraînement déplacé',
+    }, 'update')
   })
 })

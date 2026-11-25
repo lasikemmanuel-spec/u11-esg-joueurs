@@ -130,6 +130,7 @@ export function DashboardTabs({
 }) {
   const router = useRouter()
   const [activeTab, setActiveTab] = useState<TabKey>('matches')
+  const [trainingFocusDate, setTrainingFocusDate] = useState<string | null>(null)
   const [whatsAppPrefill, setWhatsAppPrefill] = useState<WhatsAppPrefill | null>(null)
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const [statsSection, setStatsSection] = useState<StatsSection>('players')
@@ -156,6 +157,10 @@ export function DashboardTabs({
   const [logoutError, setLogoutError] = useState('')
   const [profilePhotoOpen, setProfilePhotoOpen] = useState(false)
   const [profilePhotoRevision, setProfilePhotoRevision] = useState(0)
+
+  useEffect(() => {
+    if (activeTab !== 'training' && trainingFocusDate) setTrainingFocusDate(null)
+  }, [activeTab, trainingFocusDate])
 
   useEffect(() => {
     if (!moreMenuOpen) return
@@ -634,6 +639,10 @@ export function DashboardTabs({
         {activeTab === 'planning' && (
           <TeamPlanning
             canManage={educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'}
+            onOpenTraining={(date) => {
+              setTrainingFocusDate(date)
+              setActiveTab('training')
+            }}
           />
         )}
         {activeTab === 'whatsapp' && educatorIdentity && (
@@ -654,6 +663,7 @@ export function DashboardTabs({
             players={rosterPlayers}
             sessions={trainingAttendance}
             loadError={trainingAttendanceError}
+            initialDate={trainingFocusDate}
             onPrepareCancellation={(date) => {
               setWhatsAppPrefill({
                 templateId: 'tpl-annulation',

@@ -6,13 +6,16 @@ import {
   CalendarPlus,
   ChevronLeft,
   ChevronRight,
+  ClipboardCheck,
   Clock3,
   MapPin,
   Pencil,
   Plus,
+  Repeat,
   RefreshCw,
   X,
 } from 'lucide-react'
+import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
 import {
   createCalendarFile,
   MAX_WEEKLY_RECURRENCE_EVENTS,
@@ -73,11 +76,21 @@ function formatDate(dateKey: string, options: Intl.DateTimeFormatOptions = {}) {
   })
 }
 
+function formatWeekday(dateKey: string) {
+  return new Date(`${dateKey}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'long' })
+}
+
 function sortEvents(events: PlanningEvent[]) {
   return [...events].sort((a, b) => `${a.date}T${a.startTime}`.localeCompare(`${b.date}T${b.startTime}`))
 }
 
-export function TeamPlanning({ canManage }: { canManage: boolean }) {
+export function TeamPlanning({
+  canManage,
+  onOpenTraining,
+}: {
+  canManage: boolean
+  onOpenTraining: (date: string) => void
+}) {
   const [events, setEvents] = useState<PlanningEvent[]>([])
   const [view, setView] = useState<PlanningView>('week')
   const [weekStart, setWeekStart] = useState(() => getMonday())
@@ -86,11 +99,14 @@ export function TeamPlanning({ canManage }: { canManage: boolean }) {
   const [loadError, setLoadError] = useState('')
   const [saveError, setSaveError] = useState('')
   const [notice, setNotice] = useState('')
+  const [actionError, setActionError] = useState('')
   const [formOpen, setFormOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<PlanningEvent | null>(null)
+  const [editingSeries, setEditingSeries] = useState(false)
   const [draft, setDraft] = useState<PlanningEventFields>(EMPTY_DRAFT)
   const [repeatWeekly, setRepeatWeekly] = useState(false)
   const [repeatUntil, setRepeatUntil] = useState('')
+  const [pendingSeriesId, setPendingSeriesId] = useState('')
 
   const loadEvents = useCallback(async () => {
     setLoading(true)
@@ -124,24 +140,28 @@ export function TeamPlanning({ canManage }: { canManage: boolean }) {
     const date = toDateKey(new Date())
     setDraft({ ...EMPTY_DRAFT, date })
     setEditingEvent(null)
+    setEditingSeries(false)
     setRepeatWeekly(false)
     setRepeatUntil(addDays(date, 28))
     setFormOpen(false)
     setSaveError('')
+    setActionError('')
   }
 
   const openNewEventForm = () => {
     const date = toDateKey(new Date())
     setDraft({ ...EMPTY_DRAFT, date })
     setEditingEvent(null)
+    setEditingSeries(false)
     setRepeatWeekly(false)
     setRepeatUntil(addDays(date, 28))
     setSaveError('')
+    setActionError('')
     setNotice('')
     setFormOpen(true)
   }
 
-  const editEvent = (event: PlanningEvent) => {
+  const editEvent = (event: PlanningEvent, series = false) => {
     const fields: PlanningEventFields = {
       date: event.date,
       type: event.type,
@@ -156,14 +176,24 @@ export function TeamPlanning({ canManage }: { canManage: boolean }) {
     }
     setDraft(fields)
     setEditingEvent(event)
+    setEditingSeries(series && Boolean(event.recurrenceGroupId))
     setRepeatWeekly(false)
     setSaveError('')
+    setActionError('')
     setNotice('')
     setFormOpen(true)
   }
 
   const updateDraft = <K extends keyof PlanningEventFields>(key: K, value: PlanningEventFields[K]) => {
     setDraft((current) => ({ ...current, [key]: value }))
+  }
+
+  const replaceEvents = (savedEvents: PlanningEvent[]) => {
+    const savedIds = new Set(savedEvents.map((event) => event.id))
+    setEvents((current) => sortEvents([
+      ...current.filter((item) => !savedIds.has(item.id)),
+      ...savedEvents,
+    ]))
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -176,7 +206,18 @@ export function TeamPlanning({ canManage }: { canManage: boolean }) {
         method: editingEvent ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(editingEvent
-          ? { ...draft, id: editingEvent.id }
+          ? editingSeries
+            ? {
+                ...draft,
+                scope: 'series',
+                seriesId: editingEvent.recurrenceGroupId,
+              }
+            : {
+                ...draft,
+                id: editingEvent.id,
+                recurrenceGroupId: editingEvent.recurrenceGroupId ?? null,
+                recurrenceEndDate: editingEvent.recurrenceEndDate ?? null,
+              }
           : {
               ...draft,
               recurrence: repeatWeekly ? { frequency: 'weekly', endDate: repeatUntil } : null,
@@ -187,22 +228,55 @@ export function TeamPlanning({ canManage }: { canManage: boolean }) {
       if (!response.ok || savedEvents.length === 0) {
         throw new Error(result.error ?? 'Impossible d’enregistrer cet événement.')
       }
-      const savedIds = new Set(savedEvents.map((event) => event.id))
-      setEvents((current) => sortEvents([
-        ...current.filter((item) => !savedIds.has(item.id)),
-        ...savedEvents,
-      ]))
-      setNotice(editingEvent
-        ? 'Événement modifié.'
-        : repeatWeekly
-          ? `${savedEvents.length} événements hebdomadaires ajoutés jusqu’au ${formatDate(repeatUntil)}. Chaque occurrence reste modifiable séparément.`
-          : 'Événement ajouté au planning.')
+      replaceEvents(savedEvents)
+      setActionError('')
+      setNotice(
+        editingSeries
+          ? 'Série modifiée.'
+          : editingEvent
+            ? 'Événement modifié.'
+            : repeatWeekly
+              ? `${savedEvents.length} événements hebdomadaires ajoutés jusqu’au ${formatDate(repeatUntil)}. Chaque occurrence reste modifiable séparément.`
+              : 'Événement ajouté au planning.',
+      )
       setFormOpen(false)
       setEditingEvent(null)
     } catch (cause) {
       setSaveError(cause instanceof Error ? cause.message : 'Impossible d’enregistrer cet événement.')
     } finally {
       setSaving(false)
+    }
+  }
+
+  const cancelSeries = async (event: PlanningEvent) => {
+    if (!event.recurrenceGroupId) return
+    if (!window.confirm(`Annuler toutes les occurrences de « ${event.title} » ?`)) return
+
+    setPendingSeriesId(event.recurrenceGroupId)
+    setActionError('')
+    setNotice('')
+    try {
+      const response = await fetch('/api/team-planning', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...event,
+          scope: 'series',
+          seriesId: event.recurrenceGroupId,
+          status: 'cancelled',
+        }),
+      })
+      const result = await response.json() as { events?: PlanningEvent[]; event?: PlanningEvent; error?: string }
+      const savedEvents = result.events ?? (result.event ? [result.event] : [])
+      if (!response.ok || savedEvents.length === 0) {
+        throw new Error(result.error ?? 'Impossible d’annuler cette série.')
+      }
+      replaceEvents(savedEvents)
+      setNotice(`Série annulée : ${savedEvents.length} événement(s).`)
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : 'Impossible d’annuler cette série.')
+    } finally {
+      setPendingSeriesId('')
     }
   }
 
@@ -224,7 +298,9 @@ export function TeamPlanning({ canManage }: { canManage: boolean }) {
             <CalendarDays aria-hidden="true" className="size-6 text-primary" />
             Planning de l’équipe
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">Matchs, entraînements et tournois à venir.</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Matchs, entraînements et tournois à venir. Les événements ajoutés au calendrier incluent un rappel 24 h avant.
+          </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -250,6 +326,7 @@ export function TeamPlanning({ canManage }: { canManage: boolean }) {
       </header>
 
       {notice && <p role="status" className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm">{notice}</p>}
+      {actionError && <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">{actionError}</p>}
       {loadError && (
         <div role="alert" className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm">
           <span>{loadError}</span>
@@ -259,7 +336,9 @@ export function TeamPlanning({ canManage }: { canManage: boolean }) {
 
       {canManage && formOpen && (
         <form onSubmit={handleSubmit} className="grid gap-4 rounded-2xl border border-accent/40 bg-card p-4 shadow-sm sm:grid-cols-2">
-          <h3 className="text-lg font-bold sm:col-span-2">{editingEvent ? 'Modifier l’événement' : 'Nouvel événement'}</h3>
+          <h3 className="text-lg font-bold sm:col-span-2">
+            {editingSeries ? 'Modifier toute la série' : editingEvent ? 'Modifier l’événement' : 'Nouvel événement'}
+          </h3>
           <label className="grid gap-1 text-sm font-semibold">
             Titre
             <input
@@ -301,6 +380,7 @@ export function TeamPlanning({ canManage }: { canManage: boolean }) {
               required
               type="date"
               value={draft.date}
+              disabled={editingSeries}
               onChange={(event) => {
                 const date = event.target.value
                 updateDraft('date', date)
@@ -314,6 +394,11 @@ export function TeamPlanning({ canManage }: { canManage: boolean }) {
               }}
               className="h-10 rounded-lg border border-border bg-background px-3 font-normal"
             />
+            {editingSeries && (
+              <span className="text-xs font-normal text-muted-foreground">
+                Le jour et la date de chaque occurrence restent inchangés.
+              </span>
+            )}
           </label>
           {!editingEvent && (
             <fieldset className="grid gap-3 rounded-xl border border-border bg-muted/20 p-3 sm:col-span-2">
@@ -331,7 +416,7 @@ export function TeamPlanning({ canManage }: { canManage: boolean }) {
                   }}
                   className="size-4 accent-primary"
                 />
-                Répéter chaque semaine
+                {draft.date ? `Répéter chaque ${formatWeekday(draft.date)}` : 'Répéter chaque semaine'}
               </label>
               {repeatWeekly && (
                 <div className="grid gap-1">
@@ -436,7 +521,13 @@ export function TeamPlanning({ canManage }: { canManage: boolean }) {
               disabled={saving}
               className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground hover:opacity-90 disabled:opacity-50"
             >
-              {saving ? 'Enregistrement…' : editingEvent ? 'Enregistrer les modifications' : 'Ajouter au planning'}
+              {saving
+                ? 'Enregistrement…'
+                : editingSeries
+                  ? 'Enregistrer toute la série'
+                  : editingEvent
+                    ? 'Enregistrer les modifications'
+                    : 'Ajouter au planning'}
             </button>
           </div>
         </form>
@@ -510,6 +601,12 @@ export function TeamPlanning({ canManage }: { canManage: boolean }) {
                     <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${event.status === 'confirmed' ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300' : event.status === 'postponed' ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300' : 'bg-destructive/10 text-destructive'}`}>
                       {STATUS_LABELS[event.status]}
                     </span>
+                    {event.recurrenceGroupId && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary">
+                        <Repeat aria-hidden="true" className="size-3.5" />
+                        Chaque {formatWeekday(event.date)}
+                      </span>
+                    )}
                   </div>
                   <h3 className={`mt-2 text-lg font-black ${event.status === 'cancelled' ? 'line-through' : ''}`}>{event.title}</h3>
                   <p className="mt-1 text-sm font-semibold capitalize">{formatDate(event.date)}</p>
@@ -527,9 +624,24 @@ export function TeamPlanning({ canManage }: { canManage: boolean }) {
                   {event.notes && <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{event.notes}</p>}
                 </div>
                 <div className="flex shrink-0 flex-wrap gap-2 sm:justify-end">
+                  {canManage &&
+                    event.type === 'training' &&
+                    event.status !== 'cancelled' &&
+                    event.date >= MATCH_SEASON_START &&
+                    event.date <= MATCH_SEASON_END && (
+                      <button
+                        type="button"
+                        onClick={() => onOpenTraining(event.date)}
+                        className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-primary/30 bg-primary/5 px-3 text-sm font-semibold text-primary hover:bg-primary/10"
+                      >
+                        <ClipboardCheck aria-hidden="true" className="size-4" />
+                        Faire l’appel
+                      </button>
+                    )}
                   <button
                     type="button"
                     onClick={() => downloadCalendarFile(event)}
+                    title="Le fichier calendrier inclut un rappel 24 h avant."
                     className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-border px-3 text-sm font-semibold hover:bg-muted"
                   >
                     <CalendarPlus aria-hidden="true" className="size-4" />
@@ -546,6 +658,27 @@ export function TeamPlanning({ canManage }: { canManage: boolean }) {
                       <Pencil aria-hidden="true" className="size-4" />
                       Modifier
                     </button>
+                  )}
+                  {canManage && event.recurrenceGroupId && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => editEvent(event, true)}
+                        aria-label={`Modifier toute la série ${event.title}`}
+                        className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-primary/30 px-3 text-sm font-semibold text-primary hover:bg-primary/5"
+                      >
+                        <Repeat aria-hidden="true" className="size-4" />
+                        Modifier la série
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => void cancelSeries(event)}
+                        disabled={pendingSeriesId === event.recurrenceGroupId}
+                        className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-destructive/30 px-3 text-sm font-semibold text-destructive hover:bg-destructive/5 disabled:opacity-50"
+                      >
+                        {pendingSeriesId === event.recurrenceGroupId ? 'Annulation…' : 'Annuler la série'}
+                      </button>
+                    </>
                   )}
                 </div>
               </div>

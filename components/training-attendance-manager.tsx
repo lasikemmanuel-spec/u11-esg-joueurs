@@ -66,15 +66,17 @@ export function TrainingAttendanceManager({
   players,
   sessions,
   loadError,
+  initialDate,
   onPrepareCancellation,
 }: {
   players: PublicPlayer[]
   sessions: TrainingAttendanceSession[]
   loadError: boolean
+  initialDate: string | null
   onPrepareCancellation: (date: string) => void
 }) {
   const router = useRouter()
-  const [date, setDate] = useState('')
+  const [date, setDate] = useState(initialDate ?? '')
   const [query, setQuery] = useState('')
   const [quickEntryMode, setQuickEntryMode] = useState(false)
   const [quickStatus, setQuickStatus] = useState<TrainingAttendanceStatus | null>(null)

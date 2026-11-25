@@ -2,8 +2,18 @@ import crypto from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { getEducatorSession, hasEducatorAccess, isSameOriginRequest, type EducatorSession } from '@/lib/educator-auth'
-import { getTeamPlanningEvents, saveTeamPlanningEvent, saveTeamPlanningEvents } from '@/lib/team-planning'
-import { getWeeklyRecurrenceDates, parsePlanningEventFields, type PlanningEvent } from '@/lib/team-planning-shared'
+import {
+  getTeamPlanningEvents,
+  saveTeamPlanningEvent,
+  saveTeamPlanningEvents,
+  updateTeamPlanningSeries,
+} from '@/lib/team-planning'
+import {
+  getWeeklyRecurrenceDates,
+  isValidPlanningDate,
+  parsePlanningEventFields,
+  type PlanningEvent,
+} from '@/lib/team-planning-shared'
 import { getClientIp, getUserAgent, logSecurityEvent } from '@/lib/security-logger'
 
 export const runtime = 'nodejs'
@@ -89,6 +99,7 @@ export async function POST(request: Request) {
   if (!fields) return response({ error: 'Vérifie les informations de l’événement.' }, 400)
 
   let dates = [fields.date]
+  let recurrenceEndDate: string | undefined
   const recurrenceValue = input.recurrence
   if (recurrenceValue !== undefined && recurrenceValue !== null) {
     if (
@@ -108,12 +119,15 @@ export async function POST(request: Request) {
       return response({ error: 'La date de fin doit permettre entre 2 et 52 événements hebdomadaires.' }, 400)
     }
     dates = recurrenceDates
+    recurrenceEndDate = recurrence.endDate
   }
 
+  const recurrenceGroupId = recurrenceEndDate ? crypto.randomUUID() : undefined
   const events: PlanningEvent[] = dates.map((date) => ({
     id: crypto.randomUUID(),
     ...fields,
     date,
+    ...(recurrenceGroupId && recurrenceEndDate ? { recurrenceGroupId, recurrenceEndDate } : {}),
   }))
   try {
     await saveTeamPlanningEvents(events)
@@ -124,7 +138,7 @@ export async function POST(request: Request) {
       ip: getClientIp(request),
       userAgent: getUserAgent(request),
       role: authorization.educator.role,
-      detail: `event_id=${events[0].id} date=${fields.date} occurrences=${events.length}`,
+      detail: `event_id=${events[0].id} date=${fields.date} occurrences=${events.length}${recurrenceGroupId ? ` series_id=${recurrenceGroupId}` : ''}`,
     })
     return response({ ok: true, event: events[0], events }, 201)
   } catch (error) {
@@ -143,11 +157,48 @@ export async function PUT(request: Request) {
     return response({ error: 'Données du planning invalides.' }, 400)
   }
   const input = body.input as Record<string, unknown>
-  if (!isUuid(input.id)) return response({ error: 'Identifiant d’événement invalide.' }, 400)
   const fields = parsePlanningEventFields(input)
   if (!fields) return response({ error: 'Vérifie les informations de l’événement.' }, 400)
 
-  const event: PlanningEvent = { id: input.id, ...fields }
+  if (input.scope === 'series') {
+    if (!isUuid(input.seriesId)) return response({ error: 'Identifiant de série invalide.' }, 400)
+    try {
+      const events = await updateTeamPlanningSeries(input.seriesId, fields)
+      if (events.length === 0) return response({ error: 'Cette série n’existe plus. Actualise le planning.' }, 404)
+      revalidateTag('google-sheet', { expire: 0 })
+      logSecurityEvent({
+        event: 'team_planning_event_updated',
+        username: authorization.educator.username,
+        ip: getClientIp(request),
+        userAgent: getUserAgent(request),
+        role: authorization.educator.role,
+        detail: `series_id=${input.seriesId} occurrences=${events.length}`,
+      })
+      return response({ ok: true, event: events[0], events })
+    } catch (error) {
+      console.error('Erreur lors de la modification d’une série du planning:', error)
+      return response({ error: 'Impossible de modifier la série dans le planning.' }, 503)
+    }
+  }
+
+  if (!isUuid(input.id)) return response({ error: 'Identifiant d’événement invalide.' }, 400)
+  let recurrenceMetadata: Pick<PlanningEvent, 'recurrenceGroupId' | 'recurrenceEndDate'> = {}
+  if (input.recurrenceGroupId != null || input.recurrenceEndDate != null) {
+    if (
+      !isUuid(input.recurrenceGroupId) ||
+      typeof input.recurrenceEndDate !== 'string' ||
+      !isValidPlanningDate(input.recurrenceEndDate) ||
+      fields.date > input.recurrenceEndDate
+    ) {
+      return response({ error: 'Identifiants de série invalides.' }, 400)
+    }
+    recurrenceMetadata = {
+      recurrenceGroupId: input.recurrenceGroupId,
+      recurrenceEndDate: input.recurrenceEndDate,
+    }
+  }
+
+  const event: PlanningEvent = { id: input.id, ...fields, ...recurrenceMetadata }
   try {
     const updated = await saveTeamPlanningEvent(event, 'update')
     if (!updated) return response({ error: 'Cet événement n’existe plus. Actualise le planning.' }, 404)

@@ -4,10 +4,10 @@ import {
   getAuthenticatedSheetRows,
   updateAuthenticatedSheetValues,
 } from '@/lib/google-sheets'
-import { isPlanningEvent, type PlanningEvent } from '@/lib/team-planning-shared'
+import { isPlanningEvent, type PlanningEvent, type PlanningEventFields } from '@/lib/team-planning-shared'
 
 const PLANNING_TAB = '📅 Planning'
-const PLANNING_HEADERS = [
+const BASE_PLANNING_HEADERS = [
   'ID',
   'Date',
   'Type',
@@ -20,6 +20,8 @@ const PLANNING_HEADERS = [
   'Consignes',
   'Statut',
 ]
+const SERIES_HEADERS = ['Identifiant de série', 'Fin de récurrence']
+const PLANNING_HEADERS = [...BASE_PLANNING_HEADERS, ...SERIES_HEADERS]
 
 async function getPlanningRows() {
   await ensureAuthenticatedSheetTab(PLANNING_TAB)
@@ -27,14 +29,26 @@ async function getPlanningRows() {
 
   if (rows.length === 0 || !rows[0].some(Boolean)) {
     await updateAuthenticatedSheetValues([{
-      range: `'${sheetTitle.replace(/'/g, "''")}'!A1:K1`,
+      range: `'${sheetTitle.replace(/'/g, "''")}'!A1:M1`,
       values: [PLANNING_HEADERS],
     }])
     return { sheetTitle, rows: [PLANNING_HEADERS] }
   }
 
-  if (PLANNING_HEADERS.some((header, index) => rows[0][index] !== header)) {
+  if (BASE_PLANNING_HEADERS.some((header, index) => rows[0][index] !== header)) {
     throw new Error('Les en-têtes de l’onglet « Planning » ne correspondent pas au format attendu.')
+  }
+  const seriesHeadersAreMissing = !rows[0][BASE_PLANNING_HEADERS.length] &&
+    !rows[0][BASE_PLANNING_HEADERS.length + 1]
+  if (seriesHeadersAreMissing) {
+    await updateAuthenticatedSheetValues([{
+      range: `'${sheetTitle.replace(/'/g, "''")}'!L1:M1`,
+      values: [SERIES_HEADERS],
+    }])
+    rows[0][BASE_PLANNING_HEADERS.length] = SERIES_HEADERS[0]
+    rows[0][BASE_PLANNING_HEADERS.length + 1] = SERIES_HEADERS[1]
+  } else if (SERIES_HEADERS.some((header, index) => rows[0][BASE_PLANNING_HEADERS.length + index] !== header)) {
+    throw new Error('Les en-têtes des séries récurrentes dans l’onglet « Planning » ne correspondent pas au format attendu.')
   }
 
   return { sheetTitle, rows }
@@ -42,7 +56,21 @@ async function getPlanningRows() {
 
 function rowToEvent(row: string[]): PlanningEvent | null {
   if (!row.some(Boolean)) return null
-  const [id, date, type, team, title, meetingTime, startTime, endTime, location, notes, status] = row
+  const [
+    id,
+    date,
+    type,
+    team,
+    title,
+    meetingTime,
+    startTime,
+    endTime,
+    location,
+    notes,
+    status,
+    recurrenceGroupId,
+    recurrenceEndDate,
+  ] = row
   const event: unknown = {
     id,
     date,
@@ -55,11 +83,30 @@ function rowToEvent(row: string[]): PlanningEvent | null {
     location,
     notes,
     status,
+    ...(recurrenceGroupId || recurrenceEndDate ? { recurrenceGroupId, recurrenceEndDate } : {}),
   }
   if (!isPlanningEvent(event)) {
     throw new Error('Une ligne de l’onglet « Planning » contient des données invalides.')
   }
   return event
+}
+
+function eventToRow(event: PlanningEvent) {
+  return [
+    event.id,
+    event.date,
+    event.type,
+    event.team,
+    event.title,
+    event.meetingTime,
+    event.startTime,
+    event.endTime,
+    event.location,
+    event.notes,
+    event.status,
+    event.recurrenceGroupId ?? '',
+    event.recurrenceEndDate ?? '',
+  ]
 }
 
 export async function getTeamPlanningEvents() {
@@ -80,23 +127,10 @@ export async function saveTeamPlanningEvent(event: PlanningEvent, mode: 'create'
   if (mode === 'update' && existingRow < 0) return false
 
   const rowIndex = mode === 'update' ? existingRow : rows.length
-  const values = [
-    event.id,
-    event.date,
-    event.type,
-    event.team,
-    event.title,
-    event.meetingTime,
-    event.startTime,
-    event.endTime,
-    event.location,
-    event.notes,
-    event.status,
-  ]
   const quotedTitle = sheetTitle.replace(/'/g, "''")
   await updateAuthenticatedSheetValues([{
-    range: `'${quotedTitle}'!A${rowIndex + 1}:K${rowIndex + 1}`,
-    values: [values],
+    range: `'${quotedTitle}'!A${rowIndex + 1}:M${rowIndex + 1}`,
+    values: [eventToRow(event)],
   }])
   return true
 }
@@ -118,20 +152,40 @@ export async function saveTeamPlanningEvents(events: PlanningEvent[]) {
   await updateAuthenticatedSheetValues(events.map((event, index) => {
     const rowIndex = rows.length + index + 1
     return {
-      range: `'${quotedTitle}'!A${rowIndex}:K${rowIndex}`,
-      values: [[
-        event.id,
-        event.date,
-        event.type,
-        event.team,
-        event.title,
-        event.meetingTime,
-        event.startTime,
-        event.endTime,
-        event.location,
-        event.notes,
-        event.status,
-      ]],
+      range: `'${quotedTitle}'!A${rowIndex}:M${rowIndex}`,
+      values: [eventToRow(event)],
     }
   }))
+}
+
+export async function updateTeamPlanningSeries(
+  recurrenceGroupId: string,
+  fields: PlanningEventFields,
+): Promise<PlanningEvent[]> {
+  const { sheetTitle, rows } = await getPlanningRows()
+  const updates: Array<{ range: string; values: string[][] }> = []
+  const events: PlanningEvent[] = []
+  const quotedTitle = sheetTitle.replace(/'/g, "''")
+
+  rows.forEach((row, rowIndex) => {
+    if (rowIndex === 0 || row[11] !== recurrenceGroupId) return
+    const event: PlanningEvent = {
+      ...fields,
+      id: row[0],
+      date: row[1],
+      recurrenceGroupId,
+      recurrenceEndDate: row[12],
+    }
+    if (!isPlanningEvent(event)) {
+      throw new Error('Une occurrence de la série récurrente contient des données invalides.')
+    }
+    events.push(event)
+    updates.push({
+      range: `'${quotedTitle}'!A${rowIndex + 1}:M${rowIndex + 1}`,
+      values: [eventToRow(event)],
+    })
+  })
+
+  if (updates.length > 0) await updateAuthenticatedSheetValues(updates)
+  return events
 }

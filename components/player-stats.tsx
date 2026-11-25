@@ -132,7 +132,7 @@ function TrainingHistory({ sessions, playerNumber }: { sessions: TrainingAttenda
           <h4 className="text-xs font-bold text-primary">Détail des séances</h4>
           <p className="text-[10px] text-muted-foreground">{presentCount} présence{presentCount === 1 ? '' : 's'} · {recordedCount}/{activeSessions.length} statuts renseignés</p>
         </div>
-        {pastSessions.length > 5 && (
+        {pastSessions.length > 6 && (
           <button
             type="button"
             aria-expanded={showAll}
@@ -144,7 +144,7 @@ function TrainingHistory({ sessions, playerNumber }: { sessions: TrainingAttenda
         )}
       </div>
       <ol className="flex flex-wrap gap-1.5">
-        {orderedSessions.slice(0, showAll ? undefined : 5).map((session) => {
+        {orderedSessions.slice(0, showAll ? undefined : 6).map((session) => {
           if (session.cancellation) {
             const [year, month, day] = session.date.split('-')
             const weekdayInitial = new Date(`${session.date}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'long' }).charAt(0).toUpperCase()
@@ -258,7 +258,7 @@ function SaturdaySection({
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs font-semibold text-muted-foreground">Historique de la saison · {convocation.matches.length} matchs</p>
-            {convocation.matches.length > 5 && (
+            {convocation.matches.length > 6 && (
               <button
                 type="button"
                 aria-expanded={showAllMatches}
@@ -272,7 +272,7 @@ function SaturdaySection({
           <ol className="flex flex-wrap gap-1.5">
             {[...convocation.matches]
               .sort((a, b) => matchDateOrder(b.date).localeCompare(matchDateOrder(a.date)))
-              .slice(0, showAllMatches ? undefined : 5)
+              .slice(0, showAllMatches ? undefined : 6)
               .map((m) => {
                 const style = MATCH_STYLES[m.status]
                 return (

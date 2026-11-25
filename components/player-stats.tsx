@@ -143,13 +143,13 @@ function TrainingHistory({ sessions, playerNumber }: { sessions: TrainingAttenda
           </button>
         )}
       </div>
-      <ol className="grid grid-cols-3 gap-1.5">
+      <ol className="flex flex-wrap gap-1.5">
         {orderedSessions.slice(0, showAll ? undefined : 5).map((session) => {
           if (session.cancellation) {
             const [year, month, day] = session.date.split('-')
             const weekdayInitial = new Date(`${session.date}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'long' }).charAt(0).toUpperCase()
             return (
-              <li key={session.date} title={`${day}/${month}/${year} : séance annulée · ${session.cancellation.reason}`} className="flex h-12 min-w-0 flex-col items-center justify-center rounded-lg border border-slate-200 bg-slate-50 px-1 text-center text-[10px] leading-tight text-slate-500">
+              <li key={session.date} title={`${day}/${month}/${year} : séance annulée · ${session.cancellation.reason}`} className="flex h-10 w-20 shrink-0 flex-col items-center justify-center rounded-md border border-slate-200 bg-slate-50 px-1 text-center text-[9px] leading-tight text-slate-500">
                 <span className="font-mono">{weekdayInitial} {day}/{month}</span>
                 <span className="font-semibold">☁️ Annulée</span>
               </li>
@@ -161,7 +161,7 @@ function TrainingHistory({ sessions, playerNumber }: { sessions: TrainingAttenda
           const weekdayInitial = new Date(`${session.date}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'long' }).charAt(0).toUpperCase()
           const isEditing = editingDate === session.date
           return (
-            <li key={session.date} title={`${day}/${month}/${year} : ${style.label}`} className={`flex h-12 min-w-0 flex-col items-center justify-center rounded-lg px-1 text-center text-[10px] leading-tight transition ${style.className} ${isEditing ? 'ring-2 ring-[#d4af37] ring-offset-1' : ''}`}>
+            <li key={session.date} title={`${day}/${month}/${year} : ${style.label}`} className={`flex h-10 w-20 shrink-0 flex-col items-center justify-center rounded-md px-1 text-center text-[9px] leading-tight transition ${style.className} ${isEditing ? 'ring-2 ring-[#d4af37] ring-offset-1' : ''}`}>
               <button
                 type="button"
                 onClick={() => {

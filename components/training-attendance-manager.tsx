@@ -449,9 +449,16 @@ export function TrainingAttendanceManager({
             </section>
           )}
           {players.length === 0 ? (
-        <p role="status" className="rounded-xl bg-muted p-4 text-sm">Aucun joueur dans l’effectif.</p>
-      ) : (
-        <>
+            <p role="status" className="rounded-xl bg-muted p-4 text-sm">Aucun joueur dans l’effectif.</p>
+          ) : (
+            <>
+              {!quickEntryMode && (
+                <p role="status" className="rounded-xl border border-dashed border-accent/40 bg-card/70 px-4 py-6 text-center text-sm font-semibold text-muted-foreground">
+                  Commence par marquer tout le monde présent ou ouvre les corrections pour une séance déjà commencée.
+                </p>
+              )}
+              {quickEntryMode && (
+                <>
           {(!quickEntryMode || quickStatus) && (
             <label className="relative block sm:max-w-xl">
               <span className="sr-only">Rechercher un joueur par nom, prénom ou numéro</span>
@@ -601,7 +608,8 @@ export function TrainingAttendanceManager({
             })}
           </ul>
           )}
-
+        </>
+          )}
           <footer className={`z-10 flex flex-col gap-3 rounded-2xl border border-accent/50 bg-card/95 p-3 shadow-xl backdrop-blur sm:flex-row sm:items-center sm:justify-between sm:px-5 ${playerStatusFilter === 'all' && !query ? 'sticky bottom-20 xl:bottom-3' : 'relative'}`}>
             <button type="button" onClick={() => void save()} disabled={!canSave} className="min-h-12 w-full rounded-xl bg-gradient-to-r from-amber-300 to-yellow-400 px-6 font-black text-[#14234e] shadow-lg transition hover:-translate-y-0.5 hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto sm:min-w-64">
               <Save aria-hidden="true" className="mr-2 inline size-4" />{saving ? 'Enregistrement…' : savedSession ? 'Mettre à jour la séance' : 'Enregistrer les présences'}

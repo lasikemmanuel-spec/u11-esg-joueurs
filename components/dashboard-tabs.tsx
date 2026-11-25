@@ -338,6 +338,7 @@ export function DashboardTabs({
     ? [
         { key: 'matches', label: 'Matchs', icon: CalendarDays },
         { key: 'training', label: 'Entraînements', icon: Dumbbell },
+        { key: 'planning', label: 'Planning', icon: CalendarRange },
         { key: 'more', label: 'Plus', icon: Ellipsis },
       ]
     : [

@@ -100,3 +100,38 @@ export async function saveTeamPlanningEvent(event: PlanningEvent, mode: 'create'
   }])
   return true
 }
+
+export async function saveTeamPlanningEvents(events: PlanningEvent[]) {
+  if (events.length === 0) throw new Error('Aucun événement à enregistrer.')
+
+  const { sheetTitle, rows } = await getPlanningRows()
+  const existingIds = new Set(rows.slice(1).map((row) => row[0]).filter(Boolean))
+  const newIds = new Set<string>()
+  for (const event of events) {
+    if (existingIds.has(event.id) || newIds.has(event.id)) {
+      throw new Error('Un événement avec cet identifiant existe déjà.')
+    }
+    newIds.add(event.id)
+  }
+
+  const quotedTitle = sheetTitle.replace(/'/g, "''")
+  await updateAuthenticatedSheetValues(events.map((event, index) => {
+    const rowIndex = rows.length + index + 1
+    return {
+      range: `'${quotedTitle}'!A${rowIndex}:K${rowIndex}`,
+      values: [[
+        event.id,
+        event.date,
+        event.type,
+        event.team,
+        event.title,
+        event.meetingTime,
+        event.startTime,
+        event.endTime,
+        event.location,
+        event.notes,
+        event.status,
+      ]],
+    }
+  }))
+}

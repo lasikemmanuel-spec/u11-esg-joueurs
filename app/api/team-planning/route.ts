@@ -2,8 +2,8 @@ import crypto from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { revalidateTag } from 'next/cache'
 import { getEducatorSession, hasEducatorAccess, isSameOriginRequest, type EducatorSession } from '@/lib/educator-auth'
-import { getTeamPlanningEvents, saveTeamPlanningEvent } from '@/lib/team-planning'
-import { parsePlanningEventFields, type PlanningEvent } from '@/lib/team-planning-shared'
+import { getTeamPlanningEvents, saveTeamPlanningEvent, saveTeamPlanningEvents } from '@/lib/team-planning'
+import { getWeeklyRecurrenceDates, parsePlanningEventFields, type PlanningEvent } from '@/lib/team-planning-shared'
 import { getClientIp, getUserAgent, logSecurityEvent } from '@/lib/security-logger'
 
 export const runtime = 'nodejs'
@@ -81,12 +81,42 @@ export async function POST(request: Request) {
 
   const body = await readInput(request)
   if (!body.valid) return body.response
+  if (typeof body.input !== 'object' || body.input === null || Array.isArray(body.input)) {
+    return response({ error: 'Données du planning invalides.' }, 400)
+  }
+  const input = body.input as Record<string, unknown>
   const fields = parsePlanningEventFields(body.input)
   if (!fields) return response({ error: 'Vérifie les informations de l’événement.' }, 400)
 
-  const event: PlanningEvent = { id: crypto.randomUUID(), ...fields }
+  let dates = [fields.date]
+  const recurrenceValue = input.recurrence
+  if (recurrenceValue !== undefined && recurrenceValue !== null) {
+    if (
+      typeof recurrenceValue !== 'object' ||
+      Array.isArray(recurrenceValue)
+    ) {
+      return response({ error: 'La récurrence hebdomadaire est invalide.' }, 400)
+    }
+
+    const recurrence = recurrenceValue as Record<string, unknown>
+    if (recurrence.frequency !== 'weekly' || typeof recurrence.endDate !== 'string') {
+      return response({ error: 'La récurrence hebdomadaire est invalide.' }, 400)
+    }
+
+    const recurrenceDates = getWeeklyRecurrenceDates(fields.date, recurrence.endDate)
+    if (!recurrenceDates) {
+      return response({ error: 'La date de fin doit permettre entre 2 et 52 événements hebdomadaires.' }, 400)
+    }
+    dates = recurrenceDates
+  }
+
+  const events: PlanningEvent[] = dates.map((date) => ({
+    id: crypto.randomUUID(),
+    ...fields,
+    date,
+  }))
   try {
-    await saveTeamPlanningEvent(event, 'create')
+    await saveTeamPlanningEvents(events)
     revalidateTag('google-sheet', { expire: 0 })
     logSecurityEvent({
       event: 'team_planning_event_created',
@@ -94,9 +124,9 @@ export async function POST(request: Request) {
       ip: getClientIp(request),
       userAgent: getUserAgent(request),
       role: authorization.educator.role,
-      detail: `event_id=${event.id} date=${event.date}`,
+      detail: `event_id=${events[0].id} date=${fields.date} occurrences=${events.length}`,
     })
-    return response({ ok: true, event }, 201)
+    return response({ ok: true, event: events[0], events }, 201)
   } catch (error) {
     console.error('Erreur lors de la création d’un événement du planning:', error)
     return response({ error: 'Impossible d’enregistrer l’événement dans le planning.' }, 503)

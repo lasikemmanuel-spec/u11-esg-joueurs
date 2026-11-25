@@ -13,7 +13,12 @@ import {
   RefreshCw,
   X,
 } from 'lucide-react'
-import { createCalendarFile, type PlanningEvent, type PlanningEventFields } from '@/lib/team-planning-shared'
+import {
+  createCalendarFile,
+  MAX_WEEKLY_RECURRENCE_EVENTS,
+  type PlanningEvent,
+  type PlanningEventFields,
+} from '@/lib/team-planning-shared'
 
 type PlanningView = 'week' | 'upcoming'
 
@@ -84,6 +89,8 @@ export function TeamPlanning({ canManage }: { canManage: boolean }) {
   const [formOpen, setFormOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<PlanningEvent | null>(null)
   const [draft, setDraft] = useState<PlanningEventFields>(EMPTY_DRAFT)
+  const [repeatWeekly, setRepeatWeekly] = useState(false)
+  const [repeatUntil, setRepeatUntil] = useState('')
 
   const loadEvents = useCallback(async () => {
     setLoading(true)
@@ -114,15 +121,21 @@ export function TeamPlanning({ canManage }: { canManage: boolean }) {
   }, [events, view, weekStart])
 
   const resetForm = () => {
-    setDraft({ ...EMPTY_DRAFT, date: toDateKey(new Date()) })
+    const date = toDateKey(new Date())
+    setDraft({ ...EMPTY_DRAFT, date })
     setEditingEvent(null)
+    setRepeatWeekly(false)
+    setRepeatUntil(addDays(date, 28))
     setFormOpen(false)
     setSaveError('')
   }
 
   const openNewEventForm = () => {
-    setDraft({ ...EMPTY_DRAFT, date: toDateKey(new Date()) })
+    const date = toDateKey(new Date())
+    setDraft({ ...EMPTY_DRAFT, date })
     setEditingEvent(null)
+    setRepeatWeekly(false)
+    setRepeatUntil(addDays(date, 28))
     setSaveError('')
     setNotice('')
     setFormOpen(true)
@@ -143,6 +156,7 @@ export function TeamPlanning({ canManage }: { canManage: boolean }) {
     }
     setDraft(fields)
     setEditingEvent(event)
+    setRepeatWeekly(false)
     setSaveError('')
     setNotice('')
     setFormOpen(true)
@@ -161,18 +175,28 @@ export function TeamPlanning({ canManage }: { canManage: boolean }) {
       const response = await fetch('/api/team-planning', {
         method: editingEvent ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editingEvent ? { ...draft, id: editingEvent.id } : draft),
+        body: JSON.stringify(editingEvent
+          ? { ...draft, id: editingEvent.id }
+          : {
+              ...draft,
+              recurrence: repeatWeekly ? { frequency: 'weekly', endDate: repeatUntil } : null,
+            }),
       })
-      const result = await response.json() as { event?: PlanningEvent; error?: string }
-      if (!response.ok || !result.event) {
+      const result = await response.json() as { event?: PlanningEvent; events?: PlanningEvent[]; error?: string }
+      const savedEvents = result.events ?? (result.event ? [result.event] : [])
+      if (!response.ok || savedEvents.length === 0) {
         throw new Error(result.error ?? 'Impossible d’enregistrer cet événement.')
       }
-      const savedEvent = result.event
+      const savedIds = new Set(savedEvents.map((event) => event.id))
       setEvents((current) => sortEvents([
-        ...current.filter((item) => item.id !== savedEvent.id),
-        savedEvent,
+        ...current.filter((item) => !savedIds.has(item.id)),
+        ...savedEvents,
       ]))
-      setNotice(editingEvent ? 'Événement modifié.' : 'Événement ajouté au planning.')
+      setNotice(editingEvent
+        ? 'Événement modifié.'
+        : repeatWeekly
+          ? `${savedEvents.length} événements hebdomadaires ajoutés jusqu’au ${formatDate(repeatUntil)}. Chaque occurrence reste modifiable séparément.`
+          : 'Événement ajouté au planning.')
       setFormOpen(false)
       setEditingEvent(null)
     } catch (cause) {
@@ -277,10 +301,62 @@ export function TeamPlanning({ canManage }: { canManage: boolean }) {
               required
               type="date"
               value={draft.date}
-              onChange={(event) => updateDraft('date', event.target.value)}
+              onChange={(event) => {
+                const date = event.target.value
+                updateDraft('date', date)
+                if (date) {
+                  const minDate = addDays(date, 7)
+                  const maxDate = addDays(date, MAX_WEEKLY_RECURRENCE_EVENTS * 7 - 1)
+                  setRepeatUntil((current) =>
+                    current < minDate || current > maxDate ? addDays(date, 28) : current,
+                  )
+                }
+              }}
               className="h-10 rounded-lg border border-border bg-background px-3 font-normal"
             />
           </label>
+          {!editingEvent && (
+            <fieldset className="grid gap-3 rounded-xl border border-border bg-muted/20 p-3 sm:col-span-2">
+              <legend className="px-1 text-sm font-bold">Récurrence</legend>
+              <label className="flex min-h-8 items-center gap-2 text-sm font-semibold">
+                <input
+                  type="checkbox"
+                  checked={repeatWeekly}
+                  onChange={(event) => {
+                    const checked = event.target.checked
+                    setRepeatWeekly(checked)
+                    if (checked && draft.date && repeatUntil < addDays(draft.date, 7)) {
+                      setRepeatUntil(addDays(draft.date, 28))
+                    }
+                  }}
+                  className="size-4 accent-primary"
+                />
+                Répéter chaque semaine
+              </label>
+              {repeatWeekly && (
+                <div className="grid gap-1">
+                  <label htmlFor="planning-recurrence-end" className="text-sm font-semibold">
+                    Jusqu’au (inclus)
+                  </label>
+                  <input
+                    id="planning-recurrence-end"
+                    required
+                    type="date"
+                    min={draft.date ? addDays(draft.date, 7) : undefined}
+                    max={draft.date
+                      ? addDays(draft.date, MAX_WEEKLY_RECURRENCE_EVENTS * 7 - 1)
+                      : undefined}
+                    value={repeatUntil}
+                    onChange={(event) => setRepeatUntil(event.target.value)}
+                    className="h-10 rounded-lg border border-border bg-background px-3 font-normal"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Le même jour et les mêmes horaires seront repris chaque semaine. Chaque occurrence reste modifiable séparément (52 maximum).
+                  </p>
+                </div>
+              )}
+            </fieldset>
+          )}
           <label className="grid gap-1 text-sm font-semibold">
             Heure de rendez-vous <span className="font-normal text-muted-foreground">(facultative)</span>
             <input

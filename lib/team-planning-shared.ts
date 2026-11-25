@@ -21,6 +21,25 @@ export type PlanningEventFields = {
 
 export type PlanningEvent = PlanningEventFields & { id: string }
 
+export const MAX_WEEKLY_RECURRENCE_EVENTS = 52
+
+export function getWeeklyRecurrenceDates(startDate: string, endDate: string): string[] | null {
+  if (!isValidDate(startDate) || !isValidDate(endDate) || endDate <= startDate) return null
+
+  const dates: string[] = []
+  let date = startDate
+  while (date <= endDate) {
+    dates.push(date)
+    if (dates.length > MAX_WEEKLY_RECURRENCE_EVENTS) return null
+
+    const nextDate = new Date(`${date}T00:00:00Z`)
+    nextDate.setUTCDate(nextDate.getUTCDate() + 7)
+    date = nextDate.toISOString().slice(0, 10)
+  }
+
+  return dates
+}
+
 function isValidDate(value: string) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false
   const date = new Date(`${value}T00:00:00Z`)

@@ -33,6 +33,8 @@ import {
 } from '@/lib/training-attendance-shared'
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
 
+const TEAM_ATTENDANCE_GOAL_PERCENT = 75
+
 const STATUS_PRESENTATION = {
   P: { icon: CircleCheck, label: 'Présent', active: 'border-emerald-400 bg-emerald-500 text-white', idle: 'border-emerald-200 bg-emerald-50/70 text-emerald-800 hover:bg-emerald-100', accent: 'border-l-emerald-400' },
   AJ: { icon: ShieldCheck, label: 'Absence justifiée', active: 'border-amber-400 bg-amber-400 text-amber-950', idle: 'border-amber-200 bg-amber-50/70 text-amber-900 hover:bg-amber-100', accent: 'border-l-amber-400' },
@@ -85,6 +87,7 @@ export function TrainingAttendanceManager({
   const [cancellationReason, setCancellationReason] = useState('Météo')
   const [cancellationError, setCancellationError] = useState('')
   const [message, setMessage] = useState('')
+  const [showSaveCelebration, setShowSaveCelebration] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -110,6 +113,7 @@ export function TrainingAttendanceManager({
     setQuickStatus(null)
     setPlayerStatusFilter('all')
     setMessage('')
+    setShowSaveCelebration(false)
     setError('')
     setShowCancellationForm(false)
     setCancellationError('')
@@ -164,6 +168,7 @@ export function TrainingAttendanceManager({
       saveOfflineAttendance(date, players.map((p) => ({ number: p.number, status: 'P' })))
     }
     setMessage('')
+    setShowSaveCelebration(false)
     setError('')
   }
 
@@ -176,6 +181,7 @@ export function TrainingAttendanceManager({
       saveOfflineAttendance(date, players.map((p) => ({ number: p.number, status: '' })))
     }
     setMessage('')
+    setShowSaveCelebration(false)
     setError('')
   }
 
@@ -229,6 +235,7 @@ export function TrainingAttendanceManager({
     if (savedSession?.cancellation) return
     setSaving(true)
     setMessage('')
+    setShowSaveCelebration(false)
     setError('')
     const entries = players.map((player) => ({ number: player.number, status: statuses[player.number] }))
     const savedSnapshot = Object.fromEntries(entries.map((entry) => [entry.number, entry.status ?? '']))
@@ -238,6 +245,7 @@ export function TrainingAttendanceManager({
       queuePendingAttendance(date, entries)
       setSavedStatuses(savedSnapshot)
       setMessage('Présences sauvegardées localement (mode hors-ligne) 📡. Elles seront transmises automatiquement dès la reconnexion.')
+      setShowSaveCelebration(true)
       setSaving(false)
       return
     }
@@ -253,6 +261,7 @@ export function TrainingAttendanceManager({
       removePendingAttendance(date)
       setSavedStatuses(savedSnapshot)
       setMessage('Présences enregistrées dans le classeur Google.')
+      setShowSaveCelebration(true)
       router.refresh()
     } catch (cause) {
       const isNetwork =
@@ -264,6 +273,7 @@ export function TrainingAttendanceManager({
         queuePendingAttendance(date, entries)
         setSavedStatuses(savedSnapshot)
         setMessage('Connexion coupée : présences enregistrées localement (mode hors-ligne) 📡. Elles seront envoyées dès le retour du réseau.')
+        setShowSaveCelebration(true)
       } else {
         setError(cause instanceof Error ? cause.message : 'Enregistrement impossible.')
       }
@@ -274,6 +284,8 @@ export function TrainingAttendanceManager({
 
   const canSave = Boolean(date) && !loadError && !savedSession?.cancellation && players.length > 0 && counts.missing === 0 && !saving && !cancellationSaving
   const completion = players.length ? Math.round(counts.filled / players.length * 100) : 0
+  const teamAttendanceGoal = Math.ceil(players.length * TEAM_ATTENDANCE_GOAL_PERCENT / 100)
+  const teamAttendanceGoalReached = teamAttendanceGoal > 0 && counts.present >= teamAttendanceGoal
 
   return (
     <section className="flex flex-col gap-2 sm:gap-5" aria-labelledby="training-attendance-title">
@@ -340,6 +352,21 @@ export function TrainingAttendanceManager({
             <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-black/25 sm:mt-3 sm:h-2.5" role="progressbar" aria-label="Présences renseignées" aria-valuemin={0} aria-valuemax={players.length} aria-valuenow={counts.filled}>
               <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-lime-300 transition-[width] duration-500" style={{ width: `${completion}%` }} />
             </div>
+            {players.length > 0 && (
+              <p
+                aria-live="polite"
+                className={`mt-2 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-bold sm:text-xs ${
+                  teamAttendanceGoalReached
+                    ? 'bg-emerald-300/15 text-emerald-100 ring-1 ring-emerald-200/30'
+                    : 'bg-white/10 text-white/75 ring-1 ring-white/10'
+                }`}
+              >
+                <Sparkles aria-hidden="true" className="size-3.5" />
+                {teamAttendanceGoalReached
+                  ? 'Objectif collectif atteint !'
+                  : `Objectif collectif · ${TEAM_ATTENDANCE_GOAL_PERCENT}% · ${counts.present}/${teamAttendanceGoal}`}
+              </p>
+            )}
           </div>
         </div>
       <div className="mt-1.5 grid grid-cols-2 gap-1.5 sm:flex sm:justify-end sm:gap-2 xl:mt-4 xl:border-t xl:border-white/10 xl:pt-4">
@@ -510,6 +537,7 @@ export function TrainingAttendanceManager({
                       if (quickEntryMode) {
                         setQuickStatus(status.value)
                         setMessage('')
+                        setShowSaveCelebration(false)
                         setError('')
                       } else {
                         setPlayerStatusFilter(status.value)
@@ -562,6 +590,7 @@ export function TrainingAttendanceManager({
                           quickStatus === 'P' || currentStatus === quickStatus ? 'P' : quickStatus
                         setStatuses((current) => ({ ...current, [player.number]: nextStatus }))
                         setMessage('')
+                        setShowSaveCelebration(false)
                         setError('')
                       }}
                       className="flex min-h-14 w-full items-center gap-3 text-left disabled:cursor-not-allowed"
@@ -592,6 +621,7 @@ export function TrainingAttendanceManager({
                             const nextStatus = TRAINING_ATTENDANCE_STATUSES.find((status) => status.value === event.target.value)?.value ?? ''
                             setStatuses((current) => ({ ...current, [player.number]: nextStatus }))
                             setMessage('')
+                            setShowSaveCelebration(false)
                             setError('')
                           }}
                           className={`h-9 w-44 rounded-xl border px-2 text-xs font-black outline-none transition focus-visible:ring-2 focus-visible:ring-[#d4af37] sm:w-48 ${currentStatus ? STATUS_PRESENTATION[currentStatus].idle : 'border-amber-200 bg-amber-50 text-amber-900'}`}
@@ -616,7 +646,12 @@ export function TrainingAttendanceManager({
               <Save aria-hidden="true" className="mr-2 inline size-4" />{saving ? 'Enregistrement…' : savedSession ? 'Mettre à jour la séance' : 'Enregistrer les présences'}
             </button>
           </footer>
-          {message && <p role="status" className="rounded-lg bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900">{message}</p>}
+          {message && (
+            <p role="status" className="flex items-center gap-2 rounded-lg bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-900">
+              {showSaveCelebration && <Sparkles aria-hidden="true" className="size-5 shrink-0 text-amber-500 motion-safe:animate-bounce" />}
+              {message}
+            </p>
+          )}
           {error && <p role="alert" className="rounded-lg bg-red-50 px-4 py-3 text-sm font-semibold text-red-800">{error}</p>}
         </>
       )}

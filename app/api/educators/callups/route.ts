@@ -18,6 +18,7 @@ const statuses = [
   '🗓️ Absent',
   '✅ Convoqué E2',
   '🩺 Blessé',
+  'Exempt',
   'Pas de licence',
 ] as const satisfies readonly EditableCallupStatus[]
 

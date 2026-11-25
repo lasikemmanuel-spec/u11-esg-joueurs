@@ -18,6 +18,7 @@ export const CALLUP_STATUS_OPTIONS: Array<{ value: EditableCallupStatus; label: 
   { value: '🗓️ Absent', label: '🗓️ Absent' },
   { value: '✅ Convoqué E2', label: '✅ Convoqué E2' },
   { value: '🩺 Blessé', label: '🩺 Blessé' },
+  { value: 'Exempt', label: 'Exempt' },
   { value: 'Pas de licence', label: 'Pas de licence' },
 ]
 

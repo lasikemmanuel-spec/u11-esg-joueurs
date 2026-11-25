@@ -44,6 +44,7 @@ function selectionForPlayer(
   if (status === 'calledAbsent') return '⚠️ Convoqué absent'
   if (status === 'absent') return '🗓️ Absent'
   if (status === 'injured') return '🩺 Blessé'
+  if (status === 'exempt') return 'Exempt'
   if (status === 'notCalled') return '❌ Non convoqué'
   if (status === 'noLicense') return 'Pas de licence'
   return ''
@@ -181,15 +182,20 @@ export function CallupScheduleEntry({
 
   const visiblePlayers = useMemo(() => {
     const normalizedQuery = query.trim().normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr-FR')
-    const teamPriority = (playerNumber: number) => {
+    const statusPriority = (playerNumber: number) => {
       const status = selections[playerNumber]
       if (status === '✅ Convoqué E1' || status === '✅ Convoqué E1 + E2') return 0
       if (status === '✅ Convoqué E2') return 1
-      return 2
+      if (status === '❌ Non convoqué') return 2
+      if (status === '⚠️ Convoqué absent' || status === '🗓️ Absent') return 3
+      if (status === '🩺 Blessé') return 4
+      if (status === 'Exempt') return 5
+      if (status === 'Pas de licence') return 6
+      return 7
     }
     return [...players]
       .filter((player) => !normalizedQuery || `${player.firstName} ${player.lastName}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('fr-FR').includes(normalizedQuery))
-      .sort((a, b) => teamPriority(a.number) - teamPriority(b.number) ||
+      .sort((a, b) => statusPriority(a.number) - statusPriority(b.number) ||
         a.lastName.localeCompare(b.lastName, 'fr') || a.firstName.localeCompare(b.firstName, 'fr'))
   }, [players, query, selections])
 

@@ -14,6 +14,7 @@ export type EditableCallupStatus =
   | '🗓️ Absent'
   | '✅ Convoqué E2'
   | '🩺 Blessé'
+  | 'Exempt'
   | 'Pas de licence'
 
 export type CallupSelection = {

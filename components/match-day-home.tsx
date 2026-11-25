@@ -534,19 +534,19 @@ export function MatchDayHome({
                               {match.kickoffTime}
                             </span>
                           )}
+                          {daysUntilPlannedMatch !== null &&
+                            daysUntilPlannedMatch >= 0 &&
+                            daysUntilPlannedMatch <= 15 &&
+                            (match.homeAway === 'Domicile' || match.homeAway === 'Extérieur') && (
+                              <MatchWeather
+                                date={plannedDate}
+                                homeAway={match.homeAway}
+                                opponent={match.opponent}
+                                today={today}
+                                tone={match.team === 'E1' ? 'dark' : 'light'}
+                              />
+                            )}
                         </div>
-                        {daysUntilPlannedMatch !== null &&
-                          daysUntilPlannedMatch >= 0 &&
-                          daysUntilPlannedMatch <= 15 &&
-                          (match.homeAway === 'Domicile' || match.homeAway === 'Extérieur') && (
-                            <MatchWeather
-                              date={plannedDate}
-                              homeAway={match.homeAway}
-                              opponent={match.opponent}
-                              today={today}
-                              tone={match.team === 'E1' ? 'dark' : 'light'}
-                            />
-                          )}
                       </button>
                       <div className="mt-2 grid grid-cols-2 gap-1.5">
                         <button

@@ -28,11 +28,11 @@ const MATCH_STYLES: Record<MatchStatus, { label: string; className: string }> = 
 }
 
 const TRAINING_STYLES: Record<string, { label: string; className: string }> = {
-  P: { label: 'Présent', className: 'bg-emerald-600 text-white' },
-  AJ: { label: 'Absence justifiée', className: 'bg-amber-400 text-amber-950' },
-  AI: { label: 'Absence injustifiée', className: 'bg-blue-950 text-white' },
-  B: { label: 'Blessé', className: 'bg-rose-600 text-white' },
-  E: { label: 'Exempt', className: 'bg-violet-600 text-white' },
+  P: { label: '✅ Présent', className: 'border border-emerald-200 bg-emerald-50 text-emerald-900' },
+  AJ: { label: '🟡 Justifiée', className: 'border border-amber-200 bg-amber-50 text-amber-950' },
+  AI: { label: '🔴 Injustifiée', className: 'border border-rose-200 bg-rose-50 text-rose-950' },
+  B: { label: '🩹 Blessé', className: 'border border-sky-200 bg-sky-50 text-sky-950' },
+  E: { label: '⭐ Exempt', className: 'border border-violet-200 bg-violet-50 text-violet-950' },
 }
 
 function RateRow({
@@ -143,25 +143,25 @@ function TrainingHistory({ sessions, playerNumber }: { sessions: TrainingAttenda
           </button>
         )}
       </div>
-      <ol className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+      <ol className="flex flex-wrap gap-1.5">
         {orderedSessions.slice(0, showAll ? undefined : 5).map((session) => {
           if (session.cancellation) {
             const [year, month, day] = session.date.split('-')
             const weekdayInitial = new Date(`${session.date}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'long' }).charAt(0).toUpperCase()
             return (
-              <li key={session.date} title={`${day}/${month}/${year} : séance annulée · ${session.cancellation.reason}`} className="flex min-h-14 flex-col items-center justify-center rounded-xl border border-slate-300 bg-slate-100 px-2 py-2 text-center text-[10px] leading-tight text-slate-600">
+              <li key={session.date} title={`${day}/${month}/${year} : séance annulée · ${session.cancellation.reason}`} className="flex flex-col items-center rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-center text-[10px] leading-tight text-slate-500">
                 <span className="font-mono">{weekdayInitial} {day}/{month}</span>
-                <span className="font-bold">Annulée</span>
+                <span className="font-semibold">☁️ Annulée</span>
               </li>
             )
           }
           const status = statusForSession(session)
-          const style = TRAINING_STYLES[status] ?? { label: 'Non saisi', className: 'border border-slate-300 bg-slate-100 text-slate-600' }
+          const style = TRAINING_STYLES[status] ?? { label: '▫️ À saisir', className: 'border border-slate-200 bg-slate-50 text-slate-600' }
           const [year, month, day] = session.date.split('-')
           const weekdayInitial = new Date(`${session.date}T12:00:00`).toLocaleDateString('fr-FR', { weekday: 'long' }).charAt(0).toUpperCase()
           const isEditing = editingDate === session.date
           return (
-            <li key={session.date} title={`${day}/${month}/${year} : ${style.label}`} className={`flex min-h-14 min-w-0 flex-col items-center justify-center rounded-xl px-2 py-2 text-center text-[10px] leading-tight transition ${style.className} ${isEditing ? 'ring-2 ring-[#d4af37] ring-offset-2' : ''}`}>
+            <li key={session.date} title={`${day}/${month}/${year} : ${style.label}`} className={`flex flex-col items-center rounded-lg px-2 py-1 text-center text-[10px] leading-tight transition ${style.className} ${isEditing ? 'ring-2 ring-[#d4af37] ring-offset-1' : ''}`}>
               <button
                 type="button"
                 onClick={() => {
@@ -169,13 +169,13 @@ function TrainingHistory({ sessions, playerNumber }: { sessions: TrainingAttenda
                   setDraftStatus(isEditing ? '' : status as TrainingAttendanceStatus)
                   setEditError('')
                 }}
-                className="flex w-full flex-col items-center gap-0.5 outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+                className="flex flex-col items-center gap-0.5 outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
                 aria-label={`Modifier le statut du ${weekdayInitial} ${day}/${month}`}
               >
                 <span className="font-mono font-medium">{weekdayInitial} {day}/{month}</span>
-                <span className="inline-flex items-center gap-1 font-bold">
-                  <span className="break-words">{style.label}</span>
-                  <Pencil aria-hidden="true" className="size-3 shrink-0 opacity-70" />
+                <span className="inline-flex items-center gap-0.5 font-semibold">
+                  <span className="whitespace-nowrap">{style.label}</span>
+                  <Pencil aria-hidden="true" className="size-2.5 shrink-0 opacity-50" />
                 </span>
               </button>
             </li>
@@ -183,36 +183,19 @@ function TrainingHistory({ sessions, playerNumber }: { sessions: TrainingAttenda
         })}
       </ol>
       {editingDate && (
-        <div className="rounded-xl border border-primary/15 bg-secondary/30 p-3">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <div>
-              <h5 className="text-xs font-bold text-primary">Modifier le statut</h5>
-              <p className="text-[11px] text-muted-foreground">
-                {new Date(`${editingDate}T12:00:00`).toLocaleDateString('fr-FR', {
-                  weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
-                })}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setEditingDate('')
-                setDraftStatus('')
-                setEditError('')
-              }}
-              className="inline-flex size-8 shrink-0 items-center justify-center rounded-full text-muted-foreground hover:bg-background hover:text-foreground"
-              aria-label="Annuler la modification"
-            >
-              <X aria-hidden="true" className="size-4" />
-            </button>
-          </div>
-          <div className="flex flex-col gap-2 sm:flex-row">
+        <div className="flex flex-wrap items-center gap-1.5 rounded-lg border border-primary/10 bg-secondary/30 p-2">
+          <span className="mr-auto text-[11px] font-semibold text-primary">
+            ✏️ {new Date(`${editingDate}T12:00:00`).toLocaleDateString('fr-FR', {
+              weekday: 'short', day: 'numeric', month: 'short',
+            })}
+          </span>
+          <div className="flex w-full gap-1.5 sm:w-auto">
             <label className="sr-only" htmlFor={`training-status-${playerNumber}`}>Statut de présence</label>
             <select
               id={`training-status-${playerNumber}`}
               value={draftStatus}
               onChange={(event) => setDraftStatus(event.target.value as TrainingAttendanceStatus)}
-              className="h-10 min-w-0 flex-1 rounded-lg border border-border bg-background px-3 text-sm font-semibold text-foreground"
+              className="h-8 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-xs font-semibold text-foreground sm:w-44 sm:flex-none"
             >
               <option value="" disabled>Choisir un statut…</option>
               {TRAINING_ATTENDANCE_STATUSES.map((option) => (
@@ -223,14 +206,27 @@ function TrainingHistory({ sessions, playerNumber }: { sessions: TrainingAttenda
               type="button"
               disabled={saving || !draftStatus}
               onClick={() => saveStatus(editingDate)}
-              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex h-8 items-center justify-center gap-1 rounded-md bg-primary px-2.5 text-xs font-bold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <Check aria-hidden="true" className="size-4" />
-              {saving ? 'Enregistrement…' : 'Enregistrer'}
+              <Check aria-hidden="true" className="size-3.5" />
+              {saving ? '…' : 'OK'}
+            </button>
+            <button
+              type="button"
+              disabled={saving}
+              onClick={() => {
+                setEditingDate('')
+                setDraftStatus('')
+                setEditError('')
+              }}
+              className="inline-flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-background hover:text-foreground disabled:opacity-50"
+              aria-label="Annuler"
+            >
+              <X aria-hidden="true" className="size-3.5" />
             </button>
           </div>
           {editError && (
-            <p role="alert" className="mt-2 text-xs font-semibold text-destructive">
+            <p role="alert" className="w-full text-[11px] font-semibold text-destructive">
               {editError}
             </p>
           )}

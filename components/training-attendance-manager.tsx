@@ -158,6 +158,8 @@ export function TrainingAttendanceManager({
     setStatuses(next)
     setQuickEntryMode(true)
     setQuickStatus(null)
+    setPlayerStatusFilter('all')
+    setQuery('')
     if (date) {
       saveOfflineAttendance(date, players.map((p) => ({ number: p.number, status: 'P' })))
     }
@@ -373,27 +375,8 @@ export function TrainingAttendanceManager({
               ? quickStatus === 'P'
                 ? 'Touchez les joueurs à remettre présents.'
                 : `Touchez les joueurs à marquer « ${STATUS_PRESENTATION[quickStatus].label} ». Retouchez-les pour les remettre présents.`
-              : 'Choisissez un statut, puis touchez les joueurs concernés.'}
+              : 'Choisissez un statut dans les compteurs ci-dessous, puis touchez les joueurs concernés.'}
           </p>
-          <div className="mt-2 grid grid-cols-2 gap-1.5 sm:flex sm:flex-wrap">
-            {TRAINING_ATTENDANCE_STATUSES.map((status) => {
-              const presentation = STATUS_PRESENTATION[status.value]
-              const StatusIcon = presentation.icon
-              const selected = quickStatus === status.value
-              return (
-                <button
-                  key={status.value}
-                  type="button"
-                  aria-pressed={selected}
-                  onClick={() => setQuickStatus(status.value)}
-                  className={`inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border px-2 py-1 text-[10px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white sm:text-xs ${selected ? `${presentation.active} ring-2 ring-white/70` : presentation.idle}`}
-                >
-                  <StatusIcon aria-hidden="true" className="size-3.5 shrink-0" />
-                  {status.shortLabel}
-                </button>
-              )
-            })}
-          </div>
         </div>
       )}
         </>
@@ -481,7 +464,9 @@ export function TrainingAttendanceManager({
               className="h-11 w-full rounded-2xl border border-accent/40 bg-card pr-4 pl-12 text-sm shadow-sm outline-none transition focus-visible:ring-2 focus-visible:ring-ring"
             />
           </label>
-          <div role="group" aria-label="Filtrer les joueurs par statut" className="flex flex-wrap gap-1.5">
+          <div role="group" aria-label={quickEntryMode ? 'Choisir le statut à appliquer' : 'Filtrer les joueurs par statut'} className="flex flex-wrap gap-1.5">
+              {!quickEntryMode && (
+                <>
               <button
                 type="button"
                 aria-pressed={playerStatusFilter === 'all'}
@@ -498,16 +483,28 @@ export function TrainingAttendanceManager({
               >
                 À renseigner <span className="tabular-nums">{counts.missing}</span>
               </button>
+                </>
+              )}
               {TRAINING_ATTENDANCE_STATUSES.map((status) => {
                 const presentation = STATUS_PRESENTATION[status.value]
                 const StatusIcon = presentation.icon
-                const selected = playerStatusFilter === status.value
+                const selected = quickEntryMode
+                  ? quickStatus === status.value
+                  : playerStatusFilter === status.value
                 return (
                   <button
                     key={status.value}
                     type="button"
                     aria-pressed={selected}
-                    onClick={() => setPlayerStatusFilter(status.value)}
+                    onClick={() => {
+                      if (quickEntryMode) {
+                        setQuickStatus(status.value)
+                        setMessage('')
+                        setError('')
+                      } else {
+                        setPlayerStatusFilter(status.value)
+                      }
+                    }}
                     className={`inline-flex min-h-9 items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold transition ${selected ? presentation.active : presentation.idle}`}
                   >
                     <StatusIcon aria-hidden="true" className="size-3" />

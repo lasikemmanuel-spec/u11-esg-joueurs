@@ -12,16 +12,19 @@ import { ClubCrest } from '@/components/club-crest'
 import { LiveMatchHistory } from '@/components/live-match-history'
 import type { MatchSheetEntry } from '@/lib/match-results'
 import type { Convocation } from '@/lib/convocations'
-import { MATCH_RESULT_STATUSES } from '@/lib/match-result-options'
-import type { MatchResultDraft } from '@/components/match-result-form'
+import {
+  createMatchResultDraft,
+  getEditableMatchResultLabel,
+  saveMatchResultDraft,
+  validateMatchResultDraft,
+  type MatchResultDraft,
+} from '@/lib/match-result-draft'
 import type { PublicPlayer } from '@/lib/players'
 import type { PlayerStats } from '@/lib/stats'
 import type { TrainingAttendanceSession } from '@/lib/training-attendance'
 import {
   clampToMatchSeason,
-  MATCH_SEASON_END,
   MATCH_SEASON_MONTHS,
-  MATCH_SEASON_START,
 } from '@/lib/match-season'
 
 type MatchEntryStatus = {
@@ -46,30 +49,6 @@ function dateInputValue(value: string) {
   const dayFirst = value.match(/^(\d{1,2})[/. -](\d{1,2})[/. -](\d{4})$/)
   if (dayFirst) return dayFirst[3] + '-' + dayFirst[2].padStart(2, '0') + '-' + dayFirst[1].padStart(2, '0')
   return ''
-}
-
-function createDraft(): MatchResultDraft {
-  return {
-    team: 'E1',
-    date: clampToMatchSeason(localToday()),
-    opponent: '',
-    competition: 'Championnat',
-    homeAway: 'Domicile',
-    kickoffTime: '',
-    meetingTime: '',
-    venueAddress: '',
-    resultLabel: '',
-    goalsFor: '',
-    goalsAgainst: '',
-  }
-}
-
-function getEditableResult(entry: MatchSheetEntry) {
-  if (MATCH_RESULT_STATUSES.includes(entry.resultLabel as (typeof MATCH_RESULT_STATUSES)[number])) return entry.resultLabel
-  if (entry.goalsFor === null || entry.goalsAgainst === null) return ''
-  if (entry.goalsFor > entry.goalsAgainst) return 'Gagné'
-  if (entry.goalsFor < entry.goalsAgainst) return 'Perdu'
-  return 'Nul'
 }
 
 export function MatchResultEntry({
@@ -104,7 +83,7 @@ export function MatchResultEntry({
 }) {
   const router = useRouter()
   const [status, setStatus] = useState<MatchEntryStatus | null>(null)
-  const [draft, setDraft] = useState<MatchResultDraft>(createDraft)
+  const [draft, setDraft] = useState<MatchResultDraft>(createMatchResultDraft)
   const [month, setMonth] = useState(clampToMatchSeason(localToday()).slice(0, 7))
   const [editingSlot, setEditingSlot] = useState<number | null>(null)
   const [openCallupDate, setOpenCallupDate] = useState('')
@@ -231,7 +210,7 @@ export function MatchResultEntry({
 
   const startNew = () => {
     setEditingSlot(null)
-    setDraft(createDraft())
+    setDraft(createMatchResultDraft())
     setError('')
     setNotice('')
     setFormMinimized(false)
@@ -255,7 +234,7 @@ export function MatchResultEntry({
       kickoffTime: entry.kickoffTime,
       meetingTime: entry.meetingTime ?? '',
       venueAddress: entry.venueAddress ?? '',
-      resultLabel: getEditableResult(entry),
+      resultLabel: getEditableMatchResultLabel(entry.resultLabel, entry.goalsFor, entry.goalsAgainst),
       goalsFor: entry.goalsFor === null ? '' : String(entry.goalsFor),
       goalsAgainst: entry.goalsAgainst === null ? '' : String(entry.goalsAgainst),
     })
@@ -267,23 +246,9 @@ export function MatchResultEntry({
 
   const save = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (draft.date < MATCH_SEASON_START || draft.date > MATCH_SEASON_END) {
-      setError('La date du match doit être comprise entre le 1er septembre 2026 et le 30 juin 2027.')
-      return
-    }
-
-    const oneScoreMissing = Boolean(draft.goalsFor) !== Boolean(draft.goalsAgainst)
-    if (oneScoreMissing) {
-      setError('Saisis les deux scores ou laisse les deux champs vides pour planifier le match.')
-      return
-    }
-    const hasScore = Boolean(draft.goalsFor && draft.goalsAgainst)
-    if (hasScore && !draft.resultLabel) {
-      setError('Choisis le résultat à inscrire dans le Sheet : Gagné, Nul ou Perdu.')
-      return
-    }
-    if (!hasScore && draft.resultLabel && draft.resultLabel !== 'Annulé') {
-      setError('Un résultat Gagné, Nul ou Perdu nécessite les deux scores.')
+    const validationError = validateMatchResultDraft(draft)
+    if (validationError) {
+      setError(validationError)
       return
     }
 
@@ -291,18 +256,7 @@ export function MatchResultEntry({
     setError('')
     setNotice('')
     try {
-      const response = await fetch('/api/match-results', {
-        method: editingSlot === null ? 'POST' : 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...draft,
-          slotColumn: editingSlot ?? undefined,
-          goalsFor: draft.goalsFor ? Number(draft.goalsFor) : null,
-          goalsAgainst: draft.goalsAgainst ? Number(draft.goalsAgainst) : null,
-        }),
-      })
-      const result = await response.json()
-      if (!response.ok) throw new Error(result.error ?? 'Impossible d’enregistrer le match.')
+      const result = await saveMatchResultDraft(draft, editingSlot)
       setNotice(editingSlot === null
         ? 'Match ajouté à « ' + result.sheetTitle + ' ».'
         : 'Match mis à jour dans « ' + result.sheetTitle + ' ».')
@@ -531,7 +485,9 @@ export function MatchResultEntry({
                     !entry.resultLabel &&
                     entry.goalsFor === null &&
                     entry.goalsAgainst === null
-                  const result = isPlayed ? getEditableResult(entry) : null
+                  const result = isPlayed
+                    ? getEditableMatchResultLabel(entry.resultLabel, entry.goalsFor, entry.goalsAgainst)
+                    : null
                   const scoreLabel = isCancelled
                     ? 'Annulé'
                     : !isPlayed

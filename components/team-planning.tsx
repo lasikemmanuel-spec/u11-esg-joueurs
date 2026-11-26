@@ -1,6 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
+import dynamic from 'next/dynamic'
+import { useRouter } from 'next/navigation'
 import {
   Ban,
   CalendarDays,
@@ -39,6 +41,11 @@ import {
   type PlanningEvent,
   type PlanningEventFields,
 } from '@/lib/team-planning-shared'
+
+const MatchResultPlannerDialog = dynamic(
+  () => import('@/components/match-result-planner-dialog').then((module) => module.MatchResultPlannerDialog),
+  { loading: () => <p role="status" className="fixed inset-x-4 bottom-4 z-[110] rounded-xl bg-card p-4 text-sm text-muted-foreground shadow-xl">Chargement du formulaire…</p> },
+)
 
 const TYPE_LABELS: Record<PlanningEvent['type'], string> = {
   training: 'Entraînement',
@@ -245,6 +252,7 @@ export function TeamPlanning({
   trainingAttendance: TrainingAttendanceSession[]
   onOpenTraining: (date: string) => void
 }) {
+  const router = useRouter()
   const [events, setEvents] = useState<PlanningEvent[]>([])
   const [view, setView] = useState<PlanningView>('week')
   const [selectedTypes, setSelectedTypes] = useState<PlanningEvent['type'][]>(() => [...PLANNING_EVENT_TYPES])
@@ -258,6 +266,7 @@ export function TeamPlanning({
   const [notice, setNotice] = useState('')
   const [actionError, setActionError] = useState('')
   const [formOpen, setFormOpen] = useState(false)
+  const [matchPlannerOpen, setMatchPlannerOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<PlanningEvent | null>(null)
   const [editingSeries, setEditingSeries] = useState(false)
   const [draft, setDraft] = useState<PlanningEventFields>(EMPTY_DRAFT)
@@ -336,6 +345,7 @@ export function TeamPlanning({
   }
 
   const openNewEventForm = () => {
+    setMatchPlannerOpen(false)
     const date = toDateKey(new Date())
     setDraft({ ...EMPTY_DRAFT, date, endDate: date })
     setEditingEvent(null)
@@ -347,6 +357,22 @@ export function TeamPlanning({
     setNotice('')
     setFormOpen(true)
   }
+
+  const openMatchPlanner = () => {
+    setFormOpen(false)
+    setMatchPlannerOpen(true)
+    setNotice('')
+    setActionError('')
+  }
+
+  const closeMatchPlanner = useCallback(() => setMatchPlannerOpen(false), [])
+
+  const handleMatchPlannerSaved = useCallback((sheetTitle: string, date: string) => {
+    setMatchPlannerOpen(false)
+    setPeriodAnchorDate(date)
+    setNotice(`Match ajouté à « ${sheetTitle} ».`)
+    router.refresh()
+  }, [router])
 
   const editEvent = (event: PlanningEvent, series = false) => {
     const fields: PlanningEventFields = {
@@ -532,6 +558,19 @@ export function TeamPlanning({
           >
             <Plus aria-hidden="true" className="size-4" />
             <span>Ajouter</span>
+          </button>
+        )}
+        {canManage && (
+          <button
+            type="button"
+            onClick={openMatchPlanner}
+            aria-label="Ajouter un match au planning"
+            title="Ajouter un match"
+            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1 rounded-xl border border-amber-300/80 bg-gradient-to-r from-amber-100 to-amber-200 px-2.5 text-xs font-bold text-amber-950 shadow-sm transition hover:brightness-95 sm:gap-1.5 sm:px-3 sm:text-sm md:min-h-11 md:px-4 md:text-base"
+          >
+            <CalendarPlus aria-hidden="true" className="size-4" />
+            <span className="sm:hidden">Match</span>
+            <span className="hidden sm:inline">Ajouter un match</span>
           </button>
         )}
         <button
@@ -797,6 +836,13 @@ export function TeamPlanning({
             </button>
           </div>
         </form>
+      )}
+
+      {canManage && matchPlannerOpen && (
+        <MatchResultPlannerDialog
+          onClose={closeMatchPlanner}
+          onSaved={handleMatchPlannerSaved}
+        />
       )}
 
       {view !== 'upcoming' && periodRange && (

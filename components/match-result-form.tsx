@@ -5,20 +5,7 @@ import { CalendarDays, ChevronDown, ChevronUp, Clock3, Save, Sparkles, X } from 
 import { ClubCrest } from '@/components/club-crest'
 import { MATCH_RESULT_STATUSES } from '@/lib/match-result-options'
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
-
-export type MatchResultDraft = {
-  team: 'E1' | 'E2'
-  date: string
-  opponent: string
-  competition: string
-  homeAway: string
-  kickoffTime: string
-  meetingTime: string
-  venueAddress: string
-  resultLabel: string
-  goalsFor: string
-  goalsAgainst: string
-}
+import type { MatchResultDraft } from '@/lib/match-result-draft'
 
 const inputClass = 'h-10 min-w-0 w-full max-w-full rounded-lg border border-accent/50 bg-background px-3 text-sm font-normal outline-none focus-visible:ring-2 focus-visible:ring-ring'
 const dateTimeInputClass = 'h-9 min-w-0 w-full max-w-full appearance-none rounded-lg border border-[#d4af37]/60 bg-white dark:bg-slate-900 px-2 text-sm font-bold text-[#172554] dark:text-amber-200 outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37] [color-scheme:light] dark:[color-scheme:dark]'

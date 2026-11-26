@@ -55,7 +55,7 @@ const EVENT_FILTERS: PlanningEventFilter[] = [
   { id: 'match', label: 'Matchs', emoji: '⚽', types: ['match'] },
   {
     id: 'meeting-cohesion',
-    label: 'Réu/coh',
+    label: 'Vie du club',
     accessibleLabel: 'Réunions et journées de cohésion',
     emoji: '🤝',
     types: ['meeting', 'cohesion'],
@@ -400,7 +400,7 @@ export function TeamPlanning({
             Planning
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            Matchs · entraînements · tournois
+            Filtrer les activités
           </p>
         </div>
       </header>
@@ -417,8 +417,8 @@ export function TeamPlanning({
               onClick={() => toggleEventTypes(filter.types)}
               className={`inline-flex min-h-9 shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-xl border px-1.5 text-[10px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 selected
-                  ? 'border-primary bg-primary text-primary-foreground shadow-sm'
-                  : 'border-border bg-card text-muted-foreground hover:bg-muted'
+                  ? 'border-blue-300 bg-gradient-to-r from-blue-50 to-sky-100 text-[#1e3a8a] shadow-sm ring-1 ring-[#d4af37]/40 dark:border-blue-700 dark:from-blue-950/70 dark:to-slate-900 dark:text-sky-100'
+                  : 'border-border/70 bg-background/50 text-muted-foreground hover:border-blue-300 hover:bg-blue-50/70 dark:hover:bg-blue-950/30'
               }`}
             >
               <span aria-hidden="true" className="text-xs leading-none">{filter.emoji}</span>

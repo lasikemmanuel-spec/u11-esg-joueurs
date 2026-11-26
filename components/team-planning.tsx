@@ -5,7 +5,6 @@ import {
   Ban,
   CalendarDays,
   CalendarPlus,
-  Check,
   ChevronLeft,
   ChevronRight,
   ClipboardCheck,
@@ -42,13 +41,26 @@ const TYPE_LABELS: Record<PlanningEvent['type'], string> = {
   cohesion: 'Journée de cohésion',
 }
 
-const TYPE_FILTER_LABELS: Record<PlanningEvent['type'], string> = {
-  training: 'Entraînements',
-  match: 'Matchs',
-  tournament: 'Tournois',
-  meeting: 'Réunions',
-  cohesion: 'Journées de cohésion',
+type PlanningEventFilter = {
+  id: string
+  label: string
+  accessibleLabel?: string
+  emoji: string
+  types: readonly PlanningEvent['type'][]
 }
+
+const EVENT_FILTERS: PlanningEventFilter[] = [
+  { id: 'training', label: 'Entraînement', emoji: '🏃', types: ['training'] },
+  { id: 'tournament', label: 'Tournoi', emoji: '🏆', types: ['tournament'] },
+  { id: 'match', label: 'Matchs', emoji: '⚽', types: ['match'] },
+  {
+    id: 'meeting-cohesion',
+    label: 'Réu/coh',
+    accessibleLabel: 'Réunions et journées de cohésion',
+    emoji: '🤝',
+    types: ['meeting', 'cohesion'],
+  },
+]
 
 const STATUS_LABELS: Record<PlanningEvent['status'], string> = {
   confirmed: 'Confirmé',
@@ -216,12 +228,13 @@ export function TeamPlanning({
     [periodEvents, selectedTypes],
   )
 
-  const toggleEventType = (type: PlanningEvent['type']) => {
-    setSelectedTypes((current) =>
-      current.includes(type)
-        ? current.filter((selectedType) => selectedType !== type)
-        : [...current, type],
-    )
+  const toggleEventTypes = (types: readonly PlanningEvent['type'][]) => {
+    setSelectedTypes((current) => {
+      const shouldSelect = !types.every((type) => current.includes(type))
+      return shouldSelect
+        ? [...new Set([...current, ...types])]
+        : current.filter((type) => !types.includes(type))
+    })
   }
 
   const resetForm = () => {
@@ -391,6 +404,38 @@ export function TeamPlanning({
           </p>
         </div>
       </header>
+
+      <div className="flex flex-wrap gap-1" role="group" aria-label="Filtrer les événements">
+        {EVENT_FILTERS.map((filter) => {
+          const selected = filter.types.every((type) => selectedTypes.includes(type))
+          return (
+            <button
+              key={filter.id}
+              type="button"
+              aria-label={`Afficher ou masquer ${filter.accessibleLabel ?? filter.label}`}
+              aria-pressed={selected}
+              onClick={() => toggleEventTypes(filter.types)}
+              className={`inline-flex min-h-9 shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-xl border px-1.5 text-[10px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+                selected
+                  ? 'border-primary bg-primary text-primary-foreground shadow-sm'
+                  : 'border-border bg-card text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              <span aria-hidden="true" className="text-xs leading-none">{filter.emoji}</span>
+              {filter.label}
+            </button>
+          )
+        })}
+        {selectedTypes.length !== PLANNING_EVENT_TYPES.length && (
+          <button
+            type="button"
+            onClick={() => setSelectedTypes([...PLANNING_EVENT_TYPES])}
+            className="min-h-9 px-1.5 text-[11px] font-bold text-primary underline-offset-2 hover:underline"
+          >
+            Tout
+          </button>
+        )}
+      </div>
 
       <div className="flex min-w-0 flex-nowrap items-center gap-1.5 rounded-2xl border border-border/70 bg-muted/30 p-1.5 shadow-sm">
         {canManage && (
@@ -668,38 +713,6 @@ export function TeamPlanning({
           </button>
         </div>
       )}
-
-      <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrer les événements par type">
-        <span className="mr-1 text-xs font-semibold text-muted-foreground">Afficher :</span>
-        {PLANNING_EVENT_TYPES.map((type) => {
-          const selected = selectedTypes.includes(type)
-          return (
-            <button
-              key={type}
-              type="button"
-              aria-pressed={selected}
-              onClick={() => toggleEventType(type)}
-              className={`inline-flex min-h-8 items-center gap-1 rounded-full border px-2.5 text-xs font-semibold transition ${
-                selected
-                  ? 'border-primary/40 bg-primary/10 text-primary'
-                  : 'border-border bg-card text-muted-foreground hover:bg-muted'
-              }`}
-            >
-              {selected && <Check aria-hidden="true" className="size-3.5" />}
-              {TYPE_FILTER_LABELS[type]}
-            </button>
-          )
-        })}
-        {selectedTypes.length !== PLANNING_EVENT_TYPES.length && (
-          <button
-            type="button"
-            onClick={() => setSelectedTypes([...PLANNING_EVENT_TYPES])}
-            className="min-h-8 px-2 text-xs font-bold text-primary underline-offset-2 hover:underline"
-          >
-            Tout afficher
-          </button>
-        )}
-      </div>
 
       {loading ? (
         <p role="status" className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Chargement du planning…</p>

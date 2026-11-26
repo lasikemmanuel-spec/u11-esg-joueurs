@@ -41,6 +41,29 @@ const TYPE_LABELS: Record<PlanningEvent['type'], string> = {
   cohesion: 'Journée de cohésion',
 }
 
+const EVENT_COLORS: Record<PlanningEvent['type'], { card: string; badge: string }> = {
+  training: {
+    card: 'border-l-sky-600 bg-gradient-to-r from-sky-100/90 to-card dark:from-sky-950/45',
+    badge: 'bg-sky-500/15 text-sky-800 dark:text-sky-200',
+  },
+  match: {
+    card: 'border-l-amber-500 bg-gradient-to-r from-amber-100/90 to-card dark:from-amber-950/45',
+    badge: 'bg-amber-500/20 text-amber-900 dark:text-amber-200',
+  },
+  tournament: {
+    card: 'border-l-emerald-600 bg-gradient-to-r from-emerald-100/90 to-card dark:from-emerald-950/45',
+    badge: 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-200',
+  },
+  meeting: {
+    card: 'border-l-violet-600 bg-gradient-to-r from-violet-100/90 to-card dark:from-violet-950/45',
+    badge: 'bg-violet-500/15 text-violet-800 dark:text-violet-200',
+  },
+  cohesion: {
+    card: 'border-l-rose-600 bg-gradient-to-r from-rose-100/90 to-card dark:from-rose-950/45',
+    badge: 'bg-rose-500/15 text-rose-800 dark:text-rose-200',
+  },
+}
+
 type PlanningEventFilter = {
   id: string
   label: string
@@ -127,13 +150,6 @@ function getDateParts(dateKey: string) {
     day: date.toLocaleDateString('fr-FR', { day: 'numeric' }),
     month: date.toLocaleDateString('fr-FR', { month: 'short' }).replace(/\.$/, ''),
   }
-}
-
-function getWeekColor(dateKey: string) {
-  const date = new Date(`${dateKey}T00:00:00Z`)
-  date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7))
-  const weekIndex = Math.floor(date.getTime() / (7 * 24 * 60 * 60 * 1000))
-  return Math.abs(weekIndex % 2) === 0 ? 'blue' : 'gold'
 }
 
 function getTrainingAttendanceGauge(
@@ -740,7 +756,7 @@ export function TeamPlanning({
         <ul className="grid gap-2 sm:gap-3">
           {visibleEvents.map((event) => {
             const dateParts = getDateParts(event.date)
-            const weekColor = getWeekColor(event.date)
+            const eventColors = EVENT_COLORS[event.type]
             const weatherDetails = event.date >= today && event.status !== 'cancelled'
               ? event.weather ?? (event.type === 'training'
                 ? { eventTime: event.startTime, homeAway: 'Domicile', opponent: '', venue: event.location }
@@ -752,15 +768,12 @@ export function TeamPlanning({
                   players,
                 )
               : null
-            const accentClass = weekColor === 'blue'
-              ? 'border-l-[#1e3a8a] bg-gradient-to-r from-blue-50/70 to-card dark:from-blue-950/30'
-              : 'border-l-[#d4af37] bg-gradient-to-r from-amber-50/70 to-card dark:from-amber-950/30'
             const iconButtonClass = 'inline-flex size-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
             return (
               <li
                 key={event.id}
-                className={`rounded-2xl border border-l-[3px] p-3 shadow-sm transition hover:shadow-md ${event.status === 'cancelled' ? 'opacity-75' : ''} ${accentClass}`}
+                className={`rounded-2xl border border-l-[3px] p-3 shadow-sm transition hover:shadow-md ${event.status === 'cancelled' ? 'opacity-75' : ''} ${eventColors.card}`}
               >
                 <div className="flex min-w-0 items-start gap-3">
                   <time
@@ -775,7 +788,7 @@ export function TeamPlanning({
 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${eventColors.badge}`}>
                         {TYPE_LABELS[event.type]}
                       </span>
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${event.team === 'E1' ? 'bg-[#1e3a8a]/10 text-[#1e3a8a] dark:text-sky-200' : event.team === 'E2' ? 'bg-[#d4af37]/20 text-[#725200] dark:text-amber-200' : 'bg-muted text-muted-foreground'}`}>

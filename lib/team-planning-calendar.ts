@@ -1,4 +1,4 @@
-export type PlanningPeriodView = 'week' | 'fortnight' | 'month' | 'year'
+export type PlanningPeriodView = 'week' | 'month' | 'year'
 export type PlanningView = PlanningPeriodView | 'upcoming'
 
 export type PlanningDateRange = {
@@ -22,12 +22,12 @@ export function getPlanningPeriodRange(
 ): PlanningDateRange {
   const anchor = new Date(`${anchorDate}T12:00:00`)
 
-  if (view === 'week' || view === 'fortnight') {
+  if (view === 'week') {
     anchor.setDate(anchor.getDate() - ((anchor.getDay() + 6) % 7))
     const startDate = toDateKey(anchor)
     return {
       startDate,
-      endDate: addDays(startDate, view === 'week' ? 6 : 13),
+      endDate: addDays(startDate, 6),
     }
   }
 
@@ -52,8 +52,8 @@ export function shiftPlanningPeriod(
 ) {
   const { startDate } = getPlanningPeriodRange(view, anchorDate)
 
-  if (view === 'week' || view === 'fortnight') {
-    return addDays(startDate, (view === 'week' ? 7 : 14) * direction)
+  if (view === 'week') {
+    return addDays(startDate, 7 * direction)
   }
 
   const date = new Date(`${startDate}T12:00:00`)

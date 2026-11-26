@@ -71,17 +71,24 @@ const EVENT_COLORS: Record<PlanningEvent['type'], { card: string; badge: string 
   },
 }
 
-const EVENT_DOT_COLORS: Record<PlanningEvent['type'], string> = {
+const EVENT_MARKER_COLORS: Record<PlanningEvent['type'], string> = {
   training: 'bg-sky-600',
-  match: 'bg-amber-500',
+  match: 'bg-amber-700',
   tournament: 'bg-emerald-600',
   meeting: 'bg-violet-600',
   cohesion: 'bg-rose-600',
 }
 
+const EVENT_SHORT_LABELS: Record<PlanningEvent['type'], string> = {
+  training: 'En',
+  match: 'Ma',
+  tournament: 'To',
+  meeting: 'Ré',
+  cohesion: 'Co',
+}
+
 const PLANNING_VIEWS: { id: PlanningView; label: string }[] = [
   { id: 'week', label: 'Semaine' },
-  { id: 'fortnight', label: 'Quinzaine' },
   { id: 'month', label: 'Mois' },
   { id: 'year', label: 'Année' },
   { id: 'upcoming', label: 'À venir' },
@@ -164,7 +171,7 @@ function formatWeekRange(startDate: string, endDate: string) {
 }
 
 function formatPlanningPeriod(view: PlanningPeriodView, startDate: string, endDate: string) {
-  if (view === 'week' || view === 'fortnight') return formatWeekRange(startDate, endDate)
+  if (view === 'week') return formatWeekRange(startDate, endDate)
   if (view === 'month') {
     return new Date(`${startDate}T12:00:00`).toLocaleDateString('fr-FR', {
       month: 'long',
@@ -862,12 +869,20 @@ export function TeamPlanning({
                       </span>
                     )}
                   </div>
-                  <div className="mt-1 flex min-h-2 justify-center gap-0.5 sm:hidden" aria-hidden="true">
-                    {dateEvents.slice(0, 4).map((event, index) => (
-                      <span key={`${event.id}-${index}`} className={`size-1.5 rounded-full ${EVENT_DOT_COLORS[event.type]}`} />
+                  <div className="mt-1 flex flex-col gap-0.5 sm:hidden">
+                    {dateEvents.slice(0, 2).map((event) => (
+                      <span
+                        key={event.id}
+                        title={`${TYPE_LABELS[event.type]} : ${event.title}`}
+                        className={`block truncate rounded px-0.5 py-0.5 text-center text-[8px] font-bold leading-tight ${EVENT_COLORS[event.type].badge}`}
+                      >
+                        {EVENT_SHORT_LABELS[event.type]}
+                      </span>
                     ))}
-                    {dateEvents.length > 4 && (
-                      <span className="text-[8px] font-bold leading-none">+{dateEvents.length - 4}</span>
+                    {dateEvents.length > 2 && (
+                      <span className="text-center text-[8px] font-bold leading-tight text-muted-foreground">
+                        +{dateEvents.length - 2}
+                      </span>
                     )}
                   </div>
                   {dateEvents.length > 0 && (
@@ -928,12 +943,9 @@ export function TeamPlanning({
                       return (
                         <span
                           key={dateKey}
-                          className={`relative flex aspect-square items-center justify-center rounded-full text-[9px] tabular-nums sm:text-[10px] ${isInMonth ? '' : 'text-muted-foreground/30'} ${dateKey === today ? 'bg-primary/10 font-black text-primary' : dateEvents.length > 0 ? 'font-bold text-foreground' : ''}`}
+                          className={`flex aspect-square items-center justify-center rounded-full text-[9px] tabular-nums sm:text-[10px] ${isInMonth ? '' : 'text-muted-foreground/30'} ${dateKey === today ? 'bg-primary/10 font-black text-primary' : dateEvents.length > 0 ? `font-bold text-white ${EVENT_MARKER_COLORS[dateEvents[0].type]}` : ''}`}
                         >
                           {day}
-                          {dateEvents.length > 0 && (
-                            <span className={`absolute bottom-0 h-1 w-1 rounded-full ${EVENT_DOT_COLORS[dateEvents[0].type]}`} />
-                          )}
                         </span>
                       )
                     })}

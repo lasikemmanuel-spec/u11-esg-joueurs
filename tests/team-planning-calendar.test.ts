@@ -6,14 +6,10 @@ import {
 } from '@/lib/team-planning-calendar'
 
 describe('team planning calendar periods', () => {
-  it('starts weeks and fortnights on Monday', () => {
+  it('starts weeks on Monday', () => {
     expect(getPlanningPeriodRange('week', '2026-11-26')).toEqual({
       startDate: '2026-11-23',
       endDate: '2026-11-29',
-    })
-    expect(getPlanningPeriodRange('fortnight', '2026-11-26')).toEqual({
-      startDate: '2026-11-23',
-      endDate: '2026-12-06',
     })
   })
 
@@ -31,7 +27,7 @@ describe('team planning calendar periods', () => {
   it('navigates by the selected period without skipping months', () => {
     expect(shiftPlanningPeriod('month', '2026-01-31', 1)).toBe('2026-02-01')
     expect(shiftPlanningPeriod('month', '2026-01-31', -1)).toBe('2025-12-01')
-    expect(shiftPlanningPeriod('fortnight', '2026-11-23', 1)).toBe('2026-12-07')
+    expect(shiftPlanningPeriod('week', '2026-11-23', 1)).toBe('2026-11-30')
   })
 
   it('builds a Monday-to-Sunday month grid containing every day of the month', () => {

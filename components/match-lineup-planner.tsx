@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useRef } from 'react'
 import { createPortal } from 'react-dom'
-import { Armchair, ChevronRight, X } from 'lucide-react'
+import { Armchair, CheckCircle2, ChevronRight, LoaderCircle, X } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import {
   getOfflineLineups,
@@ -415,15 +415,45 @@ export function MatchLineupEntry({
           </p>
         ) : (
           <>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[#172554]/10 bg-white/80 px-3 py-2 shadow-sm">
-              <p className="text-xs font-bold text-[#172554]">Choisis la composition</p>
-              <p className="text-xs font-black text-[#172554]"><span className="text-[#1e3a8a]">{starters.length}/8 titulaires</span><span className="mx-2 text-slate-300">·</span>{substitutes.length} remplaçant{substitutes.length === 1 ? '' : 's'}</p>
-              <p className="flex w-full flex-wrap items-center gap-x-3 gap-y-1 text-[10px] font-medium text-slate-600">
-                <span className="inline-flex items-center gap-1"><JerseyIcon number={0} /> Titulaire</span>
-                <span className="inline-flex items-center gap-1"><Armchair aria-hidden="true" className="size-4" /> Remplaçant</span>
-                <span className="inline-flex items-center gap-1"><X aria-hidden="true" className="size-3.5" /> Retirer le choix</span>
-                <span>Appuie sur un nom pour ouvrir sa fiche.</span>
-              </p>
+            <div className="mb-3 rounded-2xl border border-[#172554]/10 bg-white/85 p-3 shadow-sm sm:p-4">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-sm font-black text-[#172554]">Composition de l’équipe</p>
+                  <p className="mt-0.5 text-[11px] font-medium text-slate-600">Choisis un rôle pour chaque joueur convoqué.</p>
+                </div>
+                {pending ? (
+                  <span role="status" className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-blue-50 px-2.5 py-1 text-[10px] font-bold text-blue-800">
+                    <LoaderCircle aria-hidden="true" className="size-3.5 animate-spin" /> Enregistrement
+                  </span>
+                ) : savedKey === key ? (
+                  <span role="status" className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-bold text-emerald-800">
+                    <CheckCircle2 aria-hidden="true" className="size-3.5" /> Enregistré
+                  </span>
+                ) : null}
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <div className="rounded-xl bg-blue-50 px-3 py-2">
+                  <div className="flex items-center justify-between gap-2 text-xs font-black text-[#172554]">
+                    <span className="inline-flex items-center gap-1.5"><JerseyIcon number={0} /> Titulaires</span>
+                    <span>{starters.length}<span className="font-semibold text-slate-500">/8</span></span>
+                  </div>
+                  <div
+                    role="progressbar"
+                    aria-label="Nombre de titulaires sélectionnés"
+                    aria-valuemin={0}
+                    aria-valuemax={8}
+                    aria-valuenow={Math.min(starters.length, 8)}
+                    className="mt-2 h-1.5 overflow-hidden rounded-full bg-blue-200"
+                  >
+                    <div className="h-full rounded-full bg-[#1e3a8a] transition-[width] duration-300" style={{ width: `${Math.min(starters.length / 8, 1) * 100}%` }} />
+                  </div>
+                </div>
+                <div className="flex items-center justify-between gap-2 rounded-xl bg-amber-50 px-3 py-2 text-xs font-black text-amber-950">
+                  <span className="inline-flex items-center gap-1.5"><Armchair aria-hidden="true" className="size-4" /> Remplaçants</span>
+                  <span>{substitutes.length}</span>
+                </div>
+              </div>
+              <p className="mt-2 text-[10px] font-medium text-slate-500">Appuie sur un nom pour ouvrir sa fiche. Tu peux retirer un rôle avec ×.</p>
             </div>
             <ul className="grid gap-2">
               {calledPlayers.map((player) => {
@@ -448,9 +478,10 @@ export function MatchLineupEntry({
                         aria-pressed={currentRole === 'starter'}
                         disabled={currentRole !== 'starter' && starters.length >= 8}
                         onClick={() => updateRole(player.number, 'starter')}
-                        className={`${buttonClass} ${currentRole === 'starter' ? 'border-primary bg-primary text-primary-foreground' : 'border-accent/50 bg-background text-foreground hover:bg-muted'}`}
+                        className={`${buttonClass} !h-10 !w-auto gap-1.5 px-2 text-[10px] font-extrabold sm:!h-9 sm:px-2.5 ${currentRole === 'starter' ? 'border-[#172554] bg-[#172554] text-white ring-2 ring-[#d4af37]/70' : 'border-[#172554]/20 bg-white text-[#172554] hover:bg-blue-50'}`}
                       >
                         <JerseyIcon number={player.number} />
+                        <span>Titulaire</span>
                       </button>
                       <button
                         type="button"
@@ -458,9 +489,10 @@ export function MatchLineupEntry({
                         aria-label={`${currentRole === 'substitute' ? 'Retirer : ' : 'Choisir : '}peut entrer en cours de jeu pour ${player.firstName} ${player.lastName}`}
                         aria-pressed={currentRole === 'substitute'}
                         onClick={() => updateRole(player.number, 'substitute')}
-                        className={`${buttonClass} ${currentRole === 'substitute' ? 'border-primary bg-primary text-primary-foreground' : 'border-accent/50 bg-background text-foreground hover:bg-muted'}`}
+                        className={`${buttonClass} !h-10 !w-auto gap-1.5 px-2 text-[10px] font-extrabold sm:!h-9 sm:px-2.5 ${currentRole === 'substitute' ? 'border-amber-500 bg-amber-100 text-amber-950 ring-2 ring-amber-300' : 'border-[#172554]/20 bg-white text-[#172554] hover:bg-amber-50'}`}
                       >
-                        <Armchair aria-hidden="true" className="size-5" />
+                        <Armchair aria-hidden="true" className="size-4" />
+                        <span>Remplaçant</span>
                       </button>
                       {currentRole && (
                         <button
@@ -478,10 +510,6 @@ export function MatchLineupEntry({
                 )
               })}
             </ul>
-            <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-              <span className="font-semibold text-[#172554]">{starters.length}/8 titulaires</span>
-              <span>{substitutes.length} remplaçant{substitutes.length === 1 ? '' : 's'}</span>
-            </p>
             {starters.length >= 8 && (
               <p role="status" className="mt-1 text-xs font-medium text-amber-800">
                 Les 8 places de titulaires sont prises. Retire d’abord un titulaire avec le bouton × pour en choisir un autre.
@@ -489,11 +517,6 @@ export function MatchLineupEntry({
             )}
           </>
         )}
-        {pending ? (
-          <p role="status" className="mt-2 text-xs font-medium text-[#172554]">Enregistrement en cours…</p>
-        ) : savedKey === key ? (
-          <p role="status" className="mt-2 text-xs font-semibold text-emerald-700">Feuille enregistrée.</p>
-        ) : null}
       </div>
       </section>
     </div>,

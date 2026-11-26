@@ -212,19 +212,19 @@ export function MatchWeather({
   const toneClass = tone === 'dark'
     ? 'border-amber-300/30 bg-white/10 text-white/80'
     : 'border-[#172554]/15 bg-white/75 text-[#172554]'
-  const iconClass = 'size-5 shrink-0 rounded-full bg-amber-300 p-1 text-[#172554]'
+  const iconClass = 'size-5 shrink-0 rounded-full bg-amber-300 p-1 text-[#172554] md:size-6'
   const temperatureClass = tone === 'dark'
     ? 'bg-amber-300 text-[#172554]'
     : 'bg-[#172554] text-white'
 
   return (
-    <span aria-live="polite" className={`inline-flex min-h-7 w-fit max-w-full self-start items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold sm:gap-1.5 sm:px-2 sm:text-[10px] md:text-xs ${toneClass}`}>
+    <span aria-live="polite" className={`inline-flex min-h-7 w-fit max-w-full self-start items-center gap-1 rounded-full border px-1.5 py-0.5 text-[9px] font-bold sm:gap-1.5 sm:px-2 sm:text-[10px] md:text-sm ${toneClass}`}>
       {weather.status === 'ready' ? (
         <>
           <WeatherIcon code={weather.weather.weatherCode} className={iconClass} />
           <span className="max-w-32 truncate sm:max-w-40"><span className="sr-only">Météo à </span>{weather.weather.location}</span>
-          <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-black tabular-nums sm:text-xs ${temperatureClass}`}>{Math.round(weather.weather.temperature)}°</span>
-          <span className="shrink-0 rounded-full border border-[#d4af37] bg-[#172554] px-1.5 py-0.5 text-[9px] font-bold tabular-nums text-white sm:text-[10px]">
+          <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-black tabular-nums sm:text-xs md:text-sm ${temperatureClass}`}>{Math.round(weather.weather.temperature)}°</span>
+          <span className="shrink-0 rounded-full border border-[#d4af37] bg-[#172554] px-1.5 py-0.5 text-[9px] font-bold tabular-nums text-white sm:text-[10px] md:text-xs">
             Ressenti {weather.weather.feelsLikeTemperature === null ? '—' : `${Math.round(weather.weather.feelsLikeTemperature)}°`}
           </span>
         </>

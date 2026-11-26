@@ -412,8 +412,8 @@ export function TeamPlanning({
     <section className="mx-auto flex w-full flex-col gap-3 sm:gap-5 md:max-w-2xl 2xl:max-w-3xl">
       <header className="flex flex-col gap-1">
         <div>
-          <h2 className="flex items-center gap-2 text-xl font-black text-foreground">
-            <CalendarDays aria-hidden="true" className="size-6 text-primary" />
+          <h2 className="flex items-center gap-2 text-xl font-black text-foreground md:text-2xl">
+            <CalendarDays aria-hidden="true" className="size-6 text-primary md:size-7" />
             Planning
           </h2>
         </div>
@@ -429,13 +429,13 @@ export function TeamPlanning({
               aria-label={`Afficher ou masquer ${filter.accessibleLabel ?? filter.label}`}
               aria-pressed={selected}
               onClick={() => toggleEventTypes(filter.types)}
-              className={`inline-flex min-h-9 shrink-0 items-center justify-center gap-0.5 whitespace-nowrap rounded-xl border px-1 text-[10px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              className={`inline-flex min-h-9 shrink-0 items-center justify-center gap-0.5 whitespace-nowrap rounded-xl border px-1 text-[10px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-10 md:gap-1 md:px-2 md:text-xs ${
                 selected
                   ? 'border-blue-300 bg-gradient-to-r from-blue-50 to-sky-100 text-[#1e3a8a] shadow-sm ring-1 ring-[#d4af37]/40 dark:border-blue-700 dark:from-blue-950/70 dark:to-slate-900 dark:text-sky-100'
                   : 'border-border/70 bg-background/50 text-muted-foreground hover:border-blue-300 hover:bg-blue-50/70 dark:hover:bg-blue-950/30'
               }`}
             >
-              <span aria-hidden="true" className="text-xs leading-none">{filter.emoji}</span>
+              <span aria-hidden="true" className="text-xs leading-none md:text-sm">{filter.emoji}</span>
               {filter.label}
             </button>
           )
@@ -444,7 +444,7 @@ export function TeamPlanning({
           <button
             type="button"
             onClick={() => setSelectedTypes([...PLANNING_EVENT_TYPES])}
-            className="min-h-9 px-1.5 text-[11px] font-bold text-primary underline-offset-2 hover:underline"
+            className="min-h-9 px-1.5 text-[11px] font-bold text-primary underline-offset-2 hover:underline md:text-xs"
           >
             Tout
           </button>
@@ -458,7 +458,7 @@ export function TeamPlanning({
             onClick={openNewEventForm}
             aria-label="Ajouter un événement au planning"
             title="Ajouter un événement"
-            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-foreground shadow-sm transition hover:opacity-90 sm:text-sm"
+            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-foreground shadow-sm transition hover:opacity-90 sm:text-sm md:min-h-11 md:px-4 md:text-base"
           >
             <Plus aria-hidden="true" className="size-4" />
             <span>Ajouter</span>
@@ -479,7 +479,7 @@ export function TeamPlanning({
             type="button"
             aria-pressed={view === 'week'}
             onClick={() => setView('week')}
-            className={`min-h-9 whitespace-nowrap rounded-lg px-2.5 text-xs font-bold transition sm:px-3 sm:text-sm ${view === 'week' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-background hover:text-foreground'}`}
+            className={`min-h-9 whitespace-nowrap rounded-lg px-2.5 text-xs font-bold transition sm:px-3 sm:text-sm md:min-h-10 md:text-base ${view === 'week' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-background hover:text-foreground'}`}
           >
             Semaine
           </button>
@@ -487,7 +487,7 @@ export function TeamPlanning({
             type="button"
             aria-pressed={view === 'upcoming'}
             onClick={() => setView('upcoming')}
-            className={`min-h-9 whitespace-nowrap rounded-lg px-2.5 text-xs font-bold transition sm:px-3 sm:text-sm ${view === 'upcoming' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-background hover:text-foreground'}`}
+            className={`min-h-9 whitespace-nowrap rounded-lg px-2.5 text-xs font-bold transition sm:px-3 sm:text-sm md:min-h-10 md:text-base ${view === 'upcoming' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-background hover:text-foreground'}`}
           >
             À venir
           </button>
@@ -710,20 +710,20 @@ export function TeamPlanning({
             type="button"
             aria-label="Semaine précédente"
             onClick={() => setWeekStart((current) => addDays(current, -7))}
-            className="inline-flex size-9 items-center justify-center rounded-lg border border-border hover:bg-muted"
+            className="inline-flex size-9 items-center justify-center rounded-lg border border-border hover:bg-muted md:size-10"
           >
-            <ChevronLeft aria-hidden="true" className="size-4" />
+            <ChevronLeft aria-hidden="true" className="size-4 md:size-5" />
           </button>
-          <p className="min-w-36 text-center text-sm font-bold capitalize">
+          <p className="min-w-36 text-center text-sm font-bold capitalize md:text-base">
             {formatWeekRange(weekStart, addDays(weekStart, 6))}
           </p>
           <button
             type="button"
             aria-label="Semaine suivante"
             onClick={() => setWeekStart((current) => addDays(current, 7))}
-            className="inline-flex size-9 items-center justify-center rounded-lg border border-border hover:bg-muted"
+            className="inline-flex size-9 items-center justify-center rounded-lg border border-border hover:bg-muted md:size-10"
           >
-            <ChevronRight aria-hidden="true" className="size-4" />
+            <ChevronRight aria-hidden="true" className="size-4 md:size-5" />
           </button>
         </div>
       )}
@@ -774,61 +774,61 @@ export function TeamPlanning({
             return (
               <li
                 key={event.id}
-                className={`rounded-2xl border border-l-[3px] p-3 shadow-sm transition hover:shadow-md ${event.status === 'cancelled' ? 'opacity-75' : ''} ${eventColors.card}`}
+                className={`rounded-2xl border border-l-[3px] p-3 shadow-sm transition hover:shadow-md md:p-4 ${event.status === 'cancelled' ? 'opacity-75' : ''} ${eventColors.card}`}
               >
-                <div className="flex min-w-0 items-start gap-3">
+                <div className="flex min-w-0 items-start gap-3 md:gap-4">
                   <time
                     dateTime={event.date}
                     aria-label={formatDate(event.date)}
-                    className="flex w-12 shrink-0 flex-col items-center rounded-xl bg-muted/60 px-1.5 py-2 text-center leading-none"
+                    className="flex w-12 shrink-0 flex-col items-center rounded-xl bg-muted/60 px-1.5 py-2 text-center leading-none md:w-14 md:py-2.5"
                   >
-                    <span className="text-[10px] font-bold uppercase text-muted-foreground">{dateParts.weekday}</span>
-                    <span className="mt-1 text-xl font-black tabular-nums text-foreground">{dateParts.day}</span>
-                    <span className="mt-1 text-[10px] font-semibold capitalize text-muted-foreground">{dateParts.month}</span>
+                    <span className="text-[10px] font-bold uppercase text-muted-foreground md:text-xs">{dateParts.weekday}</span>
+                    <span className="mt-1 text-xl font-black tabular-nums text-foreground md:text-2xl">{dateParts.day}</span>
+                    <span className="mt-1 text-[10px] font-semibold capitalize text-muted-foreground md:text-xs">{dateParts.month}</span>
                   </time>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-1.5">
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${eventColors.badge}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold md:text-xs ${eventColors.badge}`}>
                         {TYPE_LABELS[event.type]}
                       </span>
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${event.team === 'E1' ? 'bg-[#1e3a8a]/10 text-[#1e3a8a] dark:text-sky-200' : event.team === 'E2' ? 'bg-[#d4af37]/20 text-[#725200] dark:text-amber-200' : 'bg-muted text-muted-foreground'}`}>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold md:text-xs ${event.team === 'E1' ? 'bg-[#1e3a8a]/10 text-[#1e3a8a] dark:text-sky-200' : event.team === 'E2' ? 'bg-[#d4af37]/20 text-[#725200] dark:text-amber-200' : 'bg-muted text-muted-foreground'}`}>
                         {event.team === 'both' ? 'E1 + E2' : event.team}
                       </span>
                       {attendance && (
                         <span
                           title={`${attendance.present} joueurs présents sur ${attendance.total}`}
-                          className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-200"
+                          className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-200 md:text-xs"
                         >
-                          <UsersRound aria-hidden="true" className="size-3" />
+                          <UsersRound aria-hidden="true" className="size-3 md:size-3.5" />
                           {attendance.present} présents
                         </span>
                       )}
                       {event.source === 'match-sheet' && event.notes && (
-                        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground md:text-xs">
                           {event.notes}
                         </span>
                       )}
                       {event.status !== 'confirmed' && (
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${event.status === 'postponed' ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300' : 'bg-destructive/10 text-destructive'}`}>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold md:text-xs ${event.status === 'postponed' ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300' : 'bg-destructive/10 text-destructive'}`}>
                           {STATUS_LABELS[event.status]}
                         </span>
                       )}
                       {event.recurrenceGroupId && (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                          <Repeat aria-hidden="true" className="size-3" />
+                        <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary md:text-xs">
+                          <Repeat aria-hidden="true" className="size-3 md:size-3.5" />
                           Chaque {formatWeekday(event.date)}
                         </span>
                       )}
                     </div>
 
-                    <h3 className={`mt-1 truncate text-base font-black leading-snug ${event.status === 'cancelled' ? 'line-through' : ''}`}>
+                    <h3 className={`mt-1 truncate text-base font-black leading-snug md:text-lg ${event.status === 'cancelled' ? 'line-through' : ''}`}>
                       {event.title}
                     </h3>
-                    <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground md:text-sm">
                       {(event.startTime || event.endTime || event.meetingTime) && (
                         <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                          <Clock3 aria-hidden="true" className="size-3.5 shrink-0" />
+                          <Clock3 aria-hidden="true" className="size-3.5 shrink-0 md:size-4" />
                           {event.startTime && event.endTime
                             ? `${event.startTime}–${event.endTime}`
                             : event.startTime || event.endTime}
@@ -836,7 +836,7 @@ export function TeamPlanning({
                         </span>
                       )}
                       <span className="inline-flex min-w-0 items-center gap-1">
-                        <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
+                        <MapPin aria-hidden="true" className="size-3.5 shrink-0 md:size-4" />
                         <span className="truncate">{event.location}</span>
                       </span>
                       {weatherDetails && (
@@ -861,7 +861,7 @@ export function TeamPlanning({
                       </button>
                     </div>
                     {event.notes && event.source !== 'match-sheet' && (
-                      <p title={event.notes} className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                      <p title={event.notes} className="mt-1 line-clamp-1 text-xs text-muted-foreground md:text-sm">
                         {event.notes}
                       </p>
                     )}
@@ -869,13 +869,13 @@ export function TeamPlanning({
                       <div
                         role="img"
                         aria-label={`${attendance.present} présents, ${attendance.absent} absents sur ${attendance.total} joueurs`}
-                        className="mt-2 max-w-sm"
+                        className="mt-2 max-w-sm md:max-w-md"
                       >
-                        <div className="flex items-center justify-between gap-3 text-[10px] font-bold">
+                        <div className="flex items-center justify-between gap-3 text-[10px] font-bold md:text-xs">
                           <span className="text-[#1e3a8a] dark:text-sky-200">{attendance.present} présents</span>
                           <span className="text-[#725200] dark:text-amber-200">{attendance.absent} absents</span>
                         </div>
-                        <div aria-hidden="true" className="mt-1 flex h-1.5 overflow-hidden rounded-full bg-muted">
+                        <div aria-hidden="true" className="mt-1 flex h-1.5 overflow-hidden rounded-full bg-muted md:h-2">
                           <span
                             className="bg-[#1e3a8a] transition-[width]"
                             style={{ width: `${attendance.present / attendance.total * 100}%` }}
@@ -900,9 +900,9 @@ export function TeamPlanning({
                         type="button"
                         onClick={() => onOpenTraining(event.date)}
                         title="Ouvrir la feuille de présence à cette date"
-                        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground transition hover:opacity-90"
+                        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground transition hover:opacity-90 md:min-h-10 md:px-4 md:text-sm"
                       >
-                        <ClipboardCheck aria-hidden="true" className="size-4" />
+                        <ClipboardCheck aria-hidden="true" className="size-4 md:size-5" />
                         Présence joueurs
                       </button>
                     ) : <span aria-hidden="true" />}

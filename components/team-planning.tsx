@@ -150,6 +150,7 @@ const EMPTY_DRAFT: PlanningEventFields = {
 }
 
 const EVENT_FORM_INPUT_CLASS = 'h-10 min-w-0 w-full rounded-lg border border-[#d4af37]/60 bg-background px-3 text-sm font-normal text-foreground outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]'
+const PLAN_BUTTON_CLASS = 'group inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-amber-200/70 bg-gradient-to-r from-[#f4d45e] via-[#d4af37] to-[#f4d45e] px-3 text-xs font-black text-blue-950 shadow-md transition duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#172554] active:translate-y-0 sm:gap-2 sm:px-4 sm:text-sm md:min-h-11 md:text-base'
 
 function toDateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
@@ -555,11 +556,24 @@ export function TeamPlanning({
   return (
     <section className="mx-auto flex w-full flex-col gap-3 sm:gap-5 md:max-w-2xl 2xl:max-w-3xl">
       <header className="flex flex-col gap-1">
-        <div>
-          <h2 className="flex items-center gap-2 text-xl font-black text-foreground md:text-2xl">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="flex min-w-0 items-center gap-2 text-xl font-black text-foreground md:text-2xl">
             <CalendarDays aria-hidden="true" className="size-6 text-primary md:size-7" />
             Planning
           </h2>
+          {canManage && (
+            <button
+              type="button"
+              onClick={openNewEventForm}
+              aria-label="Planifier un événement au planning"
+              title="Planifier un événement"
+              className={`${PLAN_BUTTON_CLASS} sm:hidden`}
+            >
+              <CalendarPlus aria-hidden="true" className="size-4 transition-transform duration-200 group-hover:rotate-[-8deg]" />
+              <span>Planifier</span>
+              <span aria-hidden="true" className="transition-transform duration-200 group-hover:animate-bounce">⚽</span>
+            </button>
+          )}
         </div>
       </header>
 
@@ -603,7 +617,7 @@ export function TeamPlanning({
               onClick={openNewEventForm}
               aria-label="Planifier un événement au planning"
               title="Planifier un événement"
-              className="group inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-amber-200/70 bg-gradient-to-r from-[#f4d45e] via-[#d4af37] to-[#f4d45e] px-3 text-xs font-black text-blue-950 shadow-md transition duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#172554] active:translate-y-0 sm:gap-2 sm:px-4 sm:text-sm md:min-h-11 md:text-base"
+              className={`${PLAN_BUTTON_CLASS} hidden sm:inline-flex`}
             >
               <CalendarPlus aria-hidden="true" className="size-4 transition-transform duration-200 group-hover:rotate-[-8deg] sm:size-[18px]" />
               <span>Planifier</span>

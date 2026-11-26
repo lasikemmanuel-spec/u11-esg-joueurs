@@ -139,6 +139,7 @@ const EMPTY_DRAFT: PlanningEventFields = {
   date: '',
   endDate: '',
   type: 'training',
+  tournamentFormat: '',
   team: 'both',
   title: '',
   meetingTime: '',
@@ -424,6 +425,7 @@ export function TeamPlanning({
       date: event.date,
       endDate: event.endDate,
       type: event.type,
+      tournamentFormat: event.tournamentFormat,
       team: event.team,
       title: event.title,
       meetingTime: event.meetingTime,
@@ -730,6 +732,7 @@ export function TeamPlanning({
                   return
                 }
                 updateDraft('type', type)
+                updateDraft('tournamentFormat', type === 'tournament' ? draft.tournamentFormat : '')
                 updateDraft('endDate', type === 'tournament' ? draft.endDate || draft.date : draft.date)
               }}
               className={EVENT_FORM_INPUT_CLASS}
@@ -794,6 +797,21 @@ export function TeamPlanning({
               </span>
             )}
           </label>
+          {draft.type === 'tournament' && (
+            <label className="grid gap-1 text-sm font-semibold">
+              Format du tournoi
+              <select
+                required
+                value={draft.tournamentFormat}
+                onChange={(event) => updateDraft('tournamentFormat', event.target.value as PlanningEventFields['tournamentFormat'])}
+                className={EVENT_FORM_INPUT_CLASS}
+              >
+                <option value="">Choisir un format</option>
+                <option value="futsal">Futsal</option>
+                <option value="football8">Foot à 8 extérieur</option>
+              </select>
+            </label>
+          )}
           {draft.type === 'tournament' && (
             <label className="grid gap-1 text-sm font-semibold">
               Date de fin
@@ -1113,6 +1131,11 @@ export function TeamPlanning({
                             <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${EVENT_COLORS[event.type].badge}`}>
                               {TYPE_LABELS[event.type]}
                             </span>
+                            {event.type === 'tournament' && event.tournamentFormat && (
+                              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+                                {event.tournamentFormat === 'futsal' ? 'Futsal' : 'Foot à 8 extérieur'}
+                              </span>
+                            )}
                             <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
                               {event.team === 'both' ? 'E1 + E2' : event.team}
                             </span>
@@ -1308,6 +1331,11 @@ export function TeamPlanning({
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold md:text-xs ${eventColors.badge}`}>
                         {TYPE_LABELS[event.type]}
                       </span>
+                      {event.type === 'tournament' && event.tournamentFormat && (
+                        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary md:text-xs">
+                          {event.tournamentFormat === 'futsal' ? 'Futsal' : 'Foot à 8 extérieur'}
+                        </span>
+                      )}
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold md:text-xs ${event.team === 'E1' ? 'bg-[#1e3a8a]/10 text-[#1e3a8a] dark:text-sky-200' : event.team === 'E2' ? 'bg-[#d4af37]/20 text-[#725200] dark:text-amber-200' : 'bg-muted text-muted-foreground'}`}>
                         {event.team === 'both' ? 'E1 + E2' : event.team}
                       </span>

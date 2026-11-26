@@ -5,11 +5,13 @@ export const PLANNING_STATUSES = ['confirmed', 'postponed', 'cancelled'] as cons
 export type PlanningEventType = (typeof PLANNING_EVENT_TYPES)[number]
 export type PlanningTeam = (typeof PLANNING_TEAMS)[number]
 export type PlanningStatus = (typeof PLANNING_STATUSES)[number]
+export type TournamentFormat = 'futsal' | 'football8' | ''
 
 export type PlanningEventFields = {
   date: string
   endDate: string
   type: PlanningEventType
+  tournamentFormat?: TournamentFormat
   team: PlanningTeam
   title: string
   meetingTime: string
@@ -88,6 +90,12 @@ export function parsePlanningEventFields(input: unknown): PlanningEventFields | 
     endDate < date ||
     typeof value.type !== 'string' ||
     !PLANNING_EVENT_TYPES.includes(value.type as PlanningEventType) ||
+    (value.tournamentFormat !== undefined &&
+      value.tournamentFormat !== '' &&
+      value.tournamentFormat !== 'futsal' &&
+      value.tournamentFormat !== 'football8') ||
+    (value.type === 'tournament' && typeof value.tournamentFormat !== 'string') ||
+    (value.type !== 'tournament' && value.tournamentFormat !== undefined && value.tournamentFormat !== '') ||
     (value.type !== 'tournament' && endDate !== date) ||
     typeof value.team !== 'string' ||
     !PLANNING_TEAMS.includes(value.team as PlanningTeam) ||
@@ -116,6 +124,7 @@ export function parsePlanningEventFields(input: unknown): PlanningEventFields | 
     date,
     endDate,
     type: value.type as PlanningEventType,
+    tournamentFormat: value.type === 'tournament' ? value.tournamentFormat as TournamentFormat : '',
     team: value.team as PlanningTeam,
     title: value.title.trim(),
     meetingTime: value.meetingTime,
@@ -162,6 +171,7 @@ export function createCalendarFile(event: PlanningEvent) {
   const status = event.status === 'cancelled' ? 'CANCELLED' : 'CONFIRMED'
   const description = [
     `Équipe : ${event.team === 'both' ? 'E1 et E2' : event.team}`,
+    event.tournamentFormat ? `Format : ${event.tournamentFormat === 'futsal' ? 'Futsal' : 'Foot à 8 extérieur'}` : '',
     event.meetingTime ? `Rendez-vous : ${event.meetingTime}` : '',
     event.status === 'postponed' ? 'Événement reporté' : '',
     event.notes,

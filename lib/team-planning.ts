@@ -28,7 +28,8 @@ const BASE_PLANNING_HEADERS = [
 ]
 const SERIES_HEADERS = ['Identifiant de série', 'Fin de récurrence']
 const END_DATE_HEADER = 'Date de fin'
-const PLANNING_HEADERS = [...BASE_PLANNING_HEADERS, ...SERIES_HEADERS, END_DATE_HEADER]
+const TOURNAMENT_FORMAT_HEADER = 'Format du tournoi'
+const PLANNING_HEADERS = [...BASE_PLANNING_HEADERS, ...SERIES_HEADERS, END_DATE_HEADER, TOURNAMENT_FORMAT_HEADER]
 
 async function getPlanningRows() {
   await ensureAuthenticatedSheetTab(PLANNING_TAB)
@@ -67,6 +68,16 @@ async function getPlanningRows() {
   } else if (rows[0][endDateColumn] !== END_DATE_HEADER) {
     throw new Error('L’en-tête de la date de fin dans l’onglet « Planning » ne correspond pas au format attendu.')
   }
+  const tournamentFormatColumn = endDateColumn + 1
+  if (!rows[0][tournamentFormatColumn]) {
+    await updateAuthenticatedSheetValues([{
+      range: `'${sheetTitle.replace(/'/g, "''")}'!O1`,
+      values: [[TOURNAMENT_FORMAT_HEADER]],
+    }])
+    rows[0][tournamentFormatColumn] = TOURNAMENT_FORMAT_HEADER
+  } else if (rows[0][tournamentFormatColumn] !== TOURNAMENT_FORMAT_HEADER) {
+    throw new Error('L’en-tête du format de tournoi dans l’onglet « Planning » ne correspond pas au format attendu.')
+  }
 
   return { sheetTitle, rows }
 }
@@ -88,6 +99,7 @@ function rowToEvent(row: string[]): PlanningEvent | null {
     recurrenceGroupId,
     recurrenceEndDate,
     endDate,
+    tournamentFormat,
   ] = row
   const event: unknown = {
     id,
@@ -102,6 +114,7 @@ function rowToEvent(row: string[]): PlanningEvent | null {
     notes,
     status,
     endDate: endDate || date,
+    tournamentFormat: type === 'tournament' ? tournamentFormat || '' : '',
     ...(recurrenceGroupId || recurrenceEndDate ? { recurrenceGroupId, recurrenceEndDate } : {}),
   }
   if (!isPlanningEvent(event)) {
@@ -126,6 +139,7 @@ function eventToRow(event: PlanningEvent) {
     event.recurrenceGroupId ?? '',
     event.recurrenceEndDate ?? '',
     event.endDate,
+    event.tournamentFormat ?? '',
   ]
 }
 
@@ -149,7 +163,7 @@ export async function saveTeamPlanningEvent(event: PlanningEvent, mode: 'create'
   const rowIndex = mode === 'update' ? existingRow : rows.length
   const quotedTitle = sheetTitle.replace(/'/g, "''")
   await updateAuthenticatedSheetValues([{
-    range: `'${quotedTitle}'!A${rowIndex + 1}:N${rowIndex + 1}`,
+    range: `'${quotedTitle}'!A${rowIndex + 1}:O${rowIndex + 1}`,
     values: [eventToRow(event)],
   }])
   return true
@@ -172,7 +186,7 @@ export async function saveTeamPlanningEvents(events: PlanningEvent[]) {
   await updateAuthenticatedSheetValues(events.map((event, index) => {
     const rowIndex = rows.length + index + 1
     return {
-      range: `'${quotedTitle}'!A${rowIndex}:N${rowIndex}`,
+      range: `'${quotedTitle}'!A${rowIndex}:O${rowIndex}`,
       values: [eventToRow(event)],
     }
   }))
@@ -204,7 +218,7 @@ export async function updateTeamPlanningSeries(
     }
     events.push(event)
     updates.push({
-      range: `'${quotedTitle}'!A${rowIndex + 1}:N${rowIndex + 1}`,
+      range: `'${quotedTitle}'!A${rowIndex + 1}:O${rowIndex + 1}`,
       values: [eventToRow(event)],
     })
   })

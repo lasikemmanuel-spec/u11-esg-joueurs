@@ -14,6 +14,7 @@ import {
   Plus,
   Repeat,
   RefreshCw,
+  UsersRound,
   X,
 } from 'lucide-react'
 import { MatchWeather } from '@/components/match-weather'
@@ -794,6 +795,15 @@ export function TeamPlanning({
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${event.team === 'E1' ? 'bg-[#1e3a8a]/10 text-[#1e3a8a] dark:text-sky-200' : event.team === 'E2' ? 'bg-[#d4af37]/20 text-[#725200] dark:text-amber-200' : 'bg-muted text-muted-foreground'}`}>
                         {event.team === 'both' ? 'E1 + E2' : event.team}
                       </span>
+                      {attendance && (
+                        <span
+                          title={`${attendance.present} joueurs présents sur ${attendance.total}`}
+                          className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-200"
+                        >
+                          <UsersRound aria-hidden="true" className="size-3" />
+                          {attendance.present} présents
+                        </span>
+                      )}
                       {event.source === 'match-sheet' && event.notes && (
                         <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
                           {event.notes}

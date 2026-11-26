@@ -4,6 +4,11 @@ import { isValidPlanningDate, type PlanningEvent } from '@/lib/team-planning-sha
 
 export type PlanningCardEvent = PlanningEvent & {
   source?: 'match-sheet'
+  weather?: {
+    homeAway: string
+    opponent: string
+    venue?: string
+  }
 }
 
 function normalizeText(value: string) {
@@ -62,6 +67,11 @@ export function getScheduledMatchPlanningEvents(
       notes: match.competition.trim(),
       status: 'confirmed',
       source: 'match-sheet',
+      weather: {
+        homeAway: match.homeAway,
+        opponent: match.opponent,
+        venue: match.venueAddress?.trim() || undefined,
+      },
     }]
   })
 }

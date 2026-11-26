@@ -659,9 +659,11 @@ export function TeamPlanning({
           {visibleEvents.map((event) => {
             const dateParts = getDateParts(event.date)
             const weekColor = getWeekColor(event.date)
-            const showTrainingWeather = event.type === 'training' &&
-              event.status !== 'cancelled' &&
-              event.date >= today
+            const weatherDetails = event.date >= today && event.status !== 'cancelled'
+              ? event.weather ?? (event.type === 'training'
+                ? { homeAway: 'Domicile', opponent: '', venue: event.location }
+                : null)
+              : null
             const attendance = event.type === 'training'
               ? getTrainingAttendanceGauge(
                   trainingAttendance.find((session) => session.date === event.date),
@@ -727,14 +729,13 @@ export function TeamPlanning({
                         <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
                         <span className="truncate">{event.location}</span>
                       </span>
-                      {showTrainingWeather && (
+                      {weatherDetails && (
                         <MatchWeather
                           date={event.date}
-                          homeAway="Domicile"
-                          opponent=""
+                          homeAway={weatherDetails.homeAway}
+                          opponent={weatherDetails.opponent}
                           today={today}
-                          venue={event.location}
-                          showFeelsLike
+                          venue={weatherDetails.venue}
                           tone="light"
                         />
                       )}

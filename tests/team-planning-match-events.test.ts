@@ -53,6 +53,11 @@ describe('getScheduledMatchPlanningEvents', () => {
       notes: 'Championnat',
       status: 'confirmed',
       source: 'match-sheet',
+      weather: {
+        homeAway: 'Extérieur',
+        opponent: 'FC Lille',
+        venue: 'Stade municipal, Lille',
+      },
     }])
   })
 

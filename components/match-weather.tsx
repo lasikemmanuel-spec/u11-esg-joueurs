@@ -189,7 +189,6 @@ export function MatchWeather({
   opponent,
   today,
   venue,
-  showFeelsLike = false,
   tone = 'dark',
 }: {
   date: string
@@ -197,7 +196,6 @@ export function MatchWeather({
   opponent: string
   today: string
   venue?: string
-  showFeelsLike?: boolean
   tone?: 'dark' | 'light'
 }) {
   const weather = useMatchWeather(date, homeAway, opponent, today, venue)
@@ -216,11 +214,9 @@ export function MatchWeather({
           <WeatherIcon code={weather.weather.weatherCode} className={iconClass} />
           <span className="max-w-32 truncate sm:max-w-40"><span className="sr-only">Météo à </span>{weather.weather.location}</span>
           <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-black tabular-nums sm:text-xs ${temperatureClass}`}>{Math.round(weather.weather.temperature)}°</span>
-          {showFeelsLike && (
-            <span className="shrink-0 rounded-full bg-[#d4af37]/20 px-1.5 py-0.5 text-[9px] font-bold tabular-nums text-[#725200] dark:text-amber-200 sm:text-[10px]">
-              Ressenti {weather.weather.feelsLikeTemperature === null ? '—' : `${Math.round(weather.weather.feelsLikeTemperature)}°`}
-            </span>
-          )}
+          <span className="shrink-0 rounded-full bg-[#d4af37]/20 px-1.5 py-0.5 text-[9px] font-bold tabular-nums text-[#725200] dark:text-amber-200 sm:text-[10px]">
+            Ressenti {weather.weather.feelsLikeTemperature === null ? '—' : `${Math.round(weather.weather.feelsLikeTemperature)}°`}
+          </span>
         </>
       ) : weather.status === 'loading' ? (
         <><CloudSun aria-hidden="true" className={`${iconClass} animate-pulse`} />Météo…</>

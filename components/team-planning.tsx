@@ -16,6 +16,7 @@ import {
   RefreshCw,
   X,
 } from 'lucide-react'
+import { MatchWeather } from '@/components/match-weather'
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
 import { isCountedTrainingStatus } from '@/lib/training-attendance-metrics'
 import type { PublicPlayer } from '@/lib/players'
@@ -179,13 +180,13 @@ export function TeamPlanning({
     void loadEvents()
   }, [loadEvents])
 
+  const today = toDateKey(new Date())
   const visibleEvents = useMemo(() => {
-    const today = toDateKey(new Date())
     const weekEnd = addDays(weekStart, 6)
     return sortEvents(events.filter((event) => view === 'week'
       ? event.date >= weekStart && event.date <= weekEnd
       : event.date >= today))
-  }, [events, view, weekStart])
+  }, [events, today, view, weekStart])
 
   const resetForm = () => {
     const date = toDateKey(new Date())
@@ -343,7 +344,7 @@ export function TeamPlanning({
 
   return (
     <section className="flex flex-col gap-5">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <header className="flex flex-col gap-1">
         <div>
           <h2 className="flex items-center gap-2 text-xl font-black text-foreground">
             <CalendarDays aria-hidden="true" className="size-6 text-primary" />
@@ -353,28 +354,50 @@ export function TeamPlanning({
             Matchs · entraînements · tournois
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+      </header>
+
+      <div className="flex min-w-0 flex-nowrap items-center gap-1.5 rounded-2xl border border-border/70 bg-muted/30 p-1.5 shadow-sm">
+        {canManage && (
           <button
             type="button"
-            onClick={() => void loadEvents()}
-            disabled={loading}
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-border px-3 text-sm font-semibold hover:bg-muted disabled:opacity-50"
+            onClick={openNewEventForm}
+            aria-label="Ajouter un événement au planning"
+            title="Ajouter un événement"
+            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-foreground shadow-sm transition hover:opacity-90 sm:text-sm"
           >
-            <RefreshCw aria-hidden="true" className={`size-4 ${loading ? 'animate-spin' : ''}`} />
-            Actualiser
+            <Plus aria-hidden="true" className="size-4" />
+            <span>Ajouter</span>
           </button>
-          {canManage && (
-            <button
-              type="button"
-              onClick={openNewEventForm}
-              className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground hover:opacity-90"
-            >
-              <Plus aria-hidden="true" className="size-4" />
-              Ajouter un événement
-            </button>
-          )}
+        )}
+        <button
+          type="button"
+          onClick={() => void loadEvents()}
+          disabled={loading}
+          aria-label="Actualiser le planning"
+          title="Actualiser le planning"
+          className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-background/70 text-muted-foreground transition hover:bg-background hover:text-foreground disabled:opacity-50"
+        >
+          <RefreshCw aria-hidden="true" className={`size-4 ${loading ? 'animate-spin' : ''}`} />
+        </button>
+        <div className="ml-auto inline-flex shrink-0 rounded-xl bg-muted/70 p-1" role="group" aria-label="Affichage du planning">
+          <button
+            type="button"
+            aria-pressed={view === 'week'}
+            onClick={() => setView('week')}
+            className={`min-h-9 whitespace-nowrap rounded-lg px-2.5 text-xs font-bold transition sm:px-3 sm:text-sm ${view === 'week' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-background hover:text-foreground'}`}
+          >
+            Semaine
+          </button>
+          <button
+            type="button"
+            aria-pressed={view === 'upcoming'}
+            onClick={() => setView('upcoming')}
+            className={`min-h-9 whitespace-nowrap rounded-lg px-2.5 text-xs font-bold transition sm:px-3 sm:text-sm ${view === 'upcoming' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-background hover:text-foreground'}`}
+          >
+            À venir
+          </button>
         </div>
-      </header>
+      </div>
 
       {notice && <p role="status" className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm">{notice}</p>}
       {actionError && <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">{actionError}</p>}
@@ -584,49 +607,29 @@ export function TeamPlanning({
         </form>
       )}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="inline-flex rounded-xl border border-border bg-muted/60 p-1" role="group" aria-label="Affichage du planning">
+      {view === 'week' && (
+        <div className="flex items-center justify-center gap-2">
           <button
             type="button"
-            aria-pressed={view === 'week'}
-            onClick={() => setView('week')}
-            className={`min-h-9 rounded-lg px-3 text-sm font-bold ${view === 'week' ? 'bg-card shadow-sm' : 'text-muted-foreground'}`}
+            aria-label="Semaine précédente"
+            onClick={() => setWeekStart((current) => addDays(current, -7))}
+            className="inline-flex size-9 items-center justify-center rounded-lg border border-border hover:bg-muted"
           >
-            Semaine
+            <ChevronLeft aria-hidden="true" className="size-4" />
           </button>
+          <p className="min-w-36 text-center text-sm font-bold capitalize">
+            {formatWeekRange(weekStart, addDays(weekStart, 6))}
+          </p>
           <button
             type="button"
-            aria-pressed={view === 'upcoming'}
-            onClick={() => setView('upcoming')}
-            className={`min-h-9 rounded-lg px-3 text-sm font-bold ${view === 'upcoming' ? 'bg-card shadow-sm' : 'text-muted-foreground'}`}
+            aria-label="Semaine suivante"
+            onClick={() => setWeekStart((current) => addDays(current, 7))}
+            className="inline-flex size-9 items-center justify-center rounded-lg border border-border hover:bg-muted"
           >
-            À venir
+            <ChevronRight aria-hidden="true" className="size-4" />
           </button>
         </div>
-        {view === 'week' && (
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="Semaine précédente"
-              onClick={() => setWeekStart((current) => addDays(current, -7))}
-              className="inline-flex size-9 items-center justify-center rounded-lg border border-border hover:bg-muted"
-            >
-              <ChevronLeft aria-hidden="true" className="size-4" />
-            </button>
-            <p className="min-w-36 text-center text-sm font-bold capitalize">
-              {formatWeekRange(weekStart, addDays(weekStart, 6))}
-            </p>
-            <button
-              type="button"
-              aria-label="Semaine suivante"
-              onClick={() => setWeekStart((current) => addDays(current, 7))}
-              className="inline-flex size-9 items-center justify-center rounded-lg border border-border hover:bg-muted"
-            >
-              <ChevronRight aria-hidden="true" className="size-4" />
-            </button>
-          </div>
-        )}
-      </div>
+      )}
 
       {loading ? (
         <p role="status" className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Chargement du planning…</p>
@@ -645,6 +648,9 @@ export function TeamPlanning({
           {visibleEvents.map((event) => {
             const dateParts = getDateParts(event.date)
             const weekColor = getWeekColor(event.date)
+            const showTrainingWeather = event.type === 'training' &&
+              event.status !== 'cancelled' &&
+              event.date >= today
             const attendance = event.type === 'training'
               ? getTrainingAttendanceGauge(
                   trainingAttendance.find((session) => session.date === event.date),
@@ -706,6 +712,16 @@ export function TeamPlanning({
                         <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
                         <span className="truncate">{event.location}</span>
                       </span>
+                      {showTrainingWeather && (
+                        <MatchWeather
+                          date={event.date}
+                          homeAway="Domicile"
+                          opponent=""
+                          today={today}
+                          venue={event.location}
+                          tone="light"
+                        />
+                      )}
                     </div>
                     {event.notes && (
                       <p title={event.notes} className="mt-1 line-clamp-1 text-xs text-muted-foreground">

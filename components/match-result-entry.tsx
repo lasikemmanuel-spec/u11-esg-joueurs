@@ -7,7 +7,7 @@ import { CalendarDays, CalendarPlus, Check, ChevronDown, Clock3, Map as GoogleMa
 import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
 import { MatchLineupEntry, useMatchLineups } from '@/components/match-lineup-planner'
 import { MatchFamilyMessage } from '@/components/match-family-message'
-import { MatchWeather } from '@/components/match-day-home'
+import { MatchWeather } from '@/components/match-weather'
 import { ClubCrest } from '@/components/club-crest'
 import { LiveMatchHistory } from '@/components/live-match-history'
 import type { MatchSheetEntry } from '@/lib/match-results'

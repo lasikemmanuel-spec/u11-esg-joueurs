@@ -409,7 +409,7 @@ export function TeamPlanning({
   }
 
   return (
-    <section className="mx-auto flex w-full flex-col gap-3 sm:gap-5 md:max-w-xl 2xl:max-w-2xl">
+    <section className="mx-auto flex w-full flex-col gap-3 sm:gap-5 md:max-w-2xl 2xl:max-w-3xl">
       <header className="flex flex-col gap-1">
         <div>
           <h2 className="flex items-center gap-2 text-xl font-black text-foreground">

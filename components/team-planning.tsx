@@ -563,62 +563,64 @@ export function TeamPlanning({
         </div>
       </header>
 
-      <div className="flex flex-nowrap gap-1 overflow-x-auto overscroll-x-contain py-0.5 sm:flex-wrap sm:overflow-visible" role="group" aria-label="Filtrer les événements">
-        {EVENT_FILTERS.map((filter) => {
-          const selected = filter.types.every((type) => selectedTypes.includes(type))
-          return (
+      <div className="flex min-w-0 flex-nowrap items-center gap-1.5 overflow-x-auto overscroll-x-contain py-0.5">
+        <div className="flex shrink-0 items-center gap-1" role="group" aria-label="Filtrer les événements">
+          {EVENT_FILTERS.map((filter) => {
+            const selected = filter.types.every((type) => selectedTypes.includes(type))
+            return (
+              <button
+                key={filter.id}
+                type="button"
+                aria-label={`Afficher ou masquer ${filter.accessibleLabel ?? filter.label}`}
+                aria-pressed={selected}
+                onClick={() => toggleEventTypes(filter.types)}
+                className={`inline-flex min-h-9 shrink-0 items-center justify-center gap-0.5 whitespace-nowrap rounded-xl border px-1 text-[10px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-10 md:gap-1 md:px-2 md:text-xs ${
+                  selected
+                    ? 'border-blue-300 bg-gradient-to-r from-blue-50 to-sky-100 text-[#1e3a8a] shadow-sm ring-1 ring-[#d4af37]/40 dark:border-blue-700 dark:from-blue-950/70 dark:to-slate-900 dark:text-sky-100'
+                    : 'border-border/70 bg-background/50 text-muted-foreground hover:border-blue-300 hover:bg-blue-50/70 dark:hover:bg-blue-950/30'
+                }`}
+              >
+                <span aria-hidden="true" className="text-xs leading-none md:text-sm">{filter.emoji}</span>
+                {filter.label}
+              </button>
+            )
+          })}
+          {selectedTypes.length !== PLANNING_EVENT_TYPES.length && (
             <button
-              key={filter.id}
               type="button"
-              aria-label={`Afficher ou masquer ${filter.accessibleLabel ?? filter.label}`}
-              aria-pressed={selected}
-              onClick={() => toggleEventTypes(filter.types)}
-              className={`inline-flex min-h-9 shrink-0 items-center justify-center gap-0.5 whitespace-nowrap rounded-xl border px-1 text-[10px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:min-h-10 md:gap-1 md:px-2 md:text-xs ${
-                selected
-                  ? 'border-blue-300 bg-gradient-to-r from-blue-50 to-sky-100 text-[#1e3a8a] shadow-sm ring-1 ring-[#d4af37]/40 dark:border-blue-700 dark:from-blue-950/70 dark:to-slate-900 dark:text-sky-100'
-                  : 'border-border/70 bg-background/50 text-muted-foreground hover:border-blue-300 hover:bg-blue-50/70 dark:hover:bg-blue-950/30'
-              }`}
+              onClick={() => setSelectedTypes([...PLANNING_EVENT_TYPES])}
+              className="min-h-9 shrink-0 px-1.5 text-[11px] font-bold text-primary underline-offset-2 hover:underline md:text-xs"
             >
-              <span aria-hidden="true" className="text-xs leading-none md:text-sm">{filter.emoji}</span>
-              {filter.label}
+              Tout
             </button>
-          )
-        })}
-        {selectedTypes.length !== PLANNING_EVENT_TYPES.length && (
-          <button
-            type="button"
-            onClick={() => setSelectedTypes([...PLANNING_EVENT_TYPES])}
-            className="min-h-9 px-1.5 text-[11px] font-bold text-primary underline-offset-2 hover:underline md:text-xs"
-          >
-            Tout
-          </button>
-        )}
-      </div>
+          )}
+        </div>
 
-      <div className="flex min-w-0 flex-nowrap items-center gap-1.5 rounded-2xl border border-border/70 bg-muted/30 p-1.5 shadow-sm">
-        {canManage && (
+        <div className="ml-auto flex shrink-0 items-center gap-1.5 pl-1">
+          {canManage && (
+            <button
+              type="button"
+              onClick={openNewEventForm}
+              aria-label="Planifier un événement au planning"
+              title="Planifier un événement"
+              className="group inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-amber-200/70 bg-gradient-to-r from-[#f4d45e] via-[#d4af37] to-[#f4d45e] px-3 text-xs font-black text-blue-950 shadow-md transition duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#172554] active:translate-y-0 sm:gap-2 sm:px-4 sm:text-sm md:min-h-11 md:text-base"
+            >
+              <CalendarPlus aria-hidden="true" className="size-4 transition-transform duration-200 group-hover:rotate-[-8deg] sm:size-[18px]" />
+              <span>Planifier</span>
+              <span aria-hidden="true" className="transition-transform duration-200 group-hover:animate-bounce">⚽</span>
+            </button>
+          )}
           <button
             type="button"
-            onClick={openNewEventForm}
-            aria-label="Planifier un événement au planning"
-            title="Planifier un événement"
-            className="group inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-amber-200/70 bg-gradient-to-r from-[#f4d45e] via-[#d4af37] to-[#f4d45e] px-3 text-xs font-black text-blue-950 shadow-md transition duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#172554] active:translate-y-0 sm:gap-2 sm:px-4 sm:text-sm md:min-h-11 md:text-base"
+            onClick={() => void loadEvents()}
+            disabled={loading}
+            aria-label="Actualiser le planning"
+            title="Actualiser le planning"
+            className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-background/70 text-muted-foreground transition hover:bg-background hover:text-foreground disabled:opacity-50"
           >
-            <CalendarPlus aria-hidden="true" className="size-4 transition-transform duration-200 group-hover:rotate-[-8deg] sm:size-[18px]" />
-            <span>Planifier</span>
-            <span aria-hidden="true" className="transition-transform duration-200 group-hover:animate-bounce">⚽</span>
+            <RefreshCw aria-hidden="true" className={`size-4 ${loading ? 'animate-spin' : ''}`} />
           </button>
-        )}
-        <button
-          type="button"
-          onClick={() => void loadEvents()}
-          disabled={loading}
-          aria-label="Actualiser le planning"
-          title="Actualiser le planning"
-          className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl border border-border/70 bg-background/70 text-muted-foreground transition hover:bg-background hover:text-foreground disabled:opacity-50"
-        >
-          <RefreshCw aria-hidden="true" className={`size-4 ${loading ? 'animate-spin' : ''}`} />
-        </button>
+        </div>
       </div>
 
       <div

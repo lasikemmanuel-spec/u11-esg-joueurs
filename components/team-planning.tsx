@@ -7,8 +7,10 @@ import {
   Ban,
   CalendarDays,
   CalendarPlus,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
+  ChevronUp,
   ClipboardCheck,
   Clock3,
   MapPin,
@@ -16,9 +18,11 @@ import {
   Plus,
   Repeat,
   RefreshCw,
+  Save,
   UsersRound,
   X,
 } from 'lucide-react'
+import { ClubCrest } from '@/components/club-crest'
 import { MatchWeather } from '@/components/match-weather'
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
 import type { MatchSheetEntry } from '@/lib/match-results'
@@ -145,6 +149,8 @@ const EMPTY_DRAFT: PlanningEventFields = {
   status: 'confirmed',
 }
 
+const EVENT_FORM_INPUT_CLASS = 'h-10 min-w-0 w-full rounded-lg border border-[#d4af37]/60 bg-background px-3 text-sm font-normal text-foreground outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]'
+
 function toDateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
@@ -266,6 +272,7 @@ export function TeamPlanning({
   const [notice, setNotice] = useState('')
   const [actionError, setActionError] = useState('')
   const [formOpen, setFormOpen] = useState(false)
+  const [formMinimized, setFormMinimized] = useState(false)
   const [matchPlannerOpen, setMatchPlannerOpen] = useState(false)
   const [editingEvent, setEditingEvent] = useState<PlanningEvent | null>(null)
   const [editingSeries, setEditingSeries] = useState(false)
@@ -332,7 +339,7 @@ export function TeamPlanning({
     })
   }
 
-  const resetForm = () => {
+  const resetForm = useCallback(() => {
     const date = toDateKey(new Date())
     setDraft({ ...EMPTY_DRAFT, date, endDate: date })
     setEditingEvent(null)
@@ -340,9 +347,24 @@ export function TeamPlanning({
     setRepeatWeekly(false)
     setRepeatUntil(addDays(date, 28))
     setFormOpen(false)
+    setFormMinimized(false)
     setSaveError('')
     setActionError('')
-  }
+  }, [])
+
+  useEffect(() => {
+    if (!formOpen) return
+    const previousOverflow = document.body.style.overflow
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && !saving) resetForm()
+    }
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [formOpen, resetForm, saving])
 
   const openNewEventForm = () => {
     setMatchPlannerOpen(false)
@@ -355,11 +377,13 @@ export function TeamPlanning({
     setSaveError('')
     setActionError('')
     setNotice('')
+    setFormMinimized(false)
     setFormOpen(true)
   }
 
   const openMatchPlanner = () => {
     setFormOpen(false)
+    setFormMinimized(false)
     setMatchPlannerOpen(true)
     setNotice('')
     setActionError('')
@@ -395,6 +419,7 @@ export function TeamPlanning({
     setSaveError('')
     setActionError('')
     setNotice('')
+    setFormMinimized(false)
     setFormOpen(true)
   }
 
@@ -454,6 +479,7 @@ export function TeamPlanning({
               : 'Événement ajouté au planning.',
       )
       setFormOpen(false)
+      setFormMinimized(false)
       setEditingEvent(null)
     } catch (cause) {
       setSaveError(cause instanceof Error ? cause.message : 'Impossible d’enregistrer cet événement.')
@@ -617,10 +643,71 @@ export function TeamPlanning({
       )}
 
       {canManage && formOpen && (
-        <form onSubmit={handleSubmit} className="grid gap-4 rounded-2xl border border-accent/40 bg-card p-4 shadow-sm sm:grid-cols-2">
-          <h3 className="text-lg font-bold sm:col-span-2">
-            {editingSeries ? 'Modifier toute la série' : editingEvent ? 'Modifier l’événement' : 'Nouvel événement'}
-          </h3>
+        <div
+          className={[
+            'fixed inset-0 z-[100] flex justify-center bg-[#08132f]/65 backdrop-blur-sm transition-all duration-300',
+            formMinimized ? 'pointer-events-none items-end' : 'items-end p-0 sm:items-center sm:p-4',
+          ].join(' ')}
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !saving && !formMinimized) resetForm()
+          }}
+        >
+          {formMinimized && (
+            <button
+              type="button"
+              onClick={() => setFormMinimized(false)}
+              className="pointer-events-auto mb-24 mr-4 ml-auto inline-flex items-center gap-2 rounded-2xl border-2 border-[#d4af37] bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-4 py-3 text-sm font-black text-[#d4af37] shadow-2xl ring-2 ring-[#d4af37]/30 transition hover:-translate-y-1 hover:shadow-[#d4af37]/30 sm:hidden"
+              aria-label="Rouvrir le formulaire"
+            >
+              <ChevronUp aria-hidden="true" className="size-5 text-[#d4af37]" />
+              <span>{editingEvent ? 'Modifier l’événement' : 'Nouvel événement'}</span>
+            </button>
+          )}
+
+          <form
+            onSubmit={handleSubmit}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="planning-event-form-title"
+            className={[
+              'flex max-h-[94dvh] w-full max-w-2xl flex-col overflow-hidden border border-[#d4af37]/60 bg-card shadow-2xl transition-all duration-300 sm:rounded-3xl',
+              formMinimized ? 'hidden rounded-t-3xl sm:flex' : 'rounded-t-3xl',
+            ].join(' ')}
+          >
+            <header className="flex shrink-0 items-center justify-between gap-3 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-4 py-3 text-white">
+              <div className="flex min-w-0 items-center gap-2.5">
+                <ClubCrest className="size-9 shrink-0 ring-2 ring-[#d4af37]" />
+                <div className="min-w-0">
+                  <p className="text-[9px] font-black uppercase tracking-widest text-[#d4af37]">ES Genech · U11</p>
+                  <h3 id="planning-event-form-title" className="truncate text-sm font-black sm:text-base">
+                    {editingSeries ? 'Modifier toute la série' : editingEvent ? 'Modifier l’événement' : 'Nouvel événement'}
+                  </h3>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => setFormMinimized(true)}
+                  aria-label="Réduire le formulaire"
+                  title="Réduire"
+                  className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 transition hover:bg-white/20 disabled:opacity-50 sm:hidden"
+                >
+                  <ChevronDown aria-hidden="true" className="size-5" />
+                </button>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={resetForm}
+                  aria-label="Fermer la fenêtre"
+                  className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 transition hover:bg-white/20 disabled:opacity-50"
+                >
+                  <X aria-hidden="true" className="size-5" />
+                </button>
+              </div>
+            </header>
+
+            <div className="grid min-h-0 grid-cols-1 gap-3 overflow-y-auto p-4 text-[#172554] dark:text-amber-200 sm:grid-cols-2">
           <label className="grid gap-1 text-sm font-semibold">
             Titre
             <input
@@ -629,7 +716,7 @@ export function TeamPlanning({
               value={draft.title}
               onChange={(event) => updateDraft('title', event.target.value)}
               placeholder="Ex. Match contre l’ES..."
-              className="h-10 rounded-lg border border-border bg-background px-3 font-normal"
+              className={EVENT_FORM_INPUT_CLASS}
             />
           </label>
           <label className="grid gap-1 text-sm font-semibold">
@@ -641,7 +728,7 @@ export function TeamPlanning({
                 updateDraft('type', type)
                 updateDraft('endDate', type === 'tournament' ? draft.endDate || draft.date : draft.date)
               }}
-              className="h-10 rounded-lg border border-border bg-background px-3 font-normal"
+              className={EVENT_FORM_INPUT_CLASS}
             >
               <option value="training">Entraînement</option>
               <option value="match">Match</option>
@@ -655,7 +742,7 @@ export function TeamPlanning({
             <select
               value={draft.team}
               onChange={(event) => updateDraft('team', event.target.value as PlanningEventFields['team'])}
-              className="h-10 rounded-lg border border-border bg-background px-3 font-normal"
+              className={EVENT_FORM_INPUT_CLASS}
             >
               <option value="both">E1 et E2</option>
               <option value="E1">E1</option>
@@ -684,7 +771,7 @@ export function TeamPlanning({
                   )
                 }
               }}
-              className="h-10 rounded-lg border border-border bg-background px-3 font-normal"
+              className={EVENT_FORM_INPUT_CLASS}
             />
             {editingSeries && (
               <span className="text-xs font-normal text-muted-foreground">
@@ -701,7 +788,7 @@ export function TeamPlanning({
                 min={draft.date || undefined}
                 value={draft.endDate}
                 onChange={(event) => updateDraft('endDate', event.target.value)}
-                className="h-10 rounded-lg border border-border bg-background px-3 font-normal"
+                className={EVENT_FORM_INPUT_CLASS}
               />
             </label>
           )}
@@ -738,7 +825,7 @@ export function TeamPlanning({
                       : undefined}
                     value={repeatUntil}
                     onChange={(event) => setRepeatUntil(event.target.value)}
-                    className="h-10 rounded-lg border border-border bg-background px-3 font-normal"
+                    className={EVENT_FORM_INPUT_CLASS}
                   />
                   <p className="text-xs text-muted-foreground">
                     Le même jour et les mêmes horaires seront repris chaque semaine. Chaque occurrence reste modifiable séparément (52 maximum).
@@ -753,7 +840,7 @@ export function TeamPlanning({
               type="time"
               value={draft.meetingTime}
               onChange={(event) => updateDraft('meetingTime', event.target.value)}
-              className="h-10 rounded-lg border border-border bg-background px-3 font-normal"
+              className={EVENT_FORM_INPUT_CLASS}
             />
           </label>
           <label className="grid gap-1 text-sm font-semibold">
@@ -763,7 +850,7 @@ export function TeamPlanning({
               type="time"
               value={draft.startTime}
               onChange={(event) => updateDraft('startTime', event.target.value)}
-              className="h-10 rounded-lg border border-border bg-background px-3 font-normal"
+              className={EVENT_FORM_INPUT_CLASS}
             />
           </label>
           <label className="grid gap-1 text-sm font-semibold">
@@ -774,7 +861,7 @@ export function TeamPlanning({
               min={draft.startTime || undefined}
               value={draft.endTime}
               onChange={(event) => updateDraft('endTime', event.target.value)}
-              className="h-10 rounded-lg border border-border bg-background px-3 font-normal"
+              className={EVENT_FORM_INPUT_CLASS}
             />
           </label>
           <label className="grid gap-1 text-sm font-semibold sm:col-span-2">
@@ -785,7 +872,7 @@ export function TeamPlanning({
               value={draft.location}
               onChange={(event) => updateDraft('location', event.target.value)}
               placeholder="Stade, adresse…"
-              className="h-10 rounded-lg border border-border bg-background px-3 font-normal"
+              className={EVENT_FORM_INPUT_CLASS}
             />
           </label>
           <label className="grid gap-1 text-sm font-semibold">
@@ -793,7 +880,7 @@ export function TeamPlanning({
             <select
               value={draft.status}
               onChange={(event) => updateDraft('status', event.target.value as PlanningEventFields['status'])}
-              className="h-10 rounded-lg border border-border bg-background px-3 font-normal"
+              className={EVENT_FORM_INPUT_CLASS}
             >
               <option value="confirmed">Confirmé</option>
               <option value="postponed">Reporté</option>
@@ -807,35 +894,37 @@ export function TeamPlanning({
               rows={3}
               value={draft.notes}
               onChange={(event) => updateDraft('notes', event.target.value)}
-              className="rounded-lg border border-border bg-background px-3 py-2 font-normal"
+              className="min-h-20 w-full rounded-lg border border-[#d4af37]/60 bg-background px-3 py-2 text-sm font-normal text-foreground outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
             />
           </label>
-          {saveError && <p role="alert" className="text-sm font-medium text-destructive sm:col-span-2">{saveError}</p>}
-          <div className="flex flex-wrap justify-end gap-2 sm:col-span-2">
-            <button
-              type="button"
-              onClick={resetForm}
-              disabled={saving}
-              className="inline-flex min-h-10 items-center gap-2 rounded-lg border border-border px-4 text-sm font-semibold hover:bg-muted disabled:opacity-50"
-            >
-              <X aria-hidden="true" className="size-4" />
-              Fermer
-            </button>
-            <button
-              type="submit"
-              disabled={saving}
-              className="inline-flex min-h-10 items-center gap-2 rounded-lg bg-primary px-4 text-sm font-bold text-primary-foreground hover:opacity-90 disabled:opacity-50"
-            >
-              {saving
-                ? 'Enregistrement…'
-                : editingSeries
-                  ? 'Enregistrer toute la série'
-                  : editingEvent
-                    ? 'Enregistrer les modifications'
-                    : 'Ajouter au planning'}
-            </button>
-          </div>
-        </form>
+              {saveError && <p role="alert" className="text-xs font-semibold text-destructive sm:col-span-2">{saveError}</p>}
+            </div>
+            <footer className="flex shrink-0 gap-2 border-t border-[#172554]/10 dark:border-amber-400/20 bg-background/95 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+              <button
+                type="button"
+                onClick={resetForm}
+                disabled={saving}
+                className="min-h-11 flex-1 rounded-xl border border-[#172554]/15 dark:border-amber-400/30 px-4 text-sm font-bold text-[#172554] dark:text-amber-200 disabled:opacity-50"
+              >
+                Annuler
+              </button>
+              <button
+                type="submit"
+                disabled={saving}
+                className="inline-flex min-h-11 flex-[1.5] items-center justify-center gap-2 rounded-xl bg-[#172554] px-4 text-sm font-black text-white shadow-md transition hover:bg-blue-900 disabled:opacity-50"
+              >
+                <Save aria-hidden="true" className="size-4 text-[#d4af37]" />
+                {saving
+                  ? 'Enregistrement…'
+                  : editingSeries
+                    ? 'Enregistrer toute la série'
+                    : editingEvent
+                      ? 'Enregistrer'
+                      : 'Ajouter au planning'}
+              </button>
+            </footer>
+          </form>
+        </div>
       )}
 
       {canManage && matchPlannerOpen && (

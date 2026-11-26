@@ -15,7 +15,6 @@ import {
   Clock3,
   MapPin,
   Pencil,
-  Plus,
   Repeat,
   RefreshCw,
   Save,
@@ -601,12 +600,13 @@ export function TeamPlanning({
           <button
             type="button"
             onClick={openNewEventForm}
-            aria-label="Ajouter un événement au planning"
-            title="Ajouter un événement"
-            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl bg-primary px-3 text-xs font-bold text-primary-foreground shadow-sm transition hover:opacity-90 sm:text-sm md:min-h-11 md:px-4 md:text-base"
+            aria-label="Planifier un événement au planning"
+            title="Planifier un événement"
+            className="group inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-xl border border-amber-200/70 bg-gradient-to-r from-[#f4d45e] via-[#d4af37] to-[#f4d45e] px-3 text-xs font-black text-blue-950 shadow-md transition duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#172554] active:translate-y-0 sm:gap-2 sm:px-4 sm:text-sm md:min-h-11 md:text-base"
           >
-            <Plus aria-hidden="true" className="size-4" />
-            <span>Ajouter</span>
+            <CalendarPlus aria-hidden="true" className="size-4 transition-transform duration-200 group-hover:rotate-[-8deg] sm:size-[18px]" />
+            <span>Planifier</span>
+            <span aria-hidden="true" className="transition-transform duration-200 group-hover:animate-bounce">⚽</span>
           </button>
         )}
         <button
@@ -1282,8 +1282,8 @@ export function TeamPlanning({
             </button>
           )}
           {canManage && !formOpen && (
-            <button type="button" onClick={openNewEventForm} className="mt-3 text-sm font-bold text-primary underline underline-offset-4">
-              Ajouter un événement
+            <button type="button" onClick={openNewEventForm} className="group mt-3 inline-flex min-h-10 items-center gap-1.5 rounded-xl border border-amber-200/70 bg-gradient-to-r from-[#f4d45e] via-[#d4af37] to-[#f4d45e] px-4 text-sm font-black text-blue-950 shadow-md transition duration-200 hover:-translate-y-0.5 hover:shadow-lg">
+              Planifier un événement <span aria-hidden="true" className="transition-transform duration-200 group-hover:animate-bounce">⚽</span>
             </button>
           )}
         </div>

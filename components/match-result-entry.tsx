@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
-import { CalendarDays, CalendarPlus, Check, ChevronDown, Clock3, Map as GoogleMapIcon, MapPin, Navigation, Pencil, Plus, Sparkles, Trash2, UsersRound } from 'lucide-react'
+import { CalendarDays, Check, ChevronDown, Clock3, Map as GoogleMapIcon, MapPin, Navigation, Pencil, Plus, Sparkles, Trash2, UsersRound } from 'lucide-react'
 import { CallupScheduleEntry } from '@/components/callup-schedule-entry'
 import { MatchLineupEntry, useMatchLineups } from '@/components/match-lineup-planner'
 import { MatchFamilyMessage } from '@/components/match-family-message'
@@ -208,15 +208,6 @@ export function MatchResultEntry({
   const canManage = Boolean(status?.enabled && (status.role === 'educator' || status.role === 'admin'))
   const matchLineups = useMatchLineups(canManage)
 
-  const startNew = () => {
-    setEditingSlot(null)
-    setDraft(createMatchResultDraft())
-    setError('')
-    setNotice('')
-    setFormMinimized(false)
-    setOpen(true)
-  }
-
   const closeForm = () => {
     setOpen(false)
     setEditingSlot(null)
@@ -336,21 +327,6 @@ export function MatchResultEntry({
               </select>
               <ChevronDown aria-hidden="true" className="pointer-events-none absolute right-3 size-4 text-[#d4af37]" />
             </label>
-            {canManage && (
-              <>
-                <button
-                  type="button"
-                  disabled={pending || pendingDeletion !== null}
-                  onClick={startNew}
-                  className="group inline-flex min-h-10 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-xl border border-amber-200/70 bg-gradient-to-r from-[#f4d45e] via-[#d4af37] to-[#f4d45e] px-2.5 text-[11px] font-black text-blue-950 shadow-md transition duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#172554] active:translate-y-0 sm:min-h-11 sm:gap-2 sm:px-5 sm:text-sm"
-                >
-                  <CalendarPlus aria-hidden="true" className="size-4 transition-transform duration-200 group-hover:rotate-[-8deg] sm:size-[18px]" />
-                  <span className="sm:hidden">Planifier</span>
-                  <span className="hidden sm:inline">Planifier un match</span>
-                  <Sparkles aria-hidden="true" className="hidden size-3.5 text-blue-950/70 transition-transform duration-200 group-hover:scale-125 sm:inline sm:size-4" />
-                </button>
-              </>
-            )}
           </div>
         </div>
       </header>

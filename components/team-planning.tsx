@@ -570,7 +570,7 @@ export function TeamPlanning({
               onClick={openNewEventForm}
               aria-label="Planifier un événement au planning"
               title="Planifier un événement"
-              className={PLAN_BUTTON_CLASS}
+              className={`${PLAN_BUTTON_CLASS} sm:hidden`}
             >
               <CalendarPlus aria-hidden="true" className="size-4 transition-transform duration-200 group-hover:rotate-[-8deg]" />
               <span>Planifier</span>
@@ -614,6 +614,19 @@ export function TeamPlanning({
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-1.5 pl-1">
+          {canManage && (
+            <button
+              type="button"
+              onClick={openNewEventForm}
+              aria-label="Planifier un événement au planning"
+              title="Planifier un événement"
+              className={`${PLAN_BUTTON_CLASS} hidden sm:inline-flex`}
+            >
+              <CalendarPlus aria-hidden="true" className="size-4 transition-transform duration-200 group-hover:rotate-[-8deg] sm:size-[18px]" />
+              <span>Planifier</span>
+              <span aria-hidden="true" className="transition-transform duration-200 group-hover:animate-bounce">⚽</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={() => void loadEvents()}

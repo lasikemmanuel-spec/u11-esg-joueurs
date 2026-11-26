@@ -261,11 +261,9 @@ export function TeamPlanning({
 }) {
   const router = useRouter()
   const [events, setEvents] = useState<PlanningEvent[]>([])
-  const [view, setView] = useState<PlanningView>('week')
+  const [view, setView] = useState<PlanningView>('year')
   const [selectedTypes, setSelectedTypes] = useState<PlanningEvent['type'][]>(() => [...PLANNING_EVENT_TYPES])
-  const [periodAnchorDate, setPeriodAnchorDate] = useState(() =>
-    getPlanningPeriodRange('week', toDateKey(new Date())).startDate,
-  )
+  const [periodAnchorDate, setPeriodAnchorDate] = useState(() => toDateKey(new Date()))
   const [selectedYearDate, setSelectedYearDate] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -336,6 +334,11 @@ export function TeamPlanning({
   const yearMonthStarts = view === 'year' && periodRange
     ? getPlanningMonthStarts(periodRange.startDate, periodRange.endDate)
     : []
+  const currentMonthStart = `${today.slice(0, 7)}-01`
+  const currentMonthIndex = yearMonthStarts.indexOf(currentMonthStart)
+  const orderedYearMonthStarts = currentMonthIndex > 0
+    ? [...yearMonthStarts.slice(currentMonthIndex), ...yearMonthStarts.slice(0, currentMonthIndex)]
+    : yearMonthStarts
 
   const toggleEventTypes = (types: readonly PlanningEvent['type'][]) => {
     setSelectedTypes((current) => {
@@ -567,7 +570,7 @@ export function TeamPlanning({
               onClick={openNewEventForm}
               aria-label="Planifier un événement au planning"
               title="Planifier un événement"
-              className={`${PLAN_BUTTON_CLASS} sm:hidden`}
+              className={PLAN_BUTTON_CLASS}
             >
               <CalendarPlus aria-hidden="true" className="size-4 transition-transform duration-200 group-hover:rotate-[-8deg]" />
               <span>Planifier</span>
@@ -611,19 +614,6 @@ export function TeamPlanning({
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-1.5 pl-1">
-          {canManage && (
-            <button
-              type="button"
-              onClick={openNewEventForm}
-              aria-label="Planifier un événement au planning"
-              title="Planifier un événement"
-              className={`${PLAN_BUTTON_CLASS} hidden sm:inline-flex`}
-            >
-              <CalendarPlus aria-hidden="true" className="size-4 transition-transform duration-200 group-hover:rotate-[-8deg] sm:size-[18px]" />
-              <span>Planifier</span>
-              <span aria-hidden="true" className="transition-transform duration-200 group-hover:animate-bounce">⚽</span>
-            </button>
-          )}
           <button
             type="button"
             onClick={() => void loadEvents()}
@@ -1199,7 +1189,7 @@ export function TeamPlanning({
 
           <section aria-label={`Calendrier de la saison ${periodRange.startDate.slice(0, 4)}–${periodRange.endDate.slice(0, 4)}`}>
             <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4">
-              {yearMonthStarts.map((monthStart) => {
+              {orderedYearMonthStarts.map((monthStart) => {
                 const monthRange = getPlanningPeriodRange('month', monthStart)
                 const monthEvents = visibleEvents.filter((event) =>
                   planningEventOverlapsDateRange(
@@ -1214,7 +1204,7 @@ export function TeamPlanning({
                 return (
                   <article
                     key={monthStart}
-                    className="rounded-2xl border border-border bg-card p-2 shadow-sm sm:p-3"
+                    className={`rounded-2xl border bg-card p-2 shadow-sm sm:p-3 ${monthStart === currentMonthStart ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}
                   >
                     <header className="flex items-baseline justify-between gap-1">
                       <button

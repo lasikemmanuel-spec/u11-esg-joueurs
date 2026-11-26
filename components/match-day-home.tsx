@@ -8,7 +8,6 @@ import {
   ArrowRight,
   Clock3,
   MapPin,
-  Pencil,
   RotateCcw,
   Radio,
   Sun,
@@ -292,6 +291,9 @@ export function MatchDayHome({
                     lineup.slotColumn === match.slotColumn,
                   )
                   const lineupSaveKey = `${plannedDate}-${match.team}-${match.slotColumn}`
+                  const canStartDirect = Boolean(
+                    canManageMatches && savedLineup && savedLineup.starters.length > 0,
+                  )
                   const calledPlayers = convocations.flatMap((player) => {
                     const callup = player.matches.find((item) =>
                       normalizeMatchDate(item.date) === plannedDate &&
@@ -397,16 +399,21 @@ export function MatchDayHome({
                         {canManageMatches ? (
                           <button
                             type="button"
-                            onClick={() => onSelectMatch(match)}
-                            className={[
-                              'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border px-2 text-[11px] font-black transition',
-                              match.team === 'E1'
-                                ? 'border-sky-200/30 bg-white/10 text-white hover:bg-white/15'
-                                : 'border-[#172554]/25 bg-white/45 text-[#172554] hover:bg-white/70',
-                            ].join(' ')}
+                            disabled={!canStartDirect || matchLineups.pendingKeys.has(lineupSaveKey)}
+                            onClick={() => {
+                              if (!savedLineup || !canStartDirect) return
+                              setLineupToStartLive({
+                                match: { ...match, date: plannedDate },
+                                lineup: savedLineup,
+                              })
+                            }}
+                            aria-label={`Lancer le direct, ES Genech ${match.team === 'E1' ? '1' : '2'} contre ${match.opponent || 'adversaire'}`}
+                            title={canStartDirect ? `Lancer le match contre ${match.opponent || 'cet adversaire'}` : 'Enregistre une composition pour lancer le direct.'}
+                            className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-emerald-200/70 px-2 text-[11px] font-black text-white shadow-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:cursor-not-allowed disabled:opacity-60 sm:text-xs ${canStartDirect ? 'bg-emerald-700 hover:bg-emerald-600' : 'bg-emerald-950/50'}`}
                           >
-                            <Pencil aria-hidden="true" className="size-3.5" />
-                            Modifier
+                            <span aria-hidden="true" className="size-2 rounded-full bg-rose-300 shadow-[0_0_0_2px_rgba(252,165,165,0.2)] motion-safe:animate-pulse" />
+                            <Radio aria-hidden="true" className="size-4" />
+                            <span>Direct</span>
                           </button>
                         ) : (
                           <button
@@ -424,25 +431,6 @@ export function MatchDayHome({
                           </button>
                         )}
                       </div>
-                      {canManageMatches && savedLineup && savedLineup.starters.length > 0 && (
-                        <div className="mt-1.5 flex justify-end">
-                          <button
-                            type="button"
-                            disabled={matchLineups.pendingKeys.has(lineupSaveKey)}
-                            onClick={() => setLineupToStartLive({
-                              match: { ...match, date: plannedDate },
-                              lineup: savedLineup,
-                            })}
-                            aria-label={`Lancer le direct, ES Genech ${match.team === 'E1' ? '1' : '2'} contre ${match.opponent || 'adversaire'}`}
-                            title={`Lancer le match contre ${match.opponent || 'cet adversaire'}`}
-                            className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border border-emerald-200/40 bg-emerald-400/15 px-3 text-[10px] font-black uppercase tracking-wider text-emerald-100 shadow-sm transition hover:bg-emerald-400/25 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:cursor-wait disabled:opacity-60 sm:hidden"
-                          >
-                            <span aria-hidden="true" className="size-1.5 rounded-full bg-rose-300 shadow-[0_0_0_2px_rgba(252,165,165,0.2)] motion-safe:animate-pulse" />
-                            <Radio aria-hidden="true" className="size-4" />
-                            <span>Direct</span>
-                          </button>
-                        </div>
-                      )}
                       <ConvocationOverlay
                         teamName={`ES Genech ${match.team === 'E1' ? '1' : '2'}`}
                         players={calledPlayers}

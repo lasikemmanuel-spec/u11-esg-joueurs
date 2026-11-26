@@ -116,10 +116,10 @@ export default async function Page() {
     }),
   )
   const matchDayPlayers: MatchDayPlayer[] = educator
-    ? roster.players.map(({ number, position, licenseNumber }) => ({
+    ? roster.players.map(({ number, position }) => ({
       number,
       position,
-      licenseNumber,
+      licenseNumber: null,
     }))
     : []
   const matchDataErrors = [

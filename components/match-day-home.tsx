@@ -177,10 +177,38 @@ export function MatchDayHome({
   onOpenCallups: (date: string) => void
 }) {
   const router = useRouter()
+  const [licenseNumbers, setLicenseNumbers] = useState<Record<number, string>>({})
   const [lineupToStartLive, setLineupToStartLive] = useState<{
     match: MatchSheetEntry
     lineup: MatchLineup
   } | null>(null)
+  useEffect(() => {
+    if (!canManageMatches) {
+      setLicenseNumbers({})
+      return
+    }
+
+    let active = true
+    fetch('/api/educators/players', { cache: 'no-store' })
+      .then(async (response) => {
+        if (!response.ok) return
+        const result = await response.json() as {
+          players?: Array<{ number?: unknown; licenseNumber?: unknown }>
+        }
+        if (!active || !Array.isArray(result.players)) return
+        setLicenseNumbers(Object.fromEntries(
+          result.players.flatMap((player) =>
+            typeof player.number === 'number' && Number.isSafeInteger(player.number) && typeof player.licenseNumber === 'string'
+              ? [[player.number, player.licenseNumber] as const]
+              : [],
+          ),
+        ))
+      })
+      .catch(() => {})
+
+    return () => { active = false }
+  }, [canManageMatches])
+
   const matchLineups = useMatchLineups(canManageMatches)
   const today = localToday()
   const plannedDate = getNextPlannedMatchDate(entries, today)
@@ -276,7 +304,7 @@ export function MatchDayHome({
                       name: player.name,
                       absent: callup.status === 'calledAbsent',
                       position: rosterPlayer?.position ?? null,
-                      licenseNumber: rosterPlayer?.licenseNumber ?? null,
+                      licenseNumber: rosterPlayer ? licenseNumbers[rosterPlayer.number] ?? null : null,
                     }]
                   })
 
@@ -418,7 +446,7 @@ export function MatchDayHome({
                       <ConvocationOverlay
                         teamName={`ES Genech ${match.team === 'E1' ? '1' : '2'}`}
                         players={calledPlayers}
-                        canShowLicenseNumbers={rosterPlayers.length > 0}
+                        canShowLicenseNumbers={canManageMatches && rosterPlayers.length > 0}
                         hasCallups={hasCallups}
                         canEdit={canEditCallups}
                         onEdit={() => onOpenCallups(plannedDate)}

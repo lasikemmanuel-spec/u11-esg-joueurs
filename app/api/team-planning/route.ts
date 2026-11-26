@@ -78,7 +78,16 @@ function isUuid(value: unknown): value is string {
   return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
 }
 
-export async function GET() {
+export async function GET(request: Request) {
+  let educator: EducatorSession | null
+  try {
+    educator = await getEducatorSession(request)
+  } catch (error) {
+    console.error('Erreur de vérification de session pour la lecture du planning:', error)
+    return response({ error: 'La connexion éducateur n’est pas disponible.' }, 503)
+  }
+  if (!educator) return response({ error: 'Connexion requise pour consulter le planning.' }, 401)
+
   try {
     return response({ events: await getTeamPlanningEvents() })
   } catch (error) {

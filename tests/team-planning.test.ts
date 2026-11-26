@@ -169,10 +169,11 @@ describe('team planning', () => {
     expect(tournamentCalendar).toContain('DTEND;TZID=Europe/Paris:20261123T090000')
   })
 
-  it('allows readers to view the planning', async () => {
+  it('allows signed-in reader accounts to view the planning', async () => {
+    vi.mocked(getEducatorSession).mockResolvedValue(reader)
     vi.mocked(getTeamPlanningEvents).mockResolvedValue([planningEvent])
 
-    const response = await GET()
+    const response = await GET(request('/api/team-planning', 'GET'))
 
     expect(response.status).toBe(200)
     expect(await response.json()).toEqual({ events: [planningEvent] })

@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import dynamic from 'next/dynamic'
 import { useRouter } from 'next/navigation'
-import { BarChart3, CalendarDays, CalendarRange, Dumbbell, Ellipsis, LogOut, MessageCircle, Radio, Shirt, UsersRound, X, type LucideIcon } from 'lucide-react'
+import { BarChart3, CalendarDays, CalendarRange, ChevronLeft, Ellipsis, LogOut, MessageCircle, Radio, Shirt, UsersRound, X, type LucideIcon } from 'lucide-react'
 import { ClubCrest } from '@/components/club-crest'
 import { EducatorAvatar } from '@/components/educator-avatar'
 import { EducatorProfilePhotoEditor } from '@/components/educator-profile-photo-editor'
@@ -17,7 +17,7 @@ import type { TrainingAttendanceSession } from '@/lib/training-attendance'
 import type { CohesionDay } from '@/lib/cohesion'
 import type { PlayerStats as PlayerStat } from '@/lib/stats'
 
-type TabKey = 'roster' | 'educator' | 'training' | 'stats' | 'matches' | 'planning' | 'whatsapp'
+type TabKey = 'roster' | 'educator' | 'stats' | 'matches' | 'planning' | 'whatsapp'
 type StatsSection = 'players' | 'dynamics' | 'matches'
 type MatchFocus = {
   date: string
@@ -159,7 +159,7 @@ export function DashboardTabs({
   const [profilePhotoRevision, setProfilePhotoRevision] = useState(0)
 
   useEffect(() => {
-    if (activeTab !== 'training' && trainingFocusDate) setTrainingFocusDate(null)
+    if (activeTab !== 'planning' && trainingFocusDate) setTrainingFocusDate(null)
   }, [activeTab, trainingFocusDate])
 
   useEffect(() => {
@@ -272,7 +272,7 @@ export function DashboardTabs({
       setEducatorAccess(identity.role === 'reader' ? 'unauthenticated' : 'authenticated')
       setApplicationSession('authenticated')
       setLoginPassword('')
-      if (identity.role === 'reader' && (activeTab === 'educator' || activeTab === 'training')) setActiveTab('roster')
+      if (identity.role === 'reader' && activeTab === 'educator') setActiveTab('roster')
       window.dispatchEvent(new Event('educator-session-changed'))
       router.refresh()
     } catch (error) {
@@ -332,9 +332,6 @@ export function DashboardTabs({
       ? [{ key: 'educator' as const, label: 'Annuaire' }]
       : []),
     ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
-      ? [{ key: 'training' as const, label: 'Entraînements' }]
-      : []),
-    ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
       ? [{ key: 'whatsapp' as const, label: 'Messages WhatsApp' }]
       : []),
   ]
@@ -349,7 +346,6 @@ export function DashboardTabs({
     roster: Shirt,
     stats: BarChart3,
     educator: UsersRound,
-    training: Dumbbell,
     planning: CalendarRange,
     whatsapp: MessageCircle,
   }
@@ -630,16 +626,42 @@ export function DashboardTabs({
           </div>
         )}
         {activeTab === 'planning' && (
-          <TeamPlanning
-            canManage={educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'}
-            matches={matchResults.entries}
-            players={rosterPlayers}
-            trainingAttendance={trainingAttendance}
-            onOpenTraining={(date) => {
-              setTrainingFocusDate(date)
-              setActiveTab('training')
-            }}
-          />
+          trainingFocusDate ? (
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() => setTrainingFocusDate(null)}
+                className="inline-flex min-h-10 w-fit items-center gap-1 rounded-lg border border-border px-3 text-sm font-semibold text-foreground transition hover:bg-muted"
+              >
+                <ChevronLeft aria-hidden="true" className="size-4" />
+                Retour au planning
+              </button>
+              {educatorAccess === 'authenticated' && educatorIdentity && (
+                <TrainingAttendanceManager
+                  players={rosterPlayers}
+                  sessions={trainingAttendance}
+                  loadError={trainingAttendanceError}
+                  initialDate={trainingFocusDate}
+                  onPrepareCancellation={(date) => {
+                    setWhatsAppPrefill({
+                      templateId: 'tpl-annulation',
+                      date,
+                      requestId: Date.now(),
+                    })
+                    setActiveTab('whatsapp')
+                  }}
+                />
+              )}
+            </div>
+          ) : (
+            <TeamPlanning
+              canManage={educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'}
+              matches={matchResults.entries}
+              players={rosterPlayers}
+              trainingAttendance={trainingAttendance}
+              onOpenTraining={setTrainingFocusDate}
+            />
+          )
         )}
         {activeTab === 'whatsapp' && educatorIdentity && (
           <WhatsAppMessageCenter prefill={whatsAppPrefill} />
@@ -652,22 +674,6 @@ export function DashboardTabs({
             matchesPlayed={matchesPlayed}
             matchResults={matchResults}
             trainingAttendance={trainingAttendance}
-          />
-        )}
-        {activeTab === 'training' && educatorAccess === 'authenticated' && educatorIdentity && (
-          <TrainingAttendanceManager
-            players={rosterPlayers}
-            sessions={trainingAttendance}
-            loadError={trainingAttendanceError}
-            initialDate={trainingFocusDate}
-            onPrepareCancellation={(date) => {
-              setWhatsAppPrefill({
-                templateId: 'tpl-annulation',
-                date,
-                requestId: Date.now(),
-              })
-              setActiveTab('whatsapp')
-            }}
           />
         )}
         {activeTab === 'educator' && (

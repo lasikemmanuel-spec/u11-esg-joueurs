@@ -5,6 +5,7 @@ import { isValidPlanningDate, type PlanningEvent } from '@/lib/team-planning-sha
 export type PlanningCardEvent = PlanningEvent & {
   source?: 'match-sheet'
   weather?: {
+    eventTime: string
     homeAway: string
     opponent: string
     venue?: string
@@ -68,6 +69,7 @@ export function getScheduledMatchPlanningEvents(
       status: 'confirmed',
       source: 'match-sheet',
       weather: {
+        eventTime: match.kickoffTime,
         homeAway: match.homeAway,
         opponent: match.opponent,
         venue: match.venueAddress?.trim() || undefined,

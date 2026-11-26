@@ -10,6 +10,7 @@ import {
   CloudSun,
   Sun,
 } from 'lucide-react'
+import { findClosestWeatherHour } from '@/lib/weather-forecast'
 
 type WeatherResult = {
   temperature: number
@@ -23,6 +24,7 @@ type WeatherState =
   | { status: 'ready'; weather: WeatherResult }
   | { status: 'unavailable' }
   | { status: 'tooEarly' }
+  | { status: 'timeUnknown' }
 
 function daysFromToday(date: string, today: string) {
   const dateTime = Date.parse(`${date}T00:00:00Z`)
@@ -73,6 +75,7 @@ export function WeatherIcon({ code, className }: { code: number; className?: str
 
 function useMatchWeather(
   date: string,
+  eventTime: string,
   homeAway: string,
   opponent: string,
   today: string,
@@ -83,6 +86,10 @@ function useMatchWeather(
   useEffect(() => {
     if (daysFromToday(date, today) > 15) {
       setWeather({ status: 'tooEarly' })
+      return
+    }
+    if (!/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(eventTime)) {
+      setWeather({ status: 'timeUnknown' })
       return
     }
 
@@ -136,7 +143,7 @@ function useMatchWeather(
         const params = new URLSearchParams({
           latitude: String(latitude),
           longitude: String(longitude),
-          daily: 'weather_code,temperature_2m_max,apparent_temperature_max',
+          hourly: 'weather_code,temperature_2m,apparent_temperature',
           timezone: 'Europe/Paris',
           start_date: date,
           end_date: date,
@@ -146,17 +153,18 @@ function useMatchWeather(
         })
         if (!response.ok) throw new Error(`Prévisions météo indisponibles (${response.status}).`)
         const result = await response.json() as {
-          daily?: {
+          hourly?: {
             time?: string[]
             weather_code?: number[]
-            temperature_2m_max?: number[]
-            apparent_temperature_max?: number[]
+            temperature_2m?: number[]
+            apparent_temperature?: number[]
           }
         }
-        const index = result.daily?.time?.indexOf(date) ?? -1
-        const temperature = result.daily?.temperature_2m_max?.[index]
-        const feelsLikeTemperature = result.daily?.apparent_temperature_max?.[index]
-        const weatherCode = result.daily?.weather_code?.[index]
+        const times = result.hourly?.time ?? []
+        const index = findClosestWeatherHour(times, date, eventTime)
+        const temperature = result.hourly?.temperature_2m?.[index]
+        const feelsLikeTemperature = result.hourly?.apparent_temperature?.[index]
+        const weatherCode = result.hourly?.weather_code?.[index]
         if (index < 0 || typeof temperature !== 'number' || typeof weatherCode !== 'number') {
           throw new Error('Prévisions météo incomplètes.')
         }
@@ -178,13 +186,14 @@ function useMatchWeather(
 
     void loadWeather()
     return () => controller.abort()
-  }, [date, homeAway, opponent, today, venue])
+  }, [date, eventTime, homeAway, opponent, today, venue])
 
   return weather
 }
 
 export function MatchWeather({
   date,
+  eventTime,
   homeAway,
   opponent,
   today,
@@ -192,13 +201,14 @@ export function MatchWeather({
   tone = 'dark',
 }: {
   date: string
+  eventTime: string
   homeAway: string
   opponent: string
   today: string
   venue?: string
   tone?: 'dark' | 'light'
 }) {
-  const weather = useMatchWeather(date, homeAway, opponent, today, venue)
+  const weather = useMatchWeather(date, eventTime, homeAway, opponent, today, venue)
   const toneClass = tone === 'dark'
     ? 'border-amber-300/30 bg-white/10 text-white/80'
     : 'border-[#172554]/15 bg-white/75 text-[#172554]'
@@ -222,6 +232,8 @@ export function MatchWeather({
         <><CloudSun aria-hidden="true" className={`${iconClass} animate-pulse`} />Météo…</>
       ) : weather.status === 'tooEarly' ? (
         <><CloudSun aria-hidden="true" className={iconClass} />Prévisions à venir</>
+      ) : weather.status === 'timeUnknown' ? (
+        <><CloudSun aria-hidden="true" className={iconClass} />Horaire à préciser</>
       ) : (
         <><CloudSun aria-hidden="true" className={iconClass} />Météo indisponible</>
       )}

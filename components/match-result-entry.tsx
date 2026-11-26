@@ -641,9 +641,11 @@ export function MatchResultEntry({
                               <span className="min-w-0 flex-1">
                                 <MatchWeather
                                   date={date}
+                                  eventTime={entry.kickoffTime}
                                   homeAway={entry.homeAway}
                                   opponent={entry.opponent}
                                   today={localToday()}
+                                  venue={entry.venueAddress}
                                   tone={isE1 ? 'dark' : 'light'}
                                 />
                               </span>

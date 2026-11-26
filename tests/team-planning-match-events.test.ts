@@ -54,11 +54,22 @@ describe('getScheduledMatchPlanningEvents', () => {
       status: 'confirmed',
       source: 'match-sheet',
       weather: {
+        eventTime: '10:00',
         homeAway: 'Extérieur',
         opponent: 'FC Lille',
         venue: 'Stade municipal, Lille',
       },
     }])
+  })
+
+  it('does not use the meeting time as a substitute for a missing kickoff time', () => {
+    const [scheduledMatch] = getScheduledMatchPlanningEvents(
+      [match({ kickoffTime: '' })],
+      [],
+      '2026-11-26',
+    )
+
+    expect(scheduledMatch.weather?.eventTime).toBe('')
   })
 
   it('excludes past, completed, cancelled, training, and already-entered matches', () => {

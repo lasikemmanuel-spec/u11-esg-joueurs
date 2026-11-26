@@ -661,7 +661,7 @@ export function TeamPlanning({
             const weekColor = getWeekColor(event.date)
             const weatherDetails = event.date >= today && event.status !== 'cancelled'
               ? event.weather ?? (event.type === 'training'
-                ? { homeAway: 'Domicile', opponent: '', venue: event.location }
+                ? { eventTime: event.startTime, homeAway: 'Domicile', opponent: '', venue: event.location }
                 : null)
               : null
             const attendance = event.type === 'training'
@@ -732,6 +732,7 @@ export function TeamPlanning({
                       {weatherDetails && (
                         <MatchWeather
                           date={event.date}
+                          eventTime={weatherDetails.eventTime}
                           homeAway={weatherDetails.homeAway}
                           opponent={weatherDetails.opponent}
                           today={today}

@@ -342,9 +342,11 @@ export function MatchDayHome({
                             (match.homeAway === 'Domicile' || match.homeAway === 'Extérieur') && (
                               <MatchWeather
                                 date={plannedDate}
+                                eventTime={match.kickoffTime}
                                 homeAway={match.homeAway}
                                 opponent={match.opponent}
                                 today={today}
+                                venue={match.venueAddress}
                                 tone={match.team === 'E1' ? 'dark' : 'light'}
                               />
                             )}

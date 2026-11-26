@@ -42,7 +42,13 @@ function ConvocationOverlay({
   onEdit,
 }: {
   teamName: string
-  players: { name: string; absent: boolean; position: string | null; licenseNumber: string | null }[]
+  players: {
+    name: string
+    absent: boolean
+    position: string | null
+    licenseNumber: string | null
+    role: 'Titulaire' | 'Remplaçant' | null
+  }[]
   canShowLicenseNumbers: boolean
   hasCallups: boolean
   canEdit: boolean
@@ -114,6 +120,11 @@ function ConvocationOverlay({
                       <span className="grid size-6 shrink-0 place-items-center rounded-full bg-amber-300 text-[#172554]">{player.absent ? '!' : '✓'}</span>
                       <span className="min-w-0 break-words">
                         <span className="block">{player.name}{player.absent ? ' · absent' : ''}</span>
+                        {player.role && (
+                          <span className={`mt-1 inline-flex rounded-full px-2 py-0.5 text-[9px] font-black ${player.role === 'Titulaire' ? 'bg-sky-200 text-[#172554]' : 'bg-amber-200 text-amber-950'}`}>
+                            {player.role}
+                          </span>
+                        )}
                         {player.position && (
                           <span className="mt-0.5 block text-[9px] font-medium text-white/55">Poste · {player.position}</span>
                         )}
@@ -306,6 +317,11 @@ export function MatchDayHome({
                       absent: callup.status === 'calledAbsent',
                       position: rosterPlayer?.position ?? null,
                       licenseNumber: rosterPlayer ? licenseNumbers[rosterPlayer.number] ?? null : null,
+                      role: savedLineup?.starters.includes(player.number)
+                        ? 'Titulaire' as const
+                        : savedLineup?.substitutes.includes(player.number)
+                          ? 'Remplaçant' as const
+                          : null,
                     }]
                   })
 

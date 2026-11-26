@@ -13,6 +13,7 @@ import {
 
 type WeatherResult = {
   temperature: number
+  feelsLikeTemperature: number | null
   weatherCode: number
   location: string
 }
@@ -135,7 +136,7 @@ function useMatchWeather(
         const params = new URLSearchParams({
           latitude: String(latitude),
           longitude: String(longitude),
-          daily: 'weather_code,temperature_2m_max',
+          daily: 'weather_code,temperature_2m_max,apparent_temperature_max',
           timezone: 'Europe/Paris',
           start_date: date,
           end_date: date,
@@ -145,17 +146,28 @@ function useMatchWeather(
         })
         if (!response.ok) throw new Error(`Prévisions météo indisponibles (${response.status}).`)
         const result = await response.json() as {
-          daily?: { time?: string[]; weather_code?: number[]; temperature_2m_max?: number[] }
+          daily?: {
+            time?: string[]
+            weather_code?: number[]
+            temperature_2m_max?: number[]
+            apparent_temperature_max?: number[]
+          }
         }
         const index = result.daily?.time?.indexOf(date) ?? -1
         const temperature = result.daily?.temperature_2m_max?.[index]
+        const feelsLikeTemperature = result.daily?.apparent_temperature_max?.[index]
         const weatherCode = result.daily?.weather_code?.[index]
         if (index < 0 || typeof temperature !== 'number' || typeof weatherCode !== 'number') {
           throw new Error('Prévisions météo incomplètes.')
         }
         setWeather({
           status: 'ready',
-          weather: { temperature, weatherCode, location },
+          weather: {
+            temperature,
+            feelsLikeTemperature: typeof feelsLikeTemperature === 'number' ? feelsLikeTemperature : null,
+            weatherCode,
+            location,
+          },
         })
       } catch (error: unknown) {
         if (error instanceof Error && error.name === 'AbortError') return
@@ -177,6 +189,7 @@ export function MatchWeather({
   opponent,
   today,
   venue,
+  showFeelsLike = false,
   tone = 'dark',
 }: {
   date: string
@@ -184,6 +197,7 @@ export function MatchWeather({
   opponent: string
   today: string
   venue?: string
+  showFeelsLike?: boolean
   tone?: 'dark' | 'light'
 }) {
   const weather = useMatchWeather(date, homeAway, opponent, today, venue)
@@ -202,6 +216,11 @@ export function MatchWeather({
           <WeatherIcon code={weather.weather.weatherCode} className={iconClass} />
           <span className="max-w-32 truncate sm:max-w-40"><span className="sr-only">Météo à </span>{weather.weather.location}</span>
           <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-black tabular-nums sm:text-xs ${temperatureClass}`}>{Math.round(weather.weather.temperature)}°</span>
+          {showFeelsLike && (
+            <span className="shrink-0 rounded-full bg-[#d4af37]/20 px-1.5 py-0.5 text-[9px] font-bold tabular-nums text-[#725200] dark:text-amber-200 sm:text-[10px]">
+              Ressenti {weather.weather.feelsLikeTemperature === null ? '—' : `${Math.round(weather.weather.feelsLikeTemperature)}°`}
+            </span>
+          )}
         </>
       ) : weather.status === 'loading' ? (
         <><CloudSun aria-hidden="true" className={`${iconClass} animate-pulse`} />Météo…</>

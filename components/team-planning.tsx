@@ -719,6 +719,7 @@ export function TeamPlanning({
                           opponent=""
                           today={today}
                           venue={event.location}
+                          showFeelsLike
                           tone="light"
                         />
                       )}

@@ -91,6 +91,10 @@ describe('team planning', () => {
     expect(parsePlanningEventFields({ ...fields, endTime: '09:30' })).toBeNull()
   })
 
+  it.each(['meeting', 'cohesion'] as const)('accepts %s events', (type) => {
+    expect(parsePlanningEventFields({ ...fields, type })).toMatchObject({ type })
+  })
+
   it('creates weekly event dates through the inclusive end date', () => {
     expect(getWeeklyRecurrenceDates('2026-11-21', '2026-12-05')).toEqual([
       '2026-11-21',

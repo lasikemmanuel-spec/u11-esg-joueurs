@@ -1,4 +1,4 @@
-export const PLANNING_EVENT_TYPES = ['training', 'match', 'tournament'] as const
+export const PLANNING_EVENT_TYPES = ['training', 'match', 'tournament', 'meeting', 'cohesion'] as const
 export const PLANNING_TEAMS = ['E1', 'E2', 'both'] as const
 export const PLANNING_STATUSES = ['confirmed', 'postponed', 'cancelled'] as const
 

@@ -36,6 +36,8 @@ const TYPE_LABELS: Record<PlanningEvent['type'], string> = {
   training: 'Entraînement',
   match: 'Match',
   tournament: 'Tournoi',
+  meeting: 'Réunion',
+  cohesion: 'Journée de cohésion',
 }
 
 const STATUS_LABELS: Record<PlanningEvent['status'], string> = {
@@ -445,6 +447,8 @@ export function TeamPlanning({
               <option value="training">Entraînement</option>
               <option value="match">Match</option>
               <option value="tournament">Tournoi</option>
+              <option value="meeting">Réunion</option>
+              <option value="cohesion">Journée de cohésion</option>
             </select>
           </label>
           <label className="grid gap-1 text-sm font-semibold">

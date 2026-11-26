@@ -5,6 +5,7 @@ import {
   Ban,
   CalendarDays,
   CalendarPlus,
+  Check,
   ChevronLeft,
   ChevronRight,
   ClipboardCheck,
@@ -26,6 +27,7 @@ import { getScheduledMatchPlanningEvents, type PlanningCardEvent } from '@/lib/t
 import {
   createCalendarFile,
   MAX_WEEKLY_RECURRENCE_EVENTS,
+  PLANNING_EVENT_TYPES,
   type PlanningEvent,
   type PlanningEventFields,
 } from '@/lib/team-planning-shared'
@@ -38,6 +40,14 @@ const TYPE_LABELS: Record<PlanningEvent['type'], string> = {
   tournament: 'Tournoi',
   meeting: 'Réunion',
   cohesion: 'Journée de cohésion',
+}
+
+const TYPE_FILTER_LABELS: Record<PlanningEvent['type'], string> = {
+  training: 'Entraînements',
+  match: 'Matchs',
+  tournament: 'Tournois',
+  meeting: 'Réunions',
+  cohesion: 'Journées de cohésion',
 }
 
 const STATUS_LABELS: Record<PlanningEvent['status'], string> = {
@@ -151,6 +161,7 @@ export function TeamPlanning({
 }) {
   const [events, setEvents] = useState<PlanningEvent[]>([])
   const [view, setView] = useState<PlanningView>('week')
+  const [selectedTypes, setSelectedTypes] = useState<PlanningEvent['type'][]>(() => [...PLANNING_EVENT_TYPES])
   const [weekStart, setWeekStart] = useState(() => getMonday())
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -194,12 +205,24 @@ export function TeamPlanning({
     ],
     [events, matches, today],
   )
-  const visibleEvents = useMemo(() => {
+  const periodEvents = useMemo(() => {
     const weekEnd = addDays(weekStart, 6)
-    return sortEvents(allEvents.filter((event) => view === 'week'
+    return allEvents.filter((event) => view === 'week'
       ? event.date >= weekStart && event.date <= weekEnd
-      : event.date >= today))
+      : event.date >= today)
   }, [allEvents, today, view, weekStart])
+  const visibleEvents = useMemo(
+    () => sortEvents(periodEvents.filter((event) => selectedTypes.includes(event.type))),
+    [periodEvents, selectedTypes],
+  )
+
+  const toggleEventType = (type: PlanningEvent['type']) => {
+    setSelectedTypes((current) =>
+      current.includes(type)
+        ? current.filter((selectedType) => selectedType !== type)
+        : [...current, type],
+    )
+  }
 
   const resetForm = () => {
     const date = toDateKey(new Date())
@@ -646,12 +669,57 @@ export function TeamPlanning({
         </div>
       )}
 
+      <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filtrer les événements par type">
+        <span className="mr-1 text-xs font-semibold text-muted-foreground">Afficher :</span>
+        {PLANNING_EVENT_TYPES.map((type) => {
+          const selected = selectedTypes.includes(type)
+          return (
+            <button
+              key={type}
+              type="button"
+              aria-pressed={selected}
+              onClick={() => toggleEventType(type)}
+              className={`inline-flex min-h-8 items-center gap-1 rounded-full border px-2.5 text-xs font-semibold transition ${
+                selected
+                  ? 'border-primary/40 bg-primary/10 text-primary'
+                  : 'border-border bg-card text-muted-foreground hover:bg-muted'
+              }`}
+            >
+              {selected && <Check aria-hidden="true" className="size-3.5" />}
+              {TYPE_FILTER_LABELS[type]}
+            </button>
+          )
+        })}
+        {selectedTypes.length !== PLANNING_EVENT_TYPES.length && (
+          <button
+            type="button"
+            onClick={() => setSelectedTypes([...PLANNING_EVENT_TYPES])}
+            className="min-h-8 px-2 text-xs font-bold text-primary underline-offset-2 hover:underline"
+          >
+            Tout afficher
+          </button>
+        )}
+      </div>
+
       {loading ? (
         <p role="status" className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Chargement du planning…</p>
       ) : loadError ? null : visibleEvents.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-muted/20 p-8 text-center">
           <CalendarDays aria-hidden="true" className="mx-auto size-8 text-muted-foreground" />
-          <p className="mt-2 font-semibold">Aucun événement pour cette période.</p>
+          <p className="mt-2 font-semibold">
+            {periodEvents.length === 0
+              ? 'Aucun événement pour cette période.'
+              : 'Aucun événement avec les filtres sélectionnés.'}
+          </p>
+          {periodEvents.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSelectedTypes([...PLANNING_EVENT_TYPES])}
+              className="mt-3 text-sm font-bold text-primary underline underline-offset-4"
+            >
+              Tout afficher
+            </button>
+          )}
           {canManage && !formOpen && (
             <button type="button" onClick={openNewEventForm} className="mt-3 text-sm font-bold text-primary underline underline-offset-4">
               Ajouter un événement

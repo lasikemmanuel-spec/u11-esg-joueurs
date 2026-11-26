@@ -4,6 +4,7 @@ import {
   getWeeklyRecurrenceDates,
   isPlanningEvent,
   parsePlanningEventFields,
+  planningEventOverlapsDateRange,
   type PlanningEvent,
 } from '@/lib/team-planning-shared'
 
@@ -40,6 +41,7 @@ const educator = { username: 'coach', displayName: 'Coach', role: 'educator' as 
 const reader = { username: 'reader', displayName: 'Reader', role: 'reader' as const }
 const fields = {
   date: '2026-11-21',
+  endDate: '2026-11-21',
   type: 'match',
   team: 'E1',
   title: 'Match contre Genech',
@@ -89,6 +91,33 @@ describe('team planning', () => {
     expect(parsePlanningEventFields({ ...fields, date: '2026-02-30' })).toBeNull()
     expect(parsePlanningEventFields({ ...fields, startTime: '25:00' })).toBeNull()
     expect(parsePlanningEventFields({ ...fields, endTime: '09:30' })).toBeNull()
+    expect(parsePlanningEventFields({ ...fields, endDate: '2026-11-20' })).toBeNull()
+    expect(parsePlanningEventFields({ ...fields, endDate: undefined })).toMatchObject({ endDate: fields.date })
+  })
+
+  it('accepts multi-day tournaments but restricts date ranges to tournaments', () => {
+    expect(parsePlanningEventFields({
+      ...fields,
+      type: 'tournament',
+      endDate: '2026-11-23',
+      endTime: '09:00',
+    })).toMatchObject({ type: 'tournament', date: fields.date, endDate: '2026-11-23' })
+    expect(parsePlanningEventFields({ ...fields, endDate: '2026-11-23' })).toBeNull()
+  })
+
+  it('includes multi-day events that overlap the selected week', () => {
+    expect(planningEventOverlapsDateRange(
+      '2026-11-28',
+      '2026-11-30',
+      '2026-11-23',
+      '2026-11-29',
+    )).toBe(true)
+    expect(planningEventOverlapsDateRange(
+      '2026-11-30',
+      '2026-12-02',
+      '2026-11-23',
+      '2026-11-29',
+    )).toBe(false)
   })
 
   it.each(['meeting', 'cohesion'] as const)('accepts %s events', (type) => {
@@ -130,6 +159,14 @@ describe('team planning', () => {
     const cancelledCalendar = createCalendarFile({ ...planningEvent, status: 'cancelled' })
     expect(cancelledCalendar).toContain('STATUS:CANCELLED')
     expect(cancelledCalendar).not.toContain('BEGIN:VALARM')
+
+    const tournamentCalendar = createCalendarFile({
+      ...planningEvent,
+      type: 'tournament',
+      endDate: '2026-11-23',
+      endTime: '09:00',
+    })
+    expect(tournamentCalendar).toContain('DTEND;TZID=Europe/Paris:20261123T090000')
   })
 
   it('allows readers to view the planning', async () => {
@@ -188,6 +225,7 @@ describe('team planning', () => {
     const response = await POST(request('/api/team-planning', 'POST', {
       ...fields,
       date: '2026-11-24',
+      endDate: '2026-11-24',
       type: 'training',
       title: 'Entraînement',
       recurrence: { frequency: 'weekly', endDate: '2026-12-08' },
@@ -204,6 +242,27 @@ describe('team planning', () => {
     expect(new Set(result.events.map((event) => event.recurrenceGroupId)).size).toBe(1)
     expect(result.events.every((event) => event.recurrenceEndDate === '2026-12-08')).toBe(true)
     expect(saveTeamPlanningEvents).toHaveBeenCalledWith(result.events)
+  })
+
+  it('shifts multi-day tournament end dates in weekly recurrences', async () => {
+    vi.mocked(getEducatorSession).mockResolvedValue(educator)
+    vi.mocked(saveTeamPlanningEvents).mockResolvedValue()
+
+    const response = await POST(request('/api/team-planning', 'POST', {
+      ...fields,
+      date: '2026-11-24',
+      endDate: '2026-11-26',
+      type: 'tournament',
+      title: 'Tournoi',
+      recurrence: { frequency: 'weekly', endDate: '2026-12-01' },
+    }))
+    const result = await response.json() as { events: PlanningEvent[] }
+
+    expect(response.status).toBe(201)
+    expect(result.events.map((event) => [event.date, event.endDate])).toEqual([
+      ['2026-11-24', '2026-11-26'],
+      ['2026-12-01', '2026-12-03'],
+    ])
   })
 
   it('rejects recurrence ranges that exceed 52 weekly events', async () => {

@@ -57,6 +57,7 @@ export function getScheduledMatchPlanningEvents(
     return [{
       id: `match-sheet-${match.team}-${match.slotColumn}`,
       date,
+      endDate: date,
       type: 'match',
       team: match.team,
       title: match.opponent.trim() ? `Match contre ${match.opponent.trim()}` : 'Match programmé',

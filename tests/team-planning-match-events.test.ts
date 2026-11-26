@@ -25,6 +25,7 @@ function planningEvent(overrides: Partial<PlanningEvent> = {}): PlanningEvent {
   return {
     id: '550e8400-e29b-41d4-a716-446655440000',
     date: '2026-11-29',
+    endDate: '2026-11-29',
     type: 'match',
     team: 'E1',
     title: 'Match contre FC Lille',
@@ -43,6 +44,7 @@ describe('getScheduledMatchPlanningEvents', () => {
     expect(getScheduledMatchPlanningEvents([match()], [], '2026-11-26')).toEqual([{
       id: 'match-sheet-E1-2',
       date: '2026-11-29',
+      endDate: '2026-11-29',
       type: 'match',
       team: 'E1',
       title: 'Match contre FC Lille',

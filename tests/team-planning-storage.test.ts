@@ -25,9 +25,11 @@ const headers = [
   'Statut',
   'Identifiant de série',
   'Fin de récurrence',
+  'Date de fin',
 ]
 const fields: PlanningEventFields = {
   date: '2026-11-24',
+  endDate: '2026-11-24',
   type: 'training',
   team: 'both',
   title: 'Entraînement',
@@ -57,6 +59,7 @@ function row(event: PlanningEvent) {
     event.status,
     event.recurrenceGroupId ?? '',
     event.recurrenceEndDate ?? '',
+    event.endDate,
   ]
 }
 
@@ -85,6 +88,25 @@ describe('team planning storage', () => {
       range: "'📅 Planning'!L1:M1",
       values: [['Identifiant de série', 'Fin de récurrence']],
     }])
+    expect(updateAuthenticatedSheetValues).toHaveBeenCalledWith([{
+      range: "'📅 Planning'!N1",
+      values: [['Date de fin']],
+    }])
+  })
+
+  it('loads a persisted tournament date range', async () => {
+    const tournament: PlanningEvent = {
+      ...fields,
+      type: 'tournament',
+      endDate: '2026-11-27',
+      id: firstId,
+    }
+    vi.mocked(getAuthenticatedSheetRows).mockResolvedValue({
+      sheetTitle: '📅 Planning',
+      rows: [headers, row(tournament)],
+    })
+
+    await expect(getTeamPlanningEvents()).resolves.toEqual([tournament])
   })
 
   it('writes a recurrence series in one batched sheet update', async () => {
@@ -99,6 +121,7 @@ describe('team planning storage', () => {
       ...firstOccurrence,
       id: '550e8400-e29b-41d4-a716-446655440002',
       date: '2026-12-01',
+      endDate: '2026-12-01',
     }
     vi.mocked(getAuthenticatedSheetRows).mockResolvedValue({
       sheetTitle: '📅 Planning',
@@ -108,8 +131,8 @@ describe('team planning storage', () => {
     await saveTeamPlanningEvents([firstOccurrence, secondOccurrence])
 
     expect(updateAuthenticatedSheetValues).toHaveBeenCalledWith([
-      { range: "'📅 Planning'!A3:M3", values: [row(firstOccurrence)] },
-      { range: "'📅 Planning'!A4:M4", values: [row(secondOccurrence)] },
+      { range: "'📅 Planning'!A3:N3", values: [row(firstOccurrence)] },
+      { range: "'📅 Planning'!A4:N4", values: [row(secondOccurrence)] },
     ])
   })
 
@@ -124,6 +147,7 @@ describe('team planning storage', () => {
       ...firstOccurrence,
       id: secondId,
       date: '2026-12-01',
+      endDate: '2026-12-01',
     }
     vi.mocked(getAuthenticatedSheetRows).mockResolvedValue({
       sheetTitle: '📅 Planning',
@@ -134,12 +158,44 @@ describe('team planning storage', () => {
     const updated = await updateTeamPlanningSeries(seriesId, updatedFields)
 
     expect(updated).toEqual([
-      { ...updatedFields, id: firstId, date: firstOccurrence.date, recurrenceGroupId: seriesId, recurrenceEndDate: '2026-12-08' },
-      { ...updatedFields, id: secondId, date: secondOccurrence.date, recurrenceGroupId: seriesId, recurrenceEndDate: '2026-12-08' },
+      { ...updatedFields, id: firstId, date: firstOccurrence.date, endDate: firstOccurrence.date, recurrenceGroupId: seriesId, recurrenceEndDate: '2026-12-08' },
+      { ...updatedFields, id: secondId, date: secondOccurrence.date, endDate: secondOccurrence.date, recurrenceGroupId: seriesId, recurrenceEndDate: '2026-12-08' },
     ])
     expect(updateAuthenticatedSheetValues).toHaveBeenCalledWith([
-      { range: "'📅 Planning'!A2:M2", values: [row(updated[0])] },
-      { range: "'📅 Planning'!A3:M3", values: [row(updated[1])] },
+      { range: "'📅 Planning'!A2:N2", values: [row(updated[0])] },
+      { range: "'📅 Planning'!A3:N3", values: [row(updated[1])] },
+    ])
+  })
+
+  it('shifts tournament end dates when updating a recurring series', async () => {
+    const firstOccurrence: PlanningEvent = {
+      ...fields,
+      type: 'tournament',
+      endDate: '2026-11-26',
+      id: firstId,
+      recurrenceGroupId: seriesId,
+      recurrenceEndDate: '2026-12-08',
+    }
+    const secondOccurrence: PlanningEvent = {
+      ...firstOccurrence,
+      id: secondId,
+      date: '2026-12-01',
+      endDate: '2026-12-03',
+    }
+    vi.mocked(getAuthenticatedSheetRows).mockResolvedValue({
+      sheetTitle: '📅 Planning',
+      rows: [headers, row(firstOccurrence), row(secondOccurrence)],
+    })
+
+    const updated = await updateTeamPlanningSeries(seriesId, {
+      ...fields,
+      type: 'tournament',
+      endDate: '2026-11-27',
+    })
+
+    expect(updated.map(({ date, endDate }) => [date, endDate])).toEqual([
+      ['2026-11-24', '2026-11-27'],
+      ['2026-12-01', '2026-12-04'],
     ])
   })
 })

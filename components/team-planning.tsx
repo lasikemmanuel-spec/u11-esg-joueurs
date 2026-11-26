@@ -28,6 +28,7 @@ import {
   createCalendarFile,
   MAX_WEEKLY_RECURRENCE_EVENTS,
   PLANNING_EVENT_TYPES,
+  planningEventOverlapsDateRange,
   type PlanningEvent,
   type PlanningEventFields,
 } from '@/lib/team-planning-shared'
@@ -94,6 +95,7 @@ const STATUS_LABELS: Record<PlanningEvent['status'], string> = {
 
 const EMPTY_DRAFT: PlanningEventFields = {
   date: '',
+  endDate: '',
   type: 'training',
   team: 'both',
   title: '',
@@ -142,6 +144,15 @@ function formatWeekRange(startDate: string, endDate: string) {
     ...(includeYear ? { year: 'numeric' } : {}),
   })
   return `${shortDate(startDate)} – ${shortDate(endDate, true)}`
+}
+
+function formatEventDateRange(startDate: string, endDate: string) {
+  const format = (date: string) => new Date(`${date}T12:00:00`).toLocaleDateString('fr-FR', {
+    day: 'numeric',
+    month: 'short',
+    ...(date.slice(0, 4) !== startDate.slice(0, 4) ? { year: 'numeric' } : {}),
+  })
+  return `Du ${format(startDate)} au ${format(endDate)}`
 }
 
 function getDateParts(dateKey: string) {
@@ -237,8 +248,8 @@ export function TeamPlanning({
   const periodEvents = useMemo(() => {
     const weekEnd = addDays(weekStart, 6)
     return allEvents.filter((event) => view === 'week'
-      ? event.date >= weekStart && event.date <= weekEnd
-      : event.date >= today)
+      ? planningEventOverlapsDateRange(event.date, event.endDate, weekStart, weekEnd)
+      : event.endDate >= today)
   }, [allEvents, today, view, weekStart])
   const visibleEvents = useMemo(
     () => sortEvents(periodEvents.filter((event) => selectedTypes.includes(event.type))),
@@ -256,7 +267,7 @@ export function TeamPlanning({
 
   const resetForm = () => {
     const date = toDateKey(new Date())
-    setDraft({ ...EMPTY_DRAFT, date })
+    setDraft({ ...EMPTY_DRAFT, date, endDate: date })
     setEditingEvent(null)
     setEditingSeries(false)
     setRepeatWeekly(false)
@@ -268,7 +279,7 @@ export function TeamPlanning({
 
   const openNewEventForm = () => {
     const date = toDateKey(new Date())
-    setDraft({ ...EMPTY_DRAFT, date })
+    setDraft({ ...EMPTY_DRAFT, date, endDate: date })
     setEditingEvent(null)
     setEditingSeries(false)
     setRepeatWeekly(false)
@@ -282,6 +293,7 @@ export function TeamPlanning({
   const editEvent = (event: PlanningEvent, series = false) => {
     const fields: PlanningEventFields = {
       date: event.date,
+      endDate: event.endDate,
       type: event.type,
       team: event.team,
       title: event.title,
@@ -523,7 +535,11 @@ export function TeamPlanning({
             Type
             <select
               value={draft.type}
-              onChange={(event) => updateDraft('type', event.target.value as PlanningEventFields['type'])}
+              onChange={(event) => {
+                const type = event.target.value as PlanningEventFields['type']
+                updateDraft('type', type)
+                updateDraft('endDate', type === 'tournament' ? draft.endDate || draft.date : draft.date)
+              }}
               className="h-10 rounded-lg border border-border bg-background px-3 font-normal"
             >
               <option value="training">Entraînement</option>
@@ -546,7 +562,7 @@ export function TeamPlanning({
             </select>
           </label>
           <label className="grid gap-1 text-sm font-semibold">
-            Date
+            {draft.type === 'tournament' ? 'Date de début' : 'Date'}
             <input
               required
               type="date"
@@ -554,7 +570,11 @@ export function TeamPlanning({
               disabled={editingSeries}
               onChange={(event) => {
                 const date = event.target.value
+                const endDate = date && draft.type === 'tournament' && draft.endDate >= date
+                  ? draft.endDate
+                  : date
                 updateDraft('date', date)
+                updateDraft('endDate', endDate)
                 if (date) {
                   const minDate = addDays(date, 7)
                   const maxDate = addDays(date, MAX_WEEKLY_RECURRENCE_EVENTS * 7 - 1)
@@ -571,6 +591,19 @@ export function TeamPlanning({
               </span>
             )}
           </label>
+          {draft.type === 'tournament' && (
+            <label className="grid gap-1 text-sm font-semibold">
+              Date de fin
+              <input
+                required
+                type="date"
+                min={draft.date || undefined}
+                value={draft.endDate}
+                onChange={(event) => updateDraft('endDate', event.target.value)}
+                className="h-10 rounded-lg border border-border bg-background px-3 font-normal"
+              />
+            </label>
+          )}
           {!editingEvent && (
             <fieldset className="grid gap-3 rounded-xl border border-border bg-muted/20 p-3 sm:col-span-2">
               <legend className="px-1 text-sm font-bold">Récurrence</legend>
@@ -838,6 +871,12 @@ export function TeamPlanning({
                             ? `${event.startTime}–${event.endTime}`
                             : event.startTime || event.endTime}
                           {event.meetingTime && ` · RDV ${event.meetingTime}`}
+                        </span>
+                      )}
+                      {event.endDate > event.date && (
+                        <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                          <CalendarDays aria-hidden="true" className="size-3.5 shrink-0 md:size-4" />
+                          {formatEventDateRange(event.date, event.endDate)}
                         </span>
                       )}
                       <span className="inline-flex min-w-0 items-center gap-1">

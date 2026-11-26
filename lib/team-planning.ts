@@ -4,7 +4,13 @@ import {
   getAuthenticatedSheetRows,
   updateAuthenticatedSheetValues,
 } from '@/lib/google-sheets'
-import { isPlanningEvent, type PlanningEvent, type PlanningEventFields } from '@/lib/team-planning-shared'
+import {
+  addPlanningDateDays,
+  getPlanningDateDurationDays,
+  isPlanningEvent,
+  type PlanningEvent,
+  type PlanningEventFields,
+} from '@/lib/team-planning-shared'
 
 const PLANNING_TAB = '📅 Planning'
 const BASE_PLANNING_HEADERS = [
@@ -21,7 +27,8 @@ const BASE_PLANNING_HEADERS = [
   'Statut',
 ]
 const SERIES_HEADERS = ['Identifiant de série', 'Fin de récurrence']
-const PLANNING_HEADERS = [...BASE_PLANNING_HEADERS, ...SERIES_HEADERS]
+const END_DATE_HEADER = 'Date de fin'
+const PLANNING_HEADERS = [...BASE_PLANNING_HEADERS, ...SERIES_HEADERS, END_DATE_HEADER]
 
 async function getPlanningRows() {
   await ensureAuthenticatedSheetTab(PLANNING_TAB)
@@ -29,7 +36,7 @@ async function getPlanningRows() {
 
   if (rows.length === 0 || !rows[0].some(Boolean)) {
     await updateAuthenticatedSheetValues([{
-      range: `'${sheetTitle.replace(/'/g, "''")}'!A1:M1`,
+      range: `'${sheetTitle.replace(/'/g, "''")}'!A1:N1`,
       values: [PLANNING_HEADERS],
     }])
     return { sheetTitle, rows: [PLANNING_HEADERS] }
@@ -49,6 +56,16 @@ async function getPlanningRows() {
     rows[0][BASE_PLANNING_HEADERS.length + 1] = SERIES_HEADERS[1]
   } else if (SERIES_HEADERS.some((header, index) => rows[0][BASE_PLANNING_HEADERS.length + index] !== header)) {
     throw new Error('Les en-têtes des séries récurrentes dans l’onglet « Planning » ne correspondent pas au format attendu.')
+  }
+  const endDateColumn = BASE_PLANNING_HEADERS.length + SERIES_HEADERS.length
+  if (!rows[0][endDateColumn]) {
+    await updateAuthenticatedSheetValues([{
+      range: `'${sheetTitle.replace(/'/g, "''")}'!N1`,
+      values: [[END_DATE_HEADER]],
+    }])
+    rows[0][endDateColumn] = END_DATE_HEADER
+  } else if (rows[0][endDateColumn] !== END_DATE_HEADER) {
+    throw new Error('L’en-tête de la date de fin dans l’onglet « Planning » ne correspond pas au format attendu.')
   }
 
   return { sheetTitle, rows }
@@ -70,6 +87,7 @@ function rowToEvent(row: string[]): PlanningEvent | null {
     status,
     recurrenceGroupId,
     recurrenceEndDate,
+    endDate,
   ] = row
   const event: unknown = {
     id,
@@ -83,6 +101,7 @@ function rowToEvent(row: string[]): PlanningEvent | null {
     location,
     notes,
     status,
+    endDate: endDate || date,
     ...(recurrenceGroupId || recurrenceEndDate ? { recurrenceGroupId, recurrenceEndDate } : {}),
   }
   if (!isPlanningEvent(event)) {
@@ -106,6 +125,7 @@ function eventToRow(event: PlanningEvent) {
     event.status,
     event.recurrenceGroupId ?? '',
     event.recurrenceEndDate ?? '',
+    event.endDate,
   ]
 }
 
@@ -129,7 +149,7 @@ export async function saveTeamPlanningEvent(event: PlanningEvent, mode: 'create'
   const rowIndex = mode === 'update' ? existingRow : rows.length
   const quotedTitle = sheetTitle.replace(/'/g, "''")
   await updateAuthenticatedSheetValues([{
-    range: `'${quotedTitle}'!A${rowIndex + 1}:M${rowIndex + 1}`,
+    range: `'${quotedTitle}'!A${rowIndex + 1}:N${rowIndex + 1}`,
     values: [eventToRow(event)],
   }])
   return true
@@ -152,7 +172,7 @@ export async function saveTeamPlanningEvents(events: PlanningEvent[]) {
   await updateAuthenticatedSheetValues(events.map((event, index) => {
     const rowIndex = rows.length + index + 1
     return {
-      range: `'${quotedTitle}'!A${rowIndex}:M${rowIndex}`,
+      range: `'${quotedTitle}'!A${rowIndex}:N${rowIndex}`,
       values: [eventToRow(event)],
     }
   }))
@@ -166,13 +186,16 @@ export async function updateTeamPlanningSeries(
   const updates: Array<{ range: string; values: string[][] }> = []
   const events: PlanningEvent[] = []
   const quotedTitle = sheetTitle.replace(/'/g, "''")
+  const durationDays = getPlanningDateDurationDays(fields.date, fields.endDate)
 
   rows.forEach((row, rowIndex) => {
     if (rowIndex === 0 || row[11] !== recurrenceGroupId) return
+    const date = row[1]
     const event: PlanningEvent = {
       ...fields,
       id: row[0],
-      date: row[1],
+      date,
+      endDate: addPlanningDateDays(date, durationDays),
       recurrenceGroupId,
       recurrenceEndDate: row[12],
     }
@@ -181,7 +204,7 @@ export async function updateTeamPlanningSeries(
     }
     events.push(event)
     updates.push({
-      range: `'${quotedTitle}'!A${rowIndex + 1}:M${rowIndex + 1}`,
+      range: `'${quotedTitle}'!A${rowIndex + 1}:N${rowIndex + 1}`,
       values: [eventToRow(event)],
     })
   })

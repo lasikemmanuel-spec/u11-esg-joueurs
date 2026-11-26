@@ -9,6 +9,8 @@ import {
   updateTeamPlanningSeries,
 } from '@/lib/team-planning'
 import {
+  addPlanningDateDays,
+  getPlanningDateDurationDays,
   getWeeklyRecurrenceDates,
   isValidPlanningDate,
   parsePlanningEventFields,
@@ -123,10 +125,12 @@ export async function POST(request: Request) {
   }
 
   const recurrenceGroupId = recurrenceEndDate ? crypto.randomUUID() : undefined
+  const durationDays = getPlanningDateDurationDays(fields.date, fields.endDate)
   const events: PlanningEvent[] = dates.map((date) => ({
     id: crypto.randomUUID(),
     ...fields,
     date,
+    endDate: addPlanningDateDays(date, durationDays),
     ...(recurrenceGroupId && recurrenceEndDate ? { recurrenceGroupId, recurrenceEndDate } : {}),
   }))
   try {

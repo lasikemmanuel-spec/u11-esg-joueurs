@@ -8,6 +8,7 @@ export type PlanningStatus = (typeof PLANNING_STATUSES)[number]
 
 export type PlanningEventFields = {
   date: string
+  endDate: string
   type: PlanningEventType
   team: PlanningTeam
   title: string
@@ -50,6 +51,25 @@ export function isValidPlanningDate(value: string) {
   return !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value
 }
 
+export function addPlanningDateDays(date: string, days: number) {
+  const result = new Date(`${date}T00:00:00Z`)
+  result.setUTCDate(result.getUTCDate() + days)
+  return result.toISOString().slice(0, 10)
+}
+
+export function getPlanningDateDurationDays(startDate: string, endDate: string) {
+  return (Date.parse(`${endDate}T00:00:00Z`) - Date.parse(`${startDate}T00:00:00Z`)) / 86_400_000
+}
+
+export function planningEventOverlapsDateRange(
+  eventStartDate: string,
+  eventEndDate: string,
+  rangeStartDate: string,
+  rangeEndDate: string,
+) {
+  return eventStartDate <= rangeEndDate && eventEndDate >= rangeStartDate
+}
+
 function isValidTime(value: string, optional = false) {
   if (optional && value === '') return true
   return /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(value)
@@ -58,11 +78,17 @@ function isValidTime(value: string, optional = false) {
 export function parsePlanningEventFields(input: unknown): PlanningEventFields | null {
   if (typeof input !== 'object' || input === null || Array.isArray(input)) return null
   const value = input as Record<string, unknown>
+  const date = value.date
+  const endDate = value.endDate === undefined ? date : value.endDate
   if (
-    typeof value.date !== 'string' ||
-    !isValidPlanningDate(value.date) ||
+    typeof date !== 'string' ||
+    !isValidPlanningDate(date) ||
+    typeof endDate !== 'string' ||
+    !isValidPlanningDate(endDate) ||
+    endDate < date ||
     typeof value.type !== 'string' ||
     !PLANNING_EVENT_TYPES.includes(value.type as PlanningEventType) ||
+    (value.type !== 'tournament' && endDate !== date) ||
     typeof value.team !== 'string' ||
     !PLANNING_TEAMS.includes(value.team as PlanningTeam) ||
     typeof value.title !== 'string' ||
@@ -74,7 +100,7 @@ export function parsePlanningEventFields(input: unknown): PlanningEventFields | 
     !isValidTime(value.startTime) ||
     typeof value.endTime !== 'string' ||
     !isValidTime(value.endTime) ||
-    value.endTime <= value.startTime ||
+    (endDate === date && value.endTime <= value.startTime) ||
     typeof value.location !== 'string' ||
     !value.location.trim() ||
     value.location.trim().length > 160 ||
@@ -87,7 +113,8 @@ export function parsePlanningEventFields(input: unknown): PlanningEventFields | 
   }
 
   return {
-    date: value.date,
+    date,
+    endDate,
     type: value.type as PlanningEventType,
     team: value.team as PlanningTeam,
     title: value.title.trim(),
@@ -130,6 +157,7 @@ function escapeCalendarText(value: string) {
 
 export function createCalendarFile(event: PlanningEvent) {
   const date = event.date.replace(/-/g, '')
+  const endDate = event.endDate.replace(/-/g, '')
   const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
   const status = event.status === 'cancelled' ? 'CANCELLED' : 'CONFIRMED'
   const description = [
@@ -165,7 +193,7 @@ export function createCalendarFile(event: PlanningEvent) {
     `UID:${event.id}@es-genech-u11`,
     `DTSTAMP:${stamp}Z`,
     `DTSTART;TZID=Europe/Paris:${date}T${event.startTime.replace(':', '')}00`,
-    `DTEND;TZID=Europe/Paris:${date}T${event.endTime.replace(':', '')}00`,
+    `DTEND;TZID=Europe/Paris:${endDate}T${event.endTime.replace(':', '')}00`,
     `SUMMARY:${escapeCalendarText(event.title)}`,
     `LOCATION:${escapeCalendarText(event.location)}`,
     `DESCRIPTION:${escapeCalendarText(description)}`,

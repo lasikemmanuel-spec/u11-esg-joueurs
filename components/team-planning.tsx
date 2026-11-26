@@ -153,22 +153,22 @@ function getDateParts(dateKey: string) {
   }
 }
 
-function getTrainingAttendanceGauge(
+function getTrainingAttendanceCount(
   session: TrainingAttendanceSession | undefined,
   players: PublicPlayer[],
 ) {
   if (!session || session.cancellation || players.length === 0) return null
 
   let present = 0
-  let absent = 0
+  let countedPlayers = 0
   for (const player of players) {
     const status = session.playerStatuses[player.number]?.trim() ?? ''
     if (!isCountedTrainingStatus(status)) continue
+    countedPlayers += 1
     if (status === 'P') present += 1
-    else absent += 1
   }
-  if (present + absent === 0) return null
-  return { present, absent, total: players.length }
+  if (countedPlayers === 0) return null
+  return { present, total: players.length }
 }
 
 function sortEvents(events: PlanningCardEvent[]) {
@@ -764,11 +764,16 @@ export function TeamPlanning({
                 : null)
               : null
             const attendance = event.type === 'training'
-              ? getTrainingAttendanceGauge(
+              ? getTrainingAttendanceCount(
                   trainingAttendance.find((session) => session.date === event.date),
                   players,
                 )
               : null
+            const showTrainingAction = canManage &&
+              event.type === 'training' &&
+              event.status !== 'cancelled' &&
+              event.date >= MATCH_SEASON_START &&
+              event.date <= MATCH_SEASON_END
             const iconButtonClass = 'inline-flex size-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
             return (
@@ -795,7 +800,7 @@ export function TeamPlanning({
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold md:text-xs ${event.team === 'E1' ? 'bg-[#1e3a8a]/10 text-[#1e3a8a] dark:text-sky-200' : event.team === 'E2' ? 'bg-[#d4af37]/20 text-[#725200] dark:text-amber-200' : 'bg-muted text-muted-foreground'}`}>
                         {event.team === 'both' ? 'E1 + E2' : event.team}
                       </span>
-                      {attendance && (
+                      {attendance && !showTrainingAction && (
                         <span
                           title={`${attendance.present} joueurs présents sur ${attendance.total}`}
                           className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-200 md:text-xs"
@@ -865,46 +870,32 @@ export function TeamPlanning({
                         {event.notes}
                       </p>
                     )}
-                    {attendance && (
-                      <div
-                        role="img"
-                        aria-label={`${attendance.present} présents, ${attendance.absent} absents sur ${attendance.total} joueurs`}
-                        className="mt-2 max-w-sm md:max-w-md"
-                      >
-                        <div className="flex items-center justify-between gap-3 text-[10px] font-bold md:text-xs">
-                          <span className="text-[#1e3a8a] dark:text-sky-200">{attendance.present} présents</span>
-                          <span className="text-[#725200] dark:text-amber-200">{attendance.absent} absents</span>
-                        </div>
-                        <div aria-hidden="true" className="mt-1 flex h-1.5 overflow-hidden rounded-full bg-muted md:h-2">
-                          <span
-                            className="bg-[#1e3a8a] transition-[width]"
-                            style={{ width: `${attendance.present / attendance.total * 100}%` }}
-                          />
-                          <span
-                            className="bg-[#d4af37] transition-[width]"
-                            style={{ width: `${attendance.absent / attendance.total * 100}%` }}
-                          />
-                        </div>
-                      </div>
-                    )}
                   </div>
                 </div>
 
                 {canManage && event.source !== 'match-sheet' && (
                   <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-2">
-                    {event.type === 'training' &&
-                      event.status !== 'cancelled' &&
-                      event.date >= MATCH_SEASON_START &&
-                      event.date <= MATCH_SEASON_END ? (
-                      <button
-                        type="button"
-                        onClick={() => onOpenTraining(event.date)}
-                        title="Ouvrir la feuille de présence à cette date"
-                        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground transition hover:opacity-90 md:min-h-10 md:px-4 md:text-sm"
-                      >
-                        <ClipboardCheck aria-hidden="true" className="size-4 md:size-5" />
-                        Présence joueurs
-                      </button>
+                    {showTrainingAction ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => onOpenTraining(event.date)}
+                          title="Ouvrir la feuille de présence à cette date"
+                          className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground transition hover:opacity-90 md:min-h-10 md:px-4 md:text-sm"
+                        >
+                          <ClipboardCheck aria-hidden="true" className="size-4 md:size-5" />
+                          Présence joueurs
+                        </button>
+                        {attendance && (
+                          <span
+                            title={`${attendance.present} joueurs présents sur ${attendance.total}`}
+                            className="inline-flex items-center gap-1 rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold text-emerald-800 dark:text-emerald-200 md:text-xs"
+                          >
+                            <UsersRound aria-hidden="true" className="size-3 md:size-3.5" />
+                            {attendance.present} présents
+                          </span>
+                        )}
+                      </div>
                     ) : <span aria-hidden="true" />}
                     <div className="flex items-center gap-1">
                       <button

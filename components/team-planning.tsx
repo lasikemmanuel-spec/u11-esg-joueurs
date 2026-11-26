@@ -827,6 +827,15 @@ export function TeamPlanning({
                           tone="light"
                         />
                       )}
+                      <button
+                        type="button"
+                        onClick={() => downloadCalendarFile(event)}
+                        aria-label={`Ajouter ${event.title} au calendrier avec un rappel 24 h avant`}
+                        title="Ajouter au calendrier · rappel 24 h avant"
+                        className={iconButtonClass}
+                      >
+                        <CalendarPlus aria-hidden="true" className="size-4" />
+                      </button>
                     </div>
                     {event.notes && event.source !== 'match-sheet' && (
                       <p title={event.notes} className="mt-1 line-clamp-1 text-xs text-muted-foreground">
@@ -858,33 +867,23 @@ export function TeamPlanning({
                   </div>
                 </div>
 
-                <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-2">
-                  {canManage &&
-                    event.type === 'training' &&
-                    event.status !== 'cancelled' &&
-                    event.date >= MATCH_SEASON_START &&
-                    event.date <= MATCH_SEASON_END ? (
-                    <button
-                      type="button"
-                      onClick={() => onOpenTraining(event.date)}
-                      title="Ouvrir la feuille de présence à cette date"
-                      className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground transition hover:opacity-90"
-                    >
-                      <ClipboardCheck aria-hidden="true" className="size-4" />
-                      Présence joueurs
-                    </button>
-                  ) : <span aria-hidden="true" />}
-                  <div className="flex items-center gap-1">
-                    <button
-                      type="button"
-                      onClick={() => downloadCalendarFile(event)}
-                      aria-label={`Ajouter ${event.title} au calendrier avec un rappel 24 h avant`}
-                      title="Ajouter au calendrier · rappel 24 h avant"
-                      className={iconButtonClass}
-                    >
-                      <CalendarPlus aria-hidden="true" className="size-4" />
-                    </button>
-                    {canManage && event.source !== 'match-sheet' && (
+                {canManage && event.source !== 'match-sheet' && (
+                  <div className="mt-3 flex items-center justify-between border-t border-border/60 pt-2">
+                    {event.type === 'training' &&
+                      event.status !== 'cancelled' &&
+                      event.date >= MATCH_SEASON_START &&
+                      event.date <= MATCH_SEASON_END ? (
+                      <button
+                        type="button"
+                        onClick={() => onOpenTraining(event.date)}
+                        title="Ouvrir la feuille de présence à cette date"
+                        className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground transition hover:opacity-90"
+                      >
+                        <ClipboardCheck aria-hidden="true" className="size-4" />
+                        Présence joueurs
+                      </button>
+                    ) : <span aria-hidden="true" />}
+                    <div className="flex items-center gap-1">
                       <button
                         type="button"
                         onClick={() => editEvent(event)}
@@ -894,34 +893,34 @@ export function TeamPlanning({
                       >
                         <Pencil aria-hidden="true" className="size-4" />
                       </button>
-                    )}
-                    {canManage && event.recurrenceGroupId && (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => editEvent(event, true)}
-                          aria-label={`Modifier toute la série ${event.title}`}
-                          title="Modifier toute la série"
-                          className={`${iconButtonClass} border-primary/30 text-primary`}
-                        >
-                          <Repeat aria-hidden="true" className="size-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => void cancelSeries(event)}
-                          disabled={pendingSeriesId === event.recurrenceGroupId}
-                          aria-label={`Annuler la série ${event.title}`}
-                          title="Annuler toute la série"
-                          className={`${iconButtonClass} border-destructive/30 text-destructive hover:bg-destructive/5 disabled:opacity-50`}
-                        >
-                          {pendingSeriesId === event.recurrenceGroupId
-                            ? <RefreshCw aria-hidden="true" className="size-4 animate-spin" />
-                            : <Ban aria-hidden="true" className="size-4" />}
-                        </button>
-                      </>
-                    )}
+                      {event.recurrenceGroupId && (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => editEvent(event, true)}
+                            aria-label={`Modifier toute la série ${event.title}`}
+                            title="Modifier toute la série"
+                            className={`${iconButtonClass} border-primary/30 text-primary`}
+                          >
+                            <Repeat aria-hidden="true" className="size-4" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => void cancelSeries(event)}
+                            disabled={pendingSeriesId === event.recurrenceGroupId}
+                            aria-label={`Annuler la série ${event.title}`}
+                            title="Annuler toute la série"
+                            className={`${iconButtonClass} border-destructive/30 text-destructive hover:bg-destructive/5 disabled:opacity-50`}
+                          >
+                            {pendingSeriesId === event.recurrenceGroupId
+                              ? <RefreshCw aria-hidden="true" className="size-4 animate-spin" />
+                              : <Ban aria-hidden="true" className="size-4" />}
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </li>
             )
           })}

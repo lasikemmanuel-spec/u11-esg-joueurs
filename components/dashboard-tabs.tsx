@@ -324,9 +324,9 @@ export function DashboardTabs({
   }, [])
 
   const tabs: { key: TabKey; label: string }[] = [
-    { key: 'roster', label: 'Fiches joueurs' },
-    { key: 'planning', label: 'Planning' },
     { key: 'matches', label: 'Matchs' },
+    { key: 'planning', label: 'Planning' },
+    { key: 'roster', label: 'Fiches joueurs' },
     { key: 'stats', label: 'Statistiques U11' },
     ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
       ? [{ key: 'educator' as const, label: 'Annuaire' }]
@@ -339,9 +339,9 @@ export function DashboardTabs({
       : []),
   ]
   const mobileMainTabs: Array<{ key: TabKey | 'more'; label: string; shortLabel?: string; icon: LucideIcon }> = [
-    { key: 'roster', label: 'Fiches joueurs', icon: Shirt },
-    { key: 'planning', label: 'Planning', icon: CalendarRange },
     { key: 'matches', label: 'Matchs', icon: CalendarDays },
+    { key: 'planning', label: 'Planning', icon: CalendarRange },
+    { key: 'roster', label: 'Fiches joueurs', icon: Shirt },
     { key: 'more', label: 'Plus', icon: Ellipsis },
   ]
   const moreMenuTabs = tabs.filter((tab) => !mobileMainTabs.some((mobileTab) => mobileTab.key === tab.key))
@@ -732,7 +732,7 @@ export function DashboardTabs({
             })}
           </div>
         )}
-        <div className="mx-auto grid w-full max-w-lg grid-cols-[1.35fr_1fr_1fr_1fr] gap-1 rounded-2xl bg-muted/90 p-1">
+        <div className="mx-auto grid w-full max-w-lg grid-cols-[1fr_1fr_1.35fr_1fr] gap-1 rounded-2xl bg-muted/90 p-1">
           {mobileMainTabs.map((tab) => {
             const Icon = tab.icon
             const isMore = tab.key === 'more'

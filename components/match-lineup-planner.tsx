@@ -107,6 +107,7 @@ export function useMatchLineups(enabled: boolean) {
   const [pendingKeys, setPendingKeys] = useState<Set<string>>(() => new Set())
   const [savedKey, setSavedKey] = useState('')
   const [error, setError] = useState('')
+  const saveQueues = useRef(new Map<string, Promise<void>>())
 
   useEffect(() => {
     if (!enabled) {
@@ -145,12 +146,13 @@ export function useMatchLineups(enabled: boolean) {
     return () => { active = false }
   }, [enabled])
 
-  const saveLineup = useCallback(async (
+  const saveLineup = useCallback((
     match: MatchSheetEntry & { date: string },
     starters: number[],
     substitutes: number[],
   ) => {
     const key = matchKey(match)
+    const previousSave = saveQueues.current.get(key) ?? Promise.resolve()
     setPendingKeys((current) => new Set(current).add(key))
     setError('')
     setSavedKey('')
@@ -163,65 +165,74 @@ export function useMatchLineups(enabled: boolean) {
       substitutes,
     }
 
-    if (typeof navigator !== 'undefined' && !navigator.onLine) {
-      queuePendingLineup(localLineup)
-      setLineups((current) => [
-        ...current.filter((item) => matchKey(item) !== key),
-        localLineup,
-      ])
-      setSavedKey(key)
-      setPendingKeys((current) => {
-        const next = new Set(current)
-        next.delete(key)
-        return next
-      })
-      return
-    }
-
-    try {
-      const response = await fetch('/api/educators/match-lineups', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          date: match.date,
-          team: match.team,
-          slotColumn: match.slotColumn,
-          starters,
-          substitutes,
-        }),
-      })
-      const result = await response.json()
-      if (!response.ok) throw new Error(result.error ?? 'Impossible d’enregistrer la feuille de match.')
-      if (!isMatchLineup(result.lineup)) throw new Error('La feuille de match enregistrée est invalide.')
-      removePendingLineup(`${match.date}_${match.team}_${match.slotColumn}`)
-      setLineups((current) => [
-        ...current.filter((lineup) => matchKey(lineup) !== key),
-        result.lineup,
-      ])
-      setSavedKey(key)
-    } catch (saveError) {
-      const isNetwork =
-        (typeof navigator !== 'undefined' && !navigator.onLine) ||
-        saveError instanceof TypeError ||
-        (saveError instanceof Error && (saveError.message.includes('fetch') || saveError.message.includes('NetworkError')))
-
-      if (isNetwork) {
+    const task = previousSave.catch(() => undefined).then(async () => {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
         queuePendingLineup(localLineup)
         setLineups((current) => [
           ...current.filter((item) => matchKey(item) !== key),
           localLineup,
         ])
         setSavedKey(key)
-      } else {
-        setError(saveError instanceof Error ? saveError.message : 'Impossible d’enregistrer la feuille de match.')
+        return
       }
-    } finally {
+      try {
+        const controller = new AbortController()
+        const timeout = window.setTimeout(() => controller.abort(), 20000)
+        let response: Response
+        try {
+          response = await fetch('/api/educators/match-lineups', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              date: match.date,
+              team: match.team,
+              slotColumn: match.slotColumn,
+              starters,
+              substitutes,
+            }),
+            signal: controller.signal,
+          })
+        } finally {
+          window.clearTimeout(timeout)
+        }
+        const result = await response.json()
+        if (!response.ok) throw new Error(result.error ?? 'Impossible d’enregistrer la feuille de match.')
+        if (!isMatchLineup(result.lineup)) throw new Error('La feuille de match enregistrée est invalide.')
+        removePendingLineup(`${match.date}_${match.team}_${match.slotColumn}`)
+        setLineups((current) => [
+          ...current.filter((lineup) => matchKey(lineup) !== key),
+          result.lineup,
+        ])
+        setSavedKey(key)
+      } catch (saveError) {
+        const isNetwork =
+          (typeof navigator !== 'undefined' && !navigator.onLine) ||
+          saveError instanceof TypeError ||
+          (saveError instanceof Error && saveError.name === 'AbortError') ||
+          (saveError instanceof Error && (saveError.message.includes('fetch') || saveError.message.includes('NetworkError')))
+
+        if (isNetwork) {
+          queuePendingLineup(localLineup)
+          setLineups((current) => [
+            ...current.filter((item) => matchKey(item) !== key),
+            localLineup,
+          ])
+          setSavedKey(key)
+        } else {
+          setError(saveError instanceof Error ? saveError.message : 'Impossible d’enregistrer la feuille de match.')
+        }
+      }
+    }).finally(() => {
+      if (saveQueues.current.get(key) !== task) return
+      saveQueues.current.delete(key)
       setPendingKeys((current) => {
         const next = new Set(current)
         next.delete(key)
         return next
       })
-    }
+    })
+    saveQueues.current.set(key, task)
+    return task
   }, [])
 
   return { lineups, loading, pendingKeys, savedKey, error, saveLineup }
@@ -261,7 +272,17 @@ export function MatchLineupEntry({
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedPlayerNumber, setSelectedPlayerNumber] = useState<number | null>(null)
   const key = matchKey(match)
-  const assignments = assignmentsFromLineup(lineups.find((item) => matchKey(item) === key))
+  const savedAssignments = assignmentsFromLineup(lineups.find((item) => matchKey(item) === key))
+  const [localAssignments, setLocalAssignments] = useState<LineupAssignments>(savedAssignments)
+  const localAssignmentsRef = useRef(localAssignments)
+  const pending = pendingKeys.has(key)
+  useEffect(() => {
+    if (pending) return
+    const next = assignmentsFromLineup(lineups.find((item) => matchKey(item) === key))
+    localAssignmentsRef.current = next
+    setLocalAssignments(next)
+  }, [key, lineups, pending])
+  const assignments = localAssignments
   const calledPlayers = players.filter((player) => isCalledForTeam(
     convocations.find((convocation) => convocation.number === player.number),
     dateKey(match.date),
@@ -269,7 +290,6 @@ export function MatchLineupEntry({
   ))
   const starters = calledPlayers.filter((player) => assignments[player.number] === 'starter')
   const substitutes = calledPlayers.filter((player) => assignments[player.number] === 'substitute')
-  const pending = pendingKeys.has(key)
   const selectedPlayer = players.find((player) => player.number === selectedPlayerNumber) ?? null
   const selectedPlayerStats = selectedPlayer
     ? playerStats.find((stats) => stats.number === selectedPlayer.number) ?? {
@@ -313,9 +333,11 @@ export function MatchLineupEntry({
   }, [dialogOpen])
 
   const updateRole = (playerNumber: number, role: LineupRole | null) => {
-    const nextAssignments = { ...assignments }
-    if (role === assignments[playerNumber] || role === null) delete nextAssignments[playerNumber]
+    const nextAssignments = { ...localAssignmentsRef.current }
+    if (role === nextAssignments[playerNumber] || role === null) delete nextAssignments[playerNumber]
     else nextAssignments[playerNumber] = role
+    localAssignmentsRef.current = nextAssignments
+    setLocalAssignments(nextAssignments)
     const nextStarters = Object.entries(nextAssignments)
       .filter(([, assignment]) => assignment === 'starter')
       .map(([number]) => Number(number))
@@ -424,7 +446,7 @@ export function MatchLineupEntry({
                         title="Commence le match"
                         aria-label={`${currentRole === 'starter' ? 'Retirer : ' : 'Choisir : '}commence le match pour ${player.firstName} ${player.lastName}`}
                         aria-pressed={currentRole === 'starter'}
-                        disabled={pending || (currentRole !== 'starter' && starters.length >= 8)}
+                        disabled={currentRole !== 'starter' && starters.length >= 8}
                         onClick={() => updateRole(player.number, 'starter')}
                         className={`${buttonClass} ${currentRole === 'starter' ? 'border-primary bg-primary text-primary-foreground' : 'border-accent/50 bg-background text-foreground hover:bg-muted'}`}
                       >
@@ -435,7 +457,6 @@ export function MatchLineupEntry({
                         title="Peut entrer en cours de jeu"
                         aria-label={`${currentRole === 'substitute' ? 'Retirer : ' : 'Choisir : '}peut entrer en cours de jeu pour ${player.firstName} ${player.lastName}`}
                         aria-pressed={currentRole === 'substitute'}
-                        disabled={pending}
                         onClick={() => updateRole(player.number, 'substitute')}
                         className={`${buttonClass} ${currentRole === 'substitute' ? 'border-primary bg-primary text-primary-foreground' : 'border-accent/50 bg-background text-foreground hover:bg-muted'}`}
                       >
@@ -446,7 +467,6 @@ export function MatchLineupEntry({
                           type="button"
                           title="Retirer ce choix"
                           aria-label={`Retirer le choix pour ${player.firstName} ${player.lastName}`}
-                          disabled={pending}
                           onClick={() => updateRole(player.number, null)}
                           className={`${buttonClass} border-accent/50 bg-background text-muted-foreground hover:bg-muted`}
                         >

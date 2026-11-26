@@ -590,19 +590,6 @@ export function TeamPlanning({
             <span>Ajouter</span>
           </button>
         )}
-        {canManage && (
-          <button
-            type="button"
-            onClick={() => openMatchPlanner()}
-            aria-label="Ajouter un match au planning"
-            title="Ajouter un match"
-            className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1 rounded-xl border border-amber-300/80 bg-gradient-to-r from-amber-100 to-amber-200 px-2.5 text-xs font-bold text-amber-950 shadow-sm transition hover:brightness-95 sm:gap-1.5 sm:px-3 sm:text-sm md:min-h-11 md:px-4 md:text-base"
-          >
-            <CalendarPlus aria-hidden="true" className="size-4" />
-            <span className="sm:hidden">Match</span>
-            <span className="hidden sm:inline">Ajouter un match</span>
-          </button>
-        )}
         <button
           type="button"
           onClick={() => void loadEvents()}
@@ -713,17 +700,6 @@ export function TeamPlanning({
 
             <div className="grid min-h-0 grid-cols-1 gap-3 overflow-y-auto p-4 text-[#172554] dark:text-amber-200 sm:grid-cols-2">
           <label className="grid gap-1 text-sm font-semibold">
-            Titre
-            <input
-              required
-              maxLength={100}
-              value={draft.title}
-              onChange={(event) => updateDraft('title', event.target.value)}
-              placeholder="Ex. Match contre l’ES..."
-              className={EVENT_FORM_INPUT_CLASS}
-            />
-          </label>
-          <label className="grid gap-1 text-sm font-semibold">
             Type
             <select
               value={draft.type}
@@ -744,6 +720,17 @@ export function TeamPlanning({
               <option value="meeting">Réunion</option>
               <option value="cohesion">Journée de cohésion</option>
             </select>
+          </label>
+          <label className="grid gap-1 text-sm font-semibold">
+            Titre
+            <input
+              required
+              maxLength={100}
+              value={draft.title}
+              onChange={(event) => updateDraft('title', event.target.value)}
+              placeholder="Ex. Match contre l’ES..."
+              className={EVENT_FORM_INPUT_CLASS}
+            />
           </label>
           <label className="grid gap-1 text-sm font-semibold">
             Équipe

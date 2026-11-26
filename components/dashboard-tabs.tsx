@@ -324,8 +324,9 @@ export function DashboardTabs({
   }, [])
 
   const tabs: { key: TabKey; label: string }[] = [
-    { key: 'matches', label: 'Matchs' },
     { key: 'roster', label: 'Fiches joueurs' },
+    { key: 'planning', label: 'Planning' },
+    { key: 'matches', label: 'Matchs' },
     { key: 'stats', label: 'Statistiques U11' },
     ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
       ? [{ key: 'educator' as const, label: 'Annuaire' }]
@@ -336,21 +337,13 @@ export function DashboardTabs({
     ...(educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
       ? [{ key: 'whatsapp' as const, label: 'Messages WhatsApp' }]
       : []),
-    { key: 'planning', label: 'Planning' },
   ]
-  const canAccessTraining = educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'
-  const mobileMainTabs: Array<{ key: TabKey | 'more'; label: string; shortLabel?: string; icon: LucideIcon }> = canAccessTraining
-    ? [
-        { key: 'matches', label: 'Matchs', icon: CalendarDays },
-        { key: 'training', label: 'Entraînements', icon: Dumbbell },
-        { key: 'planning', label: 'Planning', icon: CalendarRange },
-        { key: 'more', label: 'Plus', icon: Ellipsis },
-      ]
-    : [
-        { key: 'matches', label: 'Matchs', icon: CalendarDays },
-        { key: 'stats', label: 'Stats', icon: BarChart3 },
-        { key: 'more', label: 'Plus', icon: Ellipsis },
-      ]
+  const mobileMainTabs: Array<{ key: TabKey | 'more'; label: string; shortLabel?: string; icon: LucideIcon }> = [
+    { key: 'roster', label: 'Fiches joueurs', icon: Shirt },
+    { key: 'planning', label: 'Planning', icon: CalendarRange },
+    { key: 'matches', label: 'Matchs', icon: CalendarDays },
+    { key: 'more', label: 'Plus', icon: Ellipsis },
+  ]
   const moreMenuTabs = tabs.filter((tab) => !mobileMainTabs.some((mobileTab) => mobileTab.key === tab.key))
   const moreMenuIcons: Partial<Record<TabKey, LucideIcon>> = {
     roster: Shirt,
@@ -739,7 +732,7 @@ export function DashboardTabs({
             })}
           </div>
         )}
-        <div className={`mx-auto grid w-full max-w-lg gap-1 rounded-2xl bg-muted/90 p-1 ${mobileMainTabs.length === 4 ? 'grid-cols-[1fr_1.35fr_1fr_1fr]' : 'grid-cols-3'}`}>
+        <div className="mx-auto grid w-full max-w-lg grid-cols-[1.35fr_1fr_1fr_1fr] gap-1 rounded-2xl bg-muted/90 p-1">
           {mobileMainTabs.map((tab) => {
             const Icon = tab.icon
             const isMore = tab.key === 'more'

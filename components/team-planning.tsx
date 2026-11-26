@@ -372,6 +372,20 @@ export function TeamPlanning({
     }
   }, [formOpen, resetForm, saving])
 
+  useEffect(() => {
+    if (view !== 'year' || !selectedYearDate) return
+    const previousOverflow = document.body.style.overflow
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSelectedYearDate(null)
+    }
+    document.body.style.overflow = 'hidden'
+    window.addEventListener('keydown', closeOnEscape)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', closeOnEscape)
+    }
+  }, [selectedYearDate, view])
+
   const openNewEventForm = () => {
     setMatchPlannerOpen(false)
     const date = toDateKey(new Date())
@@ -1044,80 +1058,104 @@ export function TeamPlanning({
       {!loading && !loadError && view === 'year' && periodRange && (
         <>
           {selectedYearDate && (
-            <section
-              aria-live="polite"
-              className="rounded-2xl border border-primary/30 bg-card p-3 shadow-sm sm:p-4"
+            <div
+              className="fixed inset-0 z-[120] flex items-center justify-center bg-[#08132f]/65 p-4 backdrop-blur-sm"
+              onMouseDown={(event) => {
+                if (event.target === event.currentTarget) setSelectedYearDate(null)
+              }}
             >
-              <header className="mb-3 flex items-start justify-between gap-3">
-                <div>
-                  <h3 className="font-black capitalize text-foreground">
-                    Événements du {formatDate(selectedYearDate, {
-                      weekday: 'long',
-                      day: 'numeric',
-                      month: 'long',
-                      year: 'numeric',
-                    })}
-                  </h3>
-                  <p className="text-xs text-muted-foreground">
+              <section
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="annual-date-events-title"
+                className="flex max-h-[90dvh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-[#d4af37]/60 bg-card shadow-2xl sm:rounded-3xl"
+              >
+                <header className="flex shrink-0 items-center justify-between gap-3 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-4 py-3 text-white">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <ClubCrest className="size-9 shrink-0 ring-2 ring-[#d4af37]" />
+                    <div className="min-w-0">
+                      <p className="text-[9px] font-black uppercase tracking-widest text-[#d4af37]">ES Genech · U11</p>
+                      <h3 id="annual-date-events-title" className="truncate text-sm font-black capitalize sm:text-base">
+                        Événements du {formatDate(selectedYearDate, {
+                          weekday: 'long',
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric',
+                        })}
+                      </h3>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    aria-label="Fermer les événements"
+                    onClick={() => setSelectedYearDate(null)}
+                    className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-white/20 bg-white/10 transition hover:bg-white/20"
+                  >
+                    <X aria-hidden="true" className="size-5" />
+                  </button>
+                </header>
+                <div className="min-h-0 overflow-y-auto p-4">
+                  <p className="mb-3 text-xs text-muted-foreground">
                     {selectedYearDateEvents.length} événement{selectedYearDateEvents.length === 1 ? '' : 's'}
                   </p>
+                  {selectedYearDateEvents.length === 0 ? (
+                    <p className="rounded-lg bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                      Aucun événement à cette date avec les filtres sélectionnés.
+                    </p>
+                  ) : (
+                    <ul className="grid gap-2 sm:grid-cols-2">
+                      {selectedYearDateEvents.map((event) => (
+                        <li
+                          key={event.id}
+                          className={`rounded-xl border border-border/70 border-l-[3px] p-3 shadow-sm ${EVENT_COLORS[event.type].card}`}
+                        >
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${EVENT_COLORS[event.type].badge}`}>
+                              {TYPE_LABELS[event.type]}
+                            </span>
+                            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                              {event.team === 'both' ? 'E1 + E2' : event.team}
+                            </span>
+                            {event.notes && (
+                              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                                {event.notes}
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="mt-1 font-black text-foreground">{event.title}</h4>
+                          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                            {(event.startTime || event.endTime || event.meetingTime) && (
+                              <span>
+                                {event.startTime && event.endTime
+                                  ? `${event.startTime}–${event.endTime}`
+                                  : event.startTime || event.endTime}
+                                {event.meetingTime && ` · RDV ${event.meetingTime}`}
+                              </span>
+                            )}
+                            <span className="inline-flex items-center gap-1">
+                              <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
+                              {event.location}
+                            </span>
+                            {event.endDate > event.date && (
+                              <span>{formatEventDateRange(event.date, event.endDate)}</span>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
-                <button
-                  type="button"
-                  aria-label="Effacer la date sélectionnée"
-                  onClick={() => setSelectedYearDate(null)}
-                  className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted"
-                >
-                  <X aria-hidden="true" className="size-4" />
-                </button>
-              </header>
-              {selectedYearDateEvents.length === 0 ? (
-                <p className="rounded-lg bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
-                  Aucun événement à cette date avec les filtres sélectionnés.
-                </p>
-              ) : (
-                <ul className="grid gap-2 sm:grid-cols-2">
-                  {selectedYearDateEvents.map((event) => (
-                    <li
-                      key={event.id}
-                      className={`rounded-xl border border-border/70 border-l-[3px] p-3 shadow-sm ${EVENT_COLORS[event.type].card}`}
-                    >
-                      <div className="flex flex-wrap items-center gap-1.5">
-                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${EVENT_COLORS[event.type].badge}`}>
-                          {TYPE_LABELS[event.type]}
-                        </span>
-                        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
-                          {event.team === 'both' ? 'E1 + E2' : event.team}
-                        </span>
-                        {event.notes && (
-                          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
-                            {event.notes}
-                          </span>
-                        )}
-                      </div>
-                      <h4 className="mt-1 font-black text-foreground">{event.title}</h4>
-                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                        {(event.startTime || event.endTime || event.meetingTime) && (
-                          <span>
-                            {event.startTime && event.endTime
-                              ? `${event.startTime}–${event.endTime}`
-                              : event.startTime || event.endTime}
-                            {event.meetingTime && ` · RDV ${event.meetingTime}`}
-                          </span>
-                        )}
-                        <span className="inline-flex items-center gap-1">
-                          <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
-                          {event.location}
-                        </span>
-                        {event.endDate > event.date && (
-                          <span>{formatEventDateRange(event.date, event.endDate)}</span>
-                        )}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
+                <footer className="shrink-0 border-t border-border/70 bg-background/95 p-3">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedYearDate(null)}
+                    className="min-h-10 w-full rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground"
+                  >
+                    Fermer
+                  </button>
+                </footer>
+              </section>
+            </div>
           )}
 
           <section aria-label={`Calendrier de la saison ${periodRange.startDate.slice(0, 4)}–${periodRange.endDate.slice(0, 4)}`}>

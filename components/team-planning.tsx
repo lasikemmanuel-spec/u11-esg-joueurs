@@ -392,20 +392,17 @@ export function TeamPlanning({
   }
 
   return (
-    <section className="flex flex-col gap-5">
+    <section className="flex flex-col gap-3 sm:gap-5">
       <header className="flex flex-col gap-1">
         <div>
           <h2 className="flex items-center gap-2 text-xl font-black text-foreground">
             <CalendarDays aria-hidden="true" className="size-6 text-primary" />
             Planning
           </h2>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Filtrer les activités
-          </p>
         </div>
       </header>
 
-      <div className="flex flex-wrap gap-1" role="group" aria-label="Filtrer les événements">
+      <div className="flex flex-nowrap gap-1 overflow-x-auto overscroll-x-contain py-0.5 sm:flex-wrap sm:overflow-visible" role="group" aria-label="Filtrer les événements">
         {EVENT_FILTERS.map((filter) => {
           const selected = filter.types.every((type) => selectedTypes.includes(type))
           return (
@@ -415,7 +412,7 @@ export function TeamPlanning({
               aria-label={`Afficher ou masquer ${filter.accessibleLabel ?? filter.label}`}
               aria-pressed={selected}
               onClick={() => toggleEventTypes(filter.types)}
-              className={`inline-flex min-h-9 shrink-0 items-center justify-center gap-1 whitespace-nowrap rounded-xl border px-1.5 text-[10px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              className={`inline-flex min-h-9 shrink-0 items-center justify-center gap-0.5 whitespace-nowrap rounded-xl border px-1 text-[10px] font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                 selected
                   ? 'border-blue-300 bg-gradient-to-r from-blue-50 to-sky-100 text-[#1e3a8a] shadow-sm ring-1 ring-[#d4af37]/40 dark:border-blue-700 dark:from-blue-950/70 dark:to-slate-900 dark:text-sky-100'
                   : 'border-border/70 bg-background/50 text-muted-foreground hover:border-blue-300 hover:bg-blue-50/70 dark:hover:bg-blue-950/30'
@@ -740,7 +737,7 @@ export function TeamPlanning({
           )}
         </div>
       ) : (
-        <ul className="grid gap-3">
+        <ul className="grid gap-2 sm:gap-3">
           {visibleEvents.map((event) => {
             const dateParts = getDateParts(event.date)
             const weekColor = getWeekColor(event.date)

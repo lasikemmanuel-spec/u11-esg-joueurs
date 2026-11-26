@@ -639,6 +639,7 @@ export function DashboardTabs({
         {activeTab === 'planning' && (
           <TeamPlanning
             canManage={educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'}
+            matches={matchResults.entries}
             players={rosterPlayers}
             trainingAttendance={trainingAttendance}
             onOpenTraining={(date) => {

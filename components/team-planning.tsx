@@ -18,9 +18,11 @@ import {
 } from 'lucide-react'
 import { MatchWeather } from '@/components/match-weather'
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
+import type { MatchSheetEntry } from '@/lib/match-results'
 import { isCountedTrainingStatus } from '@/lib/training-attendance-metrics'
 import type { PublicPlayer } from '@/lib/players'
 import type { TrainingAttendanceSession } from '@/lib/training-attendance-shared'
+import { getScheduledMatchPlanningEvents, type PlanningCardEvent } from '@/lib/team-planning-match-events'
 import {
   createCalendarFile,
   MAX_WEEKLY_RECURRENCE_EVENTS,
@@ -128,17 +130,19 @@ function getTrainingAttendanceGauge(
   return { present, absent, total: players.length }
 }
 
-function sortEvents(events: PlanningEvent[]) {
+function sortEvents(events: PlanningCardEvent[]) {
   return [...events].sort((a, b) => `${a.date}T${a.startTime}`.localeCompare(`${b.date}T${b.startTime}`))
 }
 
 export function TeamPlanning({
   canManage,
+  matches,
   players,
   trainingAttendance,
   onOpenTraining,
 }: {
   canManage: boolean
+  matches: MatchSheetEntry[]
   players: PublicPlayer[]
   trainingAttendance: TrainingAttendanceSession[]
   onOpenTraining: (date: string) => void
@@ -181,12 +185,19 @@ export function TeamPlanning({
   }, [loadEvents])
 
   const today = toDateKey(new Date())
+  const allEvents = useMemo(
+    () => [
+      ...events,
+      ...getScheduledMatchPlanningEvents(matches, events, today),
+    ],
+    [events, matches, today],
+  )
   const visibleEvents = useMemo(() => {
     const weekEnd = addDays(weekStart, 6)
-    return sortEvents(events.filter((event) => view === 'week'
+    return sortEvents(allEvents.filter((event) => view === 'week'
       ? event.date >= weekStart && event.date <= weekEnd
       : event.date >= today))
-  }, [events, today, view, weekStart])
+  }, [allEvents, today, view, weekStart])
 
   const resetForm = () => {
     const date = toDateKey(new Date())
@@ -703,11 +714,15 @@ export function TeamPlanning({
                       {event.title}
                     </h3>
                     <div className="mt-1 flex min-w-0 flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                      <span className="inline-flex items-center gap-1 whitespace-nowrap">
-                        <Clock3 aria-hidden="true" className="size-3.5 shrink-0" />
-                        {event.startTime}–{event.endTime}
-                        {event.meetingTime && ` · RDV ${event.meetingTime}`}
-                      </span>
+                      {(event.startTime || event.endTime || event.meetingTime) && (
+                        <span className="inline-flex items-center gap-1 whitespace-nowrap">
+                          <Clock3 aria-hidden="true" className="size-3.5 shrink-0" />
+                          {event.startTime && event.endTime
+                            ? `${event.startTime}–${event.endTime}`
+                            : event.startTime || event.endTime}
+                          {event.meetingTime && ` · RDV ${event.meetingTime}`}
+                        </span>
+                      )}
                       <span className="inline-flex min-w-0 items-center gap-1">
                         <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
                         <span className="truncate">{event.location}</span>
@@ -780,7 +795,7 @@ export function TeamPlanning({
                     >
                       <CalendarPlus aria-hidden="true" className="size-4" />
                     </button>
-                    {canManage && (
+                    {canManage && event.source !== 'match-sheet' && (
                       <button
                         type="button"
                         onClick={() => editEvent(event)}

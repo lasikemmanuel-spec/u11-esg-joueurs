@@ -16,6 +16,7 @@ import type { MatchSheetEntry, TeamMatchResults } from '@/lib/match-results'
 import type { TrainingAttendanceSession } from '@/lib/training-attendance'
 import type { CohesionDay } from '@/lib/cohesion'
 import type { PlayerStats as PlayerStat } from '@/lib/stats'
+import { getLegacyPendingOfflineCount, getTotalPendingOfflineCount, setOfflineStorageAccount } from '@/lib/offline-storage'
 
 type TabKey = 'roster' | 'educator' | 'stats' | 'matches' | 'planning' | 'whatsapp'
 type StatsSection = 'players' | 'dynamics' | 'matches'
@@ -196,6 +197,7 @@ export function DashboardTabs({
         const result = await response.json()
         if (response.status === 401) {
           if (active) {
+            setOfflineStorageAccount(null)
             setEducatorAccess('unauthenticated')
             setApplicationSession('unauthenticated')
           }
@@ -204,6 +206,7 @@ export function DashboardTabs({
         if (!response.ok) throw new Error(result.error ?? 'Impossible de vérifier la connexion.')
         if (!active) return
         const identity = result.educator as EducatorIdentity
+        setOfflineStorageAccount(identity.username)
         setEducatorIdentity(identity)
         setEducatorAccess(identity.role === 'reader' ? 'unauthenticated' : 'authenticated')
         setApplicationSession('authenticated')
@@ -268,6 +271,7 @@ export function DashboardTabs({
       serviceUnavailable = response.status >= 500
       if (!response.ok) throw new Error(result.error ?? 'Connexion impossible.')
       const identity = result.educator as EducatorIdentity
+      setOfflineStorageAccount(identity.username)
       setEducatorIdentity(identity)
       setEducatorAccess(identity.role === 'reader' ? 'unauthenticated' : 'authenticated')
       setApplicationSession('authenticated')
@@ -284,6 +288,18 @@ export function DashboardTabs({
   }
 
   const handleEducatorLogout = async () => {
+    const pendingOfflineCount = getTotalPendingOfflineCount()
+    const legacyPendingCount = getLegacyPendingOfflineCount()
+    const pendingMessage = legacyPendingCount > 0
+      ? `${legacyPendingCount} ancienne(s) saisie(s) ne sont pas encore associées à un compte. Il faudra les associer au bon compte avant de les envoyer.`
+      : 'Les saisies resteront associées à ce compte sur cet appareil jusqu’à leur envoi.'
+    if (
+      pendingOfflineCount > 0 &&
+      !window.confirm(
+        `${pendingOfflineCount} saisie(s) hors-ligne n’ont pas encore été envoyées. ${pendingMessage} Veux-tu te déconnecter quand même ?`,
+      )
+    ) return
+
     setLogoutPending(true)
     setLogoutError('')
     try {
@@ -296,6 +312,7 @@ export function DashboardTabs({
       setEducatorIdentity(null)
       setApplicationSession('unauthenticated')
       setEducatorAccess('unauthenticated')
+      setOfflineStorageAccount(null)
       setReturnToMatchesAfterLogin(false)
       window.dispatchEvent(new Event('educator-session-changed'))
       router.refresh()
@@ -307,6 +324,7 @@ export function DashboardTabs({
   }
 
   const handleEducatorChange = useCallback((identity: EducatorIdentity | null) => {
+    setOfflineStorageAccount(identity?.username ?? null)
     setEducatorIdentity((current) => {
       if (
         current?.username === identity?.username &&

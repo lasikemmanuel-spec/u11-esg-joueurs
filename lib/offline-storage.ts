@@ -35,12 +35,25 @@ export type MatchLineupData = {
 }
 
 const STORAGE_PREFIX = 'esg_offline_'
-const PENDING_LIVE_PREFIX = `${STORAGE_PREFIX}pending_live_`
-const PENDING_ATTENDANCE_PREFIX = `${STORAGE_PREFIX}pending_att_`
-const PENDING_LINEUP_PREFIX = `${STORAGE_PREFIX}pending_lineup_`
-const LIVE_SESSION_PREFIX = `${STORAGE_PREFIX}live_session_`
-const ATTENDANCE_PREFIX = `${STORAGE_PREFIX}attendance_`
-const LINEUPS_CACHE_KEY = `${STORAGE_PREFIX}all_lineups`
+const ACTIVE_ACCOUNT_KEY = `${STORAGE_PREFIX}active_account`
+const UNASSIGNED_PREFIX = `${STORAGE_PREFIX}unassigned_`
+const PENDING_LIVE_SUFFIX = 'pending_live_'
+const PENDING_ATTENDANCE_SUFFIX = 'pending_att_'
+const PENDING_LINEUP_SUFFIX = 'pending_lineup_'
+const LIVE_SESSION_SUFFIX = 'live_session_'
+const ATTENDANCE_SUFFIX = 'attendance_'
+const LINEUPS_CACHE_SUFFIX = 'all_lineups'
+const LEGACY_PENDING_PREFIXES = [
+  `${STORAGE_PREFIX}pending_live_`,
+  `${STORAGE_PREFIX}pending_att_`,
+  `${STORAGE_PREFIX}pending_lineup_`,
+]
+const LEGACY_DATA_PREFIXES = [
+  ...LEGACY_PENDING_PREFIXES,
+  `${STORAGE_PREFIX}live_session_`,
+  `${STORAGE_PREFIX}attendance_`,
+  `${STORAGE_PREFIX}all_lineups`,
+]
 
 export function liveMatchKey(match: { date: string; team: string; slotColumn: number }) {
   const normalizedDate = match.date.replace(/[/. ]/g, '-')
@@ -54,6 +67,31 @@ function safeGetItem(key: string): string | null {
   } catch {
     return null
   }
+}
+
+function normalizeAccount(username: string) {
+  return username.trim().toLocaleLowerCase('fr-FR')
+}
+
+export function getOfflineStorageAccount() {
+  return safeGetItem(ACTIVE_ACCOUNT_KEY)
+}
+
+export function setOfflineStorageAccount(username: string | null) {
+  const account = username ? normalizeAccount(username) : ''
+  if (account) safeSetItem(ACTIVE_ACCOUNT_KEY, account)
+  else safeRemoveItem(ACTIVE_ACCOUNT_KEY)
+}
+
+function getAccountStoragePrefix() {
+  const account = getOfflineStorageAccount()
+  return account
+    ? `${STORAGE_PREFIX}account_${encodeURIComponent(account)}_`
+    : UNASSIGNED_PREFIX
+}
+
+function scopedKey(suffix: string, key = '') {
+  return `${getAccountStoragePrefix()}${suffix}${key}`
 }
 
 function safeSetItem(key: string, value: string): boolean {
@@ -103,7 +141,7 @@ function subscribe(callback: () => void) {
  * ========================================================================= */
 
 export function saveOfflineLiveMatch(session: LiveMatchSession): void {
-  const key = `${LIVE_SESSION_PREFIX}${liveMatchKey(session)}`
+  const key = scopedKey(LIVE_SESSION_SUFFIX, liveMatchKey(session))
   safeSetItem(key, JSON.stringify(session))
 }
 
@@ -112,7 +150,7 @@ export function getOfflineLiveMatch(
   team: string,
   slotColumn: number,
 ): LiveMatchSession | null {
-  const key = `${LIVE_SESSION_PREFIX}${liveMatchKey({ date, team, slotColumn })}`
+  const key = scopedKey(LIVE_SESSION_SUFFIX, liveMatchKey({ date, team, slotColumn }))
   const data = safeGetItem(key)
   if (!data) return null
   try {
@@ -133,7 +171,7 @@ export function queuePendingLiveMatch(
     session,
     queuedAt: Date.now(),
   }
-  safeSetItem(`${PENDING_LIVE_PREFIX}${matchKey}`, JSON.stringify(item))
+  safeSetItem(scopedKey(PENDING_LIVE_SUFFIX, matchKey), JSON.stringify(item))
   saveOfflineLiveMatch(session)
 }
 
@@ -143,7 +181,7 @@ export function getPendingLiveMatches(): OfflinePendingLiveMatch[] {
   try {
     for (let i = 0; i < window.localStorage.length; i += 1) {
       const key = window.localStorage.key(i)
-      if (key?.startsWith(PENDING_LIVE_PREFIX)) {
+      if (key?.startsWith(scopedKey(PENDING_LIVE_SUFFIX))) {
         const raw = window.localStorage.getItem(key)
         if (raw) {
           items.push(JSON.parse(raw) as OfflinePendingLiveMatch)
@@ -157,7 +195,7 @@ export function getPendingLiveMatches(): OfflinePendingLiveMatch[] {
 }
 
 export function removePendingLiveMatch(key: string): void {
-  safeRemoveItem(`${PENDING_LIVE_PREFIX}${key}`)
+  safeRemoveItem(scopedKey(PENDING_LIVE_SUFFIX, key))
 }
 
 /* =========================================================================
@@ -168,13 +206,13 @@ export function saveOfflineAttendance(
   date: string,
   entries: Array<{ number: number; status: string }>,
 ): void {
-  safeSetItem(`${ATTENDANCE_PREFIX}${date}`, JSON.stringify(entries))
+  safeSetItem(scopedKey(ATTENDANCE_SUFFIX, date), JSON.stringify(entries))
 }
 
 export function getOfflineAttendance(
   date: string,
 ): Array<{ number: number; status: string }> | null {
-  const raw = safeGetItem(`${ATTENDANCE_PREFIX}${date}`)
+  const raw = safeGetItem(scopedKey(ATTENDANCE_SUFFIX, date))
   if (!raw) return null
   try {
     return JSON.parse(raw) as Array<{ number: number; status: string }>
@@ -192,7 +230,7 @@ export function queuePendingAttendance(
     entries,
     queuedAt: Date.now(),
   }
-  safeSetItem(`${PENDING_ATTENDANCE_PREFIX}${date}`, JSON.stringify(item))
+  safeSetItem(scopedKey(PENDING_ATTENDANCE_SUFFIX, date), JSON.stringify(item))
   saveOfflineAttendance(date, entries)
 }
 
@@ -202,7 +240,7 @@ export function getPendingAttendances(): OfflinePendingAttendance[] {
   try {
     for (let i = 0; i < window.localStorage.length; i += 1) {
       const key = window.localStorage.key(i)
-      if (key?.startsWith(PENDING_ATTENDANCE_PREFIX)) {
+      if (key?.startsWith(scopedKey(PENDING_ATTENDANCE_SUFFIX))) {
         const raw = window.localStorage.getItem(key)
         if (raw) {
           items.push(JSON.parse(raw) as OfflinePendingAttendance)
@@ -216,7 +254,7 @@ export function getPendingAttendances(): OfflinePendingAttendance[] {
 }
 
 export function removePendingAttendance(date: string): void {
-  safeRemoveItem(`${PENDING_ATTENDANCE_PREFIX}${date}`)
+  safeRemoveItem(scopedKey(PENDING_ATTENDANCE_SUFFIX, date))
 }
 
 /* =========================================================================
@@ -224,11 +262,11 @@ export function removePendingAttendance(date: string): void {
  * ========================================================================= */
 
 export function saveOfflineLineups(lineups: MatchLineupData[]): void {
-  safeSetItem(LINEUPS_CACHE_KEY, JSON.stringify(lineups))
+  safeSetItem(scopedKey(LINEUPS_CACHE_SUFFIX), JSON.stringify(lineups))
 }
 
 export function getOfflineLineups(): MatchLineupData[] | null {
-  const raw = safeGetItem(LINEUPS_CACHE_KEY)
+  const raw = safeGetItem(scopedKey(LINEUPS_CACHE_SUFFIX))
   if (!raw) return null
   try {
     return JSON.parse(raw) as MatchLineupData[]
@@ -244,7 +282,7 @@ export function queuePendingLineup(lineup: MatchLineupData): void {
     ...lineup,
     queuedAt: Date.now(),
   }
-  safeSetItem(`${PENDING_LINEUP_PREFIX}${key}`, JSON.stringify(item))
+  safeSetItem(scopedKey(PENDING_LINEUP_SUFFIX, key), JSON.stringify(item))
 
   // Mettre à jour aussi le cache complet des compositions
   const existing = getOfflineLineups() ?? []
@@ -261,7 +299,7 @@ export function getPendingLineups(): OfflinePendingLineup[] {
   try {
     for (let i = 0; i < window.localStorage.length; i += 1) {
       const key = window.localStorage.key(i)
-      if (key?.startsWith(PENDING_LINEUP_PREFIX)) {
+      if (key?.startsWith(scopedKey(PENDING_LINEUP_SUFFIX))) {
         const raw = window.localStorage.getItem(key)
         if (raw) {
           items.push(JSON.parse(raw) as OfflinePendingLineup)
@@ -275,7 +313,7 @@ export function getPendingLineups(): OfflinePendingLineup[] {
 }
 
 export function removePendingLineup(key: string): void {
-  safeRemoveItem(`${PENDING_LINEUP_PREFIX}${key}`)
+  safeRemoveItem(scopedKey(PENDING_LINEUP_SUFFIX, key))
 }
 
 /* =========================================================================
@@ -287,8 +325,46 @@ export function getTotalPendingOfflineCount(): number {
   return (
     getPendingLiveMatches().length +
     getPendingAttendances().length +
-    getPendingLineups().length
+    getPendingLineups().length +
+    getLegacyPendingOfflineCount()
   )
+}
+
+export function getLegacyPendingOfflineCount() {
+  if (typeof window === 'undefined') return 0
+  let count = 0
+  try {
+    for (let index = 0; index < window.localStorage.length; index += 1) {
+      const key = window.localStorage.key(index)
+      if (key && LEGACY_PENDING_PREFIXES.some((prefix) => key.startsWith(prefix))) count += 1
+    }
+  } catch {
+    return 0
+  }
+  return count
+}
+
+export function claimLegacyOfflineData() {
+  if (typeof window === 'undefined' || !getOfflineStorageAccount()) return 0
+  const accountPrefix = getAccountStoragePrefix()
+  let claimed = 0
+  try {
+    for (let index = window.localStorage.length - 1; index >= 0; index -= 1) {
+      const key = window.localStorage.key(index)
+      if (!key || !LEGACY_DATA_PREFIXES.some((prefix) => key.startsWith(prefix))) continue
+      const value = window.localStorage.getItem(key)
+      if (value === null) continue
+      const scopedKey = `${accountPrefix}${key.slice(STORAGE_PREFIX.length)}`
+      if (window.localStorage.getItem(scopedKey) !== null) continue
+      window.localStorage.setItem(scopedKey, value)
+      claimed += 1
+      window.localStorage.removeItem(key)
+    }
+  } catch {
+    // Garde les saisies restantes pour une nouvelle tentative.
+  }
+  notifyListeners()
+  return claimed
 }
 
 export async function syncAllPendingData(): Promise<{
@@ -309,9 +385,20 @@ export async function syncAllPendingData(): Promise<{
     if (!sessionResponse.ok) {
       return { synced: 0, failed: pendingCount, errors: ['Impossible de vérifier la session éducateur. Réessaie plus tard.'] }
     }
-    const session = await sessionResponse.json() as { educator?: { role?: string } }
+    const session = await sessionResponse.json() as { educator?: { role?: string; username?: string } }
     if (session.educator?.role === 'reader') {
       return { synced: 0, failed: pendingCount, errors: ['Un compte en lecture seule ne peut pas synchroniser les saisies.'] }
+    }
+    const activeAccount = getOfflineStorageAccount()
+    if (
+      !session.educator?.username ||
+      !activeAccount ||
+      normalizeAccount(session.educator.username) !== activeAccount
+    ) {
+      return { synced: 0, failed: pendingCount, errors: ['Ces saisies appartiennent à un autre compte. Reconnecte-toi avec le compte qui les a enregistrées.'] }
+    }
+    if (getLegacyPendingOfflineCount() > 0) {
+      return { synced: 0, failed: pendingCount, errors: ['Des saisies d’une ancienne version ne sont pas encore associées à un compte. Associe-les au compte qui les a enregistrées avant de les envoyer.'] }
     }
   } catch {
     return { synced: 0, failed: pendingCount, errors: ['Impossible de joindre le serveur. Les saisies restent sur cet appareil.'] }
@@ -425,6 +512,16 @@ export function useOnlineStatus() {
     getPendingCountSnapshot,
     () => 0,
   )
+  const activeAccount = useSyncExternalStore(
+    subscribe,
+    getOfflineStorageAccount,
+    () => null,
+  )
+  const legacyPendingCount = useSyncExternalStore(
+    subscribe,
+    getLegacyPendingOfflineCount,
+    () => 0,
+  )
 
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<{
@@ -459,7 +556,7 @@ export function useOnlineStatus() {
   // Auto-sync quand la connexion revient et qu'il y a des données en attente
   useEffect(() => {
     if (isOnline && pendingCount > 0) void runSync()
-  }, [isOnline, pendingCount, sessionRevision, runSync])
+  }, [isOnline, pendingCount, activeAccount, sessionRevision, runSync])
 
   const triggerSync = async () => {
     return runSync()
@@ -468,6 +565,8 @@ export function useOnlineStatus() {
   return {
     isOnline,
     pendingCount,
+    activeAccount,
+    legacyPendingCount,
     syncing,
     syncResult,
     triggerSync,

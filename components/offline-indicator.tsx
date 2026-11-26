@@ -2,11 +2,22 @@
 
 import { useEffect, useState } from 'react'
 import { AlertCircle, CheckCircle2, RefreshCw, WifiOff } from 'lucide-react'
-import { useOnlineStatus } from '@/lib/offline-storage'
+import { claimLegacyOfflineData, useOnlineStatus } from '@/lib/offline-storage'
 
 export function OfflineIndicator() {
-  const { isOnline, pendingCount, syncing, syncResult, triggerSync } = useOnlineStatus()
+  const { isOnline, pendingCount, legacyPendingCount, activeAccount, syncing, syncResult, triggerSync } = useOnlineStatus()
   const [showSuccess, setShowSuccess] = useState(false)
+  const ownershipMessage = legacyPendingCount > 0
+    ? 'Les anciennes saisies doivent être associées au compte qui les a enregistrées.'
+    : 'Elles restent associées à ce compte sur cet appareil jusqu’à leur envoi.'
+
+  const claimLegacyData = () => {
+    if (!activeAccount) return
+    const accepted = window.confirm(
+      `${legacyPendingCount} ancienne(s) saisie(s) n’ont pas de compte associé. Vérifie que tu es connecté au compte qui les a enregistrées. Les associer à « ${activeAccount} » ?`,
+    )
+    if (accepted) claimLegacyOfflineData()
+  }
 
   useEffect(() => {
     if (syncResult && syncResult.synced > 0 && syncResult.failed === 0) {
@@ -26,6 +37,20 @@ export function OfflineIndicator() {
       aria-label="État de la connexion hors-ligne"
       className="fixed bottom-4 right-4 z-50 max-w-sm sm:max-w-md animate-in fade-in slide-in-from-bottom-2 duration-300"
     >
+      {legacyPendingCount > 0 && activeAccount && (
+        <div role="alert" className="mb-2 flex flex-col gap-2 rounded-2xl border border-amber-300/40 bg-[#0f1b3b]/95 p-3.5 text-xs text-white shadow-2xl backdrop-blur-md">
+          <p>
+            {legacyPendingCount} ancienne(s) saisie(s) hors-ligne ne sont associées à aucun compte. Vérifie le compte connecté avant de les récupérer.
+          </p>
+          <button
+            type="button"
+            onClick={claimLegacyData}
+            className="min-h-9 self-start rounded-xl bg-[#e0bd43] px-3 font-bold text-[#101b40] shadow hover:bg-amber-300"
+          >
+            Associer à ce compte
+          </button>
+        </div>
+      )}
       {!isOnline && (
         <div className="flex items-center gap-3 rounded-2xl border border-amber-400/40 bg-[#0f1b3b]/95 p-3.5 text-xs text-white shadow-2xl backdrop-blur-md">
           <div className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-amber-500/20 text-amber-300">
@@ -38,7 +63,7 @@ export function OfflineIndicator() {
                 ? `${pendingCount} saisie(s) sauvegardée(s) sur cet appareil`
                 : 'Saisie possible sur le terrain sans réseau'}
             </p>
-            {pendingCount > 0 && <p className="mt-1 text-amber-100/70">Elles seront conservées jusqu’à leur envoi.</p>}
+            {pendingCount > 0 && <p className="mt-1 text-amber-100/70">{ownershipMessage}</p>}
           </div>
         </div>
       )}
@@ -54,7 +79,7 @@ export function OfflineIndicator() {
                 {syncing ? 'Synchronisation en cours…' : syncResult?.failed ? 'Synchronisation incomplète' : 'Connexion rétablie'}
               </p>
               <p className="text-white/80">
-                {pendingCount} saisie(s) en attente d’envoi. Elles restent enregistrées sur cet appareil.
+                {pendingCount} saisie(s) en attente d’envoi. {ownershipMessage}
               </p>
             </div>
             {!syncing && (

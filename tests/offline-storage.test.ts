@@ -17,6 +17,7 @@ import {
   saveOfflineAttendance,
   saveOfflineLineups,
   saveOfflineLiveMatch,
+  setOfflineStorageAccount,
   syncAllPendingData,
 } from '@/lib/offline-storage'
 import type { LiveMatchSession } from '@/lib/live-match-shared'
@@ -65,6 +66,7 @@ describe('offline-storage', () => {
       // navigator déjà configuré
     }
     vi.restoreAllMocks()
+    setOfflineStorageAccount('coach')
   })
 
   afterEach(() => {
@@ -158,6 +160,11 @@ describe('offline-storage', () => {
       ok: true,
       status: 200,
       json: async () => ({ ok: true }),
+    })
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      status: 200,
+      json: async () => ({ educator: { username: 'coach', role: 'educator' } }),
     })
     globalThis.fetch = fetchMock
 

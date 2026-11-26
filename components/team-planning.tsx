@@ -119,7 +119,6 @@ type PlanningEventFilter = {
 const EVENT_FILTERS: PlanningEventFilter[] = [
   { id: 'training', label: 'Entraînement', emoji: '🏃', types: ['training'] },
   { id: 'tournament', label: 'Tournoi', emoji: '🏆', types: ['tournament'] },
-  { id: 'match', label: 'Matchs', emoji: '⚽', types: ['match'] },
   {
     id: 'meeting-cohesion',
     label: 'Vie du club',
@@ -274,6 +273,10 @@ export function TeamPlanning({
   const [formOpen, setFormOpen] = useState(false)
   const [formMinimized, setFormMinimized] = useState(false)
   const [matchPlannerOpen, setMatchPlannerOpen] = useState(false)
+  const [matchPlannerSeed, setMatchPlannerSeed] = useState<{
+    date: string
+    team: 'E1' | 'E2'
+  }>(() => ({ date: toDateKey(new Date()), team: 'E1' }))
   const [editingEvent, setEditingEvent] = useState<PlanningEvent | null>(null)
   const [editingSeries, setEditingSeries] = useState(false)
   const [draft, setDraft] = useState<PlanningEventFields>(EMPTY_DRAFT)
@@ -381,9 +384,10 @@ export function TeamPlanning({
     setFormOpen(true)
   }
 
-  const openMatchPlanner = () => {
+  const openMatchPlanner = (date = toDateKey(new Date()), team: 'E1' | 'E2' = 'E1') => {
     setFormOpen(false)
     setFormMinimized(false)
+    setMatchPlannerSeed({ date, team })
     setMatchPlannerOpen(true)
     setNotice('')
     setActionError('')
@@ -589,7 +593,7 @@ export function TeamPlanning({
         {canManage && (
           <button
             type="button"
-            onClick={openMatchPlanner}
+            onClick={() => openMatchPlanner()}
             aria-label="Ajouter un match au planning"
             title="Ajouter un match"
             className="inline-flex min-h-10 shrink-0 items-center justify-center gap-1 rounded-xl border border-amber-300/80 bg-gradient-to-r from-amber-100 to-amber-200 px-2.5 text-xs font-bold text-amber-950 shadow-sm transition hover:brightness-95 sm:gap-1.5 sm:px-3 sm:text-sm md:min-h-11 md:px-4 md:text-base"
@@ -725,6 +729,10 @@ export function TeamPlanning({
               value={draft.type}
               onChange={(event) => {
                 const type = event.target.value as PlanningEventFields['type']
+                if (type === 'match' && !editingEvent) {
+                  openMatchPlanner(draft.date, draft.team === 'E2' ? 'E2' : 'E1')
+                  return
+                }
                 updateDraft('type', type)
                 updateDraft('endDate', type === 'tournament' ? draft.endDate || draft.date : draft.date)
               }}
@@ -929,6 +937,8 @@ export function TeamPlanning({
 
       {canManage && matchPlannerOpen && (
         <MatchResultPlannerDialog
+          initialDate={matchPlannerSeed.date}
+          initialTeam={matchPlannerSeed.team}
           onClose={closeMatchPlanner}
           onSaved={handleMatchPlannerSaved}
         />

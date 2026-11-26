@@ -15,13 +15,20 @@ const MatchResultForm = dynamic(
 )
 
 export function MatchResultPlannerDialog({
+  initialDate,
+  initialTeam,
   onClose,
   onSaved,
 }: {
+  initialDate: string
+  initialTeam: 'E1' | 'E2'
   onClose: () => void
   onSaved: (sheetTitle: string, date: string) => void
 }) {
-  const [draft, setDraft] = useState<MatchResultDraft>(createMatchResultDraft)
+  const [draft, setDraft] = useState<MatchResultDraft>(() => ({
+    ...createMatchResultDraft(initialDate),
+    team: initialTeam,
+  }))
   const [formMinimized, setFormMinimized] = useState(false)
   const [pending, setPending] = useState(false)
   const [error, setError] = useState('')

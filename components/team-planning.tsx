@@ -31,6 +31,7 @@ import type { PublicPlayer } from '@/lib/players'
 import type { TrainingAttendanceSession } from '@/lib/training-attendance-shared'
 import {
   getPlanningMonthCalendarDays,
+  getPlanningMonthStarts,
   getPlanningPeriodRange,
   shiftPlanningPeriod,
   type PlanningPeriodView,
@@ -190,7 +191,7 @@ function formatPlanningPeriod(view: PlanningPeriodView, startDate: string, endDa
       year: 'numeric',
     })
   }
-  return startDate.slice(0, 4)
+  return `${startDate.slice(0, 4)}–${endDate.slice(0, 4)}`
 }
 
 function formatEventDateRange(startDate: string, endDate: string) {
@@ -264,6 +265,7 @@ export function TeamPlanning({
   const [periodAnchorDate, setPeriodAnchorDate] = useState(() =>
     getPlanningPeriodRange('week', toDateKey(new Date())).startDate,
   )
+  const [selectedYearDate, setSelectedYearDate] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [loadError, setLoadError] = useState('')
@@ -323,14 +325,15 @@ export function TeamPlanning({
     () => sortEvents(periodEvents.filter((event) => selectedTypes.includes(event.type))),
     [periodEvents, selectedTypes],
   )
+  const selectedYearDateEvents = selectedYearDate
+    ? getEventsOnDate(visibleEvents, selectedYearDate)
+    : []
   const periodRange = view === 'upcoming' ? null : getPlanningPeriodRange(view, periodAnchorDate)
   const monthCalendarDays = view === 'month' && periodRange
     ? getPlanningMonthCalendarDays(periodRange.startDate)
     : []
   const yearMonthStarts = view === 'year' && periodRange
-    ? Array.from({ length: 12 }, (_, month) =>
-        `${periodRange.startDate.slice(0, 4)}-${String(month + 1).padStart(2, '0')}-01`,
-      )
+    ? getPlanningMonthStarts(periodRange.startDate, periodRange.endDate)
     : []
 
   const toggleEventTypes = (types: readonly PlanningEvent['type'][]) => {
@@ -612,7 +615,10 @@ export function TeamPlanning({
             key={option.id}
             type="button"
             aria-pressed={view === option.id}
-            onClick={() => setView(option.id)}
+            onClick={() => {
+              setView(option.id)
+              setSelectedYearDate(null)
+            }}
             className={`min-h-10 shrink-0 flex-1 whitespace-nowrap rounded-xl px-2.5 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-4 sm:text-sm md:min-h-11 md:text-base ${
               view === option.id
                 ? 'bg-primary text-primary-foreground shadow-sm'
@@ -936,7 +942,10 @@ export function TeamPlanning({
           <button
             type="button"
             aria-label="Période précédente"
-            onClick={() => setPeriodAnchorDate((current) => shiftPlanningPeriod(view, current, -1))}
+            onClick={() => {
+              setPeriodAnchorDate((current) => shiftPlanningPeriod(view, current, -1))
+              setSelectedYearDate(null)
+            }}
             className="inline-flex size-9 items-center justify-center rounded-lg border border-border hover:bg-muted md:size-10"
           >
             <ChevronLeft aria-hidden="true" className="size-4 md:size-5" />
@@ -947,7 +956,10 @@ export function TeamPlanning({
           <button
             type="button"
             aria-label="Période suivante"
-            onClick={() => setPeriodAnchorDate((current) => shiftPlanningPeriod(view, current, 1))}
+            onClick={() => {
+              setPeriodAnchorDate((current) => shiftPlanningPeriod(view, current, 1))
+              setSelectedYearDate(null)
+            }}
             className="inline-flex size-9 items-center justify-center rounded-lg border border-border hover:bg-muted md:size-10"
           >
             <ChevronRight aria-hidden="true" className="size-4 md:size-5" />
@@ -1030,63 +1042,163 @@ export function TeamPlanning({
       )}
 
       {!loading && !loadError && view === 'year' && periodRange && (
-        <section aria-label={`Calendrier de l’année ${periodRange.startDate.slice(0, 4)}`}>
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4">
-            {yearMonthStarts.map((monthStart) => {
-              const monthRange = getPlanningPeriodRange('month', monthStart)
-              const monthEvents = visibleEvents.filter((event) =>
-                planningEventOverlapsDateRange(
-                  event.date,
-                  event.endDate,
-                  monthRange.startDate,
-                  monthRange.endDate,
-                ),
-              )
-              const monthDays = getPlanningMonthCalendarDays(monthStart)
-              return (
-                <button
-                  key={monthStart}
-                  type="button"
-                  aria-label={`Afficher ${formatMonthName(monthStart)}, ${monthEvents.length} événement${monthEvents.length === 1 ? '' : 's'}`}
-                  onClick={() => {
-                    setPeriodAnchorDate(monthStart)
-                    setView('month')
-                  }}
-                  className="rounded-2xl border border-border bg-card p-2 text-left shadow-sm transition hover:border-primary/50 hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-3"
-                >
-                  <div className="flex items-baseline justify-between gap-1">
-                    <h3 className="truncate text-sm font-black capitalize sm:text-base">
-                      {formatMonthName(monthStart).split(' ')[0]}
-                    </h3>
-                    <span className="shrink-0 text-[9px] font-semibold text-muted-foreground sm:text-[10px]">
-                      {monthEvents.length} évén.
-                    </span>
-                  </div>
-                  <div className="mt-2 grid grid-cols-7 gap-x-0.5 text-center" aria-hidden="true">
-                    {WEEKDAY_INITIALS.map((weekday, index) => (
-                      <span key={`${monthStart}-weekday-${index}`} className="text-[8px] font-bold text-muted-foreground sm:text-[9px]">
-                        {weekday}
-                      </span>
-                    ))}
-                    {monthDays.map((dateKey) => {
-                      const isInMonth = dateKey.slice(0, 7) === monthStart.slice(0, 7)
-                      const dateEvents = isInMonth ? getEventsOnDate(monthEvents, dateKey) : []
-                      const day = new Date(`${dateKey}T12:00:00`).getDate()
-                      return (
-                        <span
-                          key={dateKey}
-                          className={`flex aspect-square items-center justify-center rounded-full text-[9px] tabular-nums sm:text-[10px] ${isInMonth ? '' : 'text-muted-foreground/30'} ${dateKey === today ? 'bg-primary/10 font-black text-primary' : dateEvents.length > 0 ? `font-bold text-white ${EVENT_MARKER_COLORS[dateEvents[0].type]}` : ''}`}
-                        >
-                          {day}
-                        </span>
-                      )
+        <>
+          {selectedYearDate && (
+            <section
+              aria-live="polite"
+              className="rounded-2xl border border-primary/30 bg-card p-3 shadow-sm sm:p-4"
+            >
+              <header className="mb-3 flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-black capitalize text-foreground">
+                    Événements du {formatDate(selectedYearDate, {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long',
+                      year: 'numeric',
                     })}
-                  </div>
+                  </h3>
+                  <p className="text-xs text-muted-foreground">
+                    {selectedYearDateEvents.length} événement{selectedYearDateEvents.length === 1 ? '' : 's'}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Effacer la date sélectionnée"
+                  onClick={() => setSelectedYearDate(null)}
+                  className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-border text-muted-foreground hover:bg-muted"
+                >
+                  <X aria-hidden="true" className="size-4" />
                 </button>
-              )
-            })}
-          </div>
-        </section>
+              </header>
+              {selectedYearDateEvents.length === 0 ? (
+                <p className="rounded-lg bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+                  Aucun événement à cette date avec les filtres sélectionnés.
+                </p>
+              ) : (
+                <ul className="grid gap-2 sm:grid-cols-2">
+                  {selectedYearDateEvents.map((event) => (
+                    <li
+                      key={event.id}
+                      className={`rounded-xl border border-border/70 border-l-[3px] p-3 shadow-sm ${EVENT_COLORS[event.type].card}`}
+                    >
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${EVENT_COLORS[event.type].badge}`}>
+                          {TYPE_LABELS[event.type]}
+                        </span>
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                          {event.team === 'both' ? 'E1 + E2' : event.team}
+                        </span>
+                        {event.notes && (
+                          <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                            {event.notes}
+                          </span>
+                        )}
+                      </div>
+                      <h4 className="mt-1 font-black text-foreground">{event.title}</h4>
+                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                        {(event.startTime || event.endTime || event.meetingTime) && (
+                          <span>
+                            {event.startTime && event.endTime
+                              ? `${event.startTime}–${event.endTime}`
+                              : event.startTime || event.endTime}
+                            {event.meetingTime && ` · RDV ${event.meetingTime}`}
+                          </span>
+                        )}
+                        <span className="inline-flex items-center gap-1">
+                          <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
+                          {event.location}
+                        </span>
+                        {event.endDate > event.date && (
+                          <span>{formatEventDateRange(event.date, event.endDate)}</span>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+          )}
+
+          <section aria-label={`Calendrier de la saison ${periodRange.startDate.slice(0, 4)}–${periodRange.endDate.slice(0, 4)}`}>
+            <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4">
+              {yearMonthStarts.map((monthStart) => {
+                const monthRange = getPlanningPeriodRange('month', monthStart)
+                const monthEvents = visibleEvents.filter((event) =>
+                  planningEventOverlapsDateRange(
+                    event.date,
+                    event.endDate,
+                    monthRange.startDate,
+                    monthRange.endDate,
+                  ),
+                )
+                const monthDays = getPlanningMonthCalendarDays(monthStart)
+                const monthName = formatMonthName(monthStart).split(' ')[0]
+                return (
+                  <article
+                    key={monthStart}
+                    className="rounded-2xl border border-border bg-card p-2 shadow-sm sm:p-3"
+                  >
+                    <header className="flex items-baseline justify-between gap-1">
+                      <button
+                        type="button"
+                        aria-label={`Afficher le calendrier de ${formatMonthName(monthStart)}`}
+                        onClick={() => {
+                          setPeriodAnchorDate(monthStart)
+                          setSelectedYearDate(null)
+                          setView('month')
+                        }}
+                        className="truncate text-sm font-black capitalize text-foreground hover:text-primary focus-visible:outline-none focus-visible:underline sm:text-base"
+                      >
+                        {monthName}
+                      </button>
+                      <span className="shrink-0 text-[9px] font-semibold text-muted-foreground sm:text-[10px]">
+                        {monthEvents.length} évén.
+                      </span>
+                    </header>
+                    <div className="mt-2 grid grid-cols-7 gap-x-0.5 text-center">
+                      {WEEKDAY_INITIALS.map((weekday, index) => (
+                        <span key={`${monthStart}-weekday-${index}`} aria-hidden="true" className="text-[8px] font-bold text-muted-foreground sm:text-[9px]">
+                          {weekday}
+                        </span>
+                      ))}
+                      {monthDays.map((dateKey) => {
+                        const isInMonth = dateKey.slice(0, 7) === monthStart.slice(0, 7)
+                        const dateEvents = isInMonth ? getEventsOnDate(monthEvents, dateKey) : []
+                        const day = new Date(`${dateKey}T12:00:00`).getDate()
+                        if (!isInMonth) {
+                          return (
+                            <span key={dateKey} aria-hidden="true" className="flex aspect-square items-center justify-center text-[9px] text-muted-foreground/30 sm:text-[10px]">
+                              {day}
+                            </span>
+                          )
+                        }
+                        const dateLabel = formatDate(dateKey, { weekday: 'long', day: 'numeric', month: 'long' })
+                        const eventLabel = dateEvents.length > 0
+                          ? `, ${dateEvents.length} événement${dateEvents.length === 1 ? '' : 's'} : ${dateEvents.map((event) => event.title).join(', ')}`
+                          : ', aucun événement'
+                        const isSelected = selectedYearDate === dateKey
+                        return (
+                          <button
+                            key={dateKey}
+                            type="button"
+                            aria-label={`${dateLabel}${eventLabel}`}
+                            aria-pressed={isSelected}
+                            title={dateEvents.map((event) => event.title).join(', ') || dateLabel}
+                            onClick={() => setSelectedYearDate(dateKey)}
+                            className={`flex aspect-square items-center justify-center rounded-md text-[9px] tabular-nums transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:text-[10px] ${dateEvents.length > 0 ? `font-bold text-white ${EVENT_MARKER_COLORS[dateEvents[0].type]}` : dateKey === today ? 'bg-primary/10 font-black text-primary' : 'text-foreground'} ${isSelected ? 'ring-2 ring-primary ring-offset-1' : 'hover:bg-muted'}`}
+                          >
+                            {day}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </article>
+                )
+              })}
+            </div>
+          </section>
+        </>
       )}
 
       {loading ? (

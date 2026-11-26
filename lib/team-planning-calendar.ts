@@ -39,9 +39,10 @@ export function getPlanningPeriodRange(
     }
   }
 
+  const seasonStartYear = anchor.getMonth() >= 8 ? anchor.getFullYear() : anchor.getFullYear() - 1
   return {
-    startDate: toDateKey(new Date(anchor.getFullYear(), 0, 1, 12)),
-    endDate: toDateKey(new Date(anchor.getFullYear(), 11, 31, 12)),
+    startDate: toDateKey(new Date(seasonStartYear, 8, 1, 12)),
+    endDate: toDateKey(new Date(seasonStartYear + 1, 5, 30, 12)),
   }
 }
 
@@ -78,4 +79,17 @@ export function getPlanningMonthCalendarDays(monthDate: string) {
   }
 
   return days
+}
+
+export function getPlanningMonthStarts(startDate: string, endDate: string) {
+  const month = new Date(`${startDate}T12:00:00`)
+  month.setDate(1)
+  const months: string[] = []
+
+  while (toDateKey(month) <= endDate) {
+    months.push(toDateKey(month))
+    month.setMonth(month.getMonth() + 1)
+  }
+
+  return months
 }

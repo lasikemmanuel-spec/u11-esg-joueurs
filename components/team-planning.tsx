@@ -781,6 +781,11 @@ export function TeamPlanning({
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${event.team === 'E1' ? 'bg-[#1e3a8a]/10 text-[#1e3a8a] dark:text-sky-200' : event.team === 'E2' ? 'bg-[#d4af37]/20 text-[#725200] dark:text-amber-200' : 'bg-muted text-muted-foreground'}`}>
                         {event.team === 'both' ? 'E1 + E2' : event.team}
                       </span>
+                      {event.source === 'match-sheet' && event.notes && (
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
+                          {event.notes}
+                        </span>
+                      )}
                       {event.status !== 'confirmed' && (
                         <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${event.status === 'postponed' ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300' : 'bg-destructive/10 text-destructive'}`}>
                           {STATUS_LABELS[event.status]}
@@ -823,7 +828,7 @@ export function TeamPlanning({
                         />
                       )}
                     </div>
-                    {event.notes && (
+                    {event.notes && event.source !== 'match-sheet' && (
                       <p title={event.notes} className="mt-1 line-clamp-1 text-xs text-muted-foreground">
                         {event.notes}
                       </p>

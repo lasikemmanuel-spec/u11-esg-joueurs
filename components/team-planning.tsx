@@ -23,6 +23,13 @@ import type { MatchSheetEntry } from '@/lib/match-results'
 import { isCountedTrainingStatus } from '@/lib/training-attendance-metrics'
 import type { PublicPlayer } from '@/lib/players'
 import type { TrainingAttendanceSession } from '@/lib/training-attendance-shared'
+import {
+  getPlanningMonthCalendarDays,
+  getPlanningPeriodRange,
+  shiftPlanningPeriod,
+  type PlanningPeriodView,
+  type PlanningView,
+} from '@/lib/team-planning-calendar'
 import { getScheduledMatchPlanningEvents, type PlanningCardEvent } from '@/lib/team-planning-match-events'
 import {
   createCalendarFile,
@@ -32,8 +39,6 @@ import {
   type PlanningEvent,
   type PlanningEventFields,
 } from '@/lib/team-planning-shared'
-
-type PlanningView = 'week' | 'upcoming'
 
 const TYPE_LABELS: Record<PlanningEvent['type'], string> = {
   training: 'Entraînement',
@@ -65,6 +70,25 @@ const EVENT_COLORS: Record<PlanningEvent['type'], { card: string; badge: string 
     badge: 'bg-rose-500/15 text-rose-800 dark:text-rose-200',
   },
 }
+
+const EVENT_DOT_COLORS: Record<PlanningEvent['type'], string> = {
+  training: 'bg-sky-600',
+  match: 'bg-amber-500',
+  tournament: 'bg-emerald-600',
+  meeting: 'bg-violet-600',
+  cohesion: 'bg-rose-600',
+}
+
+const PLANNING_VIEWS: { id: PlanningView; label: string }[] = [
+  { id: 'week', label: 'Semaine' },
+  { id: 'fortnight', label: 'Quinzaine' },
+  { id: 'month', label: 'Mois' },
+  { id: 'year', label: 'Année' },
+  { id: 'upcoming', label: 'À venir' },
+]
+
+const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
+const WEEKDAY_INITIALS = ['L', 'M', 'M', 'J', 'V', 'S', 'D']
 
 type PlanningEventFilter = {
   id: string
@@ -117,13 +141,6 @@ function addDays(dateKey: string, days: number) {
   return toDateKey(date)
 }
 
-function getMonday(date = new Date()) {
-  const monday = new Date(date)
-  monday.setHours(12, 0, 0, 0)
-  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7))
-  return toDateKey(monday)
-}
-
 function formatDate(dateKey: string, options: Intl.DateTimeFormatOptions = {}) {
   return new Date(`${dateKey}T12:00:00`).toLocaleDateString('fr-FR', {
     weekday: 'long',
@@ -144,6 +161,17 @@ function formatWeekRange(startDate: string, endDate: string) {
     ...(includeYear ? { year: 'numeric' } : {}),
   })
   return `${shortDate(startDate)} – ${shortDate(endDate, true)}`
+}
+
+function formatPlanningPeriod(view: PlanningPeriodView, startDate: string, endDate: string) {
+  if (view === 'week' || view === 'fortnight') return formatWeekRange(startDate, endDate)
+  if (view === 'month') {
+    return new Date(`${startDate}T12:00:00`).toLocaleDateString('fr-FR', {
+      month: 'long',
+      year: 'numeric',
+    })
+  }
+  return startDate.slice(0, 4)
 }
 
 function formatEventDateRange(startDate: string, endDate: string) {
@@ -186,6 +214,17 @@ function sortEvents(events: PlanningCardEvent[]) {
   return [...events].sort((a, b) => `${a.date}T${a.startTime}`.localeCompare(`${b.date}T${b.startTime}`))
 }
 
+function getEventsOnDate(events: PlanningCardEvent[], dateKey: string) {
+  return events.filter((event) => event.date <= dateKey && event.endDate >= dateKey)
+}
+
+function formatMonthName(dateKey: string) {
+  return new Date(`${dateKey}T12:00:00`).toLocaleDateString('fr-FR', {
+    month: 'long',
+    year: 'numeric',
+  })
+}
+
 export function TeamPlanning({
   canManage,
   matches,
@@ -202,7 +241,9 @@ export function TeamPlanning({
   const [events, setEvents] = useState<PlanningEvent[]>([])
   const [view, setView] = useState<PlanningView>('week')
   const [selectedTypes, setSelectedTypes] = useState<PlanningEvent['type'][]>(() => [...PLANNING_EVENT_TYPES])
-  const [weekStart, setWeekStart] = useState(() => getMonday())
+  const [periodAnchorDate, setPeriodAnchorDate] = useState(() =>
+    getPlanningPeriodRange('week', toDateKey(new Date())).startDate,
+  )
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [loadError, setLoadError] = useState('')
@@ -246,15 +287,25 @@ export function TeamPlanning({
     [events, matches, today],
   )
   const periodEvents = useMemo(() => {
-    const weekEnd = addDays(weekStart, 6)
-    return allEvents.filter((event) => view === 'week'
-      ? planningEventOverlapsDateRange(event.date, event.endDate, weekStart, weekEnd)
-      : event.endDate >= today)
-  }, [allEvents, today, view, weekStart])
+    if (view === 'upcoming') return allEvents.filter((event) => event.endDate >= today)
+    const range = getPlanningPeriodRange(view, periodAnchorDate)
+    return allEvents.filter((event) =>
+      planningEventOverlapsDateRange(event.date, event.endDate, range.startDate, range.endDate),
+    )
+  }, [allEvents, today, view, periodAnchorDate])
   const visibleEvents = useMemo(
     () => sortEvents(periodEvents.filter((event) => selectedTypes.includes(event.type))),
     [periodEvents, selectedTypes],
   )
+  const periodRange = view === 'upcoming' ? null : getPlanningPeriodRange(view, periodAnchorDate)
+  const monthCalendarDays = view === 'month' && periodRange
+    ? getPlanningMonthCalendarDays(periodRange.startDate)
+    : []
+  const yearMonthStarts = view === 'year' && periodRange
+    ? Array.from({ length: 12 }, (_, month) =>
+        `${periodRange.startDate.slice(0, 4)}-${String(month + 1).padStart(2, '0')}-01`,
+      )
+    : []
 
   const toggleEventTypes = (types: readonly PlanningEvent['type'][]) => {
     setSelectedTypes((current) => {
@@ -486,24 +537,28 @@ export function TeamPlanning({
         >
           <RefreshCw aria-hidden="true" className={`size-4 ${loading ? 'animate-spin' : ''}`} />
         </button>
-        <div className="ml-auto inline-flex shrink-0 rounded-xl bg-muted/70 p-1" role="group" aria-label="Affichage du planning">
+      </div>
+
+      <div
+        className="flex min-w-0 gap-1 overflow-x-auto overscroll-x-contain rounded-2xl border border-border/70 bg-muted/30 p-1.5 shadow-sm"
+        role="group"
+        aria-label="Affichage du planning"
+      >
+        {PLANNING_VIEWS.map((option) => (
           <button
+            key={option.id}
             type="button"
-            aria-pressed={view === 'week'}
-            onClick={() => setView('week')}
-            className={`min-h-9 whitespace-nowrap rounded-lg px-2.5 text-xs font-bold transition sm:px-3 sm:text-sm md:min-h-10 md:text-base ${view === 'week' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-background hover:text-foreground'}`}
+            aria-pressed={view === option.id}
+            onClick={() => setView(option.id)}
+            className={`min-h-10 shrink-0 flex-1 whitespace-nowrap rounded-xl px-2.5 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:px-4 sm:text-sm md:min-h-11 md:text-base ${
+              view === option.id
+                ? 'bg-primary text-primary-foreground shadow-sm'
+                : 'text-muted-foreground hover:bg-background hover:text-foreground'
+            }`}
           >
-            Semaine
+            {option.label}
           </button>
-          <button
-            type="button"
-            aria-pressed={view === 'upcoming'}
-            onClick={() => setView('upcoming')}
-            className={`min-h-9 whitespace-nowrap rounded-lg px-2.5 text-xs font-bold transition sm:px-3 sm:text-sm md:min-h-10 md:text-base ${view === 'upcoming' ? 'bg-primary text-primary-foreground shadow-sm' : 'text-muted-foreground hover:bg-background hover:text-foreground'}`}
-          >
-            À venir
-          </button>
-        </div>
+        ))}
       </div>
 
       {notice && <p role="status" className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm">{notice}</p>}
@@ -737,23 +792,23 @@ export function TeamPlanning({
         </form>
       )}
 
-      {view === 'week' && (
+      {view !== 'upcoming' && periodRange && (
         <div className="flex items-center justify-center gap-2">
           <button
             type="button"
-            aria-label="Semaine précédente"
-            onClick={() => setWeekStart((current) => addDays(current, -7))}
+            aria-label="Période précédente"
+            onClick={() => setPeriodAnchorDate((current) => shiftPlanningPeriod(view, current, -1))}
             className="inline-flex size-9 items-center justify-center rounded-lg border border-border hover:bg-muted md:size-10"
           >
             <ChevronLeft aria-hidden="true" className="size-4 md:size-5" />
           </button>
           <p className="min-w-36 text-center text-sm font-bold capitalize md:text-base">
-            {formatWeekRange(weekStart, addDays(weekStart, 6))}
+            {formatPlanningPeriod(view, periodRange.startDate, periodRange.endDate)}
           </p>
           <button
             type="button"
-            aria-label="Semaine suivante"
-            onClick={() => setWeekStart((current) => addDays(current, 7))}
+            aria-label="Période suivante"
+            onClick={() => setPeriodAnchorDate((current) => shiftPlanningPeriod(view, current, 1))}
             className="inline-flex size-9 items-center justify-center rounded-lg border border-border hover:bg-muted md:size-10"
           >
             <ChevronRight aria-hidden="true" className="size-4 md:size-5" />
@@ -761,9 +816,138 @@ export function TeamPlanning({
         </div>
       )}
 
+      {!loading && !loadError && view === 'month' && periodRange && (
+        <section
+          aria-label={`Calendrier du mois de ${formatMonthName(periodRange.startDate)}`}
+          className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm"
+        >
+          <div className="grid grid-cols-7 border-b border-border bg-muted/40">
+            {WEEKDAY_LABELS.map((weekday) => (
+              <span key={weekday} className="py-2 text-center text-[10px] font-bold uppercase text-muted-foreground sm:text-xs">
+                {weekday}
+              </span>
+            ))}
+          </div>
+          <div className="grid grid-cols-7">
+            {monthCalendarDays.map((dateKey) => {
+              const isInMonth = dateKey.slice(0, 7) === periodRange.startDate.slice(0, 7)
+              const dateEvents = isInMonth ? getEventsOnDate(visibleEvents, dateKey) : []
+              const day = new Date(`${dateKey}T12:00:00`).getDate()
+              return (
+                <div
+                  key={dateKey}
+                  className={`min-h-[4.25rem] border-b border-r border-border/70 p-1 sm:min-h-24 sm:p-1.5 ${isInMonth ? '' : 'bg-muted/20 text-muted-foreground/50'}`}
+                >
+                  <div className="flex justify-center sm:justify-start">
+                    <time
+                      dateTime={dateKey}
+                      className={`flex size-6 items-center justify-center rounded-full text-xs font-semibold tabular-nums sm:size-7 sm:text-sm ${dateKey === today ? 'bg-primary font-black text-primary-foreground' : ''}`}
+                    >
+                      {day}
+                    </time>
+                  </div>
+                  <div className="mt-1 hidden space-y-0.5 sm:block">
+                    {dateEvents.slice(0, 2).map((event) => (
+                      <div
+                        key={event.id}
+                        title={event.title}
+                        className={`truncate rounded px-1 py-0.5 text-[10px] font-semibold ${EVENT_COLORS[event.type].badge}`}
+                      >
+                        {event.title}
+                      </div>
+                    ))}
+                    {dateEvents.length > 2 && (
+                      <span className="block px-1 text-[9px] font-semibold text-muted-foreground">
+                        +{dateEvents.length - 2} autres
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1 flex min-h-2 justify-center gap-0.5 sm:hidden" aria-hidden="true">
+                    {dateEvents.slice(0, 4).map((event, index) => (
+                      <span key={`${event.id}-${index}`} className={`size-1.5 rounded-full ${EVENT_DOT_COLORS[event.type]}`} />
+                    ))}
+                    {dateEvents.length > 4 && (
+                      <span className="text-[8px] font-bold leading-none">+{dateEvents.length - 4}</span>
+                    )}
+                  </div>
+                  {dateEvents.length > 0 && (
+                    <span className="sr-only">
+                      {dateEvents.length} événement{dateEvents.length === 1 ? '' : 's'} : {dateEvents.map((event) => event.title).join(', ')}
+                    </span>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {!loading && !loadError && view === 'year' && periodRange && (
+        <section aria-label={`Calendrier de l’année ${periodRange.startDate.slice(0, 4)}`}>
+          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4">
+            {yearMonthStarts.map((monthStart) => {
+              const monthRange = getPlanningPeriodRange('month', monthStart)
+              const monthEvents = visibleEvents.filter((event) =>
+                planningEventOverlapsDateRange(
+                  event.date,
+                  event.endDate,
+                  monthRange.startDate,
+                  monthRange.endDate,
+                ),
+              )
+              const monthDays = getPlanningMonthCalendarDays(monthStart)
+              return (
+                <button
+                  key={monthStart}
+                  type="button"
+                  aria-label={`Afficher ${formatMonthName(monthStart)}, ${monthEvents.length} événement${monthEvents.length === 1 ? '' : 's'}`}
+                  onClick={() => {
+                    setPeriodAnchorDate(monthStart)
+                    setView('month')
+                  }}
+                  className="rounded-2xl border border-border bg-card p-2 text-left shadow-sm transition hover:border-primary/50 hover:bg-muted/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:p-3"
+                >
+                  <div className="flex items-baseline justify-between gap-1">
+                    <h3 className="truncate text-sm font-black capitalize sm:text-base">
+                      {formatMonthName(monthStart).split(' ')[0]}
+                    </h3>
+                    <span className="shrink-0 text-[9px] font-semibold text-muted-foreground sm:text-[10px]">
+                      {monthEvents.length} évén.
+                    </span>
+                  </div>
+                  <div className="mt-2 grid grid-cols-7 gap-x-0.5 text-center" aria-hidden="true">
+                    {WEEKDAY_INITIALS.map((weekday, index) => (
+                      <span key={`${monthStart}-weekday-${index}`} className="text-[8px] font-bold text-muted-foreground sm:text-[9px]">
+                        {weekday}
+                      </span>
+                    ))}
+                    {monthDays.map((dateKey) => {
+                      const isInMonth = dateKey.slice(0, 7) === monthStart.slice(0, 7)
+                      const dateEvents = isInMonth ? getEventsOnDate(monthEvents, dateKey) : []
+                      const day = new Date(`${dateKey}T12:00:00`).getDate()
+                      return (
+                        <span
+                          key={dateKey}
+                          className={`relative flex aspect-square items-center justify-center rounded-full text-[9px] tabular-nums sm:text-[10px] ${isInMonth ? '' : 'text-muted-foreground/30'} ${dateKey === today ? 'bg-primary/10 font-black text-primary' : dateEvents.length > 0 ? 'font-bold text-foreground' : ''}`}
+                        >
+                          {day}
+                          {dateEvents.length > 0 && (
+                            <span className={`absolute bottom-0 h-1 w-1 rounded-full ${EVENT_DOT_COLORS[dateEvents[0].type]}`} />
+                          )}
+                        </span>
+                      )
+                    })}
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
       {loading ? (
         <p role="status" className="rounded-xl border border-dashed border-border p-6 text-center text-sm text-muted-foreground">Chargement du planning…</p>
-      ) : loadError ? null : visibleEvents.length === 0 ? (
+      ) : loadError || view === 'year' ? null : visibleEvents.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-muted/20 p-8 text-center">
           <CalendarDays aria-hidden="true" className="mx-auto size-8 text-muted-foreground" />
           <p className="mt-2 font-semibold">

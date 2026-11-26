@@ -460,14 +460,14 @@ export function MatchLineupEntry({
                 const currentRole = assignments[player.number]
                 const buttonClass = 'inline-flex size-11 items-center justify-center rounded-lg border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 sm:size-9'
                 return (
-                  <li key={player.number} className="flex min-h-14 min-w-0 items-center justify-between gap-2 rounded-xl border border-[#172554]/10 bg-white px-2.5 py-2 shadow-sm sm:px-3">
+                  <li key={player.number} className="flex min-h-14 min-w-0 flex-wrap items-center justify-between gap-2 rounded-xl border border-[#172554]/10 bg-white px-2.5 py-2 shadow-sm sm:flex-nowrap sm:px-3">
                     <button
                       type="button"
                       onClick={() => setSelectedPlayerNumber(player.number)}
                       aria-label={`Voir la fiche de ${player.firstName} ${player.lastName}`}
-                      className="flex min-w-0 flex-1 items-center gap-1 truncate rounded-md text-left text-sm font-medium text-[#172554] underline-offset-2 hover:text-blue-800 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37]"
+                      className="flex min-w-0 basis-full items-center gap-1 rounded-md text-left text-sm font-medium text-[#172554] underline-offset-2 hover:text-blue-800 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37] sm:basis-auto sm:flex-1"
                     >
-                      <span className="min-w-0 truncate">{player.firstName} <span className="font-bold uppercase">{player.lastName}</span></span>
+                      <span className="min-w-0 whitespace-normal break-words leading-snug">{player.firstName} <span className="font-bold uppercase">{player.lastName}</span></span>
                       <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-slate-400" />
                     </button>
                     <div role="group" aria-label={`Action pour ${player.firstName} ${player.lastName}`} className="flex shrink-0 items-center gap-2">

@@ -8,7 +8,6 @@ import {
   ArrowRight,
   Clock3,
   MapPin,
-  RotateCcw,
   Radio,
   Sun,
   Trophy,
@@ -382,20 +381,7 @@ export function MatchDayHome({
                             )}
                         </div>
                       </button>
-                      <div className="mt-2 grid grid-cols-2 gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => onSelectMatch(match)}
-                          className={[
-                            'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border px-2 text-[11px] font-black transition',
-                            match.team === 'E1'
-                              ? 'border-sky-200/30 bg-white/10 text-white hover:bg-white/15'
-                              : 'border-[#172554]/25 bg-white/45 text-[#172554] hover:bg-white/70',
-                          ].join(' ')}
-                        >
-                          <RotateCcw aria-hidden="true" className="size-3.5" />
-                          Feuille
-                        </button>
+                      <div className="mt-2">
                         {canManageMatches ? (
                           <button
                             type="button"
@@ -409,7 +395,7 @@ export function MatchDayHome({
                             }}
                             aria-label={`Lancer le direct, ES Genech ${match.team === 'E1' ? '1' : '2'} contre ${match.opponent || 'adversaire'}`}
                             title={canStartDirect ? `Lancer le match contre ${match.opponent || 'cet adversaire'}` : 'Enregistre une composition pour lancer le direct.'}
-                            className={`inline-flex min-h-10 items-center justify-center gap-1.5 rounded-xl border border-emerald-200/70 px-2 text-[11px] font-black text-white shadow-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:cursor-not-allowed disabled:opacity-60 sm:text-xs ${canStartDirect ? 'bg-emerald-700 hover:bg-emerald-600' : 'bg-emerald-950/50'}`}
+                            className={`inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-xl border border-emerald-200/70 px-2 text-[11px] font-black text-white shadow-md transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-200 disabled:cursor-not-allowed disabled:opacity-60 sm:text-xs ${canStartDirect ? 'bg-emerald-700 hover:bg-emerald-600' : 'bg-emerald-950/50'}`}
                           >
                             <span aria-hidden="true" className="size-2 rounded-full bg-rose-300 shadow-[0_0_0_2px_rgba(252,165,165,0.2)] motion-safe:animate-pulse" />
                             <Radio aria-hidden="true" className="size-4" />
@@ -420,7 +406,7 @@ export function MatchDayHome({
                             type="button"
                             onClick={() => onOpenCallups(plannedDate)}
                             className={[
-                              'inline-flex min-h-9 items-center justify-center gap-1.5 rounded-xl border px-2 text-[11px] font-black transition',
+                              'inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-xl border px-2 text-[11px] font-black transition',
                               match.team === 'E1'
                                 ? 'border-sky-200/30 bg-white/10 text-white hover:bg-white/15'
                                 : 'border-[#172554]/25 bg-white/45 text-[#172554] hover:bg-white/70',

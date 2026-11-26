@@ -639,6 +639,8 @@ export function DashboardTabs({
         {activeTab === 'planning' && (
           <TeamPlanning
             canManage={educatorIdentity?.role === 'admin' || educatorIdentity?.role === 'educator'}
+            players={rosterPlayers}
+            trainingAttendance={trainingAttendance}
             onOpenTraining={(date) => {
               setTrainingFocusDate(date)
               setActiveTab('training')

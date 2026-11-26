@@ -17,6 +17,9 @@ import {
   X,
 } from 'lucide-react'
 import { MATCH_SEASON_END, MATCH_SEASON_START } from '@/lib/match-season'
+import { isCountedTrainingStatus } from '@/lib/training-attendance-metrics'
+import type { PublicPlayer } from '@/lib/players'
+import type { TrainingAttendanceSession } from '@/lib/training-attendance-shared'
 import {
   createCalendarFile,
   MAX_WEEKLY_RECURRENCE_EVENTS,
@@ -99,15 +102,44 @@ function getDateParts(dateKey: string) {
   }
 }
 
+function getWeekColor(dateKey: string) {
+  const date = new Date(`${dateKey}T00:00:00Z`)
+  date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7))
+  const weekIndex = Math.floor(date.getTime() / (7 * 24 * 60 * 60 * 1000))
+  return Math.abs(weekIndex % 2) === 0 ? 'blue' : 'gold'
+}
+
+function getTrainingAttendanceGauge(
+  session: TrainingAttendanceSession | undefined,
+  players: PublicPlayer[],
+) {
+  if (!session || session.cancellation || players.length === 0) return null
+
+  let present = 0
+  let absent = 0
+  for (const player of players) {
+    const status = session.playerStatuses[player.number]?.trim() ?? ''
+    if (!isCountedTrainingStatus(status)) continue
+    if (status === 'P') present += 1
+    else absent += 1
+  }
+  if (present + absent === 0) return null
+  return { present, absent, total: players.length }
+}
+
 function sortEvents(events: PlanningEvent[]) {
   return [...events].sort((a, b) => `${a.date}T${a.startTime}`.localeCompare(`${b.date}T${b.startTime}`))
 }
 
 export function TeamPlanning({
   canManage,
+  players,
+  trainingAttendance,
   onOpenTraining,
 }: {
   canManage: boolean
+  players: PublicPlayer[]
+  trainingAttendance: TrainingAttendanceSession[]
   onOpenTraining: (date: string) => void
 }) {
   const [events, setEvents] = useState<PlanningEvent[]>([])
@@ -612,19 +644,22 @@ export function TeamPlanning({
         <ul className="grid gap-3">
           {visibleEvents.map((event) => {
             const dateParts = getDateParts(event.date)
-            const accentClass = event.status === 'cancelled'
-              ? 'border-l-destructive opacity-75'
-              : event.type === 'training'
-                ? 'border-l-emerald-500'
-                : event.type === 'match'
-                  ? 'border-l-blue-500'
-                  : 'border-l-amber-500'
+            const weekColor = getWeekColor(event.date)
+            const attendance = event.type === 'training'
+              ? getTrainingAttendanceGauge(
+                  trainingAttendance.find((session) => session.date === event.date),
+                  players,
+                )
+              : null
+            const accentClass = weekColor === 'blue'
+              ? 'border-l-[#1e3a8a] bg-gradient-to-r from-blue-50/70 to-card dark:from-blue-950/30'
+              : 'border-l-[#d4af37] bg-gradient-to-r from-amber-50/70 to-card dark:from-amber-950/30'
             const iconButtonClass = 'inline-flex size-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring'
 
             return (
               <li
                 key={event.id}
-                className={`rounded-2xl border border-l-[3px] bg-card p-3 shadow-sm transition hover:shadow-md ${accentClass}`}
+                className={`rounded-2xl border border-l-[3px] p-3 shadow-sm transition hover:shadow-md ${event.status === 'cancelled' ? 'opacity-75' : ''} ${accentClass}`}
               >
                 <div className="flex min-w-0 items-start gap-3">
                   <time
@@ -642,7 +677,7 @@ export function TeamPlanning({
                       <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
                         {TYPE_LABELS[event.type]}
                       </span>
-                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold">
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${event.team === 'E1' ? 'bg-[#1e3a8a]/10 text-[#1e3a8a] dark:text-sky-200' : event.team === 'E2' ? 'bg-[#d4af37]/20 text-[#725200] dark:text-amber-200' : 'bg-muted text-muted-foreground'}`}>
                         {event.team === 'both' ? 'E1 + E2' : event.team}
                       </span>
                       {event.status !== 'confirmed' && (
@@ -677,6 +712,28 @@ export function TeamPlanning({
                         {event.notes}
                       </p>
                     )}
+                    {attendance && (
+                      <div
+                        role="img"
+                        aria-label={`${attendance.present} présents, ${attendance.absent} absents sur ${attendance.total} joueurs`}
+                        className="mt-2 max-w-sm"
+                      >
+                        <div className="flex items-center justify-between gap-3 text-[10px] font-bold">
+                          <span className="text-[#1e3a8a] dark:text-sky-200">{attendance.present} présents</span>
+                          <span className="text-[#725200] dark:text-amber-200">{attendance.absent} absents</span>
+                        </div>
+                        <div aria-hidden="true" className="mt-1 flex h-1.5 overflow-hidden rounded-full bg-muted">
+                          <span
+                            className="bg-[#1e3a8a] transition-[width]"
+                            style={{ width: `${attendance.present / attendance.total * 100}%` }}
+                          />
+                          <span
+                            className="bg-[#d4af37] transition-[width]"
+                            style={{ width: `${attendance.absent / attendance.total * 100}%` }}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -693,7 +750,7 @@ export function TeamPlanning({
                       className="inline-flex min-h-9 items-center gap-1.5 rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground transition hover:opacity-90"
                     >
                       <ClipboardCheck aria-hidden="true" className="size-4" />
-                      Appel
+                      Présence joueurs
                     </button>
                   ) : <span aria-hidden="true" />}
                   <div className="flex items-center gap-1">

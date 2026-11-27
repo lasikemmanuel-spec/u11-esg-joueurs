@@ -1206,35 +1206,6 @@ export function TeamPlanning({
                               </span>
                             )}
                           </div>
-                          {canManage && event.source !== 'match-sheet' && (
-                            <div className="flex shrink-0 items-center gap-1">
-                              <button
-                                type="button"
-                                onClick={() => editEvent(event)}
-                                aria-label={`Modifier ${event.title}`}
-                                title="Modifier cet événement"
-                                className="inline-flex size-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                              >
-                                <Pencil aria-hidden="true" className="size-4" />
-                              </button>
-                              {event.date >= today && (
-                                <button
-                                  type="button"
-                                  onClick={() => void deleteFutureEvents(event)}
-                                  disabled={pendingDeleteId === event.id}
-                                  aria-label={`Supprimer ${event.title}`}
-                                  title={event.recurrenceGroupId
-                                    ? 'Supprimer uniquement cette occurrence'
-                                    : 'Supprimer cet événement futur'}
-                                  className="inline-flex size-9 items-center justify-center rounded-lg border border-destructive/30 text-destructive transition hover:bg-destructive/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
-                                >
-                                  {pendingDeleteId === event.id
-                                    ? <RefreshCw aria-hidden="true" className="size-4 animate-spin" />
-                                    : <Trash2 aria-hidden="true" className="size-4" />}
-                                </button>
-                              )}
-                            </div>
-                          )}
                           </div>
                           <h4 className="mt-1 font-black text-foreground">{event.title}</h4>
                           <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -1254,6 +1225,34 @@ export function TeamPlanning({
                               <span>{formatEventDateRange(event.date, event.endDate)}</span>
                             )}
                           </div>
+                          {canManage && event.source !== 'match-sheet' && (
+                            <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-border/60 pt-2">
+                              <button
+                                type="button"
+                                onClick={() => editEvent(event)}
+                                className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-background/70 px-3 text-xs font-bold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              >
+                                <Pencil aria-hidden="true" className="size-3.5" />
+                                Modifier
+                              </button>
+                              {event.date >= today && (
+                                <button
+                                  type="button"
+                                  onClick={() => void deleteFutureEvents(event)}
+                                  disabled={pendingDeleteId === event.id}
+                                  title={event.recurrenceGroupId
+                                    ? 'Supprimer uniquement cette occurrence'
+                                    : 'Supprimer cet événement futur'}
+                                  className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-destructive/30 bg-background/70 px-3 text-xs font-bold text-destructive transition hover:bg-destructive/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                                >
+                                  {pendingDeleteId === event.id
+                                    ? <RefreshCw aria-hidden="true" className="size-3.5 animate-spin" />
+                                    : <Trash2 aria-hidden="true" className="size-3.5" />}
+                                  {pendingDeleteId === event.id ? 'Suppression…' : 'Supprimer'}
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </li>
                       ))}
                     </ul>

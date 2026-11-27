@@ -162,6 +162,17 @@ function addDays(dateKey: string, days: number) {
   return toDateKey(date)
 }
 
+function getEventEndDate(
+  date: string,
+  type: PlanningEvent['type'],
+  startTime: string,
+  endTime: string,
+) {
+  return date && type !== 'tournament' && startTime && endTime && endTime <= startTime
+    ? addDays(date, 1)
+    : date
+}
+
 function formatDate(dateKey: string, options: Intl.DateTimeFormatOptions = {}) {
   return new Date(`${dateKey}T12:00:00`).toLocaleDateString('fr-FR', {
     weekday: 'long',
@@ -798,7 +809,9 @@ export function TeamPlanning({
                 }
                 updateDraft('type', type)
                 updateDraft('tournamentFormat', type === 'tournament' ? draft.tournamentFormat : '')
-                updateDraft('endDate', type === 'tournament' ? draft.endDate || draft.date : draft.date)
+                updateDraft('endDate', type === 'tournament'
+                  ? draft.endDate || draft.date
+                  : getEventEndDate(draft.date, type, draft.startTime, draft.endTime))
               }}
               className={EVENT_FORM_INPUT_CLASS}
             >
@@ -843,7 +856,7 @@ export function TeamPlanning({
                 const date = event.target.value
                 const endDate = date && draft.type === 'tournament' && draft.endDate >= date
                   ? draft.endDate
-                  : date
+                  : getEventEndDate(date, draft.type, draft.startTime, draft.endTime)
                 updateDraft('date', date)
                 updateDraft('endDate', endDate)
                 if (date) {
@@ -947,7 +960,13 @@ export function TeamPlanning({
               required
               type="time"
               value={draft.startTime}
-              onChange={(event) => updateDraft('startTime', event.target.value)}
+              onChange={(event) => {
+                const startTime = event.target.value
+                updateDraft('startTime', startTime)
+                if (draft.type !== 'tournament') {
+                  updateDraft('endDate', getEventEndDate(draft.date, draft.type, startTime, draft.endTime))
+                }
+              }}
               className={EVENT_FORM_INPUT_CLASS}
             />
           </label>
@@ -956,9 +975,14 @@ export function TeamPlanning({
             <input
               required
               type="time"
-              min={draft.startTime || undefined}
               value={draft.endTime}
-              onChange={(event) => updateDraft('endTime', event.target.value)}
+              onChange={(event) => {
+                const endTime = event.target.value
+                updateDraft('endTime', endTime)
+                if (draft.type !== 'tournament') {
+                  updateDraft('endDate', getEventEndDate(draft.date, draft.type, draft.startTime, endTime))
+                }
+              }}
               className={EVENT_FORM_INPUT_CLASS}
             />
           </label>

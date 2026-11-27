@@ -82,6 +82,15 @@ export function parsePlanningEventFields(input: unknown): PlanningEventFields | 
   const value = input as Record<string, unknown>
   const date = value.date
   const endDate = value.endDate === undefined ? date : value.endDate
+  const nextDay = typeof date === 'string' && isValidPlanningDate(date)
+    ? addPlanningDateDays(date, 1)
+    : ''
+  const endsAfterMidnight = typeof value.endTime === 'string' &&
+    typeof value.startTime === 'string' &&
+    value.endTime <= value.startTime
+  const invalidNonTournamentEndDate = value.type !== 'tournament' &&
+    endDate !== date &&
+    !(endDate === nextDay && endsAfterMidnight)
   if (
     typeof date !== 'string' ||
     !isValidPlanningDate(date) ||
@@ -96,7 +105,7 @@ export function parsePlanningEventFields(input: unknown): PlanningEventFields | 
       value.tournamentFormat !== 'football8') ||
     (value.type === 'tournament' && typeof value.tournamentFormat !== 'string') ||
     (value.type !== 'tournament' && value.tournamentFormat !== undefined && value.tournamentFormat !== '') ||
-    (value.type !== 'tournament' && endDate !== date) ||
+    invalidNonTournamentEndDate ||
     typeof value.team !== 'string' ||
     !PLANNING_TEAMS.includes(value.team as PlanningTeam) ||
     typeof value.title !== 'string' ||

@@ -235,6 +235,10 @@ function sortEvents(events: PlanningCardEvent[]) {
   return [...events].sort((a, b) => `${a.date}T${a.startTime}`.localeCompare(`${b.date}T${b.startTime}`))
 }
 
+function isSecretSantaEvent(event: PlanningCardEvent) {
+  return /secret\s+santa/i.test(`${event.title} ${event.notes}`)
+}
+
 function getEventsOnDate(events: PlanningCardEvent[], dateKey: string) {
   return events.filter((event) => event.date <= dateKey && event.endDate >= dateKey)
 }
@@ -1185,9 +1189,16 @@ export function TeamPlanning({
                       {selectedYearDateEvents.map((event) => (
                         <li
                           key={event.id}
-                          className={`rounded-xl border border-border/70 border-l-[3px] p-3 shadow-sm ${EVENT_COLORS[event.type].card}`}
+                          className={`relative overflow-hidden rounded-xl border border-border/70 border-l-[3px] p-3 shadow-sm ${EVENT_COLORS[event.type].card} ${isSecretSantaEvent(event) ? 'planning-christmas-card' : ''}`}
                         >
-                          <div className="flex items-start justify-between gap-2">
+                          {isSecretSantaEvent(event) && (
+                            <>
+                              <span aria-hidden="true" className="planning-christmas-flake planning-christmas-flake-one">❄</span>
+                              <span aria-hidden="true" className="planning-christmas-flake planning-christmas-flake-two">❄</span>
+                              <span aria-hidden="true" className="planning-christmas-flake planning-christmas-flake-three">❄</span>
+                            </>
+                          )}
+                          <div className="relative z-10 flex items-start justify-between gap-2">
                           <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                             <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${EVENT_COLORS[event.type].badge}`}>
                               {TYPE_LABELS[event.type]}
@@ -1206,27 +1217,8 @@ export function TeamPlanning({
                               </span>
                             )}
                           </div>
-                          </div>
-                          <h4 className="mt-1 font-black text-foreground">{event.title}</h4>
-                          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                            {(event.startTime || event.endTime || event.meetingTime) && (
-                              <span>
-                                {event.startTime && event.endTime
-                                  ? `${event.startTime}–${event.endTime}`
-                                  : event.startTime || event.endTime}
-                                {event.meetingTime && ` · RDV ${event.meetingTime}`}
-                              </span>
-                            )}
-                            <span className="inline-flex items-center gap-1">
-                              <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
-                              {event.location}
-                            </span>
-                            {event.endDate > event.date && (
-                              <span>{formatEventDateRange(event.date, event.endDate)}</span>
-                            )}
-                          </div>
                           {canManage && event.source !== 'match-sheet' && (
-                            <div className="mt-3 flex flex-wrap justify-end gap-2 border-t border-border/60 pt-2">
+                            <div className="flex shrink-0 items-center gap-1">
                               <button
                                 type="button"
                                 onClick={() => editEvent(event)}
@@ -1254,6 +1246,28 @@ export function TeamPlanning({
                               )}
                             </div>
                           )}
+                          </div>
+                          <h4 className="relative z-10 mt-1 font-black text-foreground">
+                            {isSecretSantaEvent(event) && <span aria-hidden="true" className="planning-christmas-santa mr-1.5 inline-block">🎅</span>}
+                            {event.title}
+                          </h4>
+                          <div className="relative z-10 mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                            {(event.startTime || event.endTime || event.meetingTime) && (
+                              <span>
+                                {event.startTime && event.endTime
+                                  ? `${event.startTime}–${event.endTime}`
+                                  : event.startTime || event.endTime}
+                                {event.meetingTime && ` · RDV ${event.meetingTime}`}
+                              </span>
+                            )}
+                            <span className="inline-flex items-center gap-1">
+                              <MapPin aria-hidden="true" className="size-3.5 shrink-0" />
+                              {event.location}
+                            </span>
+                            {event.endDate > event.date && (
+                              <span>{formatEventDateRange(event.date, event.endDate)}</span>
+                            )}
+                          </div>
                         </li>
                       ))}
                     </ul>

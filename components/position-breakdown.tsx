@@ -305,7 +305,7 @@ export function PositionBreakdown({
           1. VUE GALERIE DE CARTES COLLECTOR EA FC (OPTION 2)
       ───────────────────────────────────────────────────────────── */}
       {viewMode === 'cards' && (
-        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 pt-1">
+        <div className="grid grid-cols-2 gap-2.5 pt-1 sm:grid-cols-3 sm:gap-3 xl:grid-cols-4 2xl:grid-cols-5">
           {displayedPlayers.length === 0 ? (
             <div className="col-span-full rounded-2xl border border-dashed border-border/80 bg-muted/30 p-8 text-center text-sm text-muted-foreground">
               {searchTerm ? `Aucun joueur ne correspond à « ${query} ».` : 'Aucun joueur pour ce poste.'}
@@ -327,89 +327,85 @@ export function PositionBreakdown({
                   key={player.number}
                   type="button"
                   aria-pressed={isSelected}
+                  aria-label={`Fiche de ${player.firstName} ${player.lastName}, numéro ${player.number}, ${pos.label}`}
                   onClick={() => setSelectedNumber(player.number)}
-                  className={`group relative flex min-h-[156px] sm:min-h-[164px] flex-col justify-between overflow-hidden rounded-2xl border-2 p-3 text-left transition-all duration-200 active:scale-[0.98] ${
+                  className={`group relative flex min-w-0 flex-col overflow-hidden rounded-2xl border p-3 text-left transition-all duration-200 active:scale-[0.98] ${
                     isSelected
-                      ? 'border-amber-400 bg-amber-400/15 shadow-lg'
-                      : 'border-amber-400/30 bg-gradient-to-b from-[#172554]/10 via-card to-card hover:-translate-y-1 hover:border-amber-400 hover:shadow-xl dark:from-[#172554]/40 dark:via-card/90 dark:to-card'
+                      ? 'border-amber-400 bg-amber-400/10 shadow-lg ring-2 ring-amber-400/25'
+                      : 'border-border/80 bg-card hover:-translate-y-0.5 hover:border-amber-400/70 hover:shadow-lg'
                   }`}
                 >
-                  {/* Halo d'ambiance collector */}
-                  <div className="pointer-events-none absolute -top-10 -right-10 size-24 rounded-full bg-amber-400/10 blur-xl transition-all group-hover:bg-amber-400/25" />
-
-                  {/* En-tête de la carte : Numéro maillot + Badge Poste */}
-                  <div className="flex items-start justify-between gap-1 pb-1.5">
-                    {/* Écusson Numéro */}
-                    <div className="flex size-9 shrink-0 flex-col items-center justify-center rounded-xl border border-amber-400 bg-gradient-to-br from-[#172554] to-blue-950 text-white shadow-md ring-1 ring-amber-400/40">
-                      <span className="font-mono text-sm font-black text-amber-300 leading-none">
-                        {player.number}
-                      </span>
-                    </div>
-
-                    {/* Badge Poste avec Icône */}
-                    <span className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-black shadow-sm ${pos.badgeClass}`}>
-                      <span>{pos.icon}</span>
-                      <span className="truncate max-w-16">{pos.label}</span>
+                  <div className="flex min-w-0 items-center justify-between gap-2">
+                    <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#172554] font-mono text-base font-black text-amber-300 shadow-sm ring-1 ring-amber-400/60">
+                      {player.number}
+                    </span>
+                    <span className={`inline-flex min-w-0 items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-bold ${pos.badgeClass}`}>
+                      <span aria-hidden="true">{pos.icon}</span>
+                      <span className="truncate">{pos.label}</span>
                     </span>
                   </div>
 
-                  {/* Corps : Prénom en grand + Nom de famille en sous-titre */}
-                  <div className="min-w-0 py-1.5 flex-1 flex flex-col justify-center">
-                    <h4 className="line-clamp-1 leading-tight text-sm sm:text-base font-black text-foreground break-words group-hover:text-[#172554] dark:group-hover:text-amber-300">
+                  <div className="mt-3 min-w-0">
+                    <h4 className="truncate text-base font-black leading-tight text-foreground transition-colors group-hover:text-primary sm:text-lg">
                       {player.firstName}
                     </h4>
-                    <p className="line-clamp-2 text-[11px] sm:text-xs font-bold uppercase tracking-wider text-muted-foreground break-words pt-0.5">
+                    <p className="mt-0.5 line-clamp-1 break-words text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground sm:text-xs">
                       {player.lastName}
                     </p>
+                    {player.transferStatus && (
+                      <span className="mt-1.5 inline-flex max-w-full truncate rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-900 dark:text-amber-200">
+                        {player.transferStatus}
+                      </span>
+                    )}
                   </div>
 
-                  {/* Pied de la carte : Badges Stats Clés */}
-                  <div className="mt-2 flex flex-wrap items-center gap-1 border-t border-border/50 pt-2 text-[10px]">
-                    {goals > 0 && (
-                      <span className="inline-flex items-center gap-0.5 rounded-full border border-amber-400/60 bg-amber-400/20 px-1.5 py-0.5 font-mono font-black text-amber-900 dark:text-amber-200">
-                        ⚽ {goals}
-                      </span>
-                    )}
-                    {assists > 0 && (
-                      <span className="inline-flex items-center gap-0.5 rounded-full border border-blue-400/40 bg-blue-500/15 px-1.5 py-0.5 font-mono font-black text-blue-900 dark:text-blue-200">
-                        🎯 {assists}
-                      </span>
-                    )}
+                  <div className="mt-3 grid grid-cols-2 gap-1.5 border-t border-border/70 pt-2">
                     {rate !== null && (
                       <span
                         title={`Taux de présence aux entraînements : ${rate}%`}
-                        className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 font-mono text-[10px] font-bold ${
+                        className={`flex min-w-0 items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold ${
                           rate >= 75
-                            ? 'border-emerald-500/30 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
-                            : 'border-amber-500/30 bg-amber-500/15 text-amber-800 dark:text-amber-300'
+                            ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
+                            : 'bg-amber-500/10 text-amber-800 dark:text-amber-300'
                         }`}
                       >
-                        <span aria-hidden="true">🏋️</span>
-                        <span>Entraînement {rate}%</span>
+                        <span aria-hidden="true">🏃</span>
+                        <span className="truncate">Présence</span>
+                        <span className="ml-auto font-mono font-black">{rate}%</span>
                       </span>
                     )}
                     {ireFormatted !== null && (
                       <span
                         title={`Indice de Répartition Équitable (IRE) : ${ireFormatted}`}
-                        className={`inline-flex items-center rounded-full border px-1.5 py-0.5 font-mono text-[10px] font-black ${
+                        className={`flex min-w-0 items-center justify-center rounded-lg px-2 py-1 font-mono text-[10px] font-black ${
                           ireStatusKey === 'fair'
-                            ? 'border-emerald-500/40 bg-emerald-500/15 text-emerald-800 dark:text-emerald-300'
+                            ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
                             : ireStatusKey === 'under'
-                              ? 'border-amber-500/40 bg-amber-500/15 text-amber-800 dark:text-amber-300'
+                              ? 'bg-amber-500/10 text-amber-800 dark:text-amber-300'
                               : ireStatusKey === 'over'
-                                ? 'border-red-500/40 bg-red-500/15 text-red-800 dark:text-red-300'
-                                : 'border-border/70 bg-muted/60 text-muted-foreground'
+                                ? 'bg-red-500/10 text-red-800 dark:text-red-300'
+                                : 'bg-muted text-muted-foreground'
                         }`}
                       >
                         IRE {ireFormatted}
                       </span>
                     )}
-                    {player.transferStatus && (
-                      <span className="rounded-md border border-amber-400/40 bg-amber-400/20 px-1 py-0.5 text-[9px] font-bold text-amber-900 dark:text-amber-200">
-                        {player.transferStatus}
-                      </span>
-                    )}
                   </div>
+
+                  {(goals > 0 || assists > 0) && (
+                    <div className="mt-1.5 flex flex-wrap gap-1.5 text-[10px] font-bold">
+                      {goals > 0 && (
+                        <span className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-amber-900 dark:text-amber-200">
+                          ⚽ {goals}
+                        </span>
+                      )}
+                      {assists > 0 && (
+                        <span className="rounded-md bg-blue-500/10 px-1.5 py-0.5 text-blue-900 dark:text-blue-200">
+                          🎯 {assists}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </button>
               )
             })

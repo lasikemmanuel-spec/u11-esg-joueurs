@@ -666,6 +666,19 @@ export function TeamPlanning({
         ))}
       </div>
 
+      <div
+        className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border border-border/60 bg-card/70 px-3 py-2 text-[11px] font-semibold text-muted-foreground sm:gap-x-4 sm:text-xs"
+        aria-label="Légende des couleurs des événements"
+      >
+        <span className="font-bold text-foreground">Légende</span>
+        {PLANNING_EVENT_TYPES.map((type) => (
+          <span key={type} className="inline-flex items-center gap-1.5 whitespace-nowrap">
+            <span aria-hidden="true" className={`size-2.5 rounded-sm ${EVENT_MARKER_COLORS[type]}`} />
+            {TYPE_LABELS[type]}
+          </span>
+        ))}
+      </div>
+
       {notice && <p role="status" className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2 text-sm">{notice}</p>}
       {actionError && <p role="alert" className="rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-sm text-destructive">{actionError}</p>}
       {loadError && (

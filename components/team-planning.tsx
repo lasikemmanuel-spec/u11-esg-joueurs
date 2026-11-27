@@ -118,6 +118,7 @@ type PlanningEventFilter = {
 
 const EVENT_FILTERS: PlanningEventFilter[] = [
   { id: 'training', label: 'Entraînement', emoji: '🏃', types: ['training'] },
+  { id: 'match', label: 'Match', emoji: '⚽', types: ['match'] },
   { id: 'tournament', label: 'Tournoi', emoji: '🏆', types: ['tournament'] },
   {
     id: 'meeting-cohesion',

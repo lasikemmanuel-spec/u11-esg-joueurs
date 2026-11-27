@@ -209,7 +209,7 @@ export function PositionBreakdown({
         </label>
 
         {/* Boutons de bascule de vue : Cartes vs Liste */}
-        <div className="flex items-center gap-1 rounded-xl border border-border/70 bg-muted/60 p-1">
+        <div className="flex items-center gap-1 rounded-xl border border-white/10 bg-[#0c1630] p-1">
           <button
             type="button"
             aria-pressed={viewMode === 'cards'}
@@ -218,7 +218,7 @@ export function PositionBreakdown({
             className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition-all ${
               viewMode === 'cards'
                 ? 'border border-amber-400/40 bg-gradient-to-r from-[#172554] to-blue-900 text-amber-300 shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                : 'text-slate-300 hover:text-white'
             }`}
           >
             <LayoutGrid aria-hidden="true" className="size-3.5" />
@@ -232,7 +232,7 @@ export function PositionBreakdown({
             className={`inline-flex h-8 items-center gap-1.5 rounded-lg px-2.5 text-xs font-bold transition-all ${
               viewMode === 'accordion'
                 ? 'border border-amber-400/40 bg-gradient-to-r from-[#172554] to-blue-900 text-amber-300 shadow-sm'
-                : 'text-muted-foreground hover:text-foreground'
+                : 'text-slate-300 hover:text-white'
             }`}
           >
             <ListFilter aria-hidden="true" className="size-3.5" />
@@ -259,7 +259,7 @@ export function PositionBreakdown({
         <nav
           ref={navScrollRef}
           aria-label="Filtres de postes"
-          className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none px-0.5 scroll-smooth"
+          className={`flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none pl-0.5 scroll-smooth ${canScrollRight ? 'pr-10' : 'pr-0.5'} ${canScrollLeft ? 'pl-10' : ''}`}
         >
           {positionTabs.map((tab) => {
             const isActive = selectedPositionTab === tab.key
@@ -272,13 +272,13 @@ export function PositionBreakdown({
                 className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-black transition-all ${
                   isActive
                     ? 'border border-amber-400/70 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] text-amber-300 shadow-md ring-2 ring-amber-400/30'
-                    : 'border border-border/70 bg-muted/70 text-muted-foreground hover:bg-card hover:text-foreground'
+                    : 'border border-white/10 bg-[#172554]/80 text-slate-100 hover:bg-[#1e3a8a] hover:text-white'
                 }`}
               >
                 <span>{tab.icon}</span>
                 <span>{tab.label}</span>
                 <span className={`ml-0.5 rounded-full px-1.5 py-0.2 text-[10px] font-black ${
-                  isActive ? 'bg-amber-400 text-blue-950' : 'bg-background text-muted-foreground'
+                  isActive ? 'bg-amber-400 text-blue-950' : 'bg-white/10 text-slate-200'
                 }`}>
                   {tab.count}
                 </span>
@@ -287,15 +287,15 @@ export function PositionBreakdown({
           })}
         </nav>
 
-        {/* Bouton indicateur de défilement droit (avec mention et flèche animée) */}
+        {/* Bouton discret indiquant que d'autres postes sont accessibles */}
         {canScrollRight && (
           <button
             type="button"
             onClick={() => scrollNav('right')}
             aria-label="Faire défiler les postes vers la droite"
-            className="absolute right-0 z-20 flex items-center gap-1 rounded-full border border-amber-400 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] py-1 pl-2.5 pr-1.5 text-[10px] font-black text-amber-300 shadow-xl ring-2 ring-amber-400/50 motion-safe:animate-pulse transition-all active:scale-95"
+            className="absolute right-0 z-20 flex size-8 items-center justify-center rounded-full border border-amber-400 bg-gradient-to-r from-[#172554] to-[#1e3a8a] text-amber-300 shadow-lg ring-1 ring-amber-400/30 transition-all active:scale-95"
           >
-            <span>Postes</span>
+            <span className="sr-only">Plus de postes</span>
             <ChevronRight aria-hidden="true" className="size-3.5" />
           </button>
         )}
@@ -331,8 +331,8 @@ export function PositionBreakdown({
                   onClick={() => setSelectedNumber(player.number)}
                   className={`player-hex-card group relative flex min-w-0 flex-col overflow-hidden border p-3 text-left transition-all duration-200 active:scale-[0.98] ${
                     isSelected
-                      ? 'border-amber-400 bg-amber-400/10 shadow-lg ring-2 ring-amber-400/25'
-                      : 'border-border/80 bg-card hover:-translate-y-0.5 hover:border-amber-400/70 hover:shadow-lg'
+                      ? 'border-amber-300 bg-[#1b2d5c] shadow-lg ring-2 ring-amber-300/50'
+                      : 'border-amber-400/60 bg-[#111d3d] hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-lg'
                   }`}
                 >
                   <div className="flex min-w-0 items-center justify-between gap-2">
@@ -346,14 +346,14 @@ export function PositionBreakdown({
                   </div>
 
                   <div className="mt-3 min-w-0">
-                    <h4 className="break-words text-base font-black leading-tight text-foreground transition-colors group-hover:text-primary sm:text-lg">
+                    <h4 className="break-words text-base font-black leading-tight text-white transition-colors group-hover:text-amber-200 sm:text-lg">
                       {player.firstName}
                     </h4>
-                    <p className="mt-0.5 break-words text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground sm:text-xs">
+                    <p className="mt-0.5 break-words text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-300 sm:text-xs">
                       {player.lastName}
                     </p>
                     {player.transferStatus && (
-                      <span className="mt-1.5 inline-flex max-w-full break-words rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-900 dark:text-amber-200">
+                      <span className="mt-1.5 inline-flex max-w-full break-words rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-200">
                         {player.transferStatus}
                       </span>
                     )}
@@ -365,8 +365,8 @@ export function PositionBreakdown({
                         title={`Taux de présence aux entraînements : ${rate}%`}
                         className={`flex min-w-0 flex-col gap-0.5 rounded-lg px-2 py-1.5 text-[10px] font-bold ${
                           rate >= 75
-                            ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
-                            : 'bg-amber-500/10 text-amber-800 dark:text-amber-300'
+                            ? 'bg-emerald-950/80 text-emerald-200'
+                            : 'bg-amber-950/80 text-amber-200'
                         }`}
                       >
                         <span className="whitespace-nowrap text-[9px] uppercase tracking-wide">🏃 Entraînement</span>
@@ -378,12 +378,12 @@ export function PositionBreakdown({
                         title={`Indice de Répartition Équitable (IRE) : ${ireFormatted}`}
                         className={`flex min-w-0 flex-col justify-center gap-0.5 rounded-lg px-2 py-1.5 font-mono ${
                           ireStatusKey === 'fair'
-                            ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
+                            ? 'bg-emerald-950/80 text-emerald-200'
                             : ireStatusKey === 'under'
-                              ? 'bg-amber-500/10 text-amber-800 dark:text-amber-300'
+                              ? 'bg-amber-950/80 text-amber-200'
                               : ireStatusKey === 'over'
-                                ? 'bg-red-500/10 text-red-800 dark:text-red-300'
-                                : 'bg-muted text-muted-foreground'
+                                ? 'bg-rose-950/80 text-rose-200'
+                                : 'bg-slate-800 text-slate-200'
                         }`}
                       >
                         <span className="font-sans text-[9px] font-bold uppercase tracking-wide">Indice IRE</span>
@@ -395,12 +395,12 @@ export function PositionBreakdown({
                   {(goals > 0 || assists > 0) && (
                     <div className="mt-1.5 flex flex-wrap gap-1.5 text-[10px] font-bold">
                       {goals > 0 && (
-                        <span className="rounded-md bg-amber-400/15 px-1.5 py-0.5 text-amber-900 dark:text-amber-200">
+                        <span className="rounded-md bg-amber-950/80 px-1.5 py-0.5 text-amber-200">
                           ⚽ {goals}
                         </span>
                       )}
                       {assists > 0 && (
-                        <span className="rounded-md bg-blue-500/10 px-1.5 py-0.5 text-blue-900 dark:text-blue-200">
+                        <span className="rounded-md bg-blue-950/80 px-1.5 py-0.5 text-sky-200">
                           🎯 {assists}
                         </span>
                       )}

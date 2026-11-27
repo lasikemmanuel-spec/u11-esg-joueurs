@@ -315,7 +315,7 @@ export function DashboardTabs({
       setOfflineStorageAccount(null)
       setReturnToMatchesAfterLogin(false)
       window.dispatchEvent(new Event('educator-session-changed'))
-      router.refresh()
+      window.location.assign('/')
     } catch (error) {
       setLogoutError(error instanceof Error ? error.message : 'Déconnexion impossible.')
     } finally {

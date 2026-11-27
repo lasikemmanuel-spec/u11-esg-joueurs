@@ -323,12 +323,12 @@ export function PositionBreakdown({
               const isSelected = player.number === selectedPlayer?.number
               const initials = `${player.firstName.trim().charAt(0)}${player.lastName.trim().charAt(0)}`.toLocaleUpperCase('fr-FR')
               const cardMetrics = [
-                { label: 'ENTRAÎN.', value: rate === null ? '—' : `${rate}%`, tone: rate !== null && rate >= 75 ? 'text-emerald-200' : 'text-amber-200' },
-                { label: 'CONVOC.', value: playerStat?.callUpRate == null ? '—' : `${playerStat.callUpRate}%`, tone: 'text-sky-200' },
-                { label: 'TITUL.', value: playerStat?.starts == null ? '—' : String(playerStat.starts), tone: 'text-slate-100' },
-                { label: 'BUTS', value: goals > 0 ? String(goals) : '—', tone: 'text-amber-200' },
-                { label: 'PASSES', value: assists > 0 ? String(assists) : '—', tone: 'text-sky-200' },
-                { label: 'IRE', value: ireFormatted ?? '—', tone: ireStatusKey === 'fair' ? 'text-emerald-200' : ireStatusKey === 'under' ? 'text-amber-200' : ireStatusKey === 'over' ? 'text-rose-200' : 'text-slate-200' },
+                { label: 'ENTRAÎN.', value: rate === null ? '—' : `${rate}%`, tone: rate !== null && rate >= 75 ? 'text-emerald-300' : 'text-amber-300' },
+                { label: 'CONVOC.', value: playerStat?.callUpRate == null ? '—' : `${playerStat.callUpRate}%`, tone: 'text-sky-300' },
+                { label: 'TITULAR', value: playerStat?.starts == null ? '—' : String(playerStat.starts), tone: 'text-white' },
+                { label: 'BUTS', value: goals > 0 ? String(goals) : '—', tone: 'text-amber-300' },
+                { label: 'PASSES', value: assists > 0 ? String(assists) : '—', tone: 'text-sky-300' },
+                { label: 'IRE', value: ireFormatted ?? '—', tone: ireStatusKey === 'fair' ? 'text-emerald-300' : ireStatusKey === 'under' ? 'text-amber-300' : ireStatusKey === 'over' ? 'text-rose-300' : 'text-slate-200' },
               ]
 
               return (
@@ -338,30 +338,30 @@ export function PositionBreakdown({
                   aria-pressed={isSelected}
                   aria-label={`Fiche de ${player.firstName} ${player.lastName}, numéro ${player.number}, ${pos.label}`}
                   onClick={() => setSelectedNumber(player.number)}
-                  className={`player-hex-card group relative flex min-h-[460px] w-full max-w-[340px] justify-self-center flex-col items-center overflow-hidden border px-5 pt-6 pb-10 text-center transition-all duration-200 active:scale-[0.98] ${
+                  className={`player-hex-card group relative flex min-h-[480px] w-full max-w-[330px] justify-self-center flex-col items-center overflow-hidden border px-5 pt-7 pb-11 text-center transition-all duration-200 active:scale-[0.98] ${
                     isSelected
                       ? 'border-amber-300 bg-[#1b2d5c] shadow-lg ring-2 ring-amber-300/50'
                       : 'border-amber-400/60 bg-[#111d3d] hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-lg'
                   }`}
                 >
-                  <div className="relative z-10 flex w-[72%] min-w-0 items-start justify-between gap-2">
-                    <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-2xl border border-amber-300/80 bg-[#0a142d] font-mono text-lg font-black text-amber-300 shadow-md ring-2 ring-amber-400/20">
+                  <div className="relative z-10 flex w-[82%] min-w-0 items-start justify-between gap-2">
+                    <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-2xl border border-amber-300/80 bg-[#0a142d] font-mono text-xl font-black text-amber-300 shadow-md ring-2 ring-amber-400/20">
                       {player.number}
                     </span>
-                    <span className={`mt-1 inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-[10px] font-bold whitespace-nowrap ${pos.badgeClass}`}>
+                    <span className={`mt-1 inline-flex max-w-[72%] shrink items-center justify-center gap-1 rounded-xl border px-2 py-1 text-[10px] leading-tight font-extrabold ${pos.badgeClass}`}>
                       <span aria-hidden="true">{pos.icon}</span>
                       <span>{pos.label}</span>
                     </span>
                   </div>
 
-                  <div className="player-card-portrait relative z-10 mt-3 flex h-32 w-[80%] items-end justify-center overflow-hidden border-b border-amber-300/40">
+                  <div className="player-card-portrait relative z-10 mt-3 flex h-36 w-[82%] items-end justify-center overflow-hidden border-b border-amber-300/50">
                     <ClubCrest className="absolute top-1/2 left-1/2 size-28 -translate-x-1/2 -translate-y-1/2 opacity-[0.12]" />
                     <UserRound aria-hidden="true" className="absolute bottom-1 size-28 text-white/15" strokeWidth={1.2} />
-                    <span className="relative mb-2 font-mono text-4xl font-black tracking-wider text-amber-100 drop-shadow-lg">{initials || '⚽'}</span>
+                    <span className="relative mb-2 font-mono text-5xl font-black tracking-wider text-amber-100 drop-shadow-lg">{initials || '⚽'}</span>
                     <span className="absolute right-1 bottom-2 rounded-full border border-white/15 bg-[#0a142d]/80 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.18em] text-amber-200">ESG · U11</span>
                   </div>
 
-                  <div className="relative z-10 mt-3 w-[80%] min-w-0">
+                  <div className="relative z-10 mt-3 w-[82%] min-w-0">
                     <h4 className="break-words text-xl font-black leading-tight text-white transition-colors group-hover:text-amber-200 sm:text-2xl">
                       {player.firstName}
                     </h4>
@@ -375,11 +375,11 @@ export function PositionBreakdown({
                     )}
                   </div>
 
-                  <div className="relative z-10 mt-3 grid w-[72%] grid-cols-2 gap-x-3 gap-y-2 border-t border-amber-300/35 pt-3">
+                  <div className="relative z-10 mt-auto mb-1 grid w-[80%] grid-cols-3 gap-x-2 gap-y-3 border-t border-amber-300/45 pt-4">
                     {cardMetrics.map((metric) => (
                       <div key={metric.label} className="min-w-0 text-center">
-                        <p className="whitespace-nowrap text-[8px] font-bold uppercase tracking-[0.05em] text-slate-300">{metric.label}</p>
-                        <p className={`mt-0.5 truncate font-mono text-sm font-black ${metric.tone}`}>{metric.value}</p>
+                        <p className="whitespace-nowrap text-[9px] font-extrabold uppercase tracking-[0.06em] text-slate-300">{metric.label}</p>
+                        <p className={`mt-0.5 truncate font-mono text-base font-black ${metric.tone}`}>{metric.value}</p>
                       </div>
                     ))}
                   </div>

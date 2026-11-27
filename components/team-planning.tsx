@@ -39,6 +39,7 @@ import {
 import { getScheduledMatchPlanningEvents, type PlanningCardEvent } from '@/lib/team-planning-match-events'
 import {
   createCalendarFile,
+  getPlanningTeamLabel,
   MAX_WEEKLY_RECURRENCE_EVENTS,
   PLANNING_EVENT_TYPES,
   planningEventOverlapsDateRange,
@@ -840,9 +841,10 @@ export function TeamPlanning({
               onChange={(event) => updateDraft('team', event.target.value as PlanningEventFields['team'])}
               className={EVENT_FORM_INPUT_CLASS}
             >
-              <option value="both">E1 et E2</option>
               <option value="E1">E1</option>
               <option value="E2">E2</option>
+              <option value="both">Groupe U11 (E1+E2)</option>
+              <option value="educators">Éducateurs</option>
             </select>
           </label>
           <label className="grid gap-1 text-sm font-semibold">
@@ -1234,7 +1236,7 @@ export function TeamPlanning({
                               </span>
                             )}
                             <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
-                              {event.team === 'both' ? 'E1 + E2' : event.team}
+                              {getPlanningTeamLabel(event.team)}
                             </span>
                           </div>
                           {canManage && event.source !== 'match-sheet' && (
@@ -1458,7 +1460,7 @@ export function TeamPlanning({
                         </span>
                       )}
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold md:text-xs ${event.team === 'E1' ? 'bg-[#1e3a8a]/10 text-[#1e3a8a] dark:text-sky-200' : event.team === 'E2' ? 'bg-[#d4af37]/20 text-[#725200] dark:text-amber-200' : 'bg-muted text-muted-foreground'}`}>
-                        {event.team === 'both' ? 'E1 + E2' : event.team}
+                        {getPlanningTeamLabel(event.team)}
                       </span>
                       {attendance && !showTrainingAction && (
                         <span

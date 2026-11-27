@@ -1,5 +1,5 @@
 export const PLANNING_EVENT_TYPES = ['training', 'match', 'tournament', 'meeting', 'cohesion'] as const
-export const PLANNING_TEAMS = ['E1', 'E2', 'both'] as const
+export const PLANNING_TEAMS = ['E1', 'E2', 'both', 'educators'] as const
 export const PLANNING_STATUSES = ['confirmed', 'postponed', 'cancelled'] as const
 
 export type PlanningEventType = (typeof PLANNING_EVENT_TYPES)[number]
@@ -26,6 +26,12 @@ export type PlanningEvent = PlanningEventFields & {
   id: string
   recurrenceGroupId?: string
   recurrenceEndDate?: string
+}
+
+export function getPlanningTeamLabel(team: PlanningTeam) {
+  if (team === 'both') return 'Groupe U11 (E1+E2)'
+  if (team === 'educators') return 'Éducateurs'
+  return team
 }
 
 export const MAX_WEEKLY_RECURRENCE_EVENTS = 52
@@ -179,7 +185,7 @@ export function createCalendarFile(event: PlanningEvent) {
   const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
   const status = event.status === 'cancelled' ? 'CANCELLED' : 'CONFIRMED'
   const description = [
-    `Équipe : ${event.team === 'both' ? 'E1 et E2' : event.team}`,
+    `Équipe : ${getPlanningTeamLabel(event.team)}`,
     event.tournamentFormat ? `Format : ${event.tournamentFormat === 'futsal' ? 'Futsal' : 'Foot à 8 extérieur'}` : '',
     event.meetingTime ? `Rendez-vous : ${event.meetingTime}` : '',
     event.status === 'postponed' ? 'Événement reporté' : '',

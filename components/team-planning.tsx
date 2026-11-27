@@ -1146,7 +1146,7 @@ export function TeamPlanning({
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="annual-date-events-title"
-                className="flex max-h-[90dvh] w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-[#d4af37]/60 bg-card shadow-2xl sm:rounded-3xl"
+                className={`flex max-h-[90dvh] w-full flex-col overflow-hidden rounded-2xl border border-[#d4af37]/60 bg-card shadow-2xl sm:rounded-3xl ${selectedYearDateEvents.length <= 1 ? 'max-w-lg' : 'max-w-xl'}`}
               >
                 <header className="flex shrink-0 items-center justify-between gap-3 bg-gradient-to-r from-[#172554] via-[#1e3a8a] to-[#172554] px-4 py-3 text-white">
                   <div className="flex min-w-0 items-center gap-2.5">
@@ -1181,7 +1181,7 @@ export function TeamPlanning({
                       Aucun événement à cette date avec les filtres sélectionnés.
                     </p>
                   ) : (
-                    <ul className="grid gap-2 sm:grid-cols-2">
+                    <ul className={`grid gap-2 ${selectedYearDateEvents.length > 1 ? 'sm:grid-cols-2' : 'grid-cols-1'}`}>
                       {selectedYearDateEvents.map((event) => (
                         <li
                           key={event.id}
@@ -1259,15 +1259,6 @@ export function TeamPlanning({
                     </ul>
                   )}
                 </div>
-                <footer className="shrink-0 border-t border-border/70 bg-background/95 p-3">
-                  <button
-                    type="button"
-                    onClick={() => setSelectedYearDate(null)}
-                    className="min-h-10 w-full rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground"
-                  >
-                    Fermer
-                  </button>
-                </footer>
               </section>
             </div>
           )}

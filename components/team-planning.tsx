@@ -1187,7 +1187,8 @@ export function TeamPlanning({
                           key={event.id}
                           className={`rounded-xl border border-border/70 border-l-[3px] p-3 shadow-sm ${EVENT_COLORS[event.type].card}`}
                         >
-                          <div className="flex flex-wrap items-center gap-1.5">
+                          <div className="flex items-start justify-between gap-2">
+                          <div className="flex min-w-0 flex-wrap items-center gap-1.5">
                             <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${EVENT_COLORS[event.type].badge}`}>
                               {TYPE_LABELS[event.type]}
                             </span>
@@ -1204,6 +1205,36 @@ export function TeamPlanning({
                                 {event.notes}
                               </span>
                             )}
+                          </div>
+                          {canManage && event.source !== 'match-sheet' && (
+                            <div className="flex shrink-0 items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => editEvent(event)}
+                                aria-label={`Modifier ${event.title}`}
+                                title="Modifier cet événement"
+                                className="inline-flex size-9 items-center justify-center rounded-lg border border-border text-muted-foreground transition hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              >
+                                <Pencil aria-hidden="true" className="size-4" />
+                              </button>
+                              {event.date >= today && (
+                                <button
+                                  type="button"
+                                  onClick={() => void deleteFutureEvents(event)}
+                                  disabled={pendingDeleteId === event.id}
+                                  aria-label={`Supprimer ${event.title}`}
+                                  title={event.recurrenceGroupId
+                                    ? 'Supprimer uniquement cette occurrence'
+                                    : 'Supprimer cet événement futur'}
+                                  className="inline-flex size-9 items-center justify-center rounded-lg border border-destructive/30 text-destructive transition hover:bg-destructive/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                                >
+                                  {pendingDeleteId === event.id
+                                    ? <RefreshCw aria-hidden="true" className="size-4 animate-spin" />
+                                    : <Trash2 aria-hidden="true" className="size-4" />}
+                                </button>
+                              )}
+                            </div>
+                          )}
                           </div>
                           <h4 className="mt-1 font-black text-foreground">{event.title}</h4>
                           <div className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">

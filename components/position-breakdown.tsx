@@ -305,7 +305,7 @@ export function PositionBreakdown({
           1. VUE GALERIE DE CARTES COLLECTOR EA FC (OPTION 2)
       ───────────────────────────────────────────────────────────── */}
       {viewMode === 'cards' && (
-        <div className="grid grid-cols-2 gap-2.5 pt-1 sm:grid-cols-3 sm:gap-3 xl:grid-cols-4 2xl:grid-cols-5">
+        <div className="grid grid-cols-1 gap-2.5 pt-1 sm:grid-cols-2 sm:gap-3 xl:grid-cols-3 2xl:grid-cols-4">
           {displayedPlayers.length === 0 ? (
             <div className="col-span-full rounded-2xl border border-dashed border-border/80 bg-muted/30 p-8 text-center text-sm text-muted-foreground">
               {searchTerm ? `Aucun joueur ne correspond à « ${query} ».` : 'Aucun joueur pour ce poste.'}
@@ -339,21 +339,21 @@ export function PositionBreakdown({
                     <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#172554] font-mono text-base font-black text-amber-300 shadow-sm ring-1 ring-amber-400/60">
                       {player.number}
                     </span>
-                    <span className={`inline-flex min-w-0 items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-bold ${pos.badgeClass}`}>
+                    <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-bold whitespace-nowrap ${pos.badgeClass}`}>
                       <span aria-hidden="true">{pos.icon}</span>
-                      <span className="truncate">{pos.label}</span>
+                      <span>{pos.label}</span>
                     </span>
                   </div>
 
                   <div className="mt-3 min-w-0">
-                    <h4 className="truncate text-base font-black leading-tight text-foreground transition-colors group-hover:text-primary sm:text-lg">
+                    <h4 className="break-words text-base font-black leading-tight text-foreground transition-colors group-hover:text-primary sm:text-lg">
                       {player.firstName}
                     </h4>
-                    <p className="mt-0.5 line-clamp-1 break-words text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground sm:text-xs">
+                    <p className="mt-0.5 break-words text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground sm:text-xs">
                       {player.lastName}
                     </p>
                     {player.transferStatus && (
-                      <span className="mt-1.5 inline-flex max-w-full truncate rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-900 dark:text-amber-200">
+                      <span className="mt-1.5 inline-flex max-w-full break-words rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-900 dark:text-amber-200">
                         {player.transferStatus}
                       </span>
                     )}
@@ -363,21 +363,20 @@ export function PositionBreakdown({
                     {rate !== null && (
                       <span
                         title={`Taux de présence aux entraînements : ${rate}%`}
-                        className={`flex min-w-0 items-center gap-1 rounded-lg px-2 py-1 text-[10px] font-bold ${
+                        className={`flex min-w-0 flex-col gap-0.5 rounded-lg px-2 py-1.5 text-[10px] font-bold ${
                           rate >= 75
                             ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
                             : 'bg-amber-500/10 text-amber-800 dark:text-amber-300'
                         }`}
                       >
-                        <span aria-hidden="true">🏃</span>
-                        <span className="truncate">Présence</span>
-                        <span className="ml-auto font-mono font-black">{rate}%</span>
+                        <span className="whitespace-nowrap text-[9px] uppercase tracking-wide">🏃 Entraînement</span>
+                        <span className="font-mono text-sm font-black">{rate}%</span>
                       </span>
                     )}
                     {ireFormatted !== null && (
                       <span
                         title={`Indice de Répartition Équitable (IRE) : ${ireFormatted}`}
-                        className={`flex min-w-0 items-center justify-center rounded-lg px-2 py-1 font-mono text-[10px] font-black ${
+                        className={`flex min-w-0 flex-col justify-center gap-0.5 rounded-lg px-2 py-1.5 font-mono ${
                           ireStatusKey === 'fair'
                             ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
                             : ireStatusKey === 'under'
@@ -387,7 +386,8 @@ export function PositionBreakdown({
                                 : 'bg-muted text-muted-foreground'
                         }`}
                       >
-                        IRE {ireFormatted}
+                        <span className="font-sans text-[9px] font-bold uppercase tracking-wide">Indice IRE</span>
+                        <span className="text-sm font-black">{ireFormatted}</span>
                       </span>
                     )}
                   </div>

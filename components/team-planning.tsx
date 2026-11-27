@@ -428,6 +428,7 @@ export function TeamPlanning({
   }, [router])
 
   const editEvent = (event: PlanningEvent, series = false) => {
+    setSelectedYearDate(null)
     const fields: PlanningEventFields = {
       date: event.date,
       endDate: event.endDate,

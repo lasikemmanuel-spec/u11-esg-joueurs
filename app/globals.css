@@ -75,7 +75,7 @@
 }
 
 .player-hex-card {
-  clip-path: polygon(11% 0, 89% 0, 94% 1%, 97% 3%, 99% 6%, 100% 10%, 100% 81%, 98% 85%, 94% 89%, 85% 94%, 50% 100%, 15% 94%, 6% 89%, 2% 85%, 0 81%, 0 10%, 1% 6%, 3% 3%, 6% 1%);
+  clip-path: polygon(4% 16%, 10% 13%, 18% 9%, 28% 5%, 39% 2%, 50% 0, 61% 2%, 72% 5%, 82% 9%, 90% 13%, 96% 16%, 100% 18%, 100% 80%, 99% 85%, 96% 89%, 91% 93%, 82% 96%, 50% 100%, 18% 96%, 9% 93%, 4% 89%, 1% 85%, 0 80%, 0 18%);
   border-color: rgb(212 175 55 / 70%);
   background-image: linear-gradient(145deg, rgb(212 175 55 / 13%), transparent 34%, rgb(55 85 145 / 16%));
   background-color: #111d3d;
@@ -108,9 +108,10 @@
 
 .player-card-portrait {
   background:
-    linear-gradient(145deg, transparent 42%, rgb(212 175 55 / 10%) 42.5%, transparent 43.5%),
-    linear-gradient(35deg, transparent 62%, rgb(255 255 255 / 5%) 62.5%, transparent 64%),
-    linear-gradient(155deg, #314875 0%, #172554 55%, #0a142d 100%);
+    repeating-linear-gradient(132deg, transparent 0 13px, rgb(245 211 94 / 10%) 14px, transparent 16px 27px),
+    linear-gradient(145deg, transparent 42%, rgb(212 175 55 / 14%) 42.5%, transparent 43.5%),
+    linear-gradient(35deg, transparent 62%, rgb(255 255 255 / 7%) 62.5%, transparent 64%),
+    linear-gradient(155deg, #405788 0%, #1d3267 55%, #0a142d 100%);
 }
 
 @media (prefers-reduced-motion: reduce) {

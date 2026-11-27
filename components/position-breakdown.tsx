@@ -345,20 +345,22 @@ export function PositionBreakdown({
                   }`}
                 >
                   <div className="relative z-10 flex w-[82%] min-w-0 items-start justify-between gap-2">
-                    <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-2xl border border-amber-300/80 bg-[#0a142d] font-mono text-xl font-black text-amber-300 shadow-md ring-2 ring-amber-400/20">
-                      {player.number}
-                    </span>
-                    <span className={`mt-1 inline-flex max-w-[72%] shrink items-center justify-center gap-1 rounded-xl border px-2 py-1 text-[10px] leading-tight font-extrabold ${pos.badgeClass}`}>
-                      <span aria-hidden="true">{pos.icon}</span>
-                      <span>{pos.label}</span>
-                    </span>
+                    <div className="flex min-w-0 flex-col items-start gap-1.5">
+                      <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-2xl border border-amber-300/80 bg-[#0a142d] font-mono text-xl font-black text-amber-300 shadow-md ring-2 ring-amber-400/20">
+                        {player.number}
+                      </span>
+                      <span className={`inline-flex max-w-full items-center gap-1 rounded-lg border px-2 py-1 text-[10px] leading-tight font-extrabold ${pos.badgeClass}`}>
+                        <span aria-hidden="true">{pos.icon}</span>
+                        <span>{pos.label}</span>
+                      </span>
+                    </div>
+                    <ClubCrest className="mt-1 size-10 opacity-85 drop-shadow-md" />
                   </div>
 
-                  <div className="player-card-portrait relative z-10 mt-3 flex h-36 w-[82%] items-end justify-center overflow-hidden border-b border-amber-300/50">
-                    <ClubCrest className="absolute top-1/2 left-1/2 size-28 -translate-x-1/2 -translate-y-1/2 opacity-[0.12]" />
-                    <UserRound aria-hidden="true" className="absolute bottom-1 size-28 text-white/15" strokeWidth={1.2} />
+                  <div className="player-card-portrait relative z-10 mt-1 flex h-40 w-[84%] items-end justify-center overflow-hidden border-b border-amber-300/60">
+                    <ClubCrest className="absolute top-1/2 left-1/2 size-32 -translate-x-1/2 -translate-y-1/2 opacity-[0.13]" />
+                    <UserRound aria-hidden="true" className="absolute bottom-0 size-36 text-white/20" strokeWidth={1.1} />
                     <span className="relative mb-2 font-mono text-5xl font-black tracking-wider text-amber-100 drop-shadow-lg">{initials || '⚽'}</span>
-                    <span className="absolute right-1 bottom-2 rounded-full border border-white/15 bg-[#0a142d]/80 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.18em] text-amber-200">ESG · U11</span>
                   </div>
 
                   <div className="relative z-10 mt-3 w-[82%] min-w-0">
@@ -375,7 +377,7 @@ export function PositionBreakdown({
                     )}
                   </div>
 
-                  <div className="relative z-10 mt-auto mb-1 grid w-[80%] grid-cols-3 gap-x-2 gap-y-3 border-t border-amber-300/45 pt-4">
+                  <div className="relative z-10 mt-auto mb-1 grid w-[82%] grid-cols-3 gap-x-2 gap-y-3 border-t border-amber-300/55 pt-4">
                     {cardMetrics.map((metric) => (
                       <div key={metric.label} className="min-w-0 text-center">
                         <p className="whitespace-nowrap text-[9px] font-extrabold uppercase tracking-[0.06em] text-slate-300">{metric.label}</p>

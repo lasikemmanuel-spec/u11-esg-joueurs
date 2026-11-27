@@ -43,6 +43,7 @@ const fields = {
   date: '2026-11-21',
   endDate: '2026-11-21',
   type: 'match',
+  tournamentFormat: '' as const,
   team: 'E1',
   title: 'Match contre Genech',
   meetingTime: '09:00',

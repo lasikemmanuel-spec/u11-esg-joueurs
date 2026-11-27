@@ -38,7 +38,7 @@ async function getPlanningRows() {
 
   if (rows.length === 0 || !rows[0].some(Boolean)) {
     await updateAuthenticatedSheetValues([{
-      range: `'${sheetTitle.replace(/'/g, "''")}'!A1:N1`,
+      range: `'${sheetTitle.replace(/'/g, "''")}'!A1:O1`,
       values: [PLANNING_HEADERS],
     }])
     return { sheetTitle, rows: [PLANNING_HEADERS] }

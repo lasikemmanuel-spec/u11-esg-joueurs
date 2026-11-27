@@ -109,7 +109,6 @@ export function parsePlanningEventFields(input: unknown): PlanningEventFields | 
       value.tournamentFormat !== '' &&
       value.tournamentFormat !== 'futsal' &&
       value.tournamentFormat !== 'football8') ||
-    (value.type === 'tournament' && typeof value.tournamentFormat !== 'string') ||
     (value.type !== 'tournament' && value.tournamentFormat !== undefined && value.tournamentFormat !== '') ||
     invalidNonTournamentEndDate ||
     typeof value.team !== 'string' ||
@@ -139,7 +138,7 @@ export function parsePlanningEventFields(input: unknown): PlanningEventFields | 
     date,
     endDate,
     type: value.type as PlanningEventType,
-    tournamentFormat: value.type === 'tournament' ? value.tournamentFormat as TournamentFormat : '',
+    tournamentFormat: value.type === 'tournament' ? ((value.tournamentFormat ?? '') as TournamentFormat) : '',
     team: value.team as PlanningTeam,
     title: value.title.trim(),
     meetingTime: value.meetingTime,

@@ -26,11 +26,13 @@ const headers = [
   'Identifiant de série',
   'Fin de récurrence',
   'Date de fin',
+  'Format du tournoi',
 ]
 const fields: PlanningEventFields = {
   date: '2026-11-24',
   endDate: '2026-11-24',
   type: 'training',
+  tournamentFormat: '',
   team: 'both',
   title: 'Entraînement',
   meetingTime: '',
@@ -60,6 +62,7 @@ function row(event: PlanningEvent) {
     event.recurrenceGroupId ?? '',
     event.recurrenceEndDate ?? '',
     event.endDate,
+    event.tournamentFormat ?? '',
   ]
 }
 
@@ -91,6 +94,10 @@ describe('team planning storage', () => {
     expect(updateAuthenticatedSheetValues).toHaveBeenCalledWith([{
       range: "'📅 Planning'!N1",
       values: [['Date de fin']],
+    }])
+    expect(updateAuthenticatedSheetValues).toHaveBeenCalledWith([{
+      range: "'📅 Planning'!O1",
+      values: [['Format du tournoi']],
     }])
   })
 
@@ -131,8 +138,8 @@ describe('team planning storage', () => {
     await saveTeamPlanningEvents([firstOccurrence, secondOccurrence])
 
     expect(updateAuthenticatedSheetValues).toHaveBeenCalledWith([
-      { range: "'📅 Planning'!A3:N3", values: [row(firstOccurrence)] },
-      { range: "'📅 Planning'!A4:N4", values: [row(secondOccurrence)] },
+      { range: "'📅 Planning'!A3:O3", values: [row(firstOccurrence)] },
+      { range: "'📅 Planning'!A4:O4", values: [row(secondOccurrence)] },
     ])
   })
 
@@ -162,8 +169,8 @@ describe('team planning storage', () => {
       { ...updatedFields, id: secondId, date: secondOccurrence.date, endDate: secondOccurrence.date, recurrenceGroupId: seriesId, recurrenceEndDate: '2026-12-08' },
     ])
     expect(updateAuthenticatedSheetValues).toHaveBeenCalledWith([
-      { range: "'📅 Planning'!A2:N2", values: [row(updated[0])] },
-      { range: "'📅 Planning'!A3:N3", values: [row(updated[1])] },
+      { range: "'📅 Planning'!A2:O2", values: [row(updated[0])] },
+      { range: "'📅 Planning'!A3:O3", values: [row(updated[1])] },
     ])
   })
 

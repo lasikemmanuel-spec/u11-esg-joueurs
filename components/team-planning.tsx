@@ -1211,11 +1211,6 @@ export function TeamPlanning({
                             <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
                               {event.team === 'both' ? 'E1 + E2' : event.team}
                             </span>
-                            {event.notes && (
-                              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
-                                {event.notes}
-                              </span>
-                            )}
                           </div>
                           {canManage && event.source !== 'match-sheet' && (
                             <div className="flex shrink-0 items-center gap-1">
@@ -1247,6 +1242,11 @@ export function TeamPlanning({
                             </div>
                           )}
                           </div>
+                          {event.notes && (
+                            <p className="relative z-10 mt-2 w-fit max-w-full break-words rounded-full bg-muted px-2.5 py-1 text-[10px] font-semibold text-muted-foreground">
+                              {event.notes}
+                            </p>
+                          )}
                           <h4 className="relative z-10 mt-1 font-black text-foreground">
                             {isSecretSantaEvent(event) && <span aria-hidden="true" className="planning-christmas-santa mr-1.5 inline-block">🎅</span>}
                             {event.title}

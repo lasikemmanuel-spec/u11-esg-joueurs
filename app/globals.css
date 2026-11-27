@@ -65,9 +65,9 @@
   animation: planning-christmas-snowfall 3.8s ease-in infinite;
 }
 
-.planning-christmas-flake-one { top: 0.5rem; right: 24%; font-size: 1.1rem; }
-.planning-christmas-flake-two { top: 1rem; right: 12%; font-size: 0.8rem; animation-delay: 1.1s; }
-.planning-christmas-flake-three { top: 0.3rem; right: 4%; font-size: 0.95rem; animation-delay: 2.2s; }
+.planning-christmas-flake-one { top: 58%; right: 24%; font-size: 0.9rem; }
+.planning-christmas-flake-two { top: 72%; right: 10%; font-size: 0.7rem; animation-delay: 1.1s; }
+.planning-christmas-flake-three { top: 42%; right: 5%; font-size: 0.8rem; animation-delay: 2.2s; }
 
 .planning-christmas-santa {
   transform-origin: 50% 85%;

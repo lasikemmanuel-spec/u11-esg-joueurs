@@ -74,6 +74,26 @@
   animation: planning-christmas-santa-wave 1.8s ease-in-out infinite;
 }
 
+.player-hex-card {
+  clip-path: polygon(12% 0, 88% 0, 100% 50%, 88% 100%, 12% 100%, 0 50%);
+  border-color: rgb(212 175 55 / 65%);
+  background-image: linear-gradient(145deg, rgb(212 175 55 / 9%), transparent 34%, rgb(23 37 84 / 5%));
+  filter: drop-shadow(0 3px 5px rgb(23 37 84 / 14%));
+}
+
+.player-hex-card:hover {
+  filter: drop-shadow(0 6px 8px rgb(23 37 84 / 22%));
+}
+
+.player-hex-card[aria-pressed='true'] {
+  border-color: #d4af37;
+  filter: drop-shadow(0 0 5px rgb(212 175 55 / 65%));
+}
+
+.player-hex-card:focus-visible {
+  filter: drop-shadow(0 0 5px rgb(212 175 55 / 90%));
+}
+
 @media (prefers-reduced-motion: reduce) {
   .planning-christmas-flake,
   .planning-christmas-santa {

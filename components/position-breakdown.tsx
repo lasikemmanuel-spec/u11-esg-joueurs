@@ -329,7 +329,7 @@ export function PositionBreakdown({
                   aria-pressed={isSelected}
                   aria-label={`Fiche de ${player.firstName} ${player.lastName}, numéro ${player.number}, ${pos.label}`}
                   onClick={() => setSelectedNumber(player.number)}
-                  className={`group relative flex min-w-0 flex-col overflow-hidden rounded-2xl border p-3 text-left transition-all duration-200 active:scale-[0.98] ${
+                  className={`player-hex-card group relative flex min-w-0 flex-col overflow-hidden border p-3 text-left transition-all duration-200 active:scale-[0.98] ${
                     isSelected
                       ? 'border-amber-400 bg-amber-400/10 shadow-lg ring-2 ring-amber-400/25'
                       : 'border-border/80 bg-card hover:-translate-y-0.5 hover:border-amber-400/70 hover:shadow-lg'

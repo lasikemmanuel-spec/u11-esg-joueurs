@@ -1,5 +1,6 @@
 import 'server-only'
 import {
+  clearAuthenticatedSheetValues,
   ensureAuthenticatedSheetTab,
   getAuthenticatedSheetRows,
   updateAuthenticatedSheetValues,
@@ -235,10 +236,6 @@ export async function deleteTeamPlanningEvent(id: string): Promise<PlanningEvent
   if (!event) return null
 
   const quotedTitle = sheetTitle.replace(/'/g, "''")
-  const clearValues = Array.from({ length: PLANNING_HEADERS.length }, () => '')
-  await updateAuthenticatedSheetValues([{
-    range: `'${quotedTitle}'!A${rowIndex + 1}:O${rowIndex + 1}`,
-    values: [clearValues],
-  }])
+  await clearAuthenticatedSheetValues(`'${quotedTitle}'!A${rowIndex + 1}:O${rowIndex + 1}`)
   return event
 }

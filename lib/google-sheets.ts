@@ -483,3 +483,20 @@ export async function updateAuthenticatedSheetValues(
     throw new Error(`Impossible de mettre à jour l’onglet protégé (${response.status}).`)
   }
 }
+
+export async function clearAuthenticatedSheetValues(range: string) {
+  const accessToken = await getGoogleAccessToken()
+  if (!accessToken) throw new Error('Authentification Google indisponible pour effacer des coordonnées.')
+
+  const response = await fetchGoogleSheetsApi(
+    `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${encodeURIComponent(range)}:clear`,
+    {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}` },
+      cache: 'no-store',
+    },
+  )
+  if (!response.ok) {
+    throw new Error(`Impossible d’effacer les cellules protégées (${response.status}).`)
+  }
+}

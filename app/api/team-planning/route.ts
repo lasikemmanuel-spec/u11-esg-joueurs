@@ -4,6 +4,7 @@ import { revalidateTag } from 'next/cache'
 import { getEducatorSession, hasEducatorAccess, isSameOriginRequest, type EducatorSession } from '@/lib/educator-auth'
 import {
   getTeamPlanningEvents,
+  deleteTeamPlanningEvent,
   saveTeamPlanningEvent,
   saveTeamPlanningEvents,
   updateTeamPlanningSeries,
@@ -228,5 +229,54 @@ export async function PUT(request: Request) {
   } catch (error) {
     console.error('Erreur lors de la modification d’un événement du planning:', error)
     return response({ error: 'Impossible de modifier l’événement dans le planning.' }, 503)
+  }
+}
+
+function todayInParis() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Europe/Paris',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date())
+  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? ''
+  return `${get('year')}-${get('month')}-${get('day')}`
+}
+
+export async function DELETE(request: Request) {
+  const authorization = await authorizeWrite(request)
+  if (!authorization.authorized) return authorization.response
+
+  const body = await readInput(request)
+  if (!body.valid) return body.response
+  if (typeof body.input !== 'object' || body.input === null || Array.isArray(body.input)) {
+    return response({ error: 'Données de suppression invalides.' }, 400)
+  }
+  const input = body.input as Record<string, unknown>
+  const today = todayInParis()
+  if (input.scope !== 'event' || !isUuid(input.id)) {
+    return response({ error: 'Identifiant d’événement invalide.' }, 400)
+  }
+
+  try {
+    const existing = await getTeamPlanningEvents()
+    const event = existing.find((item) => item.id === input.id)
+    if (!event) return response({ error: 'Cet événement n’existe plus. Actualise le planning.' }, 404)
+    if (event.date < today) return response({ error: 'Seuls les événements futurs peuvent être supprimés.' }, 400)
+    const deletedEvent = await deleteTeamPlanningEvent(input.id)
+    if (!deletedEvent) return response({ error: 'Cet événement n’existe plus. Actualise le planning.' }, 404)
+    revalidateTag('google-sheet', { expire: 0 })
+    logSecurityEvent({
+      event: 'team_planning_event_deleted',
+      username: authorization.educator.username,
+      ip: getClientIp(request),
+      userAgent: getUserAgent(request),
+      role: authorization.educator.role,
+      detail: `event_id=${deletedEvent.id} date=${deletedEvent.date}`,
+    })
+    return response({ ok: true, deletedEvent })
+  } catch (error) {
+    console.error('Erreur lors de la suppression d’événements futurs du planning:', error)
+    return response({ error: 'Impossible de supprimer les événements du planning.' }, 503)
   }
 }

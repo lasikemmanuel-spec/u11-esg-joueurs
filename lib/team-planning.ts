@@ -226,3 +226,19 @@ export async function updateTeamPlanningSeries(
   if (updates.length > 0) await updateAuthenticatedSheetValues(updates)
   return events
 }
+
+export async function deleteTeamPlanningEvent(id: string): Promise<PlanningEvent | null> {
+  const { sheetTitle, rows } = await getPlanningRows()
+  const rowIndex = rows.findIndex((row, index) => index > 0 && row[0] === id)
+  if (rowIndex < 0) return null
+  const event = rowToEvent(rows[rowIndex])
+  if (!event) return null
+
+  const quotedTitle = sheetTitle.replace(/'/g, "''")
+  const clearValues = Array.from({ length: PLANNING_HEADERS.length }, () => '')
+  await updateAuthenticatedSheetValues([{
+    range: `'${quotedTitle}'!A${rowIndex + 1}:O${rowIndex + 1}`,
+    values: [clearValues],
+  }])
+  return event
+}

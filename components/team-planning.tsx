@@ -18,6 +18,7 @@ import {
   Repeat,
   RefreshCw,
   Save,
+  Trash2,
   UsersRound,
   X,
 } from 'lucide-react'
@@ -34,7 +35,6 @@ import {
   getPlanningPeriodRange,
   shiftPlanningPeriod,
   type PlanningPeriodView,
-  type PlanningView,
 } from '@/lib/team-planning-calendar'
 import { getScheduledMatchPlanningEvents, type PlanningCardEvent } from '@/lib/team-planning-match-events'
 import {
@@ -98,11 +98,10 @@ const EVENT_SHORT_LABELS: Record<PlanningEvent['type'], string> = {
   cohesion: 'Co',
 }
 
-const PLANNING_VIEWS: { id: PlanningView; label: string }[] = [
+const PLANNING_VIEWS: { id: PlanningPeriodView; label: string }[] = [
   { id: 'week', label: 'Semaine' },
   { id: 'month', label: 'Mois' },
   { id: 'year', label: 'Année' },
-  { id: 'upcoming', label: 'À venir' },
 ]
 
 const WEEKDAY_LABELS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
@@ -262,7 +261,7 @@ export function TeamPlanning({
 }) {
   const router = useRouter()
   const [events, setEvents] = useState<PlanningEvent[]>([])
-  const [view, setView] = useState<PlanningView>('year')
+  const [view, setView] = useState<PlanningPeriodView>('year')
   const [selectedTypes, setSelectedTypes] = useState<PlanningEvent['type'][]>(() => [...PLANNING_EVENT_TYPES])
   const [periodAnchorDate, setPeriodAnchorDate] = useState(() => toDateKey(new Date()))
   const [selectedYearDate, setSelectedYearDate] = useState<string | null>(null)
@@ -285,6 +284,7 @@ export function TeamPlanning({
   const [repeatWeekly, setRepeatWeekly] = useState(false)
   const [repeatUntil, setRepeatUntil] = useState('')
   const [pendingSeriesId, setPendingSeriesId] = useState('')
+  const [pendingDeleteId, setPendingDeleteId] = useState('')
 
   const loadEvents = useCallback(async () => {
     setLoading(true)
@@ -315,7 +315,6 @@ export function TeamPlanning({
     [events, matches, today],
   )
   const periodEvents = useMemo(() => {
-    if (view === 'upcoming') return allEvents.filter((event) => event.endDate >= today)
     const range = getPlanningPeriodRange(view, periodAnchorDate)
     return allEvents.filter((event) =>
       planningEventOverlapsDateRange(event.date, event.endDate, range.startDate, range.endDate),
@@ -328,11 +327,11 @@ export function TeamPlanning({
   const selectedYearDateEvents = selectedYearDate
     ? getEventsOnDate(visibleEvents, selectedYearDate)
     : []
-  const periodRange = view === 'upcoming' ? null : getPlanningPeriodRange(view, periodAnchorDate)
-  const monthCalendarDays = view === 'month' && periodRange
+  const periodRange = getPlanningPeriodRange(view, periodAnchorDate)
+  const monthCalendarDays = view === 'month'
     ? getPlanningMonthCalendarDays(periodRange.startDate)
     : []
-  const yearMonthStarts = view === 'year' && periodRange
+  const yearMonthStarts = view === 'year'
     ? getPlanningMonthStarts(periodRange.startDate, periodRange.endDate)
     : []
   const currentMonthStart = `${today.slice(0, 7)}-01`
@@ -544,6 +543,34 @@ export function TeamPlanning({
       setActionError(cause instanceof Error ? cause.message : 'Impossible d’annuler cette série.')
     } finally {
       setPendingSeriesId('')
+    }
+  }
+
+  const deleteFutureEvents = async (event: PlanningCardEvent) => {
+    const confirmation = event.recurrenceGroupId
+      ? `Supprimer uniquement la séance « ${event.title} » du ${formatDate(event.date)} ? Les autres dates de la série seront conservées.`
+      : `Supprimer « ${event.title} » du ${formatDate(event.date)} ?`
+    if (!window.confirm(confirmation)) return
+
+    setPendingDeleteId(event.id)
+    setActionError('')
+    setNotice('')
+    try {
+      const response = await fetch('/api/team-planning', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ scope: 'event', id: event.id }),
+      })
+      const result = await response.json() as { deletedEvent?: PlanningEvent; error?: string }
+      if (!response.ok || !result.deletedEvent) {
+        throw new Error(result.error ?? 'Impossible de supprimer les événements futurs.')
+      }
+      setEvents((current) => current.filter((item) => item.id !== result.deletedEvent?.id))
+      setNotice('Événement supprimé du planning.')
+    } catch (cause) {
+      setActionError(cause instanceof Error ? cause.message : 'Impossible de supprimer les événements futurs.')
+    } finally {
+      setPendingDeleteId('')
     }
   }
 
@@ -1002,7 +1029,7 @@ export function TeamPlanning({
         />
       )}
 
-      {view !== 'upcoming' && periodRange && (
+      {periodRange && (
         <div className="flex items-center justify-center gap-2">
           <button
             type="button"
@@ -1476,6 +1503,24 @@ export function TeamPlanning({
                       </div>
                     ) : <span aria-hidden="true" />}
                     <div className="flex items-center gap-1">
+                      {event.date >= today && (
+                        <button
+                          type="button"
+                          onClick={() => void deleteFutureEvents(event)}
+                          disabled={pendingDeleteId === event.id}
+                          aria-label={event.recurrenceGroupId
+                            ? `Supprimer ${event.title} à partir du ${formatDate(event.date)}`
+                            : `Supprimer ${event.title}`}
+                          title={event.recurrenceGroupId
+                            ? 'Supprimer uniquement cette occurrence'
+                            : 'Supprimer cet événement futur'}
+                          className={`${iconButtonClass} border-destructive/30 text-destructive hover:bg-destructive/5 disabled:opacity-50`}
+                        >
+                          {pendingDeleteId === event.id
+                            ? <RefreshCw aria-hidden="true" className="size-4 animate-spin" />
+                            : <Trash2 aria-hidden="true" className="size-4" />}
+                        </button>
+                      )}
                       <button
                         type="button"
                         onClick={() => editEvent(event)}

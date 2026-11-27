@@ -1,5 +1,4 @@
 export type PlanningPeriodView = 'week' | 'month' | 'year'
-export type PlanningView = PlanningPeriodView | 'upcoming'
 
 export type PlanningDateRange = {
   startDate: string

@@ -25,6 +25,7 @@ export type SecurityEventType =
   | 'whatsapp_settings_modified'
   | 'team_planning_event_created'
   | 'team_planning_event_updated'
+  | 'team_planning_event_deleted'
 
 export type SecurityEvent = {
   event: SecurityEventType
@@ -71,6 +72,7 @@ export function logSecurityEvent(event: Omit<SecurityEvent, 'timestamp'>) {
     whatsapp_settings_modified: '💬',
     team_planning_event_created: '📅',
     team_planning_event_updated: '📅',
+    team_planning_event_deleted: '🗑️',
   }[event.event] ?? '📋'
 
   console.log(

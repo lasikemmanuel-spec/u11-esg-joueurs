@@ -252,7 +252,13 @@ function isSecretSantaEvent(event: PlanningCardEvent) {
 }
 
 function getEventsOnDate(events: PlanningCardEvent[], dateKey: string) {
-  return events.filter((event) => event.date <= dateKey && event.endDate >= dateKey)
+  return events.filter((event) => {
+    const isOvernightEvent = event.type !== 'tournament' &&
+      event.endDate === addDays(event.date, 1)
+    return isOvernightEvent
+      ? event.date === dateKey
+      : event.date <= dateKey && event.endDate >= dateKey
+  })
 }
 
 function formatMonthName(dateKey: string) {

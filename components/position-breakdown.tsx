@@ -329,41 +329,41 @@ export function PositionBreakdown({
                   aria-pressed={isSelected}
                   aria-label={`Fiche de ${player.firstName} ${player.lastName}, numéro ${player.number}, ${pos.label}`}
                   onClick={() => setSelectedNumber(player.number)}
-                  className={`player-hex-card group relative flex min-w-0 flex-col overflow-hidden border p-3 text-left transition-all duration-200 active:scale-[0.98] ${
+                  className={`player-hex-card group relative flex min-h-[360px] w-full max-w-[340px] justify-self-center flex-col items-center overflow-hidden border p-7 text-center transition-all duration-200 active:scale-[0.98] ${
                     isSelected
                       ? 'border-amber-300 bg-[#1b2d5c] shadow-lg ring-2 ring-amber-300/50'
                       : 'border-amber-400/60 bg-[#111d3d] hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-lg'
                   }`}
                 >
-                  <div className="flex min-w-0 items-center justify-between gap-2">
-                    <span className="inline-flex size-10 shrink-0 items-center justify-center rounded-xl bg-[#172554] font-mono text-base font-black text-amber-300 shadow-sm ring-1 ring-amber-400/60">
+                  <div className="relative z-10 flex w-full min-w-0 flex-col items-center gap-2">
+                    <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-2xl border border-amber-300/80 bg-[#0a142d] font-mono text-lg font-black text-amber-300 shadow-md ring-2 ring-amber-400/20">
                       {player.number}
                     </span>
-                    <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 text-[10px] font-bold whitespace-nowrap ${pos.badgeClass}`}>
+                    <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-1 text-[10px] font-bold whitespace-nowrap ${pos.badgeClass}`}>
                       <span aria-hidden="true">{pos.icon}</span>
                       <span>{pos.label}</span>
                     </span>
                   </div>
 
-                  <div className="mt-3 min-w-0">
-                    <h4 className="break-words text-base font-black leading-tight text-white transition-colors group-hover:text-amber-200 sm:text-lg">
+                  <div className="relative z-10 mt-4 w-full min-w-0">
+                    <h4 className="break-words text-xl font-black leading-tight text-white transition-colors group-hover:text-amber-200 sm:text-2xl">
                       {player.firstName}
                     </h4>
-                    <p className="mt-0.5 break-words text-[11px] font-semibold uppercase tracking-[0.08em] text-slate-300 sm:text-xs">
+                    <p className="mt-1 break-words text-xs font-semibold uppercase tracking-[0.1em] text-slate-300 sm:text-sm">
                       {player.lastName}
                     </p>
                     {player.transferStatus && (
-                      <span className="mt-1.5 inline-flex max-w-full break-words rounded-md bg-amber-400/15 px-1.5 py-0.5 text-[9px] font-bold text-amber-200">
+                      <span className="mt-2 inline-flex max-w-full break-words rounded-md bg-amber-400/15 px-2 py-1 text-[9px] font-bold text-amber-200">
                         {player.transferStatus}
                       </span>
                     )}
                   </div>
 
-                  <div className="mt-3 grid grid-cols-2 gap-1.5 border-t border-border/70 pt-2">
+                  <div className="relative z-10 mt-auto grid w-full grid-cols-2 gap-2 border-t border-amber-300/25 pt-4">
                     {rate !== null && (
                       <span
                         title={`Taux de présence aux entraînements : ${rate}%`}
-                        className={`flex min-w-0 flex-col gap-0.5 rounded-lg px-2 py-1.5 text-[10px] font-bold ${
+                        className={`flex min-w-0 flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold ${
                           rate >= 75
                             ? 'bg-emerald-950/80 text-emerald-200'
                             : 'bg-amber-950/80 text-amber-200'
@@ -376,7 +376,7 @@ export function PositionBreakdown({
                     {ireFormatted !== null && (
                       <span
                         title={`Indice de Répartition Équitable (IRE) : ${ireFormatted}`}
-                        className={`flex min-w-0 flex-col justify-center gap-0.5 rounded-lg px-2 py-1.5 font-mono ${
+                        className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 font-mono ${
                           ireStatusKey === 'fair'
                             ? 'bg-emerald-950/80 text-emerald-200'
                             : ireStatusKey === 'under'
@@ -393,14 +393,14 @@ export function PositionBreakdown({
                   </div>
 
                   {(goals > 0 || assists > 0) && (
-                    <div className="mt-1.5 flex flex-wrap gap-1.5 text-[10px] font-bold">
+                    <div className="relative z-10 mt-2 flex w-full flex-wrap justify-center gap-2 text-[10px] font-bold">
                       {goals > 0 && (
-                        <span className="rounded-md bg-amber-950/80 px-1.5 py-0.5 text-amber-200">
+                        <span className="rounded-full bg-amber-950/80 px-2.5 py-1 text-amber-200">
                           ⚽ {goals}
                         </span>
                       )}
                       {assists > 0 && (
-                        <span className="rounded-md bg-blue-950/80 px-1.5 py-0.5 text-sky-200">
+                        <span className="rounded-full bg-blue-950/80 px-2.5 py-1 text-sky-200">
                           🎯 {assists}
                         </span>
                       )}

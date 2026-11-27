@@ -1230,25 +1230,26 @@ export function TeamPlanning({
                               <button
                                 type="button"
                                 onClick={() => editEvent(event)}
-                                className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-border bg-background/70 px-3 text-xs font-bold text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                                aria-label={`Modifier ${event.title}`}
+                                title="Modifier"
+                                className="inline-flex size-9 items-center justify-center rounded-lg border border-border bg-background/70 text-foreground transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                               >
                                 <Pencil aria-hidden="true" className="size-3.5" />
-                                Modifier
                               </button>
                               {event.date >= today && (
                                 <button
                                   type="button"
                                   onClick={() => void deleteFutureEvents(event)}
                                   disabled={pendingDeleteId === event.id}
+                                  aria-label={`Supprimer ${event.title}`}
                                   title={event.recurrenceGroupId
                                     ? 'Supprimer uniquement cette occurrence'
                                     : 'Supprimer cet événement futur'}
-                                  className="inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg border border-destructive/30 bg-background/70 px-3 text-xs font-bold text-destructive transition hover:bg-destructive/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+                                  className="inline-flex size-9 items-center justify-center rounded-lg border border-destructive/30 bg-background/70 text-destructive transition hover:bg-destructive/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
                                 >
                                   {pendingDeleteId === event.id
                                     ? <RefreshCw aria-hidden="true" className="size-3.5 animate-spin" />
                                     : <Trash2 aria-hidden="true" className="size-3.5" />}
-                                  {pendingDeleteId === event.id ? 'Suppression…' : 'Supprimer'}
                                 </button>
                               )}
                             </div>

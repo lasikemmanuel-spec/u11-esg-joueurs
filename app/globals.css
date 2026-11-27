@@ -96,6 +96,13 @@
   filter: drop-shadow(0 0 5px rgb(212 175 55 / 90%));
 }
 
+.player-card-portrait {
+  background:
+    linear-gradient(145deg, transparent 42%, rgb(212 175 55 / 10%) 42.5%, transparent 43.5%),
+    linear-gradient(35deg, transparent 62%, rgb(255 255 255 / 5%) 62.5%, transparent 64%),
+    linear-gradient(155deg, #314875 0%, #172554 55%, #0a142d 100%);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .planning-christmas-flake,
   .planning-christmas-santa {

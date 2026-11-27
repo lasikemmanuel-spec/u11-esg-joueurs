@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react'
-import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, LayoutGrid, ListFilter, Search, Sparkles } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, LayoutGrid, ListFilter, Search, UserRound } from 'lucide-react'
 import { PlayerCard } from '@/components/player-stats'
 import { ClubCrest } from '@/components/club-crest'
 import { countCancelledCallupsForPlayer } from '@/lib/cancelled-match-callups'
@@ -321,6 +321,15 @@ export function PositionBreakdown({
               const ireStatusKey = playerStat ? ireStatus(playerStat) : 'none'
               const pos = getPositionMeta(player.position)
               const isSelected = player.number === selectedPlayer?.number
+              const initials = `${player.firstName.trim().charAt(0)}${player.lastName.trim().charAt(0)}`.toLocaleUpperCase('fr-FR')
+              const cardMetrics = [
+                { label: 'ENTRAÎN.', value: rate === null ? '—' : `${rate}%`, tone: rate !== null && rate >= 75 ? 'text-emerald-200' : 'text-amber-200' },
+                { label: 'CONVOC.', value: playerStat?.callUpRate == null ? '—' : `${playerStat.callUpRate}%`, tone: 'text-sky-200' },
+                { label: 'TITUL.', value: playerStat?.starts == null ? '—' : String(playerStat.starts), tone: 'text-slate-100' },
+                { label: 'BUTS', value: goals > 0 ? String(goals) : '—', tone: 'text-amber-200' },
+                { label: 'PASSES', value: assists > 0 ? String(assists) : '—', tone: 'text-sky-200' },
+                { label: 'IRE', value: ireFormatted ?? '—', tone: ireStatusKey === 'fair' ? 'text-emerald-200' : ireStatusKey === 'under' ? 'text-amber-200' : ireStatusKey === 'over' ? 'text-rose-200' : 'text-slate-200' },
+              ]
 
               return (
                 <button
@@ -329,13 +338,13 @@ export function PositionBreakdown({
                   aria-pressed={isSelected}
                   aria-label={`Fiche de ${player.firstName} ${player.lastName}, numéro ${player.number}, ${pos.label}`}
                   onClick={() => setSelectedNumber(player.number)}
-                  className={`player-hex-card group relative flex min-h-[360px] w-full max-w-[340px] justify-self-center flex-col items-center overflow-hidden border p-7 text-center transition-all duration-200 active:scale-[0.98] ${
+                  className={`player-hex-card group relative flex min-h-[460px] w-full max-w-[340px] justify-self-center flex-col items-center overflow-hidden border p-7 text-center transition-all duration-200 active:scale-[0.98] ${
                     isSelected
                       ? 'border-amber-300 bg-[#1b2d5c] shadow-lg ring-2 ring-amber-300/50'
                       : 'border-amber-400/60 bg-[#111d3d] hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-lg'
                   }`}
                 >
-                  <div className="relative z-10 flex w-full min-w-0 flex-col items-center gap-2">
+                  <div className="relative z-10 flex w-full min-w-0 flex-col items-center gap-1">
                     <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-2xl border border-amber-300/80 bg-[#0a142d] font-mono text-lg font-black text-amber-300 shadow-md ring-2 ring-amber-400/20">
                       {player.number}
                     </span>
@@ -345,67 +354,35 @@ export function PositionBreakdown({
                     </span>
                   </div>
 
-                  <div className="relative z-10 mt-4 w-full min-w-0">
+                  <div className="player-card-portrait relative z-10 mt-3 flex h-32 w-full items-end justify-center overflow-hidden border-b border-amber-300/40">
+                    <ClubCrest className="absolute top-1/2 left-1/2 size-28 -translate-x-1/2 -translate-y-1/2 opacity-[0.12]" />
+                    <UserRound aria-hidden="true" className="absolute bottom-1 size-28 text-white/15" strokeWidth={1.2} />
+                    <span className="relative mb-2 font-mono text-4xl font-black tracking-wider text-amber-100 drop-shadow-lg">{initials || '⚽'}</span>
+                    <span className="absolute right-1 bottom-2 rounded-full border border-white/15 bg-[#0a142d]/80 px-2 py-0.5 text-[8px] font-black uppercase tracking-[0.18em] text-amber-200">ESG · U11</span>
+                  </div>
+
+                  <div className="relative z-10 mt-3 w-full min-w-0">
                     <h4 className="break-words text-xl font-black leading-tight text-white transition-colors group-hover:text-amber-200 sm:text-2xl">
                       {player.firstName}
                     </h4>
-                    <p className="mt-1 break-words text-xs font-semibold uppercase tracking-[0.1em] text-slate-300 sm:text-sm">
+                    <p className="mt-0.5 break-words text-xs font-semibold uppercase tracking-[0.1em] text-slate-300 sm:text-sm">
                       {player.lastName}
                     </p>
                     {player.transferStatus && (
-                      <span className="mt-2 inline-flex max-w-full break-words rounded-md bg-amber-400/15 px-2 py-1 text-[9px] font-bold text-amber-200">
+                      <span className="mt-1 inline-flex max-w-full break-words rounded-md bg-amber-400/15 px-2 py-0.5 text-[9px] font-bold text-amber-200">
                         {player.transferStatus}
                       </span>
                     )}
                   </div>
 
-                  <div className="relative z-10 mt-auto grid w-full grid-cols-2 gap-2 border-t border-amber-300/25 pt-4">
-                    {rate !== null && (
-                      <span
-                        title={`Taux de présence aux entraînements : ${rate}%`}
-                        className={`flex min-w-0 flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold ${
-                          rate >= 75
-                            ? 'bg-emerald-950/80 text-emerald-200'
-                            : 'bg-amber-950/80 text-amber-200'
-                        }`}
-                      >
-                        <span className="whitespace-nowrap text-[9px] uppercase tracking-wide">🏃 Entraînement</span>
-                        <span className="font-mono text-sm font-black">{rate}%</span>
-                      </span>
-                    )}
-                    {ireFormatted !== null && (
-                      <span
-                        title={`Indice de Répartition Équitable (IRE) : ${ireFormatted}`}
-                        className={`flex min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-2 py-2 font-mono ${
-                          ireStatusKey === 'fair'
-                            ? 'bg-emerald-950/80 text-emerald-200'
-                            : ireStatusKey === 'under'
-                              ? 'bg-amber-950/80 text-amber-200'
-                              : ireStatusKey === 'over'
-                                ? 'bg-rose-950/80 text-rose-200'
-                                : 'bg-slate-800 text-slate-200'
-                        }`}
-                      >
-                        <span className="font-sans text-[9px] font-bold uppercase tracking-wide">Indice IRE</span>
-                        <span className="text-sm font-black">{ireFormatted}</span>
-                      </span>
-                    )}
+                  <div className="relative z-10 mt-auto grid w-full grid-cols-3 gap-x-2 gap-y-2 border-t border-amber-300/35 pt-3">
+                    {cardMetrics.map((metric) => (
+                      <div key={metric.label} className="min-w-0 text-center">
+                        <p className="truncate text-[8px] font-bold uppercase tracking-[0.08em] text-slate-300">{metric.label}</p>
+                        <p className={`mt-0.5 truncate font-mono text-sm font-black ${metric.tone}`}>{metric.value}</p>
+                      </div>
+                    ))}
                   </div>
-
-                  {(goals > 0 || assists > 0) && (
-                    <div className="relative z-10 mt-2 flex w-full flex-wrap justify-center gap-2 text-[10px] font-bold">
-                      {goals > 0 && (
-                        <span className="rounded-full bg-amber-950/80 px-2.5 py-1 text-amber-200">
-                          ⚽ {goals}
-                        </span>
-                      )}
-                      {assists > 0 && (
-                        <span className="rounded-full bg-blue-950/80 px-2.5 py-1 text-sky-200">
-                          🎯 {assists}
-                        </span>
-                      )}
-                    </div>
-                  )}
                 </button>
               )
             })

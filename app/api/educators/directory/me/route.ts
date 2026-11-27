@@ -48,7 +48,7 @@ export async function PUT(request: Request) {
       licenseNumber: input.licenseNumber,
       phone: input.phone,
     })
-    revalidateTag('google-sheet', 'max')
+    revalidateTag('google-sheet', { expire: 0 })
     logSecurityEvent({
       event: 'directory_modified',
       username: educator.username,

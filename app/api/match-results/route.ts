@@ -141,7 +141,7 @@ async function save(request: Request, editing: boolean) {
       goalsFor: hasNoScore ? null : goalsFor as number,
       goalsAgainst: hasNoScore ? null : goalsAgainst as number,
     })
-    revalidateTag('google-sheet', 'max')
+    revalidateTag('google-sheet', { expire: 0 })
     logSecurityEvent({
       event: 'match_modified',
       username: educator.username,
@@ -231,7 +231,7 @@ export async function DELETE(request: Request) {
     const deleted = scope === 'match'
       ? await deleteMatchResult({ team: team as 'E1' | 'E2', date, slotColumn: slotColumn as number })
       : await deleteMatchDay(date)
-    revalidateTag('google-sheet', 'max')
+    revalidateTag('google-sheet', { expire: 0 })
     logSecurityEvent({
       event: 'match_modified',
       username: educator.username,

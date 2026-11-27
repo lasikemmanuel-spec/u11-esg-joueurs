@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import { RefreshCw } from 'lucide-react'
-import { refreshSheetData } from '@/app/actions'
 
 export function RefreshSheetButton({ compact = false }: { compact?: boolean }) {
   const router = useRouter()
@@ -31,10 +30,17 @@ export function RefreshSheetButton({ compact = false }: { compact?: boolean }) {
     setError(null)
     startTransition(async () => {
       try {
-        await refreshSheetData()
+        const response = await fetch('/api/refresh-sheet', { method: 'POST' })
+        const result = await response.json() as { error?: string }
+        if (!response.ok) throw new Error(result.error ?? 'Impossible d’actualiser les données du Sheet.')
         router.refresh()
       } catch (cause) {
-        setError(cause instanceof Error ? cause.message : 'Impossible d’actualiser les données du Sheet.')
+        const message = cause instanceof Error ? cause.message : 'Impossible d’actualiser les données du Sheet.'
+        if (/server action|action.*not found/i.test(message)) {
+          window.location.reload()
+          return
+        }
+        setError(message)
       }
     })
   }

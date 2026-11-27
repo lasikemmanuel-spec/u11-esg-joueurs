@@ -61,7 +61,7 @@ async function save(request: Request, editing: boolean) {
 
   try {
     const saved = await saveEducatorDirectoryEntry({ id: editing ? id as string : undefined, name, licenseNumber, phone })
-    revalidateTag('google-sheet', 'max')
+    revalidateTag('google-sheet', { expire: 0 })
     return response({ ok: true, ...saved })
   } catch (error) {
     console.error('Erreur d’enregistrement de l’annuaire des éducateurs:', error)
@@ -101,7 +101,7 @@ export async function DELETE(request: Request) {
 
   try {
     await deleteEducatorDirectoryEntry(input.id)
-    revalidateTag('google-sheet', 'max')
+    revalidateTag('google-sheet', { expire: 0 })
     return response({ ok: true })
   } catch (error) {
     console.error('Erreur de suppression d’une fiche éducateur:', error)

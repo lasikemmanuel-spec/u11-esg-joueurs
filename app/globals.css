@@ -76,34 +76,35 @@
 
 .player-hex-card {
   clip-path: polygon(4% 16%, 10% 13%, 18% 9%, 28% 5%, 39% 2%, 50% 0, 61% 2%, 72% 5%, 82% 9%, 90% 13%, 96% 16%, 100% 18%, 100% 80%, 99% 85%, 96% 89%, 91% 93%, 82% 96%, 50% 100%, 18% 96%, 9% 93%, 4% 89%, 1% 85%, 0 80%, 0 18%);
-  border-color: rgb(212 175 55 / 70%);
+  border-color: rgb(255 224 112 / 95%);
   background-image: linear-gradient(145deg, rgb(212 175 55 / 13%), transparent 34%, rgb(55 85 145 / 16%));
   background-color: #111d3d;
-  filter: drop-shadow(0 3px 5px rgb(23 37 84 / 14%));
+  filter: drop-shadow(0 1px 0 rgb(255 239 166 / 90%)) drop-shadow(0 3px 0 rgb(134 98 21 / 90%)) drop-shadow(0 9px 8px rgb(5 13 32 / 58%));
 }
 
 .player-hex-card::before {
   position: absolute;
   z-index: 0;
-  inset: 7px;
-  border: 1px solid rgb(244 212 94 / 24%);
+  inset: 6px;
+  border: 2px solid rgb(255 232 142 / 52%);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 10%);
   clip-path: polygon(11% 0, 89% 0, 94% 1%, 97% 3%, 99% 6%, 100% 10%, 100% 81%, 98% 85%, 94% 89%, 85% 94%, 50% 100%, 15% 94%, 6% 89%, 2% 85%, 0 81%, 0 10%, 1% 6%, 3% 3%, 6% 1%);
   content: '';
   pointer-events: none;
 }
 
 .player-hex-card:hover {
-  filter: drop-shadow(0 6px 8px rgb(23 37 84 / 22%));
+  filter: drop-shadow(0 1px 0 rgb(255 239 166 / 95%)) drop-shadow(0 3px 0 rgb(134 98 21 / 95%)) drop-shadow(0 13px 11px rgb(5 13 32 / 66%));
 }
 
 .player-hex-card[aria-pressed='true'] {
-  border-color: #f4d45e;
+  border-color: #fff0a5;
   background-color: #1b2d5c;
-  filter: drop-shadow(0 0 5px rgb(212 175 55 / 65%));
+  filter: drop-shadow(0 1px 0 #fff0a5) drop-shadow(0 3px 0 #aa8426) drop-shadow(0 0 8px rgb(255 211 70 / 70%)) drop-shadow(0 10px 10px rgb(5 13 32 / 60%));
 }
 
 .player-hex-card:focus-visible {
-  filter: drop-shadow(0 0 5px rgb(212 175 55 / 90%));
+  filter: drop-shadow(0 1px 0 #fff0a5) drop-shadow(0 3px 0 #aa8426) drop-shadow(0 0 8px rgb(255 211 70 / 90%));
 }
 
 .player-card-portrait {
